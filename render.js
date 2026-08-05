@@ -22,6 +22,10 @@ function decisionClass(decision){
   return 'hold';
 }
 
+function decisionEmoji(cls){
+  return { buy: '🚀', sell: '📉', hold: '🤝' }[cls];
+}
+
 function levelBlock(label, val, cls){
   return `<div class="level ${cls}"><div class="l-label">${label}</div><div class="l-val">${escapeHtml(val || '—')}</div></div>`;
 }
@@ -39,18 +43,18 @@ function renderCard(c, groupName){
     <button class="tag-btn" title="設定分組">🏷️</button>
     <button class="del-btn" title="移除（本機）">✕</button>
     <div class="flip-inner">
-      <div class="flip-face flip-front">
+      <div class="flip-face flip-front deco-${dCls}">
         <div class="card-title-row">
           <span class="card-code">${escapeHtml(c.code)}</span>
           <span class="card-name">${escapeHtml(c.name)}</span>
           <span class="card-date">${escapeHtml(c.date)}</span>
         </div>
         <div class="badge-row">
-          <span class="decision ${dCls}">${escapeHtml(c.decision)}</span>
-          <span class="winrate">勝率 ${escapeHtml(String(c.winRate))}%</span>
-          <span class="confidence">信心度 ${escapeHtml(c.confidence)}</span>
+          <span class="decision ${dCls}">${decisionEmoji(dCls)} ${escapeHtml(c.decision)}</span>
+          <span class="winrate">🎯 勝率 ${escapeHtml(String(c.winRate))}%</span>
+          <span class="confidence">✦ 信心度 ${escapeHtml(c.confidence)}</span>
         </div>
-        <div class="pattern">${escapeHtml(c.pattern)}</div>
+        <div class="pattern">📐 ${escapeHtml(c.pattern)}</div>
         <div class="levels">
           ${levelBlock('壓力', c.resist, 'resist')}
           ${levelBlock('現價', c.current, '')}
@@ -123,7 +127,7 @@ function render(){
 
   grid.innerHTML = groupNames.map(g => `
     <section class="group-section" data-group="${escapeHtml(g)}">
-      <h2 class="group-title">${escapeHtml(g)}<span class="group-count">${byGroup[g].length}</span></h2>
+      <h2 class="group-title">${g === '未分組' ? '📂' : '🗂️'} ${escapeHtml(g)}<span class="group-count">${byGroup[g].length}</span></h2>
       <div class="group-grid" data-group="${escapeHtml(g)}">
         ${byGroup[g].map(c => renderCard(c, g)).join('')}
       </div>

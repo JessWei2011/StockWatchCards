@@ -46,28 +46,39 @@
 body{
   margin:0;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;
-  background:var(--bg);
+  background:
+    radial-gradient(900px 420px at 8% -10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent),
+    radial-gradient(700px 360px at 100% 0%, color-mix(in srgb, var(--buy) 8%, transparent), transparent),
+    var(--bg);
   color:var(--text);
   min-height:100vh;
 }
 header{
   position:sticky; top:0; z-index:10;
-  background:var(--bg);
+  background:color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
   border-bottom:1px solid var(--border);
-  padding:14px 24px;
+  padding:16px 24px;
   display:flex; align-items:center; gap:16px;
   flex-wrap:wrap;
 }
-header h1{ font-size:18px; margin:0; font-weight:700; white-space:nowrap; }
+header h1{
+  font-size:19px; margin:0; font-weight:800; white-space:nowrap;
+  background:linear-gradient(120deg, var(--accent), var(--buy));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
 #search{
   flex:1; min-width:140px; max-width:280px;
-  padding:8px 12px;
+  padding:9px 14px;
   border:1px solid var(--border);
-  border-radius:8px;
+  border-radius:999px;
   background:var(--card-bg);
   color:var(--text);
   font-size:14px;
+  box-shadow:var(--shadow);
 }
+#search:hover{ border-color:var(--accent); }
 #search:focus{outline:2px solid var(--accent); outline-offset:-1px;}
 #count{color:var(--text-dim); font-size:13px; white-space:nowrap;}
 
@@ -139,7 +150,11 @@ main{padding:24px 24px 60px;}
   border:1px solid var(--border);
   padding:16px;
   gap:10px;
+  border-top:4px solid var(--border);
 }
+.flip-front.deco-buy{ border-top-color:var(--buy); }
+.flip-front.deco-hold{ border-top-color:var(--hold); }
+.flip-front.deco-sell{ border-top-color:var(--sell); }
 .flip-back{
   background:var(--card-back-bg);
   color:var(--card-back-text);
@@ -149,18 +164,19 @@ main{padding:24px 24px 60px;}
 
 .card-title-row{ display:flex; align-items:baseline; gap:8px; padding-right:64px; }
 .card-code{ color:var(--text-dim); font-size:13px; font-weight:600; }
-.card-name{ font-size:19px; font-weight:700; }
+.card-name{ font-size:20px; font-weight:800; }
 .card-date{ margin-left:auto; font-size:12px; color:var(--text-dim); }
 
 .badge-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .decision{
-  font-size:13px; font-weight:700;
-  padding:4px 10px; border-radius:999px;
+  font-size:13px; font-weight:800;
+  padding:4px 12px; border-radius:999px;
+  box-shadow:0 1px 2px rgba(0,0,0,0.08);
 }
-.decision.buy{ color:var(--buy); background:var(--buy-bg); }
-.decision.hold{ color:var(--hold); background:var(--hold-bg); }
-.decision.sell{ color:var(--sell); background:var(--sell-bg); }
-.winrate{ font-size:13px; color:var(--text-dim); }
+.decision.buy{ color:#fff; background:linear-gradient(120deg, var(--buy), #22c55e); }
+.decision.hold{ color:#fff; background:linear-gradient(120deg, var(--hold), #60a5fa); }
+.decision.sell{ color:#fff; background:linear-gradient(120deg, var(--sell), #f87171); }
+.winrate{ font-size:13px; color:var(--text-dim); font-weight:600; }
 .confidence{ font-size:12px; color:var(--text-dim); }
 
 .pattern{
