@@ -192,6 +192,27 @@ function groupAndSort(cards, ui){
 }
 
 let colorFilter = 'all';
+let groupFilter = 'all';
+
+function populateGroupFilterOptions(ui){
+  const sel = document.getElementById('groupFilterSelect');
+  if(!sel) return;
+  const names = Array.from(new Set(STOCK_CARDS.map(c => ui.groups[c.code] || '未分組')));
+  names.sort((a, b) => {
+    if(a === '未分組') return -1;
+    if(b === '未分組') return 1;
+    return a.localeCompare(b, 'zh-Hant');
+  });
+  const current = sel.value || 'all';
+  sel.innerHTML = `<option value="all">🗂️ 全部分類</option>` +
+    names.map(n => `<option value="${escapeHtml(n)}">${n === '未分組' ? '📂' : '🗂️'} ${escapeHtml(n)}</option>`).join('');
+  if(current !== 'all' && !names.includes(current)){
+    groupFilter = 'all';
+    sel.value = 'all';
+  } else {
+    sel.value = current;
+  }
+}
 
 function render(){
   const grid = document.getElementById('grid');
@@ -199,11 +220,16 @@ function render(){
   const countEl = document.getElementById('count');
   const ui = loadUI();
 
+  populateGroupFilterOptions(ui);
+
   const q = searchInput.value.trim().toLowerCase();
-  const filtered = STOCK_CARDS.filter(c =>
-    (c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)) &&
-    (colorFilter === 'all' || decisionClass(c.decision) === colorFilter)
-  );
+  const filtered = STOCK_CARDS.filter(c => {
+    const matchesSearch = c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q);
+    const matchesColor = colorFilter === 'all' || decisionClass(c.decision) === colorFilter;
+    const cardGroup = ui.groups[c.code] || '未分組';
+    const matchesGroup = groupFilter === 'all' || cardGroup === groupFilter;
+    return matchesSearch && matchesColor && matchesGroup;
+  });
   const visibleCount = filtered.filter(c => !ui.hidden.includes(c.code)).length;
   countEl.textContent = STOCK_CARDS.length ? `共 ${visibleCount} / ${STOCK_CARDS.length} 檔` : '';
 
@@ -395,6 +421,14 @@ function setupColorFilter(){
   });
 }
 
+function setupGroupFilter(){
+  const sel = document.getElementById('groupFilterSelect');
+  sel.addEventListener('change', () => {
+    groupFilter = sel.value;
+    render();
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('search');
   searchInput.addEventListener('input', render);
@@ -403,5 +437,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupModals();
   setupFontControl();
   setupColorFilter();
+  setupGroupFilter();
   render();
 });

@@ -101,6 +101,18 @@ header h1{
 .color-filter button:hover{ background:var(--bg); }
 .color-filter button.active{ background:var(--accent); color:#fff; }
 
+.group-filter-select{
+  padding:9px 12px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:var(--card-bg);
+  color:var(--text);
+  font-size:12.5px; font-weight:600;
+  cursor:pointer;
+  box-shadow:var(--shadow);
+}
+.group-filter-select:hover{ border-color:var(--accent); }
+
 .font-ctrl{
   display:flex; align-items:center; gap:6px;
   margin-left:auto;
