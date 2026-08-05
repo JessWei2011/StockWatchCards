@@ -173,6 +173,10 @@ function groupAndSort(cards){
     (byGroup[g] = byGroup[g] || []).push(c);
   });
 
+  Object.values(byGroup).forEach(list => {
+    list.sort((a, b) => (b.winRate || 0) - (a.winRate || 0));
+  });
+
   const groupNames = Object.keys(byGroup).sort((a, b) => {
     if(a === '未分組') return -1;
     if(b === '未分組') return 1;
