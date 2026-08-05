@@ -46,7 +46,7 @@ function escapeHtml(s){
 }
 
 function decisionClass(decision){
-  if(/加碼|買進|買入/.test(decision)) return 'buy';
+  if(/加碼|買進|買入|進場/.test(decision)) return 'buy';
   if(/減碼|賣出|出場/.test(decision)) return 'sell';
   return 'hold';
 }
