@@ -183,13 +183,15 @@ function groupAndSort(cards, ui){
   });
 
   const groupNames = Object.keys(byGroup).sort((a, b) => {
-    if(a === '未分組') return 1;
-    if(b === '未分組') return -1;
+    if(a === '未分組') return -1;
+    if(b === '未分組') return 1;
     return a.localeCompare(b, 'zh-Hant');
   });
 
   return { byGroup, groupNames };
 }
+
+let colorFilter = 'all';
 
 function render(){
   const grid = document.getElementById('grid');
@@ -199,7 +201,8 @@ function render(){
 
   const q = searchInput.value.trim().toLowerCase();
   const filtered = STOCK_CARDS.filter(c =>
-    c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)
+    (c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)) &&
+    (colorFilter === 'all' || decisionClass(c.decision) === colorFilter)
   );
   const visibleCount = filtered.filter(c => !ui.hidden.includes(c.code)).length;
   countEl.textContent = STOCK_CARDS.length ? `共 ${visibleCount} / ${STOCK_CARDS.length} 檔` : '';
@@ -381,6 +384,17 @@ function setupCardActions(){
   });
 }
 
+function setupColorFilter(){
+  const bar = document.getElementById('colorFilter');
+  bar.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-filter]');
+    if(!btn) return;
+    colorFilter = btn.dataset.filter;
+    bar.querySelectorAll('button[data-filter]').forEach(b => b.classList.toggle('active', b === btn));
+    render();
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('search');
   searchInput.addEventListener('input', render);
@@ -388,5 +402,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupCardActions();
   setupModals();
   setupFontControl();
+  setupColorFilter();
   render();
 });

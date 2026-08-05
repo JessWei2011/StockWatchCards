@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>個股觀察卡片</title>
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
 
@@ -12,6 +12,12 @@
   <h1>📌 個股觀察卡片</h1>
   <input id="search" type="text" placeholder="搜尋代號 / 名稱...">
   <span id="count"></span>
+  <div class="color-filter" id="colorFilter">
+    <button type="button" class="active" data-filter="all">全顯示</button>
+    <button type="button" class="dot-buy" data-filter="buy">🟢 綠卡</button>
+    <button type="button" class="dot-hold" data-filter="hold">🔵 藍卡</button>
+    <button type="button" class="dot-sell" data-filter="sell">🔴 紅卡</button>
+  </div>
   <div class="font-ctrl" title="調整顯示文字大小">
     <span class="font-ctrl-label">🔠</span>
     <button type="button" id="fontDown" title="縮小文字">A-</button>
@@ -48,7 +54,7 @@
   </div>
 </div>
 
-<script src="data.js?v=10"></script>
-<script src="render.js?v=10"></script>
+<script src="data.js?v=11"></script>
+<script src="render.js?v=11"></script>
 </body>
 </html>
