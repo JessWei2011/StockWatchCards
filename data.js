@@ -4,7 +4,7 @@
 
 const STOCK_CARDS = [
   {
-    code: "3024",
+    code: "3022",
     name: "威強電",
     date: "2026-08-05",
     decision: "加碼",

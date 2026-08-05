@@ -30,6 +30,63 @@ function levelBlock(label, val, cls){
   return `<div class="level ${cls}"><div class="l-label">${label}</div><div class="l-val">${escapeHtml(val || '—')}</div></div>`;
 }
 
+function sectionColorClass(title){
+  if(/支持/.test(title)) return 'sec-bull';
+  if(/反對/.test(title)) return 'sec-bear';
+  if(/籌碼/.test(title)) return 'sec-chip';
+  if(/技術/.test(title)) return 'sec-tech';
+  if(/基本面/.test(title)) return 'sec-fund';
+  if(/訊號/.test(title)) return 'sec-signal';
+  if(/建議|行動/.test(title)) return 'sec-action';
+  return 'sec-default';
+}
+
+function renderRaw(raw){
+  const lines = (raw || '').split('\n');
+  let html = '';
+  let inList = false;
+  let currentColor = 'sec-default';
+
+  const closeList = () => { if(inList){ html += '</ul>'; inList = false; } };
+
+  lines.forEach(rawLine => {
+    const line = rawLine.replace(/\r$/, '');
+    if(!line.trim()) return;
+    const leading = line.match(/^\s*/)[0].length;
+    const trimmed = line.trim();
+
+    if(trimmed.startsWith('【')){
+      closeList();
+      html += `<div class="raw-header">${escapeHtml(trimmed)}</div>`;
+      return;
+    }
+
+    if(/^\d+\.\s/.test(trimmed)){
+      if(!inList){ html += `<ul class="raw-list ${currentColor} raw-sub">`; inList = true; }
+      html += `<li>${escapeHtml(trimmed.replace(/^\d+\.\s*/, ''))}</li>`;
+      return;
+    }
+
+    if(trimmed.startsWith('*')){
+      const content = trimmed.replace(/^\*\s*/, '');
+      if(leading === 0){
+        closeList();
+        currentColor = sectionColorClass(content);
+        html += `<div class="raw-section-title ${currentColor}">${escapeHtml(content)}</div>`;
+      } else {
+        if(!inList){ html += `<ul class="raw-list ${currentColor}">`; inList = true; }
+        html += `<li>${escapeHtml(content)}</li>`;
+      }
+      return;
+    }
+
+    closeList();
+    html += `<div class="raw-line">${escapeHtml(trimmed)}</div>`;
+  });
+  closeList();
+  return html;
+}
+
 function evidenceBlock(title, items, cls){
   if(!items || !items.length) return '';
   const lis = items.slice(0, 3).map(i => `<li>${escapeHtml(i)}</li>`).join('');
@@ -72,7 +129,7 @@ function renderCard(c, groupName){
           <span class="card-name">${escapeHtml(c.name)}</span>
           <span class="card-date">${escapeHtml(c.date)}</span>
         </div>
-        <div class="flip-back-body">${escapeHtml(c.raw)}</div>
+        <div class="flip-back-body">${renderRaw(c.raw)}</div>
         <div class="flip-back-hint">← 點擊卡片返回重點</div>
       </div>
     </div>

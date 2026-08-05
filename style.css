@@ -228,15 +228,50 @@ main{padding:24px 24px 60px;}
 .flip-back-body{
   flex:1;
   overflow-y:auto;
-  white-space:pre-wrap;
   word-break:break-word;
-  font-size:12.5px;
-  line-height:1.6;
+  font-size:14.5px;
+  line-height:1.65;
 }
 .flip-back-hint{
-  font-size:11px; color:#7a8290;
-  text-align:right; padding-top:6px;
+  font-size:12px; color:#7a8290;
+  text-align:right; padding-top:8px;
 }
+
+.raw-header{
+  font-size:15.5px; font-weight:800;
+  color:#fff;
+  background:linear-gradient(120deg, var(--accent), #7c9cff);
+  display:inline-block;
+  padding:5px 12px;
+  border-radius:8px;
+  margin:0 0 12px;
+}
+.raw-section-title{
+  font-size:14.5px; font-weight:800;
+  margin:16px 0 6px;
+  padding-left:10px;
+  border-left:4px solid currentColor;
+}
+.raw-list{
+  margin:0 0 4px; padding-left:22px;
+  color:var(--card-back-text);
+}
+.raw-list li{ margin-bottom:6px; }
+.raw-list.raw-sub{
+  padding-left:34px;
+  font-size:13.5px;
+  color:#b7bdc8;
+}
+.raw-line{ margin-bottom:6px; }
+
+.sec-fund{ color:#93c5fd; }
+.sec-tech{ color:#c4b5fd; }
+.sec-chip{ color:#fbbf24; }
+.sec-signal{ color:#5eead4; }
+.sec-bull{ color:#4ade80; }
+.sec-bear{ color:#f87171; }
+.sec-action{ color:#60a5fa; }
+.sec-default{ color:#e5e7eb; }
 
 .empty-state{
   grid-column:1/-1;
