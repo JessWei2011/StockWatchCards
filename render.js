@@ -328,7 +328,10 @@ function setupModals(){
   document.getElementById('groupClear').addEventListener('click', () => commitGroup(''));
   document.getElementById('groupSave').addEventListener('click', () => commitGroup(groupInput().value));
   groupInput().addEventListener('keydown', e => {
-    if(e.key === 'Enter') commitGroup(groupInput().value);
+    if(e.key === 'Enter'){
+      if(e.isComposing || e.keyCode === 229) return; // IME still composing, let it finish
+      commitGroup(groupInput().value);
+    }
     if(e.key === 'Escape') closeGroupModal();
   });
   groupModal().addEventListener('click', e => { if(e.target === groupModal()) closeGroupModal(); });
