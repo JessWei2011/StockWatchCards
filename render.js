@@ -32,8 +32,6 @@ function setupFontControl(){
 function loadUI(){
   const raw = JSON.parse(localStorage.getItem(UI_KEY) || '{}');
   return {
-    order: raw.order || [],
-    groups: raw.groups || {},
     hidden: raw.hidden || []
   };
 }
@@ -43,6 +41,10 @@ function saveUI(ui){
 
 function escapeHtml(s){
   return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function cardGroup(c){
+  return c.group || '未分組';
 }
 
 function decisionClass(decision){
@@ -122,11 +124,10 @@ function evidenceBlock(title, items, cls){
   return `<div class="evidence ${cls}"><div class="ev-title">${title}</div><ul>${lis}</ul></div>`;
 }
 
-function renderCard(c, groupName){
+function renderCard(c){
   const dCls = decisionClass(c.decision);
   return `
-  <div class="flip-card" draggable="true" data-code="${escapeHtml(c.code)}" data-group="${escapeHtml(groupName)}">
-    <button class="tag-btn" title="設定分組">🏷️</button>
+  <div class="flip-card" data-code="${escapeHtml(c.code)}">
     <button class="del-btn" title="移除（本機）">✕</button>
     <div class="flip-inner">
       <div class="flip-face flip-front deco-${dCls}">
@@ -165,21 +166,11 @@ function renderCard(c, groupName){
   </div>`;
 }
 
-function groupAndSort(cards, ui){
-  const visible = cards.filter(c => !ui.hidden.includes(c.code));
-
+function groupAndSort(cards){
   const byGroup = {};
-  visible.forEach(c => {
-    const g = ui.groups[c.code] || '未分組';
+  cards.forEach(c => {
+    const g = cardGroup(c);
     (byGroup[g] = byGroup[g] || []).push(c);
-  });
-
-  const orderIndex = code => {
-    const i = ui.order.indexOf(code);
-    return i === -1 ? Number.MAX_SAFE_INTEGER : i;
-  };
-  Object.values(byGroup).forEach(list => {
-    list.sort((a, b) => orderIndex(a.code) - orderIndex(b.code));
   });
 
   const groupNames = Object.keys(byGroup).sort((a, b) => {
@@ -194,10 +185,10 @@ function groupAndSort(cards, ui){
 let colorFilter = 'all';
 let groupFilter = 'all';
 
-function populateGroupFilterOptions(ui){
+function populateGroupFilterOptions(){
   const sel = document.getElementById('groupFilterSelect');
   if(!sel) return;
-  const names = Array.from(new Set(STOCK_CARDS.map(c => ui.groups[c.code] || '未分組')));
+  const names = Array.from(new Set(STOCK_CARDS.map(cardGroup)));
   names.sort((a, b) => {
     if(a === '未分組') return -1;
     if(b === '未分組') return 1;
@@ -220,20 +211,19 @@ function render(){
   const countEl = document.getElementById('count');
   const ui = loadUI();
 
-  populateGroupFilterOptions(ui);
+  populateGroupFilterOptions();
 
   const q = searchInput.value.trim().toLowerCase();
   const filtered = STOCK_CARDS.filter(c => {
+    if(ui.hidden.includes(c.code)) return false;
     const matchesSearch = c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q);
     const matchesColor = colorFilter === 'all' || decisionClass(c.decision) === colorFilter;
-    const cardGroup = ui.groups[c.code] || '未分組';
-    const matchesGroup = groupFilter === 'all' || cardGroup === groupFilter;
+    const matchesGroup = groupFilter === 'all' || cardGroup(c) === groupFilter;
     return matchesSearch && matchesColor && matchesGroup;
   });
-  const visibleCount = filtered.filter(c => !ui.hidden.includes(c.code)).length;
-  countEl.textContent = STOCK_CARDS.length ? `共 ${visibleCount} / ${STOCK_CARDS.length} 檔` : '';
+  countEl.textContent = STOCK_CARDS.length ? `共 ${filtered.length} / ${STOCK_CARDS.length} 檔` : '';
 
-  const { byGroup, groupNames } = groupAndSort(filtered, ui);
+  const { byGroup, groupNames } = groupAndSort(filtered);
 
   if(groupNames.length === 0){
     grid.innerHTML = `<div class="empty-state">${STOCK_CARDS.length ? '找不到符合的個股' : '尚無分析卡片'}</div>`;
@@ -244,98 +234,10 @@ function render(){
     <section class="group-section" data-group="${escapeHtml(g)}">
       <h2 class="group-title">${g === '未分組' ? '📂' : '🗂️'} ${escapeHtml(g)}<span class="group-count">${byGroup[g].length}</span></h2>
       <div class="group-grid" data-group="${escapeHtml(g)}">
-        ${byGroup[g].map(c => renderCard(c, g)).join('')}
+        ${byGroup[g].map(renderCard).join('')}
       </div>
     </section>
   `).join('');
-}
-
-let dragCode = null;
-
-function setupDragAndDrop(){
-  const grid = document.getElementById('grid');
-
-  grid.addEventListener('dragstart', e => {
-    const card = e.target.closest('.flip-card');
-    if(!card) return;
-    dragCode = card.dataset.code;
-    card.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-  });
-
-  grid.addEventListener('dragend', e => {
-    const card = e.target.closest('.flip-card');
-    if(card) card.classList.remove('dragging');
-    dragCode = null;
-  });
-
-  grid.addEventListener('dragover', e => {
-    e.preventDefault();
-    const overCard = e.target.closest('.flip-card');
-    const container = e.target.closest('.group-grid');
-    if(!container) return;
-    if(overCard && overCard.dataset.code !== dragCode){
-      const rect = overCard.getBoundingClientRect();
-      const before = (e.clientX - rect.left) < rect.width / 2;
-      container.insertBefore(
-        document.querySelector(`.flip-card[data-code="${dragCode}"]`),
-        before ? overCard : overCard.nextSibling
-      );
-    } else if(!overCard){
-      container.appendChild(document.querySelector(`.flip-card[data-code="${dragCode}"]`));
-    }
-  });
-
-  grid.addEventListener('drop', e => {
-    e.preventDefault();
-    if(!dragCode) return;
-    const container = e.target.closest('.group-grid');
-    if(!container) return;
-    const newGroup = container.dataset.group;
-
-    const ui = loadUI();
-    ui.groups[dragCode] = newGroup === '未分組' ? undefined : newGroup;
-    if(ui.groups[dragCode] === undefined) delete ui.groups[dragCode];
-
-    ui.order = Array.from(document.querySelectorAll('.flip-card')).map(el => el.dataset.code);
-
-    saveUI(ui);
-    render();
-  });
-}
-
-// ---- group modal ----
-const groupModal = () => document.getElementById('groupModal');
-const groupInput = () => document.getElementById('groupInput');
-let groupModalCode = null;
-
-function allGroupNames(){
-  const ui = loadUI();
-  return Array.from(new Set(Object.values(ui.groups).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
-}
-
-function openGroupModal(code){
-  groupModalCode = code;
-  const ui = loadUI();
-  const list = document.getElementById('groupList');
-  list.innerHTML = allGroupNames().map(g => `<option value="${escapeHtml(g)}"></option>`).join('');
-  groupInput().value = ui.groups[code] || '';
-  groupModal().classList.remove('hidden');
-  groupInput().focus();
-}
-function closeGroupModal(){
-  groupModal().classList.add('hidden');
-  groupModalCode = null;
-}
-function commitGroup(name){
-  if(!groupModalCode) return;
-  const ui = loadUI();
-  const trimmed = (name || '').trim();
-  if(trimmed) ui.groups[groupModalCode] = trimmed;
-  else delete ui.groups[groupModalCode];
-  saveUI(ui);
-  closeGroupModal();
-  render();
 }
 
 // ---- confirm modal ----
@@ -353,18 +255,6 @@ function closeConfirmModal(){
 }
 
 function setupModals(){
-  document.getElementById('groupCancel').addEventListener('click', closeGroupModal);
-  document.getElementById('groupClear').addEventListener('click', () => commitGroup(''));
-  document.getElementById('groupSave').addEventListener('click', () => commitGroup(groupInput().value));
-  groupInput().addEventListener('keydown', e => {
-    if(e.key === 'Enter'){
-      if(e.isComposing || e.keyCode === 229) return; // IME still composing, let it finish
-      commitGroup(groupInput().value);
-    }
-    if(e.key === 'Escape') closeGroupModal();
-  });
-  groupModal().addEventListener('click', e => { if(e.target === groupModal()) closeGroupModal(); });
-
   document.getElementById('confirmCancel').addEventListener('click', closeConfirmModal);
   document.getElementById('confirmOk').addEventListener('click', () => {
     const action = confirmAction;
@@ -378,35 +268,26 @@ function setupCardActions(){
   const grid = document.getElementById('grid');
 
   grid.addEventListener('click', e => {
-    if(e.target.closest('.del-btn') || e.target.closest('.tag-btn')) return;
+    if(e.target.closest('.del-btn')) return;
     const card = e.target.closest('.flip-card');
     if(card) card.classList.toggle('flipped');
   });
 
   grid.addEventListener('click', e => {
     const delBtn = e.target.closest('.del-btn');
-    if(delBtn){
-      e.stopPropagation();
-      const code = delBtn.closest('.flip-card').dataset.code;
-      const c = STOCK_CARDS.find(x => x.code === code);
-      openConfirmModal(
-        `從畫面移除「${c ? c.name : code}」？（僅本機隱藏，不會刪除來源資料；如需真正不再追蹤，請告知 Claude 移除）`,
-        () => {
-          const ui = loadUI();
-          if(!ui.hidden.includes(code)) ui.hidden.push(code);
-          saveUI(ui);
-          render();
-        }
-      );
-      return;
-    }
-
-    const tagBtn = e.target.closest('.tag-btn');
-    if(tagBtn){
-      e.stopPropagation();
-      const code = tagBtn.closest('.flip-card').dataset.code;
-      openGroupModal(code);
-    }
+    if(!delBtn) return;
+    e.stopPropagation();
+    const code = delBtn.closest('.flip-card').dataset.code;
+    const c = STOCK_CARDS.find(x => x.code === code);
+    openConfirmModal(
+      `從畫面移除「${c ? c.name : code}」？（僅本機隱藏，不會刪除來源資料；如需真正不再追蹤，請告知 Claude 移除）`,
+      () => {
+        const ui = loadUI();
+        if(!ui.hidden.includes(code)) ui.hidden.push(code);
+        saveUI(ui);
+        render();
+      }
+    );
   });
 }
 
@@ -432,7 +313,6 @@ function setupGroupFilter(){
 document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('search');
   searchInput.addEventListener('input', render);
-  setupDragAndDrop();
   setupCardActions();
   setupModals();
   setupFontControl();

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>個股觀察卡片</title>
-<link rel="stylesheet" href="style.css?v=19">
+<link rel="stylesheet" href="style.css?v=20">
 </head>
 <body>
 
@@ -33,19 +33,6 @@
   <div id="grid"></div>
 </main>
 
-<div class="modal-overlay hidden" id="groupModal">
-  <div class="modal">
-    <h3>🏷️ 設定分組</h3>
-    <input id="groupInput" list="groupList" placeholder="輸入或從清單選擇分組名稱" autocomplete="off">
-    <datalist id="groupList"></datalist>
-    <div class="modal-actions">
-      <button type="button" class="btn ghost" id="groupClear">移回未分組</button>
-      <button type="button" class="btn ghost" id="groupCancel">取消</button>
-      <button type="button" class="btn primary" id="groupSave">儲存</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay hidden" id="confirmModal">
   <div class="modal">
     <h3>✕ 移除卡片</h3>
@@ -57,7 +44,7 @@
   </div>
 </div>
 
-<script src="data.js?v=19"></script>
-<script src="render.js?v=19"></script>
+<script src="data.js?v=20"></script>
+<script src="render.js?v=20"></script>
 </body>
 </html>
