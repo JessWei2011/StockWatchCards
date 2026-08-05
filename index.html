@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>個股觀察卡片</title>
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
@@ -12,6 +12,12 @@
   <h1>📌 個股觀察卡片</h1>
   <input id="search" type="text" placeholder="搜尋代號 / 名稱...">
   <span id="count"></span>
+  <div class="font-ctrl" title="調整顯示文字大小">
+    <span class="font-ctrl-label">🔠</span>
+    <button type="button" id="fontDown" title="縮小文字">A-</button>
+    <span id="fontPct">100%</span>
+    <button type="button" id="fontUp" title="放大文字">A+</button>
+  </div>
 </header>
 
 <main>
@@ -42,7 +48,7 @@
   </div>
 </div>
 
-<script src="data.js?v=3"></script>
-<script src="render.js?v=3"></script>
+<script src="data.js?v=4"></script>
+<script src="render.js?v=4"></script>
 </body>
 </html>

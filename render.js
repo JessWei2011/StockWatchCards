@@ -1,4 +1,33 @@
 const UI_KEY = 'stockCardsUI';
+const FONT_KEY = 'stockCardsFontScale';
+const FONT_MIN = 0.8;
+const FONT_MAX = 1.6;
+const FONT_STEP = 0.1;
+
+function loadFontScale(){
+  const v = parseFloat(localStorage.getItem(FONT_KEY));
+  return isNaN(v) ? 1 : Math.min(FONT_MAX, Math.max(FONT_MIN, v));
+}
+
+function applyFontScale(scale){
+  document.documentElement.style.setProperty('--font-scale', scale);
+  document.getElementById('fontPct').textContent = Math.round(scale * 100) + '%';
+  localStorage.setItem(FONT_KEY, scale);
+}
+
+function setupFontControl(){
+  let scale = loadFontScale();
+  applyFontScale(scale);
+
+  document.getElementById('fontUp').addEventListener('click', () => {
+    scale = Math.min(FONT_MAX, Math.round((scale + FONT_STEP) * 10) / 10);
+    applyFontScale(scale);
+  });
+  document.getElementById('fontDown').addEventListener('click', () => {
+    scale = Math.max(FONT_MIN, Math.round((scale - FONT_STEP) * 10) / 10);
+    applyFontScale(scale);
+  });
+}
 
 function loadUI(){
   const raw = JSON.parse(localStorage.getItem(UI_KEY) || '{}');
@@ -355,5 +384,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDragAndDrop();
   setupCardActions();
   setupModals();
+  setupFontControl();
   render();
 });
