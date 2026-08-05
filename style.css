@@ -243,3 +243,43 @@ main{padding:24px 24px 60px;}
   text-align:center; color:var(--text-dim);
   padding:60px 0; font-size:14px;
 }
+
+.modal-overlay{
+  position:fixed; inset:0; z-index:100;
+  background:rgba(0,0,0,0.45);
+  display:flex; align-items:center; justify-content:center;
+  padding:16px;
+}
+.modal-overlay.hidden{ display:none; }
+.modal{
+  background:var(--card-bg);
+  color:var(--text);
+  border-radius:14px;
+  width:100%; max-width:380px;
+  padding:22px;
+  box-shadow:var(--shadow-hover);
+}
+.modal h3{ margin:0 0 14px; font-size:16px; }
+.modal p{ margin:0 0 16px; font-size:14px; color:var(--text-dim); line-height:1.5; }
+.modal input{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--bg);
+  color:var(--text);
+  font-size:14px;
+  font-family:inherit;
+}
+.modal input:focus{ outline:2px solid var(--accent); outline-offset:-1px; }
+.modal-actions{
+  display:flex; justify-content:flex-end; gap:8px; margin-top:18px; flex-wrap:wrap;
+}
+.btn{
+  padding:8px 16px; border-radius:8px; border:none;
+  font-size:14px; font-weight:600; cursor:pointer;
+}
+.btn.ghost{ background:transparent; color:var(--text-dim); border:1px solid var(--border); }
+.btn.primary{ background:var(--accent); color:#fff; }
+.btn.danger{ background:var(--sell); color:#fff; }
+.btn:hover{ filter:brightness(1.08); }

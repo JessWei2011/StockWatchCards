@@ -189,6 +189,73 @@ function setupDragAndDrop(){
   });
 }
 
+// ---- group modal ----
+const groupModal = () => document.getElementById('groupModal');
+const groupInput = () => document.getElementById('groupInput');
+let groupModalCode = null;
+
+function allGroupNames(){
+  const ui = loadUI();
+  return Array.from(new Set(Object.values(ui.groups).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+}
+
+function openGroupModal(code){
+  groupModalCode = code;
+  const ui = loadUI();
+  const list = document.getElementById('groupList');
+  list.innerHTML = allGroupNames().map(g => `<option value="${escapeHtml(g)}"></option>`).join('');
+  groupInput().value = ui.groups[code] || '';
+  groupModal().classList.remove('hidden');
+  groupInput().focus();
+}
+function closeGroupModal(){
+  groupModal().classList.add('hidden');
+  groupModalCode = null;
+}
+function commitGroup(name){
+  if(!groupModalCode) return;
+  const ui = loadUI();
+  const trimmed = (name || '').trim();
+  if(trimmed) ui.groups[groupModalCode] = trimmed;
+  else delete ui.groups[groupModalCode];
+  saveUI(ui);
+  closeGroupModal();
+  render();
+}
+
+// ---- confirm modal ----
+const confirmModal = () => document.getElementById('confirmModal');
+let confirmAction = null;
+
+function openConfirmModal(text, onOk){
+  document.getElementById('confirmText').textContent = text;
+  confirmAction = onOk;
+  confirmModal().classList.remove('hidden');
+}
+function closeConfirmModal(){
+  confirmModal().classList.add('hidden');
+  confirmAction = null;
+}
+
+function setupModals(){
+  document.getElementById('groupCancel').addEventListener('click', closeGroupModal);
+  document.getElementById('groupClear').addEventListener('click', () => commitGroup(''));
+  document.getElementById('groupSave').addEventListener('click', () => commitGroup(groupInput().value));
+  groupInput().addEventListener('keydown', e => {
+    if(e.key === 'Enter') commitGroup(groupInput().value);
+    if(e.key === 'Escape') closeGroupModal();
+  });
+  groupModal().addEventListener('click', e => { if(e.target === groupModal()) closeGroupModal(); });
+
+  document.getElementById('confirmCancel').addEventListener('click', closeConfirmModal);
+  document.getElementById('confirmOk').addEventListener('click', () => {
+    const action = confirmAction;
+    closeConfirmModal();
+    if(action) action();
+  });
+  confirmModal().addEventListener('click', e => { if(e.target === confirmModal()) closeConfirmModal(); });
+}
+
 function setupCardActions(){
   const grid = document.getElementById('grid');
 
@@ -204,12 +271,15 @@ function setupCardActions(){
       e.stopPropagation();
       const code = delBtn.closest('.flip-card').dataset.code;
       const c = STOCK_CARDS.find(x => x.code === code);
-      if(confirm(`從畫面移除「${c ? c.name : code}」？（僅本機隱藏，不會刪除來源資料；如需真正不再追蹤，請告知 Claude 移除）`)){
-        const ui = loadUI();
-        if(!ui.hidden.includes(code)) ui.hidden.push(code);
-        saveUI(ui);
-        render();
-      }
+      openConfirmModal(
+        `從畫面移除「${c ? c.name : code}」？（僅本機隱藏，不會刪除來源資料；如需真正不再追蹤，請告知 Claude 移除）`,
+        () => {
+          const ui = loadUI();
+          if(!ui.hidden.includes(code)) ui.hidden.push(code);
+          saveUI(ui);
+          render();
+        }
+      );
       return;
     }
 
@@ -217,15 +287,7 @@ function setupCardActions(){
     if(tagBtn){
       e.stopPropagation();
       const code = tagBtn.closest('.flip-card').dataset.code;
-      const ui = loadUI();
-      const existing = ui.groups[code] || '';
-      const name = prompt('設定分組名稱（留空 = 移回未分組）：', existing);
-      if(name === null) return;
-      const trimmed = name.trim();
-      if(trimmed) ui.groups[code] = trimmed;
-      else delete ui.groups[code];
-      saveUI(ui);
-      render();
+      openGroupModal(code);
     }
   });
 }
@@ -235,5 +297,6 @@ document.addEventListener('DOMContentLoaded', () => {
   searchInput.addEventListener('input', render);
   setupDragAndDrop();
   setupCardActions();
+  setupModals();
   render();
 });

@@ -18,6 +18,30 @@
   <div id="grid"></div>
 </main>
 
+<div class="modal-overlay hidden" id="groupModal">
+  <div class="modal">
+    <h3>🏷️ 設定分組</h3>
+    <input id="groupInput" list="groupList" placeholder="輸入或從清單選擇分組名稱" autocomplete="off">
+    <datalist id="groupList"></datalist>
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" id="groupClear">移回未分組</button>
+      <button type="button" class="btn ghost" id="groupCancel">取消</button>
+      <button type="button" class="btn primary" id="groupSave">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="confirmModal">
+  <div class="modal">
+    <h3>✕ 移除卡片</h3>
+    <p id="confirmText"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" id="confirmCancel">取消</button>
+      <button type="button" class="btn danger" id="confirmOk">移除</button>
+    </div>
+  </div>
+</div>
+
 <script src="data.js"></script>
 <script src="render.js"></script>
 </body>
