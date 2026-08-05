@@ -1,0 +1,235 @@
+const UI_KEY = 'stockCardsUI';
+
+function loadUI(){
+  const raw = JSON.parse(localStorage.getItem(UI_KEY) || '{}');
+  return {
+    order: raw.order || [],
+    groups: raw.groups || {},
+    hidden: raw.hidden || []
+  };
+}
+function saveUI(ui){
+  localStorage.setItem(UI_KEY, JSON.stringify(ui));
+}
+
+function escapeHtml(s){
+  return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function decisionClass(decision){
+  if(/加碼|買進|買入/.test(decision)) return 'buy';
+  if(/減碼|賣出|出場/.test(decision)) return 'sell';
+  return 'hold';
+}
+
+function levelBlock(label, val, cls){
+  return `<div class="level ${cls}"><div class="l-label">${label}</div><div class="l-val">${escapeHtml(val || '—')}</div></div>`;
+}
+
+function evidenceBlock(title, items, cls){
+  if(!items || !items.length) return '';
+  const lis = items.slice(0, 3).map(i => `<li>${escapeHtml(i)}</li>`).join('');
+  return `<div class="evidence ${cls}"><div class="ev-title">${title}</div><ul>${lis}</ul></div>`;
+}
+
+function renderCard(c, groupName){
+  const dCls = decisionClass(c.decision);
+  return `
+  <div class="flip-card" draggable="true" data-code="${escapeHtml(c.code)}" data-group="${escapeHtml(groupName)}">
+    <button class="tag-btn" title="設定分組">🏷️</button>
+    <button class="del-btn" title="移除（本機）">✕</button>
+    <div class="flip-inner">
+      <div class="flip-face flip-front">
+        <div class="card-title-row">
+          <span class="card-code">${escapeHtml(c.code)}</span>
+          <span class="card-name">${escapeHtml(c.name)}</span>
+          <span class="card-date">${escapeHtml(c.date)}</span>
+        </div>
+        <div class="badge-row">
+          <span class="decision ${dCls}">${escapeHtml(c.decision)}</span>
+          <span class="winrate">勝率 ${escapeHtml(String(c.winRate))}%</span>
+          <span class="confidence">信心度 ${escapeHtml(c.confidence)}</span>
+        </div>
+        <div class="pattern">${escapeHtml(c.pattern)}</div>
+        <div class="levels">
+          ${levelBlock('壓力', c.resist, 'resist')}
+          ${levelBlock('現價', c.current, '')}
+          ${levelBlock('買進', c.entry, 'entry')}
+          ${levelBlock('停損', c.stop, 'stop')}
+        </div>
+        ${evidenceBlock('✓ 支持', c.bullish, 'bull')}
+        ${evidenceBlock('✕ 反對', c.bearish, 'bear')}
+        <div class="action">${escapeHtml(c.action)}</div>
+        <div class="flip-hint">點擊卡片查看完整分析 →</div>
+      </div>
+      <div class="flip-face flip-back">
+        <div class="flip-back-header">
+          <span class="card-code">${escapeHtml(c.code)}</span>
+          <span class="card-name">${escapeHtml(c.name)}</span>
+          <span class="card-date">${escapeHtml(c.date)}</span>
+        </div>
+        <div class="flip-back-body">${escapeHtml(c.raw)}</div>
+        <div class="flip-back-hint">← 點擊卡片返回重點</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function groupAndSort(cards, ui){
+  const visible = cards.filter(c => !ui.hidden.includes(c.code));
+
+  const byGroup = {};
+  visible.forEach(c => {
+    const g = ui.groups[c.code] || '未分組';
+    (byGroup[g] = byGroup[g] || []).push(c);
+  });
+
+  const orderIndex = code => {
+    const i = ui.order.indexOf(code);
+    return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+  };
+  Object.values(byGroup).forEach(list => {
+    list.sort((a, b) => orderIndex(a.code) - orderIndex(b.code));
+  });
+
+  const groupNames = Object.keys(byGroup).sort((a, b) => {
+    if(a === '未分組') return 1;
+    if(b === '未分組') return -1;
+    return a.localeCompare(b, 'zh-Hant');
+  });
+
+  return { byGroup, groupNames };
+}
+
+function render(){
+  const grid = document.getElementById('grid');
+  const searchInput = document.getElementById('search');
+  const countEl = document.getElementById('count');
+  const ui = loadUI();
+
+  const q = searchInput.value.trim().toLowerCase();
+  const filtered = STOCK_CARDS.filter(c =>
+    c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)
+  );
+  const visibleCount = filtered.filter(c => !ui.hidden.includes(c.code)).length;
+  countEl.textContent = STOCK_CARDS.length ? `共 ${visibleCount} / ${STOCK_CARDS.length} 檔` : '';
+
+  const { byGroup, groupNames } = groupAndSort(filtered, ui);
+
+  if(groupNames.length === 0){
+    grid.innerHTML = `<div class="empty-state">${STOCK_CARDS.length ? '找不到符合的個股' : '尚無分析卡片'}</div>`;
+    return;
+  }
+
+  grid.innerHTML = groupNames.map(g => `
+    <section class="group-section" data-group="${escapeHtml(g)}">
+      <h2 class="group-title">${escapeHtml(g)}<span class="group-count">${byGroup[g].length}</span></h2>
+      <div class="group-grid" data-group="${escapeHtml(g)}">
+        ${byGroup[g].map(c => renderCard(c, g)).join('')}
+      </div>
+    </section>
+  `).join('');
+}
+
+let dragCode = null;
+
+function setupDragAndDrop(){
+  const grid = document.getElementById('grid');
+
+  grid.addEventListener('dragstart', e => {
+    const card = e.target.closest('.flip-card');
+    if(!card) return;
+    dragCode = card.dataset.code;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  grid.addEventListener('dragend', e => {
+    const card = e.target.closest('.flip-card');
+    if(card) card.classList.remove('dragging');
+    dragCode = null;
+  });
+
+  grid.addEventListener('dragover', e => {
+    e.preventDefault();
+    const overCard = e.target.closest('.flip-card');
+    const container = e.target.closest('.group-grid');
+    if(!container) return;
+    if(overCard && overCard.dataset.code !== dragCode){
+      const rect = overCard.getBoundingClientRect();
+      const before = (e.clientX - rect.left) < rect.width / 2;
+      container.insertBefore(
+        document.querySelector(`.flip-card[data-code="${dragCode}"]`),
+        before ? overCard : overCard.nextSibling
+      );
+    } else if(!overCard){
+      container.appendChild(document.querySelector(`.flip-card[data-code="${dragCode}"]`));
+    }
+  });
+
+  grid.addEventListener('drop', e => {
+    e.preventDefault();
+    if(!dragCode) return;
+    const container = e.target.closest('.group-grid');
+    if(!container) return;
+    const newGroup = container.dataset.group;
+
+    const ui = loadUI();
+    ui.groups[dragCode] = newGroup === '未分組' ? undefined : newGroup;
+    if(ui.groups[dragCode] === undefined) delete ui.groups[dragCode];
+
+    ui.order = Array.from(document.querySelectorAll('.flip-card')).map(el => el.dataset.code);
+
+    saveUI(ui);
+    render();
+  });
+}
+
+function setupCardActions(){
+  const grid = document.getElementById('grid');
+
+  grid.addEventListener('click', e => {
+    if(e.target.closest('.del-btn') || e.target.closest('.tag-btn')) return;
+    const card = e.target.closest('.flip-card');
+    if(card) card.classList.toggle('flipped');
+  });
+
+  grid.addEventListener('click', e => {
+    const delBtn = e.target.closest('.del-btn');
+    if(delBtn){
+      e.stopPropagation();
+      const code = delBtn.closest('.flip-card').dataset.code;
+      const c = STOCK_CARDS.find(x => x.code === code);
+      if(confirm(`從畫面移除「${c ? c.name : code}」？（僅本機隱藏，不會刪除來源資料；如需真正不再追蹤，請告知 Claude 移除）`)){
+        const ui = loadUI();
+        if(!ui.hidden.includes(code)) ui.hidden.push(code);
+        saveUI(ui);
+        render();
+      }
+      return;
+    }
+
+    const tagBtn = e.target.closest('.tag-btn');
+    if(tagBtn){
+      e.stopPropagation();
+      const code = tagBtn.closest('.flip-card').dataset.code;
+      const ui = loadUI();
+      const existing = ui.groups[code] || '';
+      const name = prompt('設定分組名稱（留空 = 移回未分組）：', existing);
+      if(name === null) return;
+      const trimmed = name.trim();
+      if(trimmed) ui.groups[code] = trimmed;
+      else delete ui.groups[code];
+      saveUI(ui);
+      render();
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const searchInput = document.getElementById('search');
+  searchInput.addEventListener('input', render);
+  setupDragAndDrop();
+  setupCardActions();
+  render();
+});

@@ -1,0 +1,10 @@
+# Only track the stock-cards web app; everything else in this
+# working directory (python scripts, per-stock reports, caches, db)
+# stays local-only.
+*
+
+!.gitignore
+!index.html
+!style.css
+!data.js
+!render.js
