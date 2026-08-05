@@ -167,7 +167,8 @@ main{padding:24px 24px 60px;}
   backface-visibility:hidden;
   border-radius:14px;
   box-shadow:var(--shadow);
-  overflow:hidden;
+  overflow-y:auto;
+  overflow-x:hidden;
   display:flex; flex-direction:column;
 }
 .flip-card:hover .flip-face{ box-shadow:var(--shadow-hover); }
@@ -208,7 +209,7 @@ main{padding:24px 24px 60px;}
 
 .pattern{
   font-size:13px; color:var(--text-dim);
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  word-break:break-word;
 }
 
 .levels{
@@ -235,13 +236,13 @@ main{padding:24px 24px 60px;}
 
 .action{
   font-size:12.5px; color:var(--text-dim);
-  overflow:hidden; text-overflow:ellipsis;
-  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  word-break:break-word;
   margin-top:auto;
 }
 
 .flip-hint{
   margin-top:auto;
+  padding-top:6px;
   font-size:11px; color:var(--text-dim);
   text-align:right;
 }
