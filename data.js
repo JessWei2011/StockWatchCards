@@ -7,7 +7,7 @@ const STOCK_CARDS = [
     code: "6187",
     name: "萬潤",
     date: "2026-08-06",
-    group: "半導體",
+    group: "設備股",
     decision: "進場",
     winRate: 65,
     pattern: "W底突破頸線",
