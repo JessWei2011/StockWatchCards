@@ -3,25 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>個股觀察卡片</title>
-<link rel="stylesheet" href="style.css?v=34">
+<title>個股觀察卡片化分析系統</title>
+<link rel="stylesheet" href="style.css?v=39">
 </head>
 <body>
 
 <header>
-  <h1>📌 個股觀察卡片</h1>
-  <input id="search" type="text" placeholder="搜尋代號 / 名稱...">
+  <h1>📌 個股觀察卡片系統</h1>
+  <input id="search" type="text" placeholder="搜尋股票代號 / 名稱...">
   <span id="count"></span>
-  <div class="color-filter" id="colorFilter">
+
+  <div class="color-filter" id="colorFilter" title="依評分顏色篩選">
     <button type="button" class="active" data-filter="all">全顯示</button>
-    <button type="button" class="dot-buy" data-filter="buy">🟢 綠卡</button>
-    <button type="button" class="dot-hold" data-filter="hold">🔵 藍卡</button>
-    <button type="button" class="dot-sell" data-filter="sell">🔴 紅卡</button>
+    <button type="button" class="btn-red" data-filter="red">🔴 紅色 (70分+)</button>
+    <button type="button" class="btn-orange" data-filter="orange">🟠 橙色 (60-69分)</button>
+    <button type="button" class="btn-yellow" data-filter="yellow">🟡 黃色 (50-59分)</button>
+    <button type="button" class="btn-gray" data-filter="gray">⚪ 灰色 (49分以下)</button>
   </div>
-  <select id="groupFilterSelect" class="group-filter-select" title="依分組篩選">
-    <option value="all">🗂️ 全部分類</option>
-  </select>
-  <div class="font-ctrl" title="調整顯示文字大小">
+
+  <div class="font-ctrl" title="調整顯示文字大小 (會自動儲存於本機)">
     <span class="font-ctrl-label">🔠</span>
     <button type="button" id="fontDown" title="縮小文字">A-</button>
     <span id="fontPct">100%</span>
@@ -30,21 +30,49 @@
 </header>
 
 <main>
-  <div id="grid"></div>
+  <!-- 1. 上方：重點觀察區 -->
+  <section class="zone-section" id="watchlistSection">
+    <h2 class="zone-title">
+      ⭐ 重點觀察區
+      <span class="zone-count" id="watchlistCount">0 檔</span>
+    </h2>
+    <div class="card-grid" id="watchlistGrid"></div>
+  </section>
+
+  <!-- 2. 下方：所有個股區域 -->
+  <section class="zone-section" id="allStocksSection">
+    <h2 class="zone-title">
+      📊 所有個股
+      <span class="zone-count" id="allStocksCount">0 檔</span>
+    </h2>
+    <div class="card-grid" id="allGrid"></div>
+  </section>
 </main>
 
 <div class="modal-overlay hidden" id="confirmModal">
   <div class="modal">
-    <h3>✕ 移除卡片</h3>
+    <h3>✕ 隱藏卡片</h3>
     <p id="confirmText"></p>
     <div class="modal-actions">
       <button type="button" class="btn ghost" id="confirmCancel">取消</button>
-      <button type="button" class="btn danger" id="confirmOk">移除</button>
+      <button type="button" class="btn danger" id="confirmOk">隱藏</button>
     </div>
   </div>
 </div>
 
-<script src="data.js?v=34"></script>
-<script src="render.js?v=34"></script>
+<div class="modal-overlay hidden" id="zoomModal">
+  <div class="zoom-modal">
+    <div class="zoom-toolbar">
+      <button type="button" class="zoom-flip-btn" id="zoomFlipBtn">🔄 翻面看完整報表</button>
+      <button type="button" class="zoom-close-btn" id="zoomCloseBtn" title="關閉">✕ 關閉</button>
+    </div>
+    <div class="zoom-stage-outer" id="zoomStageOuter">
+      <div class="zoom-stage-inner" id="zoomStageInner"></div>
+    </div>
+  </div>
+</div>
+
+<script src="data.js?v=39"></script>
+<script src="render.js?v=39"></script>
 </body>
 </html>

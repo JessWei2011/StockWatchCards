@@ -1,9 +1,26 @@
 const UI_KEY = 'stockCardsUI';
 const FONT_KEY = 'stockCardsFontScale';
+const COLOR_FILTER_KEY = 'stockCardsColorFilter';
+const WATCHLIST_KEY = 'stockCardsWatchlist';
+
 const FONT_MIN = 0.8;
 const FONT_MAX = 1.6;
 const FONT_STEP = 0.1;
 
+// --- Color Category Helper ---
+function getScoreColorCat(winRate){
+  const score = Number(winRate) || 0;
+  if(score >= 70) return 'red';
+  if(score >= 60) return 'orange';
+  if(score >= 50) return 'yellow';
+  return 'gray';
+}
+
+function isScoreFlashing(winRate){
+  return (Number(winRate) || 0) >= 80;
+}
+
+// --- LocalStorage Helpers ---
 function loadFontScale(){
   const v = parseFloat(localStorage.getItem(FONT_KEY));
   return isNaN(v) ? 1 : Math.min(FONT_MAX, Math.max(FONT_MIN, v));
@@ -11,7 +28,8 @@ function loadFontScale(){
 
 function applyFontScale(scale){
   document.documentElement.style.setProperty('--font-scale', scale);
-  document.getElementById('fontPct').textContent = Math.round(scale * 100) + '%';
+  const fontPctEl = document.getElementById('fontPct');
+  if(fontPctEl) fontPctEl.textContent = Math.round(scale * 100) + '%';
   localStorage.setItem(FONT_KEY, scale);
 }
 
@@ -19,14 +37,39 @@ function setupFontControl(){
   let scale = loadFontScale();
   applyFontScale(scale);
 
-  document.getElementById('fontUp').addEventListener('click', () => {
-    scale = Math.min(FONT_MAX, Math.round((scale + FONT_STEP) * 10) / 10);
-    applyFontScale(scale);
-  });
-  document.getElementById('fontDown').addEventListener('click', () => {
-    scale = Math.max(FONT_MIN, Math.round((scale - FONT_STEP) * 10) / 10);
-    applyFontScale(scale);
-  });
+  const fontUpBtn = document.getElementById('fontUp');
+  const fontDownBtn = document.getElementById('fontDown');
+
+  if(fontUpBtn){
+    fontUpBtn.addEventListener('click', () => {
+      scale = Math.min(FONT_MAX, Math.round((scale + FONT_STEP) * 10) / 10);
+      applyFontScale(scale);
+    });
+  }
+  if(fontDownBtn){
+    fontDownBtn.addEventListener('click', () => {
+      scale = Math.max(FONT_MIN, Math.round((scale - FONT_STEP) * 10) / 10);
+      applyFontScale(scale);
+    });
+  }
+}
+
+function loadColorFilter(){
+  return localStorage.getItem(COLOR_FILTER_KEY) || 'all';
+}
+function saveColorFilter(filter){
+  localStorage.setItem(COLOR_FILTER_KEY, filter);
+}
+
+function loadWatchlist(){
+  try {
+    return JSON.parse(localStorage.getItem(WATCHLIST_KEY)) || [];
+  } catch (e) {
+    return [];
+  }
+}
+function saveWatchlist(list){
+  localStorage.setItem(WATCHLIST_KEY, JSON.stringify(list));
 }
 
 function loadUI(){
@@ -43,18 +86,17 @@ function escapeHtml(s){
   return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-function cardGroup(c){
-  return c.group || '未分組';
-}
-
 function decisionClass(decision){
   if(/加碼|買進|買入|進場/.test(decision)) return 'buy';
   if(/減碼|賣出|出場/.test(decision)) return 'sell';
   return 'hold';
 }
 
-function decisionEmoji(cls){
-  return { buy: '🚀', sell: '📉', hold: '🤝' }[cls];
+function decisionEmoji(decision){
+  if(/進場|買進/.test(decision)) return '🚀';
+  if(/加碼/.test(decision)) return '🔥';
+  if(/減碼|賣出|出場/.test(decision)) return '📉';
+  return '🤝';
 }
 
 function levelBlock(label, val, cls){
@@ -120,131 +162,178 @@ function renderRaw(raw){
 
 function evidenceBlock(title, items, cls){
   if(!items || !items.length) return '';
-  const lis = items.slice(0, 3).map(i => `<li>${escapeHtml(i)}</li>`).join('');
-  return `<div class="evidence ${cls}"><div class="ev-title">${title}</div><ul>${lis}</ul></div>`;
+  const lis = items.map(i => `<li>${escapeHtml(i)}</li>`).join('');
+  return `<div class="evidence-block ${cls}"><div class="ev-title">${title}</div><ul>${lis}</ul></div>`;
 }
 
-function renderCard(c){
-  const dCls = decisionClass(c.decision);
+// --- Card Face Builders (shared by grid cards & zoom modal) ---
+function frontFaceHtml(c){
+  const colorCat = getScoreColorCat(c.winRate);
+  const flashing = isScoreFlashing(c.winRate);
   return `
-  <div class="flip-card" data-code="${escapeHtml(c.code)}">
-    <button class="del-btn" title="移除（本機）">✕</button>
-    <div class="flip-inner">
-      <div class="flip-face flip-front deco-${dCls}">
-        <div class="card-title-row">
-          <span class="card-code">${escapeHtml(c.code)}</span>
-          <span class="card-name">${escapeHtml(c.name)}</span>
-          <span class="card-date">${escapeHtml(c.date)}</span>
+      <div class="flip-face flip-front color-${colorCat}">
+
+        <!-- Top bar: Date -->
+        <div class="card-date-bar">
+          <span class="date-label">📅 內容更新日期：</span>
+          <span class="date-val">${escapeHtml(c.date)}</span>
         </div>
-        <div class="badge-row">
-          <span class="decision ${dCls}">${decisionEmoji(dCls)} ${escapeHtml(c.decision)}</span>
-          <span class="winrate">🎯 勝率 ${escapeHtml(String(c.winRate))}%</span>
-          <span class="confidence">✦ 信心度 ${escapeHtml(c.confidence)}</span>
+
+        <!-- Upper section: Stock Info & Score -->
+        <div class="card-header-main">
+          <div class="stock-title">
+            <span class="card-code">${escapeHtml(c.code)}</span>
+            <span class="card-name">${escapeHtml(c.name)}</span>
+          </div>
+          <div class="score-badge badge-${colorCat} ${flashing ? 'flash-score' : ''}">
+            <span class="score-num">${c.winRate}</span>
+            <span class="score-unit">分</span>
+          </div>
         </div>
-        <div class="pattern">📐 ${escapeHtml(c.pattern)}</div>
+
+        <!-- Decision & Pattern -->
+        <div class="decision-pattern-row">
+          <span class="decision-badge tag-${colorCat}">${decisionEmoji(c.decision)} ${escapeHtml(c.decision)}</span>
+          <span class="pattern-badge">📐 ${escapeHtml(c.pattern)} <small>(信心度:${escapeHtml(c.confidence)})</small></span>
+        </div>
+
+        <!-- Price Levels -->
         <div class="levels">
           ${levelBlock('壓力', c.resist, 'resist')}
           ${levelBlock('現價', c.current, '')}
           ${levelBlock('買進', c.entry, 'entry')}
           ${levelBlock('停損', c.stop, 'stop')}
         </div>
-        ${evidenceBlock('✓ 支持', c.bullish, 'bull')}
-        ${evidenceBlock('✕ 反對', c.bearish, 'bear')}
-        <div class="action">${escapeHtml(c.action)}</div>
-        <div class="flip-hint">點擊卡片查看完整分析 →</div>
-      </div>
+
+        <!-- Lower Section: Evidence -->
+        <div class="evidence-container">
+          ${evidenceBlock('✅ [支持進場證據]', c.bullish, 'bull')}
+          ${evidenceBlock('❌ [反對進場證據]', c.bearish, 'bear')}
+        </div>
+
+        <!-- Action Summary -->
+        ${c.action ? `<div class="action-summary">${escapeHtml(c.action)}</div>` : ''}
+      </div>`;
+}
+
+function backFaceHtml(c){
+  return `
       <div class="flip-face flip-back">
         <div class="flip-back-header">
           <span class="card-code">${escapeHtml(c.code)}</span>
           <span class="card-name">${escapeHtml(c.name)}</span>
-          <span class="card-date">${escapeHtml(c.date)}</span>
+          <span class="card-date">更新：${escapeHtml(c.date)}</span>
         </div>
         <div class="flip-back-body">${renderRaw(c.raw)}</div>
-        <div class="flip-back-hint">← 點擊卡片返回重點</div>
+      </div>`;
+}
+
+function getLatestCardByCode(code){
+  const matches = STOCK_CARDS.filter(c => c.code === code);
+  if(!matches.length) return null;
+  return matches.reduce((a, b) => new Date(b.date) > new Date(a.date) ? b : a);
+}
+
+// --- Render Card Function ---
+function renderCard(c, isStarred){
+  const flashing = isScoreFlashing(c.winRate);
+  const isDisp = c.isDisposition || Boolean(c.dispositionDate);
+
+  return `
+  <div class="flip-card ${flashing ? 'flashing' : ''}" data-code="${escapeHtml(c.code)}" data-score="${c.winRate}">
+
+    <!-- Watchlist Star Toggle Button -->
+    <button class="star-btn ${isStarred ? 'starred' : ''}" title="${isStarred ? '從重點觀察區移除' : '移至重點觀察區'}">
+      ${isStarred ? '⭐' : '☆'}
+    </button>
+
+    <!-- Zoom / Enlarge Card Button -->
+    <button class="zoom-btn" title="放大檢視完整量化分析報表">🔍</button>
+
+    <!-- Delete/Hide Card Button -->
+    <button class="del-btn" title="隱藏本機卡片">✕</button>
+
+    <!-- Disposition Badge (關緊閉) -->
+    ${isDisp ? `
+      <div class="disposition-badge" title="處置股票（關緊閉期間）">
+        <span class="x-mark">✕</span> 關緊閉 ${escapeHtml(c.dispositionDate || '處置中')}
       </div>
+    ` : ''}
+
+    <div class="flip-inner">
+${frontFaceHtml(c)}
     </div>
   </div>`;
 }
 
-function groupAndSort(cards){
-  const byGroup = {};
-  cards.forEach(c => {
-    const g = cardGroup(c);
-    (byGroup[g] = byGroup[g] || []).push(c);
-  });
-
-  Object.values(byGroup).forEach(list => {
-    list.sort((a, b) => (b.winRate || 0) - (a.winRate || 0));
-  });
-
-  const groupNames = Object.keys(byGroup).sort((a, b) => {
-    if(a === '未分組') return -1;
-    if(b === '未分組') return 1;
-    return a.localeCompare(b, 'zh-Hant');
-  });
-
-  return { byGroup, groupNames };
-}
-
-let colorFilter = 'all';
-let groupFilter = 'all';
-
-function populateGroupFilterOptions(){
-  const sel = document.getElementById('groupFilterSelect');
-  if(!sel) return;
-  const names = Array.from(new Set(STOCK_CARDS.map(cardGroup)));
-  names.sort((a, b) => {
-    if(a === '未分組') return -1;
-    if(b === '未分組') return 1;
-    return a.localeCompare(b, 'zh-Hant');
-  });
-  const current = sel.value || 'all';
-  sel.innerHTML = `<option value="all">🗂️ 全部分類</option>` +
-    names.map(n => `<option value="${escapeHtml(n)}">${n === '未分組' ? '📂' : '🗂️'} ${escapeHtml(n)}</option>`).join('');
-  if(current !== 'all' && !names.includes(current)){
-    groupFilter = 'all';
-    sel.value = 'all';
-  } else {
-    sel.value = current;
-  }
-}
+// --- Core Render Logic ---
+let colorFilter = loadColorFilter();
 
 function render(){
-  const grid = document.getElementById('grid');
+  const watchlistGrid = document.getElementById('watchlistGrid');
+  const allGrid = document.getElementById('allGrid');
+  const watchlistCountEl = document.getElementById('watchlistCount');
+  const allStocksCountEl = document.getElementById('allStocksCount');
   const searchInput = document.getElementById('search');
   const countEl = document.getElementById('count');
-  const ui = loadUI();
 
-  populateGroupFilterOptions();
+  const ui = loadUI();
+  const watchlist = loadWatchlist();
 
   const q = searchInput.value.trim().toLowerCase();
-  const filtered = STOCK_CARDS.filter(c => {
+
+  // Deduplicate by stock code (keep latest date entry)
+  const latestByCode = {};
+  STOCK_CARDS.forEach(c => {
+    if(!latestByCode[c.code] || new Date(c.date) > new Date(latestByCode[c.code].date)){
+      latestByCode[c.code] = c;
+    }
+  });
+  const uniqueCards = Object.values(latestByCode);
+
+  // Filter cards by search & color
+  const filtered = uniqueCards.filter(c => {
     if(ui.hidden.includes(c.code)) return false;
     const matchesSearch = c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q);
-    const matchesColor = colorFilter === 'all' || decisionClass(c.decision) === colorFilter;
-    const matchesGroup = groupFilter === 'all' || cardGroup(c) === groupFilter;
-    return matchesSearch && matchesColor && matchesGroup;
+    const cat = getScoreColorCat(c.winRate);
+    const matchesColor = colorFilter === 'all' || cat === colorFilter;
+    return matchesSearch && matchesColor;
   });
-  countEl.textContent = STOCK_CARDS.length ? `共 ${filtered.length} / ${STOCK_CARDS.length} 檔` : '';
 
-  const { byGroup, groupNames } = groupAndSort(filtered);
+  // Split into Watchlist vs All Stocks
+  const watchlistCards = filtered.filter(c => watchlist.includes(c.code));
+  const otherCards = filtered.filter(c => !watchlist.includes(c.code));
 
-  if(groupNames.length === 0){
-    grid.innerHTML = `<div class="empty-state">${STOCK_CARDS.length ? '找不到符合的個股' : '尚無分析卡片'}</div>`;
-    return;
+  // Sort both arrays in descending order by score (winRate)
+  watchlistCards.sort((a, b) => (b.winRate || 0) - (a.winRate || 0));
+  otherCards.sort((a, b) => (b.winRate || 0) - (a.winRate || 0));
+
+  countEl.textContent = uniqueCards.length ? `共 ${filtered.length} / ${uniqueCards.length} 檔` : '';
+  watchlistCountEl.textContent = `${watchlistCards.length} 檔`;
+  allStocksCountEl.textContent = `${otherCards.length} 檔`;
+
+  // Render Watchlist Zone
+  if(watchlistCards.length === 0){
+    watchlistGrid.innerHTML = `
+      <div class="empty-watchlist">
+        ⭐ 尚無重點觀察個股。點擊下方個股卡片右上角的「☆」按鈕即可移至重點觀察區！
+      </div>`;
+  } else {
+    watchlistGrid.innerHTML = watchlistCards.map(c => renderCard(c, true)).join('');
   }
 
-  grid.innerHTML = groupNames.map(g => `
-    <section class="group-section" data-group="${escapeHtml(g)}">
-      <h2 class="group-title">${g === '未分組' ? '📂' : '🗂️'} ${escapeHtml(g)}<span class="group-count">${byGroup[g].length}</span></h2>
-      <div class="group-grid" data-group="${escapeHtml(g)}">
-        ${byGroup[g].map(renderCard).join('')}
-      </div>
-    </section>
-  `).join('');
+  // Render All Stocks Zone
+  if(otherCards.length === 0){
+    allGrid.innerHTML = `
+      <div class="empty-state">
+        ${watchlistCards.length > 0 ? '其餘個股皆已移至重點觀察區' : '尚無符合條件的個股'}
+      </div>`;
+  } else {
+    allGrid.innerHTML = otherCards.map(c => renderCard(c, false)).join('');
+  }
 }
 
-// ---- confirm modal ----
+// --- Confirm Modal for Hidden Cards ---
 const confirmModal = () => document.getElementById('confirmModal');
 let confirmAction = null;
 
@@ -268,23 +357,47 @@ function setupModals(){
   confirmModal().addEventListener('click', e => { if(e.target === confirmModal()) closeConfirmModal(); });
 }
 
+// --- Card Interactions ---
 function setupCardActions(){
-  const grid = document.getElementById('grid');
+  const main = document.querySelector('main');
 
-  grid.addEventListener('click', e => {
-    if(e.target.closest('.del-btn')) return;
-    const card = e.target.closest('.flip-card');
-    if(card) card.classList.toggle('flipped');
+  // Open Zoom Modal
+  main.addEventListener('click', e => {
+    const zoomBtn = e.target.closest('.zoom-btn');
+    if(!zoomBtn) return;
+    e.stopPropagation();
+    const card = zoomBtn.closest('.flip-card');
+    if(card) openZoomModal(card.dataset.code);
   });
 
-  grid.addEventListener('click', e => {
+  // Toggle Star / Watchlist
+  main.addEventListener('click', e => {
+    const starBtn = e.target.closest('.star-btn');
+    if(!starBtn) return;
+    e.stopPropagation();
+    const card = starBtn.closest('.flip-card');
+    const code = card.dataset.code;
+
+    const watchlist = loadWatchlist();
+    const idx = watchlist.indexOf(code);
+    if(idx >= 0){
+      watchlist.splice(idx, 1);
+    } else {
+      watchlist.push(code);
+    }
+    saveWatchlist(watchlist);
+    render();
+  });
+
+  // Hide Card
+  main.addEventListener('click', e => {
     const delBtn = e.target.closest('.del-btn');
     if(!delBtn) return;
     e.stopPropagation();
     const code = delBtn.closest('.flip-card').dataset.code;
     const c = STOCK_CARDS.find(x => x.code === code);
     openConfirmModal(
-      `從畫面移除「${c ? c.name : code}」？（僅本機隱藏，不會刪除來源資料；如需真正不再追蹤，請告知 Claude 移除）`,
+      `確定在畫面上隱藏「${c ? c.name : code}」？（本機隱藏設定會同步儲存）`,
       () => {
         const ui = loadUI();
         if(!ui.hidden.includes(code)) ui.hidden.push(code);
@@ -295,32 +408,74 @@ function setupCardActions(){
   });
 }
 
+// --- Zoom Modal (enlarged card view) ---
+let zoomState = { code: null, face: 'front' };
+
+function renderZoomFace(){
+  const c = getLatestCardByCode(zoomState.code);
+  const stage = document.getElementById('zoomStageInner');
+  const flipBtn = document.getElementById('zoomFlipBtn');
+  if(!c || !stage) return;
+  stage.innerHTML = zoomState.face === 'front' ? frontFaceHtml(c) : backFaceHtml(c);
+  if(flipBtn) flipBtn.textContent = zoomState.face === 'front' ? '🔄 翻面看完整報表' : '🔄 翻回正面';
+}
+
+function openZoomModal(code){
+  zoomState = { code, face: 'front' };
+  renderZoomFace();
+  document.getElementById('zoomModal').classList.remove('hidden');
+}
+
+function closeZoomModal(){
+  document.getElementById('zoomModal').classList.add('hidden');
+  zoomState = { code: null, face: 'front' };
+}
+
+function setupZoomModal(){
+  const modal = document.getElementById('zoomModal');
+  if(!modal) return;
+
+  document.getElementById('zoomCloseBtn').addEventListener('click', closeZoomModal);
+
+  document.getElementById('zoomFlipBtn').addEventListener('click', () => {
+    zoomState.face = zoomState.face === 'front' ? 'back' : 'front';
+    renderZoomFace();
+  });
+
+  modal.addEventListener('click', e => {
+    if(e.target === modal) closeZoomModal();
+  });
+
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape' && !modal.classList.contains('hidden')) closeZoomModal();
+  });
+}
+
 function setupColorFilter(){
   const bar = document.getElementById('colorFilter');
+  if(!bar) return;
+
+  bar.querySelectorAll('button[data-filter]').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === colorFilter);
+  });
+
   bar.addEventListener('click', e => {
     const btn = e.target.closest('button[data-filter]');
     if(!btn) return;
     colorFilter = btn.dataset.filter;
+    saveColorFilter(colorFilter);
     bar.querySelectorAll('button[data-filter]').forEach(b => b.classList.toggle('active', b === btn));
-    render();
-  });
-}
-
-function setupGroupFilter(){
-  const sel = document.getElementById('groupFilterSelect');
-  sel.addEventListener('change', () => {
-    groupFilter = sel.value;
     render();
   });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('search');
-  searchInput.addEventListener('input', render);
+  if(searchInput) searchInput.addEventListener('input', render);
   setupCardActions();
   setupModals();
   setupFontControl();
   setupColorFilter();
-  setupGroupFilter();
+  setupZoomModal();
   render();
 });
