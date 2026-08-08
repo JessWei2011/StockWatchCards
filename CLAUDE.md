@@ -179,3 +179,6 @@ Repo: https://github.com/JessWei2011/StockWatchCards
   `台X資訊.py` / `clone-stockwatchcards.bat` 進版控，其餘像 `reports/` 資料夾內的個股分析 html/png、`cache/`、
   `margin_data.db`、`.claude/` 都刻意排除，只留在本機。
 - 卡片正面欄位對應的顏色系統見 `style.css` 的 `.sec-*` / `.deco-*` class；如果要調整視覺風格，先讀過現有 CSS 的命名慣例再改，不要另起一套。
+- `指標數據/` 是另一個獨立專案（總經/VIX 指標追蹤工具），有自己的 `.git`、推送到另一個 GitHub repo
+  `macro-vix-tracker`，只是實體上放在這裡方便一起管理。它完全不受 Stock2 這個 repo 的 `.gitignore`/commit 規則影響
+  （`*` 全域排除規則本來就會自動忽略整個子資料夾），也不要把它的檔案跟 Stock2 的 commit 混在一起。

@@ -103,60 +103,113 @@ function levelBlock(label, val, cls){
   return `<div class="level ${cls}"><div class="l-label">${label}</div><div class="l-val">${escapeHtml(val || '—')}</div></div>`;
 }
 
-function sectionColorClass(title){
-  if(/支持/.test(title)) return 'sec-bull';
-  if(/反對/.test(title)) return 'sec-bear';
-  if(/籌碼/.test(title)) return 'sec-chip';
-  if(/技術/.test(title)) return 'sec-tech';
-  if(/基本面/.test(title)) return 'sec-fund';
-  if(/訊號/.test(title)) return 'sec-signal';
-  if(/建議|行動/.test(title)) return 'sec-action';
-  return 'sec-default';
+function getSectionInfo(title){
+  if(/基本面/.test(title)) return { cls: 'sec-fund', icon: '🏢', name: '基本面觀察' };
+  if(/技術/.test(title)) return { cls: 'sec-tech', icon: '📈', name: '技術數據面' };
+  if(/籌碼/.test(title)) return { cls: 'sec-chip', icon: '👥', name: '籌碼面解析' };
+  if(/訊號/.test(title)) return { cls: 'sec-signal', icon: '⚡', name: '訊號面判定' };
+  if(/支持/.test(title)) return { cls: 'sec-bull', icon: '✅', name: '支持進場證據' };
+  if(/反對/.test(title)) return { cls: 'sec-bear', icon: '❌', name: '反對進場證據' };
+  if(/建議|行動/.test(title)) return { cls: 'sec-action', icon: '🎯', name: '最終持股建議' };
+  return { cls: 'sec-default', icon: '📌', name: title };
 }
 
 function renderRaw(raw){
-  const lines = (raw || '').split('\n');
+  if(!raw) return '';
+  const lines = raw.split('\n');
+  
   let html = '';
-  let inList = false;
-  let currentColor = 'sec-default';
-
-  const closeList = () => { if(inList){ html += '</ul>'; inList = false; } };
-
+  let topHeaderLines = [];
+  let currentBlock = null;
+  let blocks = [];
+  
+  const closeCurrentBlock = () => {
+    if(currentBlock){
+      blocks.push(currentBlock);
+      currentBlock = null;
+    }
+  };
+  
   lines.forEach(rawLine => {
-    const line = rawLine.replace(/\r$/, '');
-    if(!line.trim()) return;
-    const leading = line.match(/^\s*/)[0].length;
-    const trimmed = line.trim();
-
-    if(trimmed.startsWith('【')){
-      closeList();
-      html += `<div class="raw-header">${escapeHtml(trimmed)}</div>`;
+    const line = rawLine.trim();
+    if(!line) return;
+    
+    // Top header tags starting with 【
+    if(line.startsWith('【')){
+      closeCurrentBlock();
+      topHeaderLines.push(line);
       return;
     }
-
-    if(/^\d+\.\s/.test(trimmed)){
-      if(!inList){ html += `<ul class="raw-list ${currentColor} raw-sub">`; inList = true; }
-      html += `<li>${escapeHtml(trimmed.replace(/^\d+\.\s*/, ''))}</li>`;
-      return;
-    }
-
-    if(trimmed.startsWith('*')){
-      const content = trimmed.replace(/^\*\s*/, '');
-      if(leading === 0){
-        closeList();
-        currentColor = sectionColorClass(content);
-        html += `<div class="raw-section-title ${currentColor}">${escapeHtml(content)}</div>`;
-      } else {
-        if(!inList){ html += `<ul class="raw-list ${currentColor}">`; inList = true; }
-        html += `<li>${escapeHtml(content)}</li>`;
+    
+    // Check if this line is a main section header
+    const cleanLine = line.replace(/^[\*\-\•]\s*/, '');
+    const colonIdx = cleanLine.indexOf('：');
+    const hasSectionKeyword = /基本面|技術|籌碼|訊號|支持|反對|建議|行動/.test(cleanLine);
+    
+    if(hasSectionKeyword && (colonIdx > 0 || line.startsWith('-') || line.startsWith('*'))){
+      closeCurrentBlock();
+      
+      let titlePart = cleanLine;
+      let bodyPart = '';
+      if(colonIdx > 0){
+        titlePart = cleanLine.substring(0, colonIdx);
+        bodyPart = cleanLine.substring(colonIdx + 1).trim();
+      }
+      
+      const secInfo = getSectionInfo(titlePart);
+      currentBlock = {
+        cls: secInfo.cls,
+        icon: secInfo.icon,
+        title: secInfo.name,
+        lines: []
+      };
+      if(bodyPart){
+        currentBlock.lines.push(bodyPart);
       }
       return;
     }
-
-    closeList();
-    html += `<div class="raw-line">${escapeHtml(trimmed)}</div>`;
+    
+    // Sub-line content inside active section block
+    if(currentBlock){
+      currentBlock.lines.push(line);
+    } else {
+      topHeaderLines.push(line);
+    }
   });
-  closeList();
+  closeCurrentBlock();
+  
+  // Render Top Header
+  if(topHeaderLines.length > 0){
+    html += `<div class="raw-top-banner">`;
+    topHeaderLines.forEach(h => {
+      html += `<div class="raw-header-tag">${escapeHtml(h)}</div>`;
+    });
+    html += `</div>`;
+  }
+  
+  // Render Section Blocks with Distinct Paragraph Colors
+  blocks.forEach(b => {
+    html += `<div class="raw-block ${b.cls}">`;
+    html += `<div class="raw-block-title"><span class="raw-block-icon">${b.icon}</span> ${escapeHtml(b.title)}</div>`;
+    html += `<div class="raw-block-body">`;
+    
+    let inList = false;
+    b.lines.forEach(l => {
+      const trimmed = l.replace(/^[\*\-\•]\s*/, '');
+      if(/^\d+\.\s/.test(trimmed) || l.startsWith('-') || l.startsWith('*') || l.startsWith('•')){
+        if(!inList){ html += '<ul class="raw-block-list">'; inList = true; }
+        const itemText = trimmed.replace(/^\d+\.\s*/, '');
+        html += `<li>${escapeHtml(itemText)}</li>`;
+      } else {
+        if(inList){ html += '</ul>'; inList = false; }
+        html += `<p class="raw-block-text">${escapeHtml(l)}</p>`;
+      }
+    });
+    if(inList) html += '</ul>';
+    
+    html += `</div></div>`;
+  });
+  
   return html;
 }
 

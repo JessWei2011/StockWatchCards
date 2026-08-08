@@ -430,29 +430,102 @@ main{ padding: 24px 24px 60px; }
   font-size: 13.5px; line-height: 1.6;
 }
 
-/* Raw Report formatting on back */
-.raw-header{
-  font-size: 14.5px; font-weight: 800; color: #fff;
-  background: linear-gradient(135deg, var(--accent), #60a5fa);
-  display: inline-block; padding: 4px 10px; border-radius: 6px; margin-bottom: 10px;
+/* Card Back Paragraph Color Blocks (卡片背面內文段落分色) */
+.raw-top-banner {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 12px; padding-bottom: 10px;
+  border-bottom: 1px dashed var(--border);
 }
-.raw-section-title{
-  font-size: 13.5px; font-weight: 800; margin: 12px 0 4px; padding-left: 8px;
-  border-left: 3px solid currentColor;
+.raw-header-tag {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+  font-size: 11.5px; font-weight: 700;
+  padding: 3px 8px; border-radius: 6px;
 }
-.raw-list{ margin: 0 0 4px; padding-left: 20px; color: var(--card-back-text); }
-.raw-list li{ margin-bottom: 4px; }
-.raw-list.raw-sub{ padding-left: 30px; font-size: 12.5px; color: #94a3b8; }
-.raw-line{ margin-bottom: 4px; }
 
-.sec-fund{ color: #93c5fd; }
-.sec-tech{ color: #c4b5fd; }
-.sec-chip{ color: #fde047; }
-.sec-signal{ color: #5eead4; }
-.sec-bull{ color: #4ade80; }
-.sec-bear{ color: #f87171; }
-.sec-action{ color: #60a5fa; }
-.sec-default{ color: #e2e8f0; }
+.raw-block {
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border-left: 4px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.raw-block:hover {
+  transform: translateX(2px);
+}
+
+.raw-block-title {
+  font-size: 13px; font-weight: 800;
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 4px;
+}
+.raw-block-icon { font-size: 13.5px; }
+
+.raw-block-body {
+  font-size: 12px; line-height: 1.5; color: #e2e8f0;
+}
+.raw-block-text {
+  margin: 0 0 4px;
+}
+.raw-block-list {
+  margin: 0; padding-left: 18px; color: #cbd5e1;
+}
+.raw-block-list li {
+  margin-bottom: 3px; line-height: 1.35;
+}
+
+/* Section Paragraph Colors (7 大段落獨立亮眼色彩系) */
+/* 1. 基本面觀察 - 藍色 */
+.raw-block.sec-fund {
+  border-left-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.08);
+}
+.raw-block.sec-fund .raw-block-title { color: #60a5fa; }
+
+/* 2. 技術數據面 - 紫色 */
+.raw-block.sec-tech {
+  border-left-color: #a855f7;
+  background: rgba(168, 85, 247, 0.08);
+}
+.raw-block.sec-tech .raw-block-title { color: #c4b5fd; }
+
+/* 3. 籌碼面解析 - 金黃色 */
+.raw-block.sec-chip {
+  border-left-color: #eab308;
+  background: rgba(234, 179, 8, 0.08);
+}
+.raw-block.sec-chip .raw-block-title { color: #facc15; }
+
+/* 4. 訊號面判定 - 青綠色 */
+.raw-block.sec-signal {
+  border-left-color: #14b8a6;
+  background: rgba(20, 184, 166, 0.08);
+}
+.raw-block.sec-signal .raw-block-title { color: #2dd4bf; }
+
+/* 5. 支持進場證據 - 綠色 */
+.raw-block.sec-bull {
+  border-left-color: #22c55e;
+  background: rgba(34, 197, 94, 0.09);
+}
+.raw-block.sec-bull .raw-block-title { color: #4ade80; }
+
+/* 6. 反對進場證據 - 紅色 */
+.raw-block.sec-bear {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.09);
+}
+.raw-block.sec-bear .raw-block-title { color: #f87171; }
+
+/* 7. 最終持股建議 - 亮天藍色 */
+.raw-block.sec-action {
+  border-left-color: #06b6d4;
+  background: rgba(6, 182, 212, 0.12);
+}
+.raw-block.sec-action .raw-block-title { color: #38bdf8; font-size: 13.5px; }
 
 /* Confirm modal */
 .modal-overlay{
