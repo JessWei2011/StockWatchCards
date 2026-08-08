@@ -248,7 +248,7 @@ function renderCard(c, isStarred){
     </button>
 
     <!-- Zoom / Enlarge Card Button -->
-    <button class="zoom-btn" title="放大檢視完整量化分析報表">🔍</button>
+    <button class="zoom-btn" title="放大閱讀完整量化分析報表">🔍</button>
 
     <!-- Delete/Hide Card Button -->
     <button class="del-btn" title="隱藏本機卡片">✕</button>
@@ -421,14 +421,14 @@ function renderZoomFace(){
 }
 
 function openZoomModal(code){
-  zoomState = { code, face: 'front' };
+  zoomState = { code, face: 'back' };
   renderZoomFace();
   document.getElementById('zoomModal').classList.remove('hidden');
 }
 
 function closeZoomModal(){
   document.getElementById('zoomModal').classList.add('hidden');
-  zoomState = { code: null, face: 'front' };
+  zoomState = { code: null, face: 'back' };
 }
 
 function setupZoomModal(){
