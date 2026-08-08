@@ -1,0 +1,82 @@
+"""
+統一控制台 -- 滑鼠點擊即可開啟三個原本分散的進入點：
+- index.html   （個股觀察卡片網站）
+- 台X資訊.py    （產生/更新個股分析報表）
+- 指標數據/update.bat （總經/VIX 追蹤器）
+
+每個按鈕做的事情，跟你直接在檔案總管雙擊那個檔案完全一樣（用系統預設程式打開），
+不重新實作各自的執行邏輯，維持原本三個工具各自獨立運作。
+"""
+import os
+import tkinter as tk
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+TARGETS = [
+    ("📌 個股觀察卡片網站", os.path.join(BASE_DIR, "index.html")),
+    ("📊 產生 / 更新個股分析報表", os.path.join(BASE_DIR, "台X資訊.py")),
+    ("📈 總經 / VIX 追蹤器", os.path.join(BASE_DIR, "指標數據", "update.bat")),
+]
+
+BG = "#0f1117"
+CARD_BG = "#181b22"
+BORDER = "#262a36"
+TEXT = "#f1f5f9"
+TEXT_DIM = "#94a3b8"
+ACCENT = "#3b82f6"
+
+
+def launch(path, status_label):
+    if not os.path.exists(path):
+        status_label.config(text=f"❌ 找不到檔案：{path}", fg="#ef4444")
+        return
+    try:
+        os.startfile(path)
+        status_label.config(text=f"✅ 已開啟：{os.path.basename(path)}", fg="#22c55e")
+    except OSError as e:
+        status_label.config(text=f"❌ 開啟失敗：{e}", fg="#ef4444")
+
+
+def main():
+    root = tk.Tk()
+    root.title("統一控制台")
+    root.configure(bg=BG)
+    root.geometry("420x320")
+    root.resizable(False, False)
+
+    tk.Label(
+        root, text="📌 統一控制台", font=("Microsoft JhengHei", 18, "bold"), bg=BG, fg=TEXT
+    ).pack(pady=(24, 4))
+    tk.Label(
+        root, text="點一下就開啟對應的工具", font=("Microsoft JhengHei", 10), bg=BG, fg=TEXT_DIM
+    ).pack(pady=(0, 18))
+
+    status_label = tk.Label(root, text="", font=("Microsoft JhengHei", 9), bg=BG, fg=TEXT_DIM, wraplength=380)
+
+    for label, path in TARGETS:
+        btn = tk.Button(
+            root,
+            text=label,
+            font=("Microsoft JhengHei", 12, "bold"),
+            bg=CARD_BG,
+            fg=TEXT,
+            activebackground=ACCENT,
+            activeforeground="#ffffff",
+            relief="flat",
+            highlightthickness=1,
+            highlightbackground=BORDER,
+            padx=14,
+            pady=12,
+            width=28,
+            cursor="hand2",
+            command=lambda p=path: launch(p, status_label),
+        )
+        btn.pack(pady=6)
+
+    status_label.pack(pady=(14, 0))
+
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()

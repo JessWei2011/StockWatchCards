@@ -176,8 +176,11 @@ Repo: https://github.com/JessWei2011/StockWatchCards
 ## 其他檔案
 
 - `.gitignore` 只允許 `.gitignore` / `index.html` / `style.css` / `data.js` / `render.js` / `CLAUDE.md` / `GEMINI.md` /
-  `台X資訊.py` / `clone-stockwatchcards.bat` 進版控，其餘像 `reports/` 資料夾內的個股分析 html/png、`cache/`、
-  `margin_data.db`、`.claude/` 都刻意排除，只留在本機。
+  `台X資訊.py` / `clone-stockwatchcards.bat` / `控制台.pyw` 進版控，其餘像 `reports/` 資料夾內的個股分析 html/png、
+  `cache/`、`margin_data.db`、`.claude/` 都刻意排除，只留在本機。
+- `控制台.pyw`：統一控制台（Tkinter GUI），滑鼠點擊即可開啟三個原本分散的進入點
+  （`index.html` / `台X資訊.py` / `指標數據/update.bat`），桌面「統一控制台」捷徑指向這個檔案。
+  每個按鈕只是用系統預設程式打開對應檔案，不重新實作各自的執行邏輯。
 - 卡片正面欄位對應的顏色系統見 `style.css` 的 `.sec-*` / `.deco-*` class；如果要調整視覺風格，先讀過現有 CSS 的命名慣例再改，不要另起一套。
 - `指標數據/` 是另一個獨立專案（總經/VIX 指標追蹤工具），有自己的 `.git`、推送到另一個 GitHub repo
   `macro-vix-tracker`，只是實體上放在這裡方便一起管理。它完全不受 Stock2 這個 repo 的 `.gitignore`/commit 規則影響
