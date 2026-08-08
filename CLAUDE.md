@@ -175,6 +175,7 @@ Repo: https://github.com/JessWei2011/StockWatchCards
 
 ## 其他檔案
 
-- `.gitignore` 只允許 `.gitignore` / `index.html` / `style.css` / `data.js` / `render.js` / `CLAUDE.md` 進版控，
-  這個資料夾裡其他既有的個股分析 html/png、python 程式（`台X資訊.py` 等）、快取、資料庫都刻意排除，只留在本機。
+- `.gitignore` 只允許 `.gitignore` / `index.html` / `style.css` / `data.js` / `render.js` / `CLAUDE.md` / `GEMINI.md` /
+  `台X資訊.py` / `clone-stockwatchcards.bat` 進版控，其餘像 `reports/` 資料夾內的個股分析 html/png、`cache/`、
+  `margin_data.db`、`.claude/` 都刻意排除，只留在本機。
 - 卡片正面欄位對應的顏色系統見 `style.css` 的 `.sec-*` / `.deco-*` class；如果要調整視覺風格，先讀過現有 CSS 的命名慣例再改，不要另起一套。

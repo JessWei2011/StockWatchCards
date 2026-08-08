@@ -1,6 +1,5 @@
-# Only track the stock-cards web app; everything else in this
-# working directory (python scripts, per-stock reports, caches, db)
-# stays local-only.
+# Track the stock-cards web app + the report-generation source/docs.
+# Per-stock reports (reports/), caches, and the margin db stay local-only.
 *
 
 !.gitignore
@@ -9,3 +8,6 @@
 !data.js
 !render.js
 !CLAUDE.md
+!GEMINI.md
+!台X資訊.py
+!clone-stockwatchcards.bat
