@@ -1,7 +1,7 @@
 """
 統一控制台 -- 滑鼠點擊即可開啟三個原本分散的進入點：
 - index.html   （個股觀察卡片網站）
-- 台X資訊.py    （產生/更新個股分析報表）
+- stock_report_generator.py    （產生/更新個股分析報表）
 - 指標數據/update.bat （總經/VIX 追蹤器）
 
 每個按鈕做的事情，跟你直接在檔案總管雙擊那個檔案完全一樣（用系統預設程式打開），
@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 TARGETS = [
     ("📌 個股觀察卡片網站", os.path.join(BASE_DIR, "index.html")),
-    ("📊 產生 / 更新個股分析報表", os.path.join(BASE_DIR, "台X資訊.py")),
+    ("📊 產生 / 更新個股分析報表", os.path.join(BASE_DIR, "stock_report_generator.py")),
     ("📈 總經 / VIX 追蹤器", os.path.join(BASE_DIR, "指標數據", "update.bat")),
 ]
 

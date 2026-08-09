@@ -78,7 +78,7 @@ Repo: https://github.com/JessWei2011/StockWatchCards
 
 ## 自行從原始數據做分析（不是使用者貼現成文字時）
 
-使用者的 `台X資訊.py` 會在這個資料夾產生每檔股票的 `{代號}_{名稱}(TW/TWO).html` + `{代號}_{名稱}(TW/TWO)_chart.png`，
+使用者的 `stock_report_generator.py` 會在這個資料夾產生每檔股票的 `{代號}_{名稱}(TW/TWO).html` + `{代號}_{名稱}(TW/TWO)_chart.png`，
 內含完整原始數據（基本資訊、技術指標、近50日K線逐日數據、三大法人近20日、融資融券近20日、大戶持股週報）。
 
 如果使用者要求「自己讀數據做分析」而不是貼別人分析好的文字，**必須嚴格套用以下規則**（這是使用者實際使用的 Gemini
@@ -176,10 +176,10 @@ Repo: https://github.com/JessWei2011/StockWatchCards
 ## 其他檔案
 
 - `.gitignore` 只允許 `.gitignore` / `index.html` / `style.css` / `data.js` / `render.js` / `CLAUDE.md` / `GEMINI.md` /
-  `台X資訊.py` / `clone-stockwatchcards.bat` / `控制台.pyw` 進版控，其餘像 `reports/` 資料夾內的個股分析 html/png、
+  `stock_report_generator.py` / `clone-stockwatchcards.bat` / `控制台.pyw` 進版控，其餘像 `reports/` 資料夾內的個股分析 html/png、
   `cache/`、`margin_data.db`、`.claude/` 都刻意排除，只留在本機。
 - `控制台.pyw`：統一控制台（Tkinter GUI），滑鼠點擊即可開啟三個原本分散的進入點
-  （`index.html` / `台X資訊.py` / `指標數據/update.bat`），桌面「統一控制台」捷徑指向這個檔案。
+  （`index.html` / `stock_report_generator.py` / `指標數據/update.bat`），桌面「統一控制台」捷徑指向這個檔案。
   每個按鈕只是用系統預設程式打開對應檔案，不重新實作各自的執行邏輯。
 - 卡片正面欄位對應的顏色系統見 `style.css` 的 `.sec-*` / `.deco-*` class；如果要調整視覺風格，先讀過現有 CSS 的命名慣例再改，不要另起一套。
 - `指標數據/` 是另一個獨立專案（總經/VIX 指標追蹤工具），有自己的 `.git`、推送到另一個 GitHub repo
