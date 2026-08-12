@@ -41,6 +41,18 @@ REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports"
 HOLDERS_WEEKS = 8  # 大戶持股比例趨勢顯示週數
 HOLDERS_BACKFILL_WEEKS = 3  # 快取不足時，額外回補的過去週數(一次性，補齊後不再重複查詢)
 
+
+def find_existing_report_dir(sid):
+    """在整個 reports/ (含用 reports_manager 手動分類過的子資料夾)裡找這檔股票現有報表
+    在哪個資料夾，重新產生時才會存回原本的位置，而不是每次都固定丟回根目錄——不然使用者
+    手動分類過的舊版報表會變孤兒留在原地，根目錄又多一份新產生的重複資料。
+    """
+    matches = glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*.html"), recursive=True)
+    if not matches:
+        return REPORTS_DIR
+    matches.sort(key=os.path.getmtime, reverse=True)
+    return os.path.dirname(matches[0])
+
 def load_cache(sid):
     """讀取本地已存的三大法人/融資融券/大戶持股資料（依日期快取，過去資料不會變動可安心重用）"""
     path = os.path.join(CACHE_DIR, f"{sid}.json")
@@ -1118,17 +1130,20 @@ def run(ticker_input):
     safe_name = sanitize_filename(name)
 
     base_name = sanitize_filename(f"{sid}_{safe_name}{market_tag}{dispo_tag}")
-    os.makedirs(REPORTS_DIR, exist_ok=True)
-    fname = os.path.join(REPORTS_DIR, f"{base_name}.html")
-    chart_fname = os.path.join(REPORTS_DIR, f"{base_name}_chart.png")
+    target_dir = find_existing_report_dir(sid)
+    os.makedirs(target_dir, exist_ok=True)
+    fname = os.path.join(target_dir, f"{base_name}.html")
+    chart_fname = os.path.join(target_dir, f"{base_name}_chart.png")
 
-    # 出關/名稱變動時，清掉這檔股票舊檔名殘留(例如處置期滿後移除"(處置期間xx-xx)"標記)
-    for old_path in glob.glob(os.path.join(REPORTS_DIR, f"{sid}_*.html")) + \
-                     glob.glob(os.path.join(REPORTS_DIR, f"{sid}_*_chart.png")):
+    # 出關/名稱變動時(例如進入/出了處置導致檔名多/少了"(處置期間xx-xx)"標記)，清掉這檔股票
+    # 在整個 reports/ (含使用者用 reports_manager 手動分類過的子資料夾)裡的舊檔名殘留，
+    # 不然舊檔名的版本會留在原地變孤兒、新檔名的版本又在別處多存一份，變成兩份資料並存。
+    for old_path in glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*.html"), recursive=True) + \
+                     glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*_chart.png"), recursive=True):
         if os.path.abspath(old_path) not in (os.path.abspath(fname), os.path.abspath(chart_fname)):
             try:
                 os.remove(old_path)
-                print(f" 🗑 移除舊檔: {os.path.basename(old_path)}")
+                print(f" 🗑 移除舊檔: {os.path.relpath(old_path, REPORTS_DIR)}")
             except OSError:
                 pass
 
@@ -1159,25 +1174,32 @@ def parse_tickers(raw):
 TRACKED_FILENAME_RE = re.compile(r'^([0-9A-Za-z]{2,6})_(.+?)\((TW|TWO)\)')
 
 def scan_tracked_stocks():
-    """掃描 reports/ 資料夾內既有的 {代號}_{名稱}(TW/TWO).html 報表，反查目前正在追蹤的個股"""
+    """掃描 reports/ 資料夾(含用 reports_manager 手動分類過的子資料夾)內既有的
+    {代號}_{名稱}(TW/TWO).html 報表，反查目前正在追蹤的個股，並依所在子資料夾分類"""
     found = {}
     try:
-        for fn in os.listdir(REPORTS_DIR):
-            if not fn.lower().endswith(".html"):
-                continue
-            m = TRACKED_FILENAME_RE.match(fn)
-            if not m:
-                continue
-            sid, name = m.group(1), m.group(2)
-            found[sid] = (name, os.path.join(REPORTS_DIR, fn))
+        for dirpath, _dirnames, filenames in os.walk(REPORTS_DIR):
+            category = os.path.relpath(dirpath, REPORTS_DIR)
+            category = "" if category == "." else category.replace(os.sep, "/")
+            for fn in filenames:
+                if not fn.lower().endswith(".html"):
+                    continue
+                m = TRACKED_FILENAME_RE.match(fn)
+                if not m:
+                    continue
+                sid, name = m.group(1), m.group(2)
+                found[sid] = (name, os.path.join(dirpath, fn), category)
     except Exception:
         pass
 
     def sort_key(item):
-        sid = item[0]
-        return (0, int(sid)) if sid.isdigit() else (1, sid)
+        sid, (_name, _path, category) = item
+        sid_key = (0, int(sid)) if sid.isdigit() else (1, sid)
+        # 根目錄(未分類)排最前面，其餘依資料夾路徑字母排序
+        cat_key = (0, "") if category == "" else (1, category)
+        return (cat_key, sid_key)
 
-    return [(sid, name, path) for sid, (name, path) in sorted(found.items(), key=sort_key)]
+    return [(sid, name, path, category) for sid, (name, path, category) in sorted(found.items(), key=sort_key)]
 
 def file_date_str(path):
     """回傳報表檔最後修改日期 (YYYY-MM-DD)，用來判斷今天是否已經更新過"""
@@ -1203,11 +1225,15 @@ def force_refresh_holders_market():
 
 def print_tracked_list(tracked):
     today = datetime.now().strftime("%Y-%m-%d")
-    print("\n📌 追蹤中個股清單 (輸入前面的編號即可快速選取，例如輸入 1 就等於輸入代號；")
+    print("\n📌 追蹤中個股清單 (依分類資料夾列出，輸入前面的編號即可快速選取，例如輸入 1 就等於輸入代號；")
     print(f"   輸入 {ALL_TRACKED_INPUT} 更新全部追蹤清單，今天已更新過的會自動跳過；")
     print(f"   輸入 {FORCE_ALL_TRACKED_INPUT} 強制更新全部追蹤清單，含今天已更新過的；")
     print(f"   輸入 {FORCE_HOLDERS_UPDATE_INPUT} 強制重新下載集保大戶資料，不受本週快取限制):")
-    for i, (sid, name, path) in enumerate(tracked, 1):
+    last_category = object()  # 保證第一筆一定會先印出分類標題
+    for i, (sid, name, path, category) in enumerate(tracked, 1):
+        if category != last_category:
+            print(f" 🗂️ {category or '未分類'}")
+            last_category = category
         d = file_date_str(path)
         mark = " (今天已更新)" if d == today else (f" (最後更新 {d})" if d else "")
         print(f"  {i:>2}. {sid} {name}{mark}")
@@ -1217,17 +1243,17 @@ def resolve_tracked_indices(items, tracked):
     """把 <100 的純數字輸入轉換成追蹤清單中對應位置的股票代號；
     999 展開成全部追蹤清單(跳過今天已更新過的)；998 展開成全部追蹤清單(強制全部更新)"""
     today = datetime.now().strftime("%Y-%m-%d")
-    mapping = {str(i): sid for i, (sid, _, _) in enumerate(tracked, 1)}
+    mapping = {str(i): sid for i, (sid, _, _, _) in enumerate(tracked, 1)}
     resolved = []
     for p in items:
         if p == ALL_TRACKED_INPUT:
-            for sid, name, path in tracked:
+            for sid, name, path, _category in tracked:
                 if file_date_str(path) == today:
                     print(f" ⏭ {sid} {name} 今天已更新過，跳過")
                     continue
                 resolved.append(sid)
         elif p == FORCE_ALL_TRACKED_INPUT:
-            resolved.extend(sid for sid, _, _ in tracked)
+            resolved.extend(sid for sid, _, _, _ in tracked)
         elif p == FORCE_HOLDERS_UPDATE_INPUT:
             force_refresh_holders_market()
         elif p.isdigit() and int(p) < 100 and p in mapping:

@@ -1,11 +1,12 @@
 """
-統一控制台 -- 滑鼠點擊即可開啟三個原本分散的進入點：
-- index.html   （個股觀察卡片網站）
-- stock_report_generator.py    （產生/更新個股分析報表）
-- 指標數據/update.bat （總經/VIX 追蹤器）
+統一控制台 -- 滑鼠點擊即可開啟四個原本分散的進入點：
+- stock_report_generator.py    （分析個股：產生/更新個股分析報表）
+- reports_manager.bat          （檔案系統：整理 reports/ 底下的報表分類）
+- index.html                   （卡片系統：個股觀察卡片網站）
+- 指標數據/update.bat          （總經分析：總經/VIX 追蹤器）
 
 每個按鈕做的事情，跟你直接在檔案總管雙擊那個檔案完全一樣（用系統預設程式打開），
-不重新實作各自的執行邏輯，維持原本三個工具各自獨立運作。
+不重新實作各自的執行邏輯，維持原本各工具獨立運作。
 """
 import os
 import tkinter as tk
@@ -13,9 +14,10 @@ import tkinter as tk
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 TARGETS = [
-    ("📌 個股觀察卡片網站", os.path.join(BASE_DIR, "index.html")),
-    ("📊 產生 / 更新個股分析報表", os.path.join(BASE_DIR, "stock_report_generator.py")),
-    ("📈 總經 / VIX 追蹤器", os.path.join(BASE_DIR, "指標數據", "update.bat")),
+    ("📊 分析個股", os.path.join(BASE_DIR, "stock_report_generator.py")),
+    ("🗂 檔案系統", os.path.join(BASE_DIR, "reports_manager.bat")),
+    ("📌 卡片系統", os.path.join(BASE_DIR, "index.html")),
+    ("📈 總經分析", os.path.join(BASE_DIR, "指標數據", "update.bat")),
 ]
 
 BG = "#0f1117"
@@ -41,15 +43,12 @@ def main():
     root = tk.Tk()
     root.title("統一控制台")
     root.configure(bg=BG)
-    root.geometry("420x320")
+    root.geometry("420x400")
     root.resizable(False, False)
 
     tk.Label(
         root, text="📌 統一控制台", font=("Microsoft JhengHei", 18, "bold"), bg=BG, fg=TEXT
-    ).pack(pady=(24, 4))
-    tk.Label(
-        root, text="點一下就開啟對應的工具", font=("Microsoft JhengHei", 10), bg=BG, fg=TEXT_DIM
-    ).pack(pady=(0, 18))
+    ).pack(pady=(24, 18))
 
     status_label = tk.Label(root, text="", font=("Microsoft JhengHei", 9), bg=BG, fg=TEXT_DIM, wraplength=380)
 
@@ -73,7 +72,7 @@ def main():
         )
         btn.pack(pady=6)
 
-    status_label.pack(pady=(14, 0))
+    status_label.pack(pady=(14, 24))
 
     root.mainloop()
 
