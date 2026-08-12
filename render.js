@@ -1,3 +1,8 @@
+// escapeHtml / decisionClass / decisionEmoji / levelBlock / getSectionInfo / renderRaw /
+// evidenceBlock / getScoreColorCat / isScoreFlashing / frontFaceHtml / backFaceHtml / ZoomModal
+// 都搬到 render-shared.js 了(reports_manager.html 的檔案系統也要畫同一張卡片，抽成共用檔)，
+// index.html 記得要在這支 script 之前先載入 render-shared.js。
+
 const UI_KEY = 'stockCardsUI';
 const FONT_KEY = 'stockCardsFontScale';
 const COLOR_FILTER_KEY = 'stockCardsColorFilter';
@@ -6,19 +11,6 @@ const WATCHLIST_KEY = 'stockCardsWatchlist';
 const FONT_MIN = 0.8;
 const FONT_MAX = 1.6;
 const FONT_STEP = 0.1;
-
-// --- Color Category Helper ---
-function getScoreColorCat(winRate){
-  const score = Number(winRate) || 0;
-  if(score >= 70) return 'red';
-  if(score >= 60) return 'orange';
-  if(score >= 50) return 'yellow';
-  return 'gray';
-}
-
-function isScoreFlashing(winRate){
-  return (Number(winRate) || 0) >= 80;
-}
 
 // --- LocalStorage Helpers ---
 function loadFontScale(){
@@ -80,205 +72,6 @@ function loadUI(){
 }
 function saveUI(ui){
   localStorage.setItem(UI_KEY, JSON.stringify(ui));
-}
-
-function escapeHtml(s){
-  return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-function decisionClass(decision){
-  if(/加碼|買進|買入|進場/.test(decision)) return 'buy';
-  if(/減碼|賣出|出場/.test(decision)) return 'sell';
-  return 'hold';
-}
-
-function decisionEmoji(decision){
-  if(/進場|買進/.test(decision)) return '🚀';
-  if(/加碼/.test(decision)) return '🔥';
-  if(/減碼|賣出|出場/.test(decision)) return '📉';
-  return '🤝';
-}
-
-function levelBlock(label, val, cls){
-  return `<div class="level ${cls}"><div class="l-label">${label}</div><div class="l-val">${escapeHtml(val || '—')}</div></div>`;
-}
-
-function getSectionInfo(title){
-  if(/基本面/.test(title)) return { cls: 'sec-fund', icon: '🏢', name: '基本面觀察' };
-  if(/技術/.test(title)) return { cls: 'sec-tech', icon: '📈', name: '技術數據面' };
-  if(/籌碼/.test(title)) return { cls: 'sec-chip', icon: '👥', name: '籌碼面解析' };
-  if(/訊號/.test(title)) return { cls: 'sec-signal', icon: '⚡', name: '訊號面判定' };
-  if(/支持/.test(title)) return { cls: 'sec-bull', icon: '✅', name: '支持進場證據' };
-  if(/反對/.test(title)) return { cls: 'sec-bear', icon: '❌', name: '反對進場證據' };
-  if(/建議|行動/.test(title)) return { cls: 'sec-action', icon: '🎯', name: '最終持股建議' };
-  return { cls: 'sec-default', icon: '📌', name: title };
-}
-
-function renderRaw(raw){
-  if(!raw) return '';
-  const lines = raw.split('\n');
-  
-  let html = '';
-  let topHeaderLines = [];
-  let currentBlock = null;
-  let blocks = [];
-  
-  const closeCurrentBlock = () => {
-    if(currentBlock){
-      blocks.push(currentBlock);
-      currentBlock = null;
-    }
-  };
-  
-  lines.forEach(rawLine => {
-    const line = rawLine.trim();
-    if(!line) return;
-    
-    // Top header tags starting with 【
-    if(line.startsWith('【')){
-      closeCurrentBlock();
-      topHeaderLines.push(line);
-      return;
-    }
-    
-    // Check if this line is a main section header
-    const cleanLine = line.replace(/^[\*\-\•]\s*/, '');
-    const colonIdx = cleanLine.indexOf('：');
-    const hasSectionKeyword = /基本面|技術|籌碼|訊號|支持|反對|建議|行動/.test(cleanLine);
-    
-    if(hasSectionKeyword && (colonIdx > 0 || line.startsWith('-') || line.startsWith('*'))){
-      closeCurrentBlock();
-      
-      let titlePart = cleanLine;
-      let bodyPart = '';
-      if(colonIdx > 0){
-        titlePart = cleanLine.substring(0, colonIdx);
-        bodyPart = cleanLine.substring(colonIdx + 1).trim();
-      }
-      
-      const secInfo = getSectionInfo(titlePart);
-      currentBlock = {
-        cls: secInfo.cls,
-        icon: secInfo.icon,
-        title: secInfo.name,
-        lines: []
-      };
-      if(bodyPart){
-        currentBlock.lines.push(bodyPart);
-      }
-      return;
-    }
-    
-    // Sub-line content inside active section block
-    if(currentBlock){
-      currentBlock.lines.push(line);
-    } else {
-      topHeaderLines.push(line);
-    }
-  });
-  closeCurrentBlock();
-  
-  // Render Top Header
-  if(topHeaderLines.length > 0){
-    html += `<div class="raw-top-banner">`;
-    topHeaderLines.forEach(h => {
-      html += `<div class="raw-header-tag">${escapeHtml(h)}</div>`;
-    });
-    html += `</div>`;
-  }
-  
-  // Render Section Blocks with Distinct Paragraph Colors
-  blocks.forEach(b => {
-    html += `<div class="raw-block ${b.cls}">`;
-    html += `<div class="raw-block-title"><span class="raw-block-icon">${b.icon}</span> ${escapeHtml(b.title)}</div>`;
-    html += `<div class="raw-block-body">`;
-    
-    let inList = false;
-    b.lines.forEach(l => {
-      const trimmed = l.replace(/^[\*\-\•]\s*/, '');
-      if(/^\d+\.\s/.test(trimmed) || l.startsWith('-') || l.startsWith('*') || l.startsWith('•')){
-        if(!inList){ html += '<ul class="raw-block-list">'; inList = true; }
-        const itemText = trimmed.replace(/^\d+\.\s*/, '');
-        html += `<li>${escapeHtml(itemText)}</li>`;
-      } else {
-        if(inList){ html += '</ul>'; inList = false; }
-        html += `<p class="raw-block-text">${escapeHtml(l)}</p>`;
-      }
-    });
-    if(inList) html += '</ul>';
-    
-    html += `</div></div>`;
-  });
-  
-  return html;
-}
-
-function evidenceBlock(title, items, cls){
-  if(!items || !items.length) return '';
-  const lis = items.map(i => `<li>${escapeHtml(i)}</li>`).join('');
-  return `<div class="evidence-block ${cls}"><div class="ev-title">${title}</div><ul>${lis}</ul></div>`;
-}
-
-// --- Card Face Builders (shared by grid cards & zoom modal) ---
-function frontFaceHtml(c){
-  const colorCat = getScoreColorCat(c.winRate);
-  const flashing = isScoreFlashing(c.winRate);
-  return `
-      <div class="flip-face flip-front color-${colorCat}">
-
-        <!-- Top bar: Date -->
-        <div class="card-date-bar">
-          <span class="date-label">📅 內容更新日期：</span>
-          <span class="date-val">${escapeHtml(c.date)}</span>
-        </div>
-
-        <!-- Upper section: Stock Info & Score -->
-        <div class="card-header-main">
-          <div class="stock-title">
-            <span class="card-code">${escapeHtml(c.code)}</span>
-            <span class="card-name">${escapeHtml(c.name)}</span>
-          </div>
-          <div class="score-badge badge-${colorCat} ${flashing ? 'flash-score' : ''}">
-            <span class="score-num">${c.winRate}</span>
-            <span class="score-unit">分</span>
-          </div>
-        </div>
-
-        <!-- Decision & Pattern -->
-        <div class="decision-pattern-row">
-          <span class="decision-badge tag-${colorCat}">${decisionEmoji(c.decision)} ${escapeHtml(c.decision)}</span>
-          <span class="pattern-badge">📐 ${escapeHtml(c.pattern)} <small>(信心度:${escapeHtml(c.confidence)})</small></span>
-        </div>
-
-        <!-- Price Levels -->
-        <div class="levels">
-          ${levelBlock('壓力', c.resist, 'resist')}
-          ${levelBlock('現價', c.current, '')}
-          ${levelBlock('買進', c.entry, 'entry')}
-          ${levelBlock('停損', c.stop, 'stop')}
-        </div>
-
-        <!-- Lower Section: Evidence -->
-        <div class="evidence-container">
-          ${evidenceBlock('✅ [支持進場證據]', c.bullish, 'bull')}
-          ${evidenceBlock('❌ [反對進場證據]', c.bearish, 'bear')}
-        </div>
-
-        <!-- Action Summary -->
-        ${c.action ? `<div class="action-summary">${escapeHtml(c.action)}</div>` : ''}
-      </div>`;
-}
-
-function backFaceHtml(c){
-  return `
-      <div class="flip-face flip-back">
-        <div class="flip-back-header">
-          <span class="card-code">${escapeHtml(c.code)}</span>
-          <span class="card-name">${escapeHtml(c.name)}</span>
-          <span class="card-date">更新：${escapeHtml(c.date)}</span>
-        </div>
-        <div class="flip-back-body">${renderRaw(c.raw)}</div>
-      </div>`;
 }
 
 function getLatestCardByCode(code){
@@ -462,46 +255,12 @@ function setupCardActions(){
 }
 
 // --- Zoom Modal (enlarged card view) ---
-let zoomState = { code: null, face: 'front' };
-
-function renderZoomFace(){
-  const c = getLatestCardByCode(zoomState.code);
-  const stage = document.getElementById('zoomStageInner');
-  const flipBtn = document.getElementById('zoomFlipBtn');
-  if(!c || !stage) return;
-  stage.innerHTML = zoomState.face === 'front' ? frontFaceHtml(c) : backFaceHtml(c);
-  if(flipBtn) flipBtn.textContent = zoomState.face === 'front' ? '🔄 翻面看完整報表' : '🔄 翻回正面';
-}
-
+// 彈窗本身的邏輯搬到 render-shared.js 的 ZoomModal 共用了，這裡只留「用股票代號查卡片」
+// 這個 index.html 專屬的查找方式(reports_manager.html 沒有 STOCK_CARDS 全域變數，
+// 它是直接把卡片物件傳給 ZoomModal.open()，不會用到這個 wrapper)。
 function openZoomModal(code){
-  zoomState = { code, face: 'back' };
-  renderZoomFace();
-  document.getElementById('zoomModal').classList.remove('hidden');
-}
-
-function closeZoomModal(){
-  document.getElementById('zoomModal').classList.add('hidden');
-  zoomState = { code: null, face: 'back' };
-}
-
-function setupZoomModal(){
-  const modal = document.getElementById('zoomModal');
-  if(!modal) return;
-
-  document.getElementById('zoomCloseBtn').addEventListener('click', closeZoomModal);
-
-  document.getElementById('zoomFlipBtn').addEventListener('click', () => {
-    zoomState.face = zoomState.face === 'front' ? 'back' : 'front';
-    renderZoomFace();
-  });
-
-  modal.addEventListener('click', e => {
-    if(e.target === modal) closeZoomModal();
-  });
-
-  document.addEventListener('keydown', e => {
-    if(e.key === 'Escape' && !modal.classList.contains('hidden')) closeZoomModal();
-  });
+  const c = getLatestCardByCode(code);
+  if(c) ZoomModal.open(c);
 }
 
 function setupColorFilter(){
@@ -529,6 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupModals();
   setupFontControl();
   setupColorFilter();
-  setupZoomModal();
+  ZoomModal.setup();
   render();
 });

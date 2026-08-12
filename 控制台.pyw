@@ -1,8 +1,8 @@
 """
-統一控制台 -- 滑鼠點擊即可開啟四個原本分散的進入點：
+統一控制台 -- 滑鼠點擊即可開啟三個原本分散的進入點：
 - stock_report_generator.py    （分析個股：產生/更新個股分析報表）
-- reports_manager.bat          （檔案系統：整理 reports/ 底下的報表分類）
-- index.html                   （卡片系統：個股觀察卡片網站）
+- reports_manager.bat          （檔案系統：整理 reports/ 底下的報表分類，右側排行榜可直接
+                                  看到卡片系統的 AI 分析內容，不用再另外開卡片系統）
 - 指標數據/update.bat          （總經分析：總經/VIX 追蹤器）
 
 每個按鈕做的事情，跟你直接在檔案總管雙擊那個檔案完全一樣（用系統預設程式打開），
@@ -16,7 +16,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TARGETS = [
     ("📊 分析個股", os.path.join(BASE_DIR, "stock_report_generator.py")),
     ("🗂 檔案系統", os.path.join(BASE_DIR, "reports_manager.bat")),
-    ("📌 卡片系統", os.path.join(BASE_DIR, "index.html")),
     ("📈 總經分析", os.path.join(BASE_DIR, "指標數據", "update.bat")),
 ]
 
@@ -43,7 +42,7 @@ def main():
     root = tk.Tk()
     root.title("統一控制台")
     root.configure(bg=BG)
-    root.geometry("420x400")
+    root.geometry("420x360")
     root.resizable(False, False)
 
     tk.Label(
