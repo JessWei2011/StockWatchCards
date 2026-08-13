@@ -11,6 +11,7 @@
 """
 import os
 import tkinter as tk
+import urllib.request
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -18,6 +19,21 @@ TARGETS = [
     ("🗂 檔案系統", os.path.join(BASE_DIR, "reports_manager.bat")),
     ("📈 總經分析", os.path.join(BASE_DIR, "指標數據", "update.bat")),
 ]
+
+# 這兩顆按鈕各自開出來的本機 server（reports_manager.bat -> reports_manager_server.py，
+# update.bat -> 指標數據/server.py）都有做 POST /api/shutdown 讓自己乾淨結束。控制台
+# 本身沒有在追蹤它們的 process，用打自己的 shutdown API 這個既有機制關掉最簡單，
+# 不用去猜 PID／找哪個 process 佔用哪個 port。
+SERVER_SHUTDOWN_PORTS = [8934, 8935]
+
+
+def shutdown_all_servers():
+    for port in SERVER_SHUTDOWN_PORTS:
+        try:
+            req = urllib.request.Request(f"http://localhost:{port}/api/shutdown", method="POST", data=b"")
+            urllib.request.urlopen(req, timeout=1)
+        except Exception:
+            pass  # 那個 server 本來就沒開，或已經關了，不用理會
 
 BG = "#0f1117"
 CARD_BG = "#181b22"
@@ -73,6 +89,11 @@ def main():
 
     status_label.pack(pady=(14, 24))
 
+    def on_close():
+        shutdown_all_servers()
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_close)
     root.mainloop()
 
 

@@ -273,6 +273,39 @@ def twse_get(url, params):
         time.sleep(1.2)
     return None
 
+_otc_company_names_cache = None
+
+def fetch_otc_company_names():
+    """抓上櫃(TPEx)全市場代號->中文公司名稱對照表，一次抓整份、快取在記憶體裡整個
+    process 共用(同一次執行如果跑多檔上櫃股票，不用每檔都重新下載一次)。
+
+    原本用的 `tpex.org.tw/zh/api/codeQuery` 這個端點已經失效了——會回 200 但內容其實是
+    TPEx 自己的 404 錯誤頁面(不是真的查無資料，是網址本身跳掉了)，導致解析 JSON 失敗、
+    被 except 吃掉，最後整個退回用 yfinance 的英文公司全名，這就是上櫃股常常抓到英文
+    名稱、對不上一般認知台股名稱的真正原因。改用這個還在正常運作的 TPEx open data
+    每日收盤行情端點，裡面本來就含全市場代號+中文名稱，穩定得多。
+    """
+    global _otc_company_names_cache
+    if _otc_company_names_cache is not None:
+        return _otc_company_names_cache
+    names = {}
+    try:
+        otc_hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        r = requests.get(
+            "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes",
+            headers=otc_hdrs, timeout=15, verify=False
+        )
+        if r.status_code == 200:
+            for row in r.json():
+                code = row.get("SecuritiesCompanyCode")
+                cname = row.get("CompanyName")
+                if code and cname:
+                    names[code] = cname
+    except Exception:
+        pass
+    _otc_company_names_cache = names
+    return names
+
 def resolve_by_name(query):
     """用中文股票名稱查詢代號（TWSE codeQuery 同時涵蓋上市與上櫃）"""
     try:
@@ -942,20 +975,7 @@ def run(ticker_input):
         except Exception:
             pass
     else:
-        try:
-            otc_hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-            res = requests.get(
-                "https://www.tpex.org.tw/zh/api/codeQuery",
-                params={"query": sid}, headers=otc_hdrs, timeout=5, verify=False
-            )
-            if res.status_code == 200:
-                for sug in res.json().get("suggestions", []):
-                    parts = sug.split("\t")
-                    if len(parts) >= 2 and parts[0].strip() == sid:
-                        name = parts[1].strip()
-                        break
-        except Exception:
-            pass
+        name = fetch_otc_company_names().get(sid)
 
     if not name and is_otc:
         try:
