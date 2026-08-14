@@ -15,6 +15,8 @@ import urllib.request
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+WIN_W, WIN_H = 480, 220
+
 TARGETS = [
     ("🗂 檔案系統", os.path.join(BASE_DIR, "reports_manager.bat")),
     ("📈 總經分析", os.path.join(BASE_DIR, "指標數據", "update.bat")),
@@ -58,18 +60,27 @@ def main():
     root = tk.Tk()
     root.title("統一控制台")
     root.configure(bg=BG)
-    root.geometry("420x300")
     root.resizable(False, False)
+
+    # 置中顯示，不再貼工作列(多螢幕/DPI 縮放下貼工作列的座標算不準，容易跑到螢幕外)。
+    screen_w = root.winfo_screenwidth()
+    screen_h = root.winfo_screenheight()
+    x = (screen_w - WIN_W) // 2
+    y = (screen_h - WIN_H) // 2
+    root.geometry(f"{WIN_W}x{WIN_H}+{x}+{y}")
 
     tk.Label(
         root, text="📌 統一控制台", font=("Microsoft JhengHei", 18, "bold"), bg=BG, fg=TEXT
     ).pack(pady=(24, 18))
 
-    status_label = tk.Label(root, text="", font=("Microsoft JhengHei", 9), bg=BG, fg=TEXT_DIM, wraplength=380)
+    status_label = tk.Label(root, text="", font=("Microsoft JhengHei", 9), bg=BG, fg=TEXT_DIM, wraplength=440)
+
+    button_row = tk.Frame(root, bg=BG)
+    button_row.pack(pady=6)
 
     for label, path in TARGETS:
         btn = tk.Button(
-            root,
+            button_row,
             text=label,
             font=("Microsoft JhengHei", 12, "bold"),
             bg=CARD_BG,
@@ -81,11 +92,11 @@ def main():
             highlightbackground=BORDER,
             padx=14,
             pady=12,
-            width=28,
+            width=16,
             cursor="hand2",
             command=lambda p=path: launch(p, status_label),
         )
-        btn.pack(pady=6)
+        btn.pack(side=tk.LEFT, padx=8)
 
     status_label.pack(pady=(14, 24))
 
