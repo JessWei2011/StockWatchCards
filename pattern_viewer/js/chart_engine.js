@@ -40,7 +40,7 @@ window.ChartEngine = {
       if (prevZoom) { zoomStart = prevZoom.start; zoomEnd = prevZoom.end; }
     }
     if (zoomStart == null) {
-      const defaultVisibleDays = 10;
+      const defaultVisibleDays = 14;
       zoomStart = total > defaultVisibleDays ? Math.max(0, (1 - defaultVisibleDays / total) * 100) : 0;
       zoomEnd = 100;
     }
@@ -79,14 +79,23 @@ window.ChartEngine = {
           const posInGroup = group.indexOf(pivot);
           const clustered = group.length > 1;
           const position = clustered ? (posInGroup % 2 === 0 ? 'top' : 'bottom') : 'top';
-          const distance = clustered ? 16 + Math.floor(posInGroup / 2) * 26 : 8;
+          const distance = clustered ? 20 + Math.floor(posInGroup / 2) * 26 : 12;
+          // Staggering the label alone doesn't stop the pin HEADS from stacking on top of each
+          // other when several pivots share the same date — the marker itself still sits on the
+          // exact same pixel. Fan the pins out sideways (in px) around their real x position so
+          // the heads separate; the tip stays visually anchored near the candle, just nudged.
+          const xOffset = clustered ? (posInGroup - (group.length - 1) / 2) * 24 : 0;
 
           markPoints.push({
             name: pivot.label,
             coord: [pivot.date, pivot.price],
             value: pivot.tag,
             symbol: 'pin',
-            symbolSize: 40,
+            // Narrow + tall (instead of a fat 40x40 square) so the pin's point stretches further
+            // away from the candle before the round head appears — keeps wicks unobstructed and
+            // reduces head-to-head overlap when several pivots land on the same date.
+            symbolSize: [22, 52],
+            symbolOffset: [xOffset, 0],
             itemStyle: {
               color: overlayData.color || '#f59e0b',
               shadowColor: overlayData.color || '#f59e0b',
@@ -416,7 +425,7 @@ window.ChartEngine = {
               name: annot.label,
               coord: annot.coord,
               symbol: 'pin',
-              symbolSize: 40,
+              symbolSize: [22, 52],
               itemStyle: { color: annot.color },
               label: {
                 show: true,
