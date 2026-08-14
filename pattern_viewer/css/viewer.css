@@ -1,0 +1,350 @@
+/* ==========================================================================
+   AI Stock Pattern Teaching & Interactive Viewer (pattern_viewer)
+   Dark Mode Aesthetic CSS
+   ========================================================================== */
+
+:root {
+  --bg-dark: #0f1117;
+  --panel-bg: #161922;
+  --panel-border: #232734;
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
+  --accent-blue: #3b82f6;
+  --accent-cyan: #06b6d4;
+  --accent-gold: #f59e0b;
+  --stock-up: #ef4444;    /* 台灣習慣：上漲紅色 */
+  --stock-down: #10b981;  /* 台灣習慣：下跌綠色 */
+  --font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-family);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* Header Navbar */
+.navbar {
+  background: linear-gradient(180deg, #1a1e2b 0%, #12151e 100%);
+  border-bottom: 1px solid var(--panel-border);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #fff;
+  font-size: 1.2rem;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+}
+
+.brand-text h1 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(90deg, #ffffff, #cbd5e1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-text p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Stock Selection & Controls */
+.controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stock-selector {
+  background-color: var(--panel-bg);
+  color: var(--text-main);
+  border: 1px solid var(--panel-border);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stock-selector:hover, .stock-selector:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Layout Main Container: chart column first, info sidebar moved to the right column. */
+.main-container {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+  padding: 16px 24px;
+  flex: 1;
+}
+
+@media (max-width: 1024px) {
+  .main-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Right Sidebar - Teaching Card & Control Panel */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  order: 2;
+}
+
+.chart-viewport {
+  order: 1;
+}
+
+.card {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease;
+}
+
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 8px;
+}
+
+/* Pattern Select Buttons */
+.pattern-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.btn-pattern {
+  background: #1e2330;
+  border: 1px solid #2a3042;
+  color: var(--text-main);
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.btn-pattern:hover {
+  background: #283044;
+  border-color: var(--accent-blue);
+  transform: translateY(-1px);
+}
+
+.btn-pattern.active {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border-color: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  font-weight: 600;
+}
+
+/* Teaching Info Panel */
+.teaching-card {
+  background: linear-gradient(145deg, #171b26 0%, #1c2130 100%);
+  border-left: 4px solid var(--accent-gold);
+}
+
+.teaching-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.pattern-badge {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent-gold);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.teaching-content p {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #cbd5e1;
+  margin-bottom: 12px;
+}
+
+.pivot-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pivot-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  border-left: 3px solid var(--accent-blue);
+}
+
+.pivot-tag {
+  background: var(--accent-blue);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.pivot-date {
+  color: var(--text-muted);
+}
+
+.pivot-price {
+  font-weight: 600;
+  margin-left: auto;
+  color: #f1f5f9;
+}
+
+/* Stock Meta Quick Stats */
+.stock-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.stat-box {
+  background: #11141c;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #1e2330;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.stat-value.up { color: var(--stock-up); }
+.stat-value.down { color: var(--stock-down); }
+
+.stat-box.full { grid-column: 1 / -1; }
+.stat-value.small { font-size: 0.85rem; }
+
+/* Right Section - Chart Canvas Container */
+.chart-viewport {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  min-height: 720px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chart-title-group h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.chart-sub-info {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.chart-toggles {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 0.82rem;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-label input {
+  accent-color: var(--accent-blue);
+  cursor: pointer;
+}
+
+#echart-main {
+  width: 100%;
+  height: 650px;
+  flex: 1;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 16px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--panel-border);
+  background: #0b0d12;
+}

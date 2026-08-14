@@ -184,8 +184,9 @@ Repo: https://github.com/JessWei2011/StockWatchCards
 ## 其他檔案
 
 - `.gitignore` 只允許 `.gitignore` / `index.html` / `style.css` / `data.js` / `render.js` / `CLAUDE.md` / `GEMINI.md` /
-  `stock_report_generator.py` / `clone-stockwatchcards.bat` / `控制台.pyw` 進版控，其餘像 `reports/` 資料夾內的個股分析 html/png、
-  `cache/`、`margin_data.db`、`.claude/` 都刻意排除，只留在本機。
+  `stock_report_generator.py` / `clone-stockwatchcards.bat` / `控制台.pyw` / `pattern_viewer/`（僅 `index.html`、`server.py`、
+  `start_viewer.bat`、`INTEGRATION_GUIDE.md`、`css/viewer.css`、`js/*.js`，`__pycache__/` 與資料夾裡的其他雜項檔案不算）進版控，
+  其餘像 `reports/` 資料夾內的個股分析 html/png、`cache/`、`margin_data.db`、`.claude/` 都刻意排除，只留在本機。
 - `控制台.pyw`：統一控制台（Tkinter GUI），滑鼠點擊即可開啟三個原本分散的進入點
   （`index.html` / `stock_report_generator.py` / `指標數據/update.bat`），桌面「統一控制台」捷徑指向這個檔案。
   每個按鈕只是用系統預設程式打開對應檔案，不重新實作各自的執行邏輯。

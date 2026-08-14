@@ -12,3 +12,17 @@
 !stock_report_generator.py
 !clone-stockwatchcards.bat
 !控制台.pyw
+
+# pattern_viewer/ app code is tracked so it syncs across machines; __pycache__ and any stray
+# local files dropped in the folder (e.g. screenshots) stay untracked since they aren't listed.
+!pattern_viewer/
+!pattern_viewer/css/
+!pattern_viewer/js/
+!pattern_viewer/index.html
+!pattern_viewer/server.py
+!pattern_viewer/start_viewer.bat
+!pattern_viewer/INTEGRATION_GUIDE.md
+!pattern_viewer/css/viewer.css
+!pattern_viewer/js/chart_engine.js
+!pattern_viewer/js/parser.js
+!pattern_viewer/js/pattern_engine.js
