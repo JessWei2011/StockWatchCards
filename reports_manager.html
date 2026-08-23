@@ -527,7 +527,6 @@
 <script src="pattern_viewer/js/viewer_app.js?v=1"></script>
 <script src="render-shared.js"></script>
 <script>
-  const WORKSPACE_KEY = 'analysisCenterWorkspace';
   let patternViewerInitialized = false;
 
   async function activateWorkspace(name){
@@ -540,8 +539,6 @@
     document.getElementById('reports-workspace').hidden = target !== 'reports';
     document.getElementById('pattern-workspace').hidden = target !== 'pattern';
     document.getElementById('breadcrumb').style.visibility = target === 'reports' ? '' : 'hidden';
-    localStorage.setItem(WORKSPACE_KEY, target);
-
     if (target === 'pattern') {
       if (!patternViewerInitialized) {
         patternViewerInitialized = true;
@@ -579,7 +576,8 @@
   document.querySelectorAll('.app-tab').forEach(button => {
     button.addEventListener('click', () => activateWorkspace(button.dataset.workspace));
   });
-  activateWorkspace(localStorage.getItem(WORKSPACE_KEY) || 'reports');
+  // 統一入口的首頁固定是檔案管理；個股分析只在使用者主動選取後開啟。
+  activateWorkspace('reports');
 </script>
 <script>
   let tree = null;
