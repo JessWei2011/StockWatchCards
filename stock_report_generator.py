@@ -3,7 +3,8 @@
 台股分析工具 - 精簡Token版 (上市/上櫃 完美整合版 + 處置期間判斷)
 用法: python tw_analysis.py 6182
 """
-import sys, time, warnings, os, re, json, logging, glob
+import sys, time, warnings, os, re, json, logging, glob, threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 warnings.filterwarnings("ignore")
 logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
@@ -40,6 +41,9 @@ HOLDERS_MARKET_CACHE = os.path.join(CACHE_DIR, "holders_market.csv")
 REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
 HOLDERS_WEEKS = 8  # 大戶持股比例趨勢顯示週數
 HOLDERS_BACKFILL_WEEKS = 3  # 快取不足時，額外回補的過去週數(一次性，補齊後不再重複查詢)
+DEFAULT_BATCH_WORKERS = 3
+MAX_BATCH_WORKERS = 4
+_chart_render_lock = threading.Lock()
 
 
 def find_existing_report_dir(sid):
@@ -84,8 +88,13 @@ def _latest_expected_friday():
     return d.strftime("%Y%m%d")
 
 _holders_market_memory = {}
+_holders_market_lock = threading.Lock()
 
 def fetch_holders_market():
+    with _holders_market_lock:
+        return _fetch_holders_market_locked()
+
+def _fetch_holders_market_locked():
     """下載/讀取全市場集保戶股權分散表(每週五更新一次，同一週內重複查詢不會重新下載)"""
     expected = _latest_expected_friday()
 
@@ -274,6 +283,7 @@ def build_chart(sid, name, df, ma5, ma10, ma20, ma60, bu, bm, bl, n_tail, out_pa
 
 # ── 共用工具 ──────────────────────────────────────────
 _twse_response_cache = {}
+_twse_response_lock = threading.Lock()
 
 def _twse_cache_key(url, params):
     return (url, json.dumps(params, ensure_ascii=False, sort_keys=True, default=str))
@@ -282,6 +292,10 @@ def twse_response_cached(url, params):
     return _twse_cache_key(url, params) in _twse_response_cache
 
 def twse_get(url, params):
+    with _twse_response_lock:
+        return _twse_get_locked(url, params)
+
+def _twse_get_locked(url, params):
     # 法人與融資端點回傳的是「當日全市場」資料。批次更新時同一日期只下載一次，
     # 後續個股直接共用記憶體回應，避免 35 檔上市股重複抓取完全相同的內容。
     cache_key = _twse_cache_key(url, params)
@@ -300,8 +314,13 @@ def twse_get(url, params):
     return None
 
 _otc_company_names_cache = None
+_otc_company_names_lock = threading.Lock()
 
 def fetch_otc_company_names():
+    with _otc_company_names_lock:
+        return _fetch_otc_company_names_locked()
+
+def _fetch_otc_company_names_locked():
     """抓上櫃(TPEx)全市場代號->中文公司名稱對照表，一次抓整份、快取在記憶體裡整個
     process 共用(同一次執行如果跑多檔上櫃股票，不用每檔都重新下載一次)。
 
@@ -1212,7 +1231,9 @@ def run(ticker_input):
                 pass
 
     print(" 產生K線圖…", end="", flush=True)
-    chart_ok = build_chart(sid, name, df, ma5, ma10, ma20, ma60, bu, bm, bl, n_tail, chart_fname)
+    # Matplotlib/mplfinance 共用全域繪圖狀態，不可同時寫圖；網路抓取仍可並行。
+    with _chart_render_lock:
+        chart_ok = build_chart(sid, name, df, ma5, ma10, ma20, ma60, bu, bm, bl, n_tail, chart_fname)
     print(" ✅" if chart_ok else " ❌ 失敗")
 
     html = build_html(
@@ -1328,26 +1349,55 @@ def resolve_tracked_indices(items, tracked):
     return resolved
 
 def run_batch(tickers):
-    results = []
     total = len(tickers)
-    for i, t in enumerate(tickers, 1):
-        print(f"\n{'='*60}")
-        print(f"[{i}/{total}] {t}")
-        print('='*60)
-        try:
-            ok = run(t)
-        except Exception as e:
-            print(f"\n❌ {t} 發生錯誤: {e}")
-            ok = False
-        results.append((t, bool(ok)))
-        print(f"{'✅ OK' if ok else '❌ 失敗'} [{i}/{total}] {t}")
+    if not total:
+        return
 
-    if len(tickers) > 1:
+    def run_one(ticker):
+        try:
+            return bool(run(ticker)), ""
+        except Exception as error:
+            return False, str(error)
+
+    # 單檔維持原本易讀的逐步輸出；多檔才啟用受控並行。
+    if total == 1:
+        t = tickers[0]
         print(f"\n{'='*60}")
-        print("批次執行完畢")
-        for t, ok in results:
-            print(f"  {'✅' if ok else '❌'} {t}")
+        print(f"[1/1] {t}")
         print('='*60)
+        ok, error = run_one(t)
+        if error:
+            print(f"\n❌ {t} 發生錯誤: {error}")
+        print(f"{'✅ OK' if ok else '❌ 失敗'} [1/1] {t}")
+        return
+
+    try:
+        configured_workers = int(os.environ.get("STOCK_UPDATE_WORKERS", DEFAULT_BATCH_WORKERS))
+    except (TypeError, ValueError):
+        configured_workers = DEFAULT_BATCH_WORKERS
+    worker_count = min(total, MAX_BATCH_WORKERS, max(1, configured_workers))
+    print(f"\n⚡ 批次並行更新：{total} 檔，使用 {worker_count} 個工作執行緒")
+
+    results_by_index = {}
+    completed = 0
+    with ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="stock-update") as executor:
+        future_map = {executor.submit(run_one, ticker): (index, ticker) for index, ticker in enumerate(tickers)}
+        for future in as_completed(future_map):
+            index, ticker = future_map[future]
+            ok, error = future.result()
+            completed += 1
+            print(f"\n[{completed}/{total}] {ticker}")
+            if error:
+                print(f"❌ {ticker} 發生錯誤: {error}")
+            print(f"{'✅ OK' if ok else '❌ 失敗'} [{completed}/{total}] {ticker}")
+            results_by_index[index] = (ticker, ok)
+
+    print(f"\n{'='*60}")
+    print(f"批次執行完畢（{worker_count} 執行緒）")
+    for index in range(total):
+        t, ok = results_by_index[index]
+        print(f"  {'✅' if ok else '❌'} {t}")
+    print('='*60)
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
