@@ -317,14 +317,37 @@
   @keyframes spin{ to{ transform:rotate(360deg); } }
   .generate-status{ font-size:13px; color:var(--text-dim); }
   .generate-status.error{ color:var(--danger); white-space:pre-line; }
+
+  /* ── 個股分析中心主工作區：卡片管理與線形教學使用完全不同的版型 ── */
+  .app-tabs{
+    display:flex; gap:8px; padding:8px 24px; border-bottom:1px solid var(--border);
+    background:#0d0f13; flex-shrink:0;
+  }
+  .app-tab{
+    padding:8px 18px; border:1px solid transparent; border-radius:8px;
+    background:transparent; color:var(--text-dim); font-size:13.5px; font-weight:700; cursor:pointer;
+  }
+  .app-tab:hover{ color:var(--text); background:var(--hover); }
+  .app-tab.active{ color:#08101c; background:var(--accent); border-color:var(--accent); }
+  .workspace{ flex:1; min-height:0; }
+  #reports-workspace[hidden], #pattern-workspace[hidden]{ display:none; }
+  #reports-workspace{ display:flex; flex-direction:column; }
+  #pattern-workspace{ overflow:auto; background:#0f1117; }
+  #pattern-workspace .pattern-viewer{ min-height:100%; }
 </style>
+<link rel="stylesheet" href="pattern_viewer/css/viewer.css?v=5">
 </head>
 <body>
   <header>
-    <h1>📁 報表資料夾管理</h1>
+    <h1>📌 個股分析中心</h1>
     <div class="breadcrumb" id="breadcrumb"></div>
     <button class="btn danger" id="shutdown-server-btn" style="margin-left:auto;" title="關閉本機伺服器進程並關掉這個分頁">🔴 關閉伺服器</button>
   </header>
+  <nav class="app-tabs" aria-label="主要工作區">
+    <button type="button" class="app-tab active" data-workspace="reports">🗂️ 報表管理</button>
+    <button type="button" class="app-tab" data-workspace="pattern">🎓 型態教學</button>
+  </nav>
+  <section class="workspace" id="reports-workspace">
   <div class="generate-bar">
     <input type="text" id="generate-input" placeholder="輸入股票代號/名稱（可用逗號分隔多筆），或輸入 ALL 更新全部追蹤清單">
     <button class="btn primary" id="generate-btn">🚀 產生/更新報表</button>
@@ -365,6 +388,87 @@
       <div id="rank-list"></div>
     </div>
   </div>
+  </section>
+
+  <section class="workspace" id="pattern-workspace" hidden>
+    <div class="pattern-viewer pattern-viewer-embedded">
+      <header class="navbar">
+        <div class="brand">
+          <div class="brand-icon">📈</div>
+          <div class="brand-text">
+            <h1>AI 個股型態視覺化教學</h1>
+            <p>真實報表驅動的五層 K 線與技術指標</p>
+          </div>
+        </div>
+        <div class="controls-bar">
+          <label for="stockSelect">選擇個股：</label>
+          <select id="stockSelect" class="stock-selector"></select>
+        </div>
+      </header>
+
+      <div class="main-container">
+        <aside class="sidebar">
+          <div class="card">
+            <div class="card-title"><span>📊</span> <span id="cardStockName">尚未選擇個股</span></div>
+            <div class="stock-stats">
+              <div class="stat-box">
+                <div class="stat-label">最新收盤價</div>
+                <div id="statCurrentPrice" class="stat-value up">—</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">報表區間高 / 低</div>
+                <div id="statHighLow" class="stat-value stat-value-compact">—</div>
+              </div>
+              <div class="stat-box full" id="statCardBox" style="display:none;">
+                <div class="stat-label">AI 卡片判斷（<span id="statCardDate"></span>）</div>
+                <div id="statCardDecision" class="stat-value small">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span>🎓</span> 視覺化來源</div>
+            <div class="pattern-buttons" id="viewToggleContainer">
+              <button class="btn-pattern active" data-view="card">🎯 卡片型態視覺化</button>
+              <button class="btn-pattern" data-view="data">💡 指標數據解構</button>
+            </div>
+            <div id="sourceTextNote" class="source-note"></div>
+          </div>
+
+          <div class="card teaching-card">
+            <div class="teaching-header">
+              <div class="card-title teaching-title"><span>💡</span> 型態教學說明</div>
+              <span id="teachingBadge" class="pattern-badge">等待真實資料</span>
+            </div>
+            <div class="teaching-content">
+              <p id="teachingExplanation">請選擇已有報表的個股。</p>
+              <div class="pivot-heading">關鍵幾何轉折標籤（Pivots）：</div>
+              <ul id="pivotList" class="pivot-list"></ul>
+            </div>
+          </div>
+        </aside>
+
+        <main class="chart-viewport">
+          <div class="chart-header">
+            <div class="chart-title-group">
+              <h2 id="chartTitle">K線 / RSI / MACD / KD / 成交量圖</h2>
+              <div class="chart-sub-info">滑鼠移動十字光標可跨圖表同步連動觀察數值</div>
+            </div>
+            <div class="chart-toggles">
+              <label class="toggle-label"><input type="checkbox" id="toggleBoll" checked> 布林通道（BOLL）</label>
+              <label class="toggle-label"><input type="checkbox" id="toggleMa" checked> 均線（MA5）</label>
+            </div>
+          </div>
+          <div id="patternEmptyState" class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <h3 id="patternEmptyTitle">正在讀取報表資料…</h3>
+            <p id="patternEmptyDetail">型態線圖只使用真實報表，不會產生模擬行情。</p>
+          </div>
+          <div id="echart-main" hidden></div>
+        </main>
+      </div>
+    </div>
+  </section>
 
   <div class="modal-overlay hidden" id="delete-modal">
     <div class="modal">
@@ -404,7 +508,47 @@
     </div>
   </div>
 
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script src="pattern_viewer/js/parser.js?v=13"></script>
+<script src="pattern_viewer/js/pattern_engine.js?v=13"></script>
+<script src="pattern_viewer/js/chart_engine.js?v=16"></script>
+<script src="pattern_viewer/js/viewer_app.js?v=1"></script>
 <script src="render-shared.js"></script>
+<script>
+  const WORKSPACE_KEY = 'analysisCenterWorkspace';
+  let patternViewerInitialized = false;
+
+  async function activateWorkspace(name){
+    const target = name === 'pattern' ? 'pattern' : 'reports';
+    document.querySelectorAll('.app-tab').forEach(button => {
+      const active = button.dataset.workspace === target;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    document.getElementById('reports-workspace').hidden = target !== 'reports';
+    document.getElementById('pattern-workspace').hidden = target !== 'pattern';
+    document.getElementById('breadcrumb').style.visibility = target === 'reports' ? '' : 'hidden';
+    localStorage.setItem(WORKSPACE_KEY, target);
+
+    if (target === 'pattern') {
+      if (!patternViewerInitialized) {
+        patternViewerInitialized = true;
+        try {
+          await PatternViewer.init(document.querySelector('#pattern-workspace .pattern-viewer'));
+        } catch (error) {
+          patternViewerInitialized = false;
+          console.error('型態教學初始化失敗', error);
+        }
+      }
+      requestAnimationFrame(() => PatternViewer.resize());
+    }
+  }
+
+  document.querySelectorAll('.app-tab').forEach(button => {
+    button.addEventListener('click', () => activateWorkspace(button.dataset.workspace));
+  });
+  activateWorkspace(localStorage.getItem(WORKSPACE_KEY) || 'reports');
+</script>
 <script>
   let tree = null;
   let currentPath = '';
