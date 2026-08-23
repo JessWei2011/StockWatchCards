@@ -13,6 +13,13 @@
 !clone-stockwatchcards.bat
 !控制台.pyw
 
+# Unified local reports manager / stock analysis center. These source files must be
+# tracked so the integrated app can be reviewed, reverted, and restored after clone.
+!reports_manager.html
+!reports_manager_server.py
+!reports_manager.bat
+!render-shared.js
+
 # pattern_viewer/ app code is tracked so it syncs across machines; __pycache__ and any stray
 # local files dropped in the folder (e.g. screenshots) stay untracked since they aren't listed.
 !pattern_viewer/
