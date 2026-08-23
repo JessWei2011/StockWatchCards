@@ -199,12 +199,40 @@
       const card = this.cardByCode[code];
       if (!card) {
         box.style.display = 'none';
+        this.updateAnalysisPanel(null);
         return;
       }
       box.style.display = '';
       this.q('#statCardDate').textContent = card.date || '—';
       this.q('#statCardDecision').textContent =
         `${card.decision || '—'}｜勝率 ${card.winRate ?? '—'}%｜${card.pattern || '無明確型態'}`;
+      this.updateAnalysisPanel(card);
+    }
+
+    updateAnalysisPanel(card) {
+      const section = this.q('#patternAnalysisSection');
+      const body = this.q('#patternAnalysisBody');
+      if (!section || !body) return;
+      if (!card) {
+        section.hidden = true;
+        body.innerHTML = '';
+        return;
+      }
+
+      section.hidden = false;
+      this.q('#patternAnalysisTitle').textContent = `${card.code} ${card.name}・完整 AI 分析`;
+      this.q('#patternAnalysisMeta').textContent =
+        `${card.date || '日期未知'}｜${card.decision || '未定'}｜勝率 ${card.winRate ?? '—'}%｜${card.pattern || '無明確型態'}`;
+
+      if (card.raw && typeof renderRaw === 'function') {
+        body.innerHTML = renderRaw(card.raw);
+      } else {
+        body.innerHTML = '';
+        const plain = document.createElement('pre');
+        plain.className = 'analysis-plain';
+        plain.textContent = card.raw || card.action || '這張 AI 卡片沒有完整分析文字。';
+        body.appendChild(plain);
+      }
     }
 
     updateUI() {

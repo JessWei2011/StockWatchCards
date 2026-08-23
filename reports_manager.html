@@ -480,6 +480,17 @@
           <div id="echart-main" hidden></div>
         </main>
       </div>
+
+      <section id="patternAnalysisSection" class="pattern-analysis" hidden>
+        <div class="analysis-heading">
+          <div>
+            <div class="analysis-eyebrow">集中閱讀區</div>
+            <h2 id="patternAnalysisTitle">完整 AI 分析</h2>
+          </div>
+          <div id="patternAnalysisMeta" class="analysis-meta"></div>
+        </div>
+        <div id="patternAnalysisBody" class="analysis-body"></div>
+      </section>
     </div>
   </section>
 
@@ -505,18 +516,6 @@
       <div class="modal-actions">
         <button class="btn" id="report-delete-cancel-btn">取消</button>
         <button class="btn danger" id="report-delete-confirm-btn">刪除</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay hidden" id="zoomModal">
-    <div class="zoom-modal">
-      <div class="zoom-toolbar">
-        <button type="button" class="zoom-flip-btn" id="zoomFlipBtn">🔄 翻面看完整報表</button>
-        <button type="button" class="zoom-close-btn" id="zoomCloseBtn" title="關閉">✕ 關閉</button>
-      </div>
-      <div class="zoom-stage-outer" id="zoomStageOuter">
-        <div class="zoom-stage-inner" id="zoomStageInner"></div>
       </div>
     </div>
   </div>
@@ -786,7 +785,7 @@
         : `<div class="noimg">無圖</div>`;
       const aiCard = r.code ? cardsByCode[r.code] : null;
       const badge = aiCard
-        ? `<div class="card-badge badge-${getScoreColorCat(aiCard.winRate)}" title="已有 AI 分析卡片，點擊查看">🎯 ${escapeHtml(String(aiCard.winRate))}</div>`
+        ? `<div class="card-badge badge-${getScoreColorCat(aiCard.winRate)}" title="點擊進入整合分析與型態教學">🎯 ${escapeHtml(String(aiCard.winRate))}</div>`
         : '';
       card.innerHTML = `
         <input type="checkbox" class="select-box" draggable="false">
@@ -800,7 +799,7 @@
         const badgeEl = card.querySelector('.card-badge');
         badgeEl.addEventListener('click', (e) => {
           e.stopPropagation();
-          ZoomModal.open(aiCard, 'front');
+          openPatternForStock(r.code);
         });
         badgeEl.addEventListener('mousedown', (e) => e.stopPropagation());
       }
@@ -1122,8 +1121,8 @@
           <button type="button" class="rank-pattern-btn" title="查看 ${escapeHtml(c.code)} ${escapeHtml(c.name)} 的型態教學">🎓 型態</button>
         </div>
       `;
-      row.title = `${c.code} ${c.name} － ${c.date || '日期未知'} － 點擊查看 AI 分析`;
-      row.addEventListener('click', () => ZoomModal.open(c, 'front'));
+      row.title = `${c.code} ${c.name} － ${c.date || '日期未知'} － 點擊進入整合分析與型態教學`;
+      row.addEventListener('click', () => openPatternForStock(c.code));
       const delBtn = row.querySelector('.rank-del-btn');
       delBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1296,7 +1295,6 @@
   setupResizer(document.getElementById('resizer-left'), document.querySelector('.sidebar'), 'sidebar', true);
   setupResizer(document.getElementById('resizer-right'), document.querySelector('.rank-panel'), 'rank', false);
 
-  ZoomModal.setup();
   loadTree().then(() => loadCards()).then(loadList);
 </script>
 </body>

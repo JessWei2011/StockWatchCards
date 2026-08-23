@@ -200,14 +200,11 @@ window.ChartEngine = {
       animation: true,
       tooltip: {
         trigger: 'axis',
+        showContent: false,
         axisPointer: {
           type: 'cross',
           link: [{ xAxisIndex: 'all' }] // Crosshair sync across all 5 panes!
-        },
-        backgroundColor: 'rgba(22, 25, 34, 0.95)',
-        borderColor: '#232734',
-        borderWidth: 1,
-        textStyle: { color: '#e2e8f0', fontSize: 12 }
+        }
       },
       axisPointer: {
         link: [{ xAxisIndex: 'all' }],
