@@ -145,7 +145,7 @@
       this.currentCode = normalizedCode;
       this.showLoading(normalizedCode);
 
-      const entry = this.reportsIndex.find(item => String(item.code) === normalizedCode);
+      let entry = this.reportsIndex.find(item => String(item.code) === normalizedCode);
       if (!entry) {
         this.currentStockData = null;
         this.updateAiCardBox(normalizedCode);
@@ -156,30 +156,50 @@
         return false;
       }
 
-      try {
-        const reportUrl = this.options.reportsBaseUrl + entry.path
+      const fetchReport = async reportEntry => {
+        const reportUrl = this.options.reportsBaseUrl + reportEntry.path
           .split('/')
           .map(segment => encodeURIComponent(segment))
           .join('/');
-        const response = await fetch(reportUrl, { cache: 'no-store' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return fetch(reportUrl, { cache: 'no-store' });
+      };
+
+      let parsed;
+      try {
+        let response = await fetchReport(entry);
+        if (!response.ok) {
+          // 路徑可能在元件初始化後被移動。刷新全域索引並依代號重找一次，
+          // 只自動重試一輪，避免真正的伺服器錯誤形成無限請求。
+          await this.loadSources();
+          if (requestId !== this.requestSerial || this.destroyed) return false;
+          this.populateStockSelect();
+          entry = this.reportsIndex.find(item => String(item.code) === normalizedCode);
+          if (!entry) throw new Error('刷新索引後仍找不到這檔股票的報表');
+          response = await fetchReport(entry);
+        }
+        if (!response.ok) throw new Error(`讀取 ${entry.path} 時伺服器回傳 HTTP ${response.status}`);
         const htmlText = await response.text();
         if (requestId !== this.requestSerial || this.destroyed) return false;
 
-        const parsed = PatternParser.parseStockHtml(htmlText);
+        parsed = PatternParser.parseStockHtml(htmlText);
         if (!parsed || !parsed.dates || parsed.dates.length === 0) {
-          throw new Error('報表中找不到可解析的 K 線資料');
+          throw new Error(`報表 ${entry.path} 中找不到可解析的 K 線資料`);
         }
-
-        this.currentStockData = parsed;
-        this.updateAiCardBox(normalizedCode);
-        this.updateUI();
-        return true;
       } catch (error) {
         if (requestId !== this.requestSerial || this.destroyed) return false;
         this.currentStockData = null;
         this.updateAiCardBox(normalizedCode);
         this.showEmpty(`${normalizedCode} 報表載入失敗`, error.message || '無法讀取報表');
+        return false;
+      }
+
+      this.currentStockData = parsed;
+      this.updateAiCardBox(normalizedCode);
+      try {
+        this.updateUI();
+        return true;
+      } catch (error) {
+        this.showEmpty(`${normalizedCode} 圖表顯示失敗`, error.message || '無法繪製圖表');
         return false;
       }
     }

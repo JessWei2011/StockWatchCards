@@ -561,13 +561,11 @@
     if (!normalizedCode) return;
     await activateWorkspace('pattern');
 
-    let select = document.querySelector('#pattern-workspace #stockSelect');
-    let option = Array.from(select.options).find(item => item.value === normalizedCode);
-    if (!option) {
-      await PatternViewer.refresh();
-      select = document.querySelector('#pattern-workspace #stockSelect');
-      option = Array.from(select.options).find(item => item.value === normalizedCode);
-    }
+    // 報表可能剛產生、移動或由檔案總管手動整理；每次跨工作區導覽前都重新
+    // 取得索引，避免沿用先前初始化時保存的舊路徑而誤報「報表載入失敗」。
+    await PatternViewer.refresh();
+    const select = document.querySelector('#pattern-workspace #stockSelect');
+    const option = Array.from(select.options).find(item => item.value === normalizedCode);
     if (option) select.value = normalizedCode;
     await PatternViewer.loadStock(normalizedCode);
     document.getElementById('pattern-workspace').scrollTo({ top: 0, behavior: 'auto' });
