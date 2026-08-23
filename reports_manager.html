@@ -358,6 +358,8 @@
   .insight-title p{ margin:0; color:var(--text-dim); font-size:13px; }
   .insight-actions{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
   .insight-actions #rank-group-filter{ width:180px; margin:0 !important; }
+  #rank-mode{ width:160px; padding:6px 8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text); font-size:12.5px; cursor:pointer; }
+  #rank-mode:focus{ outline:2px solid var(--accent); outline-offset:-1px; }
   .summary-grid{ display:grid; grid-template-columns:repeat(4,minmax(130px,1fr)); gap:10px; margin-bottom:16px; }
   .summary-item{ background:var(--card-bg); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
   .summary-label{ color:var(--text-dim); font-size:12px; margin-bottom:5px; }
@@ -421,7 +423,11 @@
           </div>
           <div class="insight-actions">
             <select id="rank-group-filter"></select>
-            <button class="btn" id="update-top10-btn">🔄 更新前 10 名</button>
+            <select id="rank-mode" title="綜合沿用 AI 勝率；技術與籌碼分數由卡片中的結構化指標即時計算">
+              <option value="technical">📈 技術面排名</option>
+              <option value="chip">👥 籌碼面排名</option>
+              <option value="composite" selected>🏆 綜合排名</option>
+            </select>
             <button class="btn primary" id="new-folder-btn">➕ 新增資料夾</button>
           </div>
         </div>
@@ -429,7 +435,7 @@
           <div class="summary-item"><div class="summary-label">涵蓋個股</div><div class="summary-value" id="summary-total">0</div></div>
           <div class="summary-item"><div class="summary-label">進場／加碼</div><div class="summary-value" id="summary-positive">0</div></div>
           <div class="summary-item"><div class="summary-label">風險警示</div><div class="summary-value" id="summary-alerts">0</div></div>
-          <div class="summary-item"><div class="summary-label">平均勝率</div><div class="summary-value" id="summary-average">—</div></div>
+          <div class="summary-item"><div class="summary-label" id="summary-average-label">平均綜合分數</div><div class="summary-value" id="summary-average">—</div></div>
         </div>
         <div id="rank-list"></div>
       </div>
@@ -1119,14 +1125,93 @@
     renderRankPanel();
   });
 
+  document.getElementById('rank-mode').addEventListener('change', (e) => {
+    rankMode = e.target.value;
+    renderRankPanel();
+  });
+
   document.getElementById('toggle-organizer-btn').addEventListener('click', () => {
     organizerExpanded = !organizerExpanded;
     document.getElementById('organizer-panel').classList.toggle('collapsed', !organizerExpanded);
     document.getElementById('toggle-organizer-btn').textContent = organizerExpanded ? '收合整理區' : '展開整理區';
   });
 
-  let rankedCards = [];      // 目前畫面上顯示的(已套用類股篩選)，「更新前10名」按的就是這份
+  let rankedCards = [];
   let rankGroupFilter = '';  // '' 代表全部類股
+  let rankMode = 'composite';
+
+  function clampScore(value){
+    return Math.max(0, Math.min(100, Math.round(value)));
+  }
+
+  function cardSection(card, keyword){
+    return String(card.raw || '').split(/\r?\n/).find(line => line.includes(keyword)) || '';
+  }
+
+  function signedNumber(text, pattern){
+    const match = String(text || '').match(pattern);
+    return match ? Number(match[1].replace(/,/g, '')) : null;
+  }
+
+  function technicalScore(card){
+    const text = cardSection(card, '技術數據面');
+    if (!text) return Number(card.winRate || 0);
+    let score = 45;
+    const normalized = text.replace(/MA(5|10|20|60)\([^)]*\)/g, 'MA$1');
+    if (/MA5>MA10/.test(normalized)) score += 12; else score -= 6;
+    if (/MA10>MA20/.test(normalized)) score += 8;
+    if (/MA20>MA60/.test(normalized)) score += 7;
+
+    const macd = signedNumber(text, /MACD(?:\s+Hist)?[^；。\n]*?([+-][\d,.]+)/i);
+    if (macd !== null) score += macd > 0 ? 15 : (macd < 0 ? -15 : 0);
+
+    const rsiMatch = text.match(/RSI(?:\s*為)?\s*=?\s*([\d.]+)/i);
+    if (rsiMatch) {
+      const rsiValue = Number(rsiMatch[1]);
+      if (rsiValue >= 50 && rsiValue <= 70) score += 10;
+      else if (rsiValue > 80 || rsiValue < 35) score -= 8;
+      else if (rsiValue >= 40 && rsiValue < 50) score += 3;
+    }
+    if (/金叉|多頭開口|強勢鈍化|攻擊/.test(text)) score += 8;
+    if (/死叉|空頭/.test(text)) score -= 10;
+    return clampScore(score);
+  }
+
+  function chipScore(card){
+    const text = cardSection(card, '籌碼面解析');
+    if (!text) return Number(card.winRate || 0);
+    let score = 50;
+    const total = signedNumber(text, /(?:三大法人[^+\-\n]*?|最新\s*)([+-][\d,]+)\s*張/);
+    if (total !== null) score += total > 0 ? 14 : (total < 0 ? -14 : 0);
+    const foreign = signedNumber(text, /外資(?:買超)?\s*([+-][\d,]+)\s*張/);
+    if (foreign !== null) score += foreign > 0 ? 10 : (foreign < 0 ? -10 : 0);
+
+    const holderMatch = text.match(/千張大戶[^\d%]*([\d.]+)%/);
+    if (holderMatch) {
+      const holders = Number(holderMatch[1]);
+      score += holders >= 60 ? 15 : (holders >= 40 ? 8 : (holders < 30 ? -6 : 0));
+    }
+    const retailMatch = text.match(/散戶[^\d%]*([\d.]+)%/);
+    if (retailMatch) {
+      const retail = Number(retailMatch[1]);
+      score += retail <= 30 ? 10 : (retail >= 55 ? -10 : 0);
+    }
+    if (/融資[^。；\n]*(?:沉澱|減少|暴減|退場)/.test(text)) score += 8;
+    if (/融資[^。；\n]*(?:大增|增加|暴增)/.test(text)) score -= 8;
+    return clampScore(score);
+  }
+
+  function rankScore(card){
+    if (rankMode === 'technical') return technicalScore(card);
+    if (rankMode === 'chip') return chipScore(card);
+    return Number(card.winRate || 0);
+  }
+
+  function rankModeLabel(){
+    if (rankMode === 'technical') return '技術面';
+    if (rankMode === 'chip') return '籌碼面';
+    return '綜合';
+  }
 
   function todayDateStr(){
     const d = new Date();
@@ -1170,22 +1255,25 @@
   function renderRankPanel(){
     const list = document.getElementById('rank-list');
     const codeToTopFolder = buildCodeToTopFolderMap();
-    const allSorted = Object.values(cardsByCode).sort((a, b) => (b.winRate || 0) - (a.winRate || 0));
+    const allCards = Object.values(cardsByCode);
     rankedCards = rankGroupFilter
-      ? allSorted.filter(c => (codeToTopFolder[c.code] || '未分類') === rankGroupFilter)
-      : allSorted;
+      ? allCards.filter(c => (codeToTopFolder[c.code] || '未分類') === rankGroupFilter)
+      : allCards;
+    rankedCards.sort((a, b) => rankScore(b) - rankScore(a) || Number(b.winRate || 0) - Number(a.winRate || 0));
+    const modeLabel = rankModeLabel();
     document.getElementById('insight-heading').textContent = rankGroupFilter
-      ? `📊 ${rankGroupFilter}・個股決策總覽`
-      : '🏆 全部個股決策總覽';
+      ? `📊 ${rankGroupFilter}・${modeLabel}排名`
+      : `🏆 全部個股・${modeLabel}排名`;
     const positiveCount = rankedCards.filter(c => /進場|加碼/.test(String(c.decision || ''))).length;
     const alertCount = rankedCards.filter(c => c.isDisposition).length;
     const average = rankedCards.length
-      ? Math.round(rankedCards.reduce((sum, c) => sum + Number(c.winRate || 0), 0) / rankedCards.length)
+      ? Math.round(rankedCards.reduce((sum, c) => sum + rankScore(c), 0) / rankedCards.length)
       : null;
     document.getElementById('summary-total').textContent = String(rankedCards.length);
     document.getElementById('summary-positive').textContent = String(positiveCount);
     document.getElementById('summary-alerts').textContent = String(alertCount);
     document.getElementById('summary-average').textContent = average === null ? '—' : `${average}%`;
+    document.getElementById('summary-average-label').textContent = `平均${modeLabel}分數`;
     if (!rankedCards.length) {
       list.innerHTML = `<div class="rank-empty">${rankGroupFilter ? '這個類股沒有 AI 分析卡片' : '尚無 AI 分析卡片'}</div>`;
       return;
@@ -1196,6 +1284,7 @@
       const row = document.createElement('div');
       row.className = 'rank-row';
       const isFresh = c.date === today;
+      const score = rankScore(c);
       row.innerHTML = `
         <div class="rank-row-main">
           <span class="rank-num">${i + 1}</span>
@@ -1205,7 +1294,7 @@
           ${c.isDisposition ? `<span class="rank-dispo-inline" title="關緊閉 ${escapeHtml(c.dispositionDate || '')}">⚠ ${escapeHtml(c.dispositionDate || '')}</span>` : ''}
           <span class="rank-date-dot ${isFresh ? 'fresh' : 'stale'}" title="${isFresh ? '今天更新' : escapeHtml(c.date || '日期未知') + ' 更新'}"></span>
           <span class="rank-date-text">${escapeHtml(c.date || '日期未知')}</span>
-          <span class="rank-score badge-${getScoreColorCat(c.winRate)}">${escapeHtml(String(c.winRate))}</span>
+          <span class="rank-score badge-${getScoreColorCat(score)}" title="${modeLabel}分數">${escapeHtml(String(score))}</span>
           <button class="rank-del-btn" title="刪除這檔股票的報表檔(html+png)">🗑️</button>
         </div>
         <div class="rank-meta">
@@ -1325,13 +1414,6 @@
   document.getElementById('generate-btn').addEventListener('click', () => startGenerate());
   document.getElementById('generate-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') startGenerate();
-  });
-
-  document.getElementById('update-top10-btn').addEventListener('click', () => {
-    if (!rankedCards.length) return;
-    const codes = rankedCards.slice(0, 10).map(c => c.code).join(',');
-    document.getElementById('generate-input').value = codes;
-    startGenerate(codes);
   });
 
   // ── 左側資料夾欄可手動調寬，寬度記在 localStorage 下次開啟沿用 ──
