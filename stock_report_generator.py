@@ -63,10 +63,11 @@ def load_cache(sid):
                 data.setdefault("inst", {})
                 data.setdefault("margin", {})
                 data.setdefault("holders", {})
+                data.setdefault("market", {})
                 return data
         except Exception:
             pass
-    return {"inst": {}, "margin": {}, "holders": {}}
+    return {"inst": {}, "margin": {}, "holders": {}, "market": {}}
 
 def save_cache(sid, cache):
     try:
@@ -82,15 +83,21 @@ def _latest_expected_friday():
         d -= timedelta(days=1)
     return d.strftime("%Y%m%d")
 
+_holders_market_memory = {}
+
 def fetch_holders_market():
     """下載/讀取全市場集保戶股權分散表(每週五更新一次，同一週內重複查詢不會重新下載)"""
     expected = _latest_expected_friday()
+
+    if expected in _holders_market_memory:
+        return _holders_market_memory[expected]
 
     if os.path.exists(HOLDERS_MARKET_CACHE):
         try:
             with open(HOLDERS_MARKET_CACHE, "r", encoding="utf-8-sig") as f:
                 lines = f.read().splitlines()
             if len(lines) > 1 and lines[1].split(",")[0].strip() == expected:
+                _holders_market_memory[expected] = lines
                 return lines
         except Exception:
             pass
@@ -101,14 +108,18 @@ def fetch_holders_market():
             os.makedirs(CACHE_DIR, exist_ok=True)
             with open(HOLDERS_MARKET_CACHE, "w", encoding="utf-8") as f:
                 f.write(r.text)
-            return r.text.splitlines()
+            lines = r.text.splitlines()
+            _holders_market_memory[expected] = lines
+            return lines
     except Exception:
         pass
 
     if os.path.exists(HOLDERS_MARKET_CACHE):
         try:
             with open(HOLDERS_MARKET_CACHE, "r", encoding="utf-8-sig") as f:
-                return f.read().splitlines()
+                lines = f.read().splitlines()
+            _holders_market_memory[expected] = lines
+            return lines
         except Exception:
             pass
     return []
@@ -262,12 +273,27 @@ def build_chart(sid, name, df, ma5, ma10, ma20, ma60, bu, bm, bl, n_tail, out_pa
         return False
 
 # ── 共用工具 ──────────────────────────────────────────
+_twse_response_cache = {}
+
+def _twse_cache_key(url, params):
+    return (url, json.dumps(params, ensure_ascii=False, sort_keys=True, default=str))
+
+def twse_response_cached(url, params):
+    return _twse_cache_key(url, params) in _twse_response_cache
+
 def twse_get(url, params):
+    # 法人與融資端點回傳的是「當日全市場」資料。批次更新時同一日期只下載一次，
+    # 後續個股直接共用記憶體回應，避免 35 檔上市股重複抓取完全相同的內容。
+    cache_key = _twse_cache_key(url, params)
+    if cache_key in _twse_response_cache:
+        return _twse_response_cache[cache_key]
     for _ in range(2):
         try:
             r = requests.get(url, params=params, headers=HEADERS, timeout=12)
             if r.status_code == 200 and r.text.strip():
-                return r.json()
+                data = r.json()
+                _twse_response_cache[cache_key] = data
+                return data
         except:
             pass
         time.sleep(1.2)
@@ -788,6 +814,7 @@ def fetch_inst(sid, dates, is_otc=False, cache=None):
 
     for d in dates:
         dt_key = fmt_date(d)
+        reused_market_response = False
         if dt_key in cache:
             rows.append(cache[dt_key])
             if len(rows) >= DAYS_LOOKBACK:
@@ -796,7 +823,9 @@ def fetch_inst(sid, dates, is_otc=False, cache=None):
 
         if not is_otc:
             url = "https://www.twse.com.tw/rwd/zh/fund/T86"
-            data = twse_get(url, {"response": "json", "date": d, "selectType": "ALLBUT0999"})
+            params = {"response": "json", "date": d, "selectType": "ALLBUT0999"}
+            reused_market_response = twse_response_cached(url, params)
+            data = twse_get(url, params)
             if not data or data.get("stat") != "OK":
                 continue
             for row in data.get("data", []):
@@ -835,7 +864,8 @@ def fetch_inst(sid, dates, is_otc=False, cache=None):
 
         if len(rows) >= DAYS_LOOKBACK:
             break
-        time.sleep(0.8)
+        if not reused_market_response:
+            time.sleep(0.8)
 
     return rows[:DAYS_LOOKBACK]
 
@@ -847,6 +877,7 @@ def fetch_margin(sid, dates, is_otc=False, cache=None):
 
     for d in dates:
         dt_key = fmt_date(d)
+        reused_market_response = False
         if dt_key in cache:
             rows.append(cache[dt_key])
             if len(rows) >= DAYS_LOOKBACK:
@@ -855,7 +886,9 @@ def fetch_margin(sid, dates, is_otc=False, cache=None):
 
         if not is_otc:
             url = "https://www.twse.com.tw/rwd/zh/marginTrading/MI_MARGN"
-            data = twse_get(url, {"response": "json", "date": d, "selectType": "ALL"})
+            params = {"response": "json", "date": d, "selectType": "ALL"}
+            reused_market_response = twse_response_cached(url, params)
+            data = twse_get(url, params)
             if not data or data.get("stat") != "OK":
                 continue
 
@@ -901,7 +934,8 @@ def fetch_margin(sid, dates, is_otc=False, cache=None):
 
         if len(rows) >= DAYS_LOOKBACK:
             break
-        time.sleep(0.8)
+        if not reused_market_response:
+            time.sleep(0.8)
 
     return rows[:DAYS_LOOKBACK]
 
@@ -920,6 +954,7 @@ def run(ticker_input):
         sid = code
 
     dates = trading_dates(DAYS_LOOKBACK * 2)
+    cache = load_cache(sid)
     lines = []
     add = lines.append
 
@@ -929,14 +964,16 @@ def run(ticker_input):
     logging.getLogger('yfinance').setLevel(logging.CRITICAL)
 
     df = pd.DataFrame()
-    info = {}
+    today_key = datetime.now().strftime("%Y-%m-%d")
+    market_cache = cache.get("market", {})
+    info = dict(market_cache.get("info") or {}) if market_cache.get("date") == today_key else {}
     symbol = sid + ".TW"
 
     try:
         symbol = sid + ".TW"
         stok = yf.Ticker(symbol)
         df = stok.history(period="6mo", interval="1d", auto_adjust=True)
-        if not df.empty:
+        if not df.empty and not info:
             info = stok.info or {}
     except Exception:
         pass
@@ -946,7 +983,7 @@ def run(ticker_input):
             symbol = sid + ".TWO"
             stok = yf.Ticker(symbol)
             df = stok.history(period="6mo", interval="1d", auto_adjust=True)
-            if not df.empty:
+            if not df.empty and not info:
                 info = stok.info or {}
         except Exception:
             pass
@@ -1080,8 +1117,6 @@ def run(ticker_input):
             )
         add("")
 
-    cache = load_cache(sid)
-
     print(f" 抓取三大法人…(快取{len(cache['inst'])}筆)", end="", flush=True)
     inst = fetch_inst(sid, dates, is_otc, cache["inst"])
     print(f" {len(inst)}筆")
@@ -1127,6 +1162,15 @@ def run(ticker_input):
         cache["holders"].update(backfilled)
         print(f" 補到{len(backfilled)}週")
 
+    # Yahoo 的完整 info 端點通常是單檔更新最慢的一步；同一天重跑只沿用報表需要的欄位。
+    info_cache_keys = (
+        "currentPrice", "regularMarketPrice", "fiftyTwoWeekHigh", "fiftyTwoWeekLow",
+        "trailingPE", "priceToBook", "dividendYield", "marketCap", "longName", "shortName",
+    )
+    cache["market"] = {
+        "date": today_key,
+        "info": {key: info.get(key) for key in info_cache_keys if info.get(key) is not None},
+    }
     save_cache(sid, cache)
 
     holders_hist = sorted(cache["holders"].items())[-HOLDERS_WEEKS:]
@@ -1234,6 +1278,7 @@ FORCE_HOLDERS_UPDATE_INPUT = "997"  # 強制重新下載集保大戶全市場資
 
 def force_refresh_holders_market():
     """刪除集保大戶(全市場)本地快取並立即重新下載一次"""
+    _holders_market_memory.clear()
     if os.path.exists(HOLDERS_MARKET_CACHE):
         try:
             os.remove(HOLDERS_MARKET_CACHE)
