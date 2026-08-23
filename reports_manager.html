@@ -59,6 +59,8 @@
   .rank-row .rank-name{
     flex-shrink:0; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
+  .rank-decision{ flex-shrink:0; min-width:68px; color:#bfdbfe; font-size:12px; font-weight:800; }
+  .rank-date-text{ flex-shrink:0; color:var(--text-dim); font-size:11px; }
   .rank-dispo-inline{
     flex-shrink:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     font-size:11px; font-weight:700; color:#fca5a5;
@@ -347,6 +349,40 @@
   #reports-workspace{ display:flex; flex-direction:column; }
   #pattern-workspace{ overflow:auto; background:#0f1117; }
   #pattern-workspace .pattern-viewer{ min-height:100%; }
+
+  /* 報表管理改為兩欄：左側分類，右側完整寬度的決策資訊。 */
+  #reports-workspace .main{ padding:18px 24px 28px; }
+  #reports-workspace .rank-panel{ width:auto; padding:0; overflow:visible; }
+  .insight-header{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:14px; }
+  .insight-title h2{ margin:0 0 4px; font-size:20px; }
+  .insight-title p{ margin:0; color:var(--text-dim); font-size:13px; }
+  .insight-actions{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+  .insight-actions #rank-group-filter{ width:180px; margin:0 !important; }
+  .summary-grid{ display:grid; grid-template-columns:repeat(4,minmax(130px,1fr)); gap:10px; margin-bottom:16px; }
+  .summary-item{ background:var(--card-bg); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+  .summary-label{ color:var(--text-dim); font-size:12px; margin-bottom:5px; }
+  .summary-value{ font-size:22px; line-height:1; font-weight:850; }
+  #rank-list{ border:1px solid var(--border); border-radius:12px; overflow:hidden; background:rgba(255,255,255,.015); }
+  .rank-row{ display:grid; grid-template-columns:minmax(0,1fr) 170px; align-items:center; padding:10px 14px; border-radius:0; border-bottom:1px solid rgba(58,64,80,.75); }
+  .rank-row:last-child{ border-bottom:0; }
+  .rank-row-main{ gap:12px; }
+  .rank-row .rank-name{ max-width:none; font-weight:700; }
+  .rank-meta{ padding-left:0; margin-top:0; justify-content:flex-end; }
+  .rank-group{ flex:0 1 auto; text-align:right; }
+  .rank-del-btn{ opacity:.45; }
+  .organizer-panel{ margin-top:18px; padding-top:16px; border-top:1px solid var(--border); }
+  .organizer-panel[hidden]{ display:none; }
+  .organizer-heading{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+  .organizer-heading h2{ margin:0; font-size:15px; }
+  .organizer-panel.collapsed .organizer-body{ display:none; }
+  .organizer-panel .toolbar-row{ margin-bottom:14px; }
+  @media (max-width:900px){
+    .summary-grid{ grid-template-columns:repeat(2,minmax(120px,1fr)); }
+    .insight-header{ flex-direction:column; }
+    .insight-actions{ justify-content:flex-start; }
+    .rank-row{ grid-template-columns:1fr; gap:6px; }
+    .rank-meta{ justify-content:flex-start; padding-left:32px; }
+  }
 </style>
 <link rel="stylesheet" href="pattern_viewer/css/viewer.css?v=5">
 </head>
@@ -377,28 +413,49 @@
     </div>
     <div class="resizer" id="resizer-left"></div>
     <div class="main">
-      <div class="toolbar-row">
-        <button class="btn primary" id="new-folder-btn">➕ 新增子資料夾</button>
-        <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-dim); cursor:pointer;">
-          <input type="checkbox" id="select-all-checkbox"> 全選
-        </label>
-        <span style="color:var(--text-dim); font-size:13px;">💡 把報表卡片拖到左側資料夾即可移動</span>
-        <div class="selection-bar" id="selection-bar">
-          <span id="selection-count"></span>
-          <select id="move-target-select"></select>
-          <button class="btn primary" id="move-selected-btn">移動</button>
-          <button class="btn" id="clear-selection-btn">取消選取</button>
+      <div class="rank-panel">
+        <div class="insight-header">
+          <div class="insight-title">
+            <h2 id="insight-heading">🏆 全部個股決策總覽</h2>
+            <p>點擊任一個股，直接進入完整 K 線、型態教學與 AI 分析。</p>
+          </div>
+          <div class="insight-actions">
+            <select id="rank-group-filter"></select>
+            <button class="btn" id="update-top10-btn">🔄 更新前 10 名</button>
+            <button class="btn primary" id="new-folder-btn">➕ 新增資料夾</button>
+          </div>
         </div>
+        <div class="summary-grid" aria-label="個股決策摘要">
+          <div class="summary-item"><div class="summary-label">涵蓋個股</div><div class="summary-value" id="summary-total">0</div></div>
+          <div class="summary-item"><div class="summary-label">進場／加碼</div><div class="summary-value" id="summary-positive">0</div></div>
+          <div class="summary-item"><div class="summary-label">風險警示</div><div class="summary-value" id="summary-alerts">0</div></div>
+          <div class="summary-item"><div class="summary-label">平均勝率</div><div class="summary-value" id="summary-average">—</div></div>
+        </div>
+        <div id="rank-list"></div>
       </div>
-      <div class="grid" id="grid"></div>
-      <div class="status" id="status"></div>
-    </div>
-    <div class="resizer" id="resizer-right"></div>
-    <div class="rank-panel">
-      <h2>🏆 AI 分析排行榜（依勝率）</h2>
-      <select id="rank-group-filter" style="width:100%; margin-bottom:8px;"></select>
-      <button class="btn" id="update-top10-btn" style="width:100%; margin-bottom:10px; font-size:12.5px;">🔄 更新前 10 名</button>
-      <div id="rank-list"></div>
+
+      <section class="organizer-panel collapsed" id="organizer-panel" hidden>
+        <div class="organizer-heading">
+          <h2 id="organizer-title">待整理報表</h2>
+          <button type="button" class="btn" id="toggle-organizer-btn">展開整理區</button>
+        </div>
+        <div class="organizer-body">
+          <div class="toolbar-row">
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-dim); cursor:pointer;">
+              <input type="checkbox" id="select-all-checkbox"> 全選
+            </label>
+            <span style="color:var(--text-dim); font-size:13px;">💡 把報表拖到左側資料夾即可移動</span>
+            <div class="selection-bar" id="selection-bar">
+              <span id="selection-count"></span>
+              <select id="move-target-select"></select>
+              <button class="btn primary" id="move-selected-btn">移動</button>
+              <button class="btn" id="clear-selection-btn">取消選取</button>
+            </div>
+          </div>
+          <div class="grid" id="grid"></div>
+          <div class="status" id="status"></div>
+        </div>
+      </section>
     </div>
   </div>
   </section>
@@ -586,6 +643,7 @@
   let deleteTargetPath = null;
   let collapsedPaths = new Set();
   let selectedBases = new Set();
+  let organizerExpanded = false;
 
   function pathParts(path){ return path ? path.split('/') : []; }
 
@@ -761,12 +819,30 @@
     selectedBases.clear();
     const { ok, data } = await api('GET', '/api/list?path=' + encodeURIComponent(currentPath));
     const grid = document.getElementById('grid');
+    const organizer = document.getElementById('organizer-panel');
     grid.innerHTML = '';
     if (!ok) { setStatus(data.error || '載入失敗', true); updateSelectionBar(); return; }
     setStatus('');
 
-    if (!data.reports.length) {
-      grid.innerHTML = '<div class="empty">這個資料夾沒有報表</div>';
+    // 選資料夾時，主要視野同步顯示該第一層類股；根目錄則回到全部個股。
+    const topFolder = pathParts(currentPath)[0] || '';
+    const rankFilter = document.getElementById('rank-group-filter');
+    const hasRankOption = Array.from(rankFilter.options).some(option => option.value === topFolder);
+    rankGroupFilter = topFolder && hasRankOption ? topFolder : '';
+    rankFilter.value = rankGroupFilter;
+    renderRankPanel();
+
+    const reportCount = data.reports.length;
+    organizer.hidden = reportCount === 0;
+    document.getElementById('organizer-title').textContent = currentPath
+      ? `🗂️ ${pathParts(currentPath).slice(-1)[0]}・檔案整理（${reportCount}）`
+      : `📥 未分類報表（${reportCount}）`;
+    // 根目錄的報表就是待分類收件匣，應主動顯示；分類內報表預設收合，需要時再整理。
+    organizerExpanded = reportCount > 0 && currentPath === '';
+    organizer.classList.toggle('collapsed', !organizerExpanded);
+    document.getElementById('toggle-organizer-btn').textContent = organizerExpanded ? '收合整理區' : '展開整理區';
+
+    if (!reportCount) {
       document.getElementById('select-all-checkbox').checked = false;
       updateSelectionBar();
       return;
@@ -1043,6 +1119,12 @@
     renderRankPanel();
   });
 
+  document.getElementById('toggle-organizer-btn').addEventListener('click', () => {
+    organizerExpanded = !organizerExpanded;
+    document.getElementById('organizer-panel').classList.toggle('collapsed', !organizerExpanded);
+    document.getElementById('toggle-organizer-btn').textContent = organizerExpanded ? '收合整理區' : '展開整理區';
+  });
+
   let rankedCards = [];      // 目前畫面上顯示的(已套用類股篩選)，「更新前10名」按的就是這份
   let rankGroupFilter = '';  // '' 代表全部類股
 
@@ -1092,6 +1174,18 @@
     rankedCards = rankGroupFilter
       ? allSorted.filter(c => (codeToTopFolder[c.code] || '未分類') === rankGroupFilter)
       : allSorted;
+    document.getElementById('insight-heading').textContent = rankGroupFilter
+      ? `📊 ${rankGroupFilter}・個股決策總覽`
+      : '🏆 全部個股決策總覽';
+    const positiveCount = rankedCards.filter(c => /進場|加碼/.test(String(c.decision || ''))).length;
+    const alertCount = rankedCards.filter(c => c.isDisposition).length;
+    const average = rankedCards.length
+      ? Math.round(rankedCards.reduce((sum, c) => sum + Number(c.winRate || 0), 0) / rankedCards.length)
+      : null;
+    document.getElementById('summary-total').textContent = String(rankedCards.length);
+    document.getElementById('summary-positive').textContent = String(positiveCount);
+    document.getElementById('summary-alerts').textContent = String(alertCount);
+    document.getElementById('summary-average').textContent = average === null ? '—' : `${average}%`;
     if (!rankedCards.length) {
       list.innerHTML = `<div class="rank-empty">${rankGroupFilter ? '這個類股沒有 AI 分析卡片' : '尚無 AI 分析卡片'}</div>`;
       return;
@@ -1107,8 +1201,10 @@
           <span class="rank-num">${i + 1}</span>
           <span class="rank-code">${escapeHtml(c.code)}</span>
           <span class="rank-name">${escapeHtml(c.name)}</span>
+          <span class="rank-decision">${escapeHtml(c.decision || '未判定')}</span>
           ${c.isDisposition ? `<span class="rank-dispo-inline" title="關緊閉 ${escapeHtml(c.dispositionDate || '')}">⚠ ${escapeHtml(c.dispositionDate || '')}</span>` : ''}
           <span class="rank-date-dot ${isFresh ? 'fresh' : 'stale'}" title="${isFresh ? '今天更新' : escapeHtml(c.date || '日期未知') + ' 更新'}"></span>
+          <span class="rank-date-text">${escapeHtml(c.date || '日期未知')}</span>
           <span class="rank-score badge-${getScoreColorCat(c.winRate)}">${escapeHtml(String(c.winRate))}</span>
           <button class="rank-del-btn" title="刪除這檔股票的報表檔(html+png)">🗑️</button>
         </div>
@@ -1238,7 +1334,7 @@
     startGenerate(codes);
   });
 
-  // ── 左右框架手動調寬（拖曳中間那條分隔線），寬度記在 localStorage 下次開啟沿用 ──
+  // ── 左側資料夾欄可手動調寬，寬度記在 localStorage 下次開啟沿用 ──
   const PANEL_WIDTH_KEY = 'reportsManagerPanelWidths';
   const PANEL_MIN = 160;
   const PANEL_MAX = 640;
@@ -1257,7 +1353,6 @@
   function applyPanelWidths(){
     const widths = loadPanelWidths();
     if (widths.sidebar) document.querySelector('.sidebar').style.width = widths.sidebar + 'px';
-    if (widths.rank) document.querySelector('.rank-panel').style.width = widths.rank + 'px';
   }
 
   function setupResizer(handleEl, panelEl, widthKey, growsWithMouseRight){
@@ -1289,7 +1384,6 @@
 
   applyPanelWidths();
   setupResizer(document.getElementById('resizer-left'), document.querySelector('.sidebar'), 'sidebar', true);
-  setupResizer(document.getElementById('resizer-right'), document.querySelector('.rank-panel'), 'rank', false);
 
   loadTree().then(() => loadCards()).then(loadList);
 </script>
