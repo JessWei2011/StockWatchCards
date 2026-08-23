@@ -77,6 +77,22 @@
       this.cards.forEach(card => { this.cardByCode[String(card.code)] = card; });
     }
 
+    async refresh({ reloadCurrent = false } = {}) {
+      const previousCode = this.currentCode;
+      await this.loadSources();
+      if (this.destroyed) return false;
+      this.populateStockSelect();
+
+      const select = this.q('#stockSelect');
+      if (previousCode && select.querySelector(`option[value="${CSS.escape(previousCode)}"]`)) {
+        select.value = previousCode;
+      }
+      if (reloadCurrent && previousCode) {
+        return this.loadStock(previousCode);
+      }
+      return true;
+    }
+
     populateStockSelect() {
       const select = this.q('#stockSelect');
       if (!select) return;
@@ -310,6 +326,9 @@
     },
     loadStock(code) {
       return activeInstance ? activeInstance.loadStock(code) : Promise.resolve(false);
+    },
+    refresh(options) {
+      return activeInstance ? activeInstance.refresh(options) : Promise.resolve(false);
     },
     resize() {
       if (activeInstance) activeInstance.resize();

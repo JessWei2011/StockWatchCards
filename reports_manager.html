@@ -130,6 +130,13 @@
   .tree-report-row.dragging{ opacity:0.4; }
   .tree-report-row .code{ color:var(--text-dim); flex-shrink:0; }
   .tree-report-row .name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .tree-pattern-btn, .rank-pattern-btn{
+    flex-shrink:0; border:1px solid rgba(125,180,255,0.35); border-radius:6px;
+    background:rgba(59,130,246,0.12); color:#93c5fd; cursor:pointer; font-weight:700;
+  }
+  .tree-pattern-btn{ padding:2px 5px; font-size:11px; }
+  .rank-pattern-btn{ padding:2px 7px; font-size:11px; }
+  .tree-pattern-btn:hover, .rank-pattern-btn:hover{ background:rgba(59,130,246,0.28); color:#fff; }
   .tree-actions button{
     background:none; border:none; color:inherit; opacity:0.7; cursor:pointer; font-size:12px; padding:2px 4px;
   }
@@ -161,6 +168,12 @@
   }
   .card .code{ font-size:13px; color:var(--text-dim); }
   .card .name{ font-size:15px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .card-pattern-btn{
+    width:100%; margin-top:8px; padding:5px 8px; border:1px solid rgba(125,180,255,0.35);
+    border-radius:6px; background:rgba(59,130,246,0.12); color:#bfdbfe;
+    font-size:12px; font-weight:700; cursor:pointer;
+  }
+  .card-pattern-btn:hover{ background:rgba(59,130,246,0.28); color:#fff; }
   .empty{ color:var(--text-dim); padding:40px; text-align:center; }
   .toolbar-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
   .selection-bar{
@@ -544,6 +557,28 @@
     }
   }
 
+  async function openPatternForStock(code){
+    const normalizedCode = String(code || '');
+    if (!normalizedCode) return;
+    await activateWorkspace('pattern');
+
+    let select = document.querySelector('#pattern-workspace #stockSelect');
+    let option = Array.from(select.options).find(item => item.value === normalizedCode);
+    if (!option) {
+      await PatternViewer.refresh();
+      select = document.querySelector('#pattern-workspace #stockSelect');
+      option = Array.from(select.options).find(item => item.value === normalizedCode);
+    }
+    if (option) select.value = normalizedCode;
+    await PatternViewer.loadStock(normalizedCode);
+    document.getElementById('pattern-workspace').scrollTo({ top: 0, behavior: 'auto' });
+    requestAnimationFrame(() => PatternViewer.resize());
+  }
+
+  async function refreshPatternData(){
+    if (patternViewerInitialized) await PatternViewer.refresh();
+  }
+
   document.querySelectorAll('.app-tab').forEach(button => {
     button.addEventListener('click', () => activateWorkspace(button.dataset.workspace));
   });
@@ -678,6 +713,19 @@
     item.className = 'tree-report-row';
     item.draggable = true;
     item.innerHTML = `<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(r.name || r.base)}">${escapeHtml(r.name || r.base)}</span>`;
+    if (r.code) {
+      const patternBtn = document.createElement('button');
+      patternBtn.type = 'button';
+      patternBtn.className = 'tree-pattern-btn';
+      patternBtn.textContent = '🎓';
+      patternBtn.title = `查看 ${r.code} ${r.name || ''} 的型態教學`;
+      patternBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openPatternForStock(r.code);
+      });
+      patternBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+      item.appendChild(patternBtn);
+    }
     item.addEventListener('click', () => {
       window.open('reports/' + encodeURI(joinPath(folderPath, r.html)), '_blank');
     });
@@ -746,6 +794,7 @@
         ${thumb}
         <div class="code">${escapeHtml(r.code || '')}</div>
         <div class="name">${escapeHtml(r.name || r.base)}</div>
+        ${r.code ? `<button type="button" class="card-pattern-btn">🎓 查看型態</button>` : ''}
       `;
       if (aiCard) {
         const badgeEl = card.querySelector('.card-badge');
@@ -766,6 +815,14 @@
           selectedBases.size === data.reports.length;
         updateSelectionBar();
       });
+      const patternBtn = card.querySelector('.card-pattern-btn');
+      if (patternBtn) {
+        patternBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openPatternForStock(r.code);
+        });
+        patternBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+      }
       card.addEventListener('click', () => {
         window.open('reports/' + encodeURI(joinPath(currentPath, r.html)), '_blank');
       });
@@ -810,7 +867,9 @@
     const { ok, data } = await api('POST', '/api/report/move', { base, from, to });
     if (!ok) { setStatus('❌ ' + data.error, true); return; }
     setStatus('✅ 已移動');
-    loadList();
+    await loadTree();
+    await loadList();
+    await refreshPatternData();
   }
 
   document.getElementById('expand-all-btn').addEventListener('click', () => {
@@ -864,7 +923,8 @@
       setStatus(`✅ 已移動 ${okCount} 筆`);
     }
     await loadTree();
-    loadList();
+    await loadList();
+    await refreshPatternData();
   });
 
   document.getElementById('new-folder-btn').addEventListener('click', async () => {
@@ -889,7 +949,8 @@
       currentPath = parts.join('/');
     }
     await loadTree();
-    loadList();
+    await loadList();
+    await refreshPatternData();
   }
 
   function openDeleteModal(path, name){
@@ -932,7 +993,8 @@
     }
     closeDeleteModal();
     await loadTree();
-    loadList();
+    await loadList();
+    await refreshPatternData();
   });
 
   let reportDeleteTargetCode = null;
@@ -959,6 +1021,7 @@
     setStatus(data.deletedFiles > 0 ? `✅ 已刪除 ${code} 的報表檔案` : `⚠️ 找不到 ${code} 對應的報表檔案（可能只有 AI 分析、沒有實際報表）`);
     await loadTree();
     await loadList();
+    await refreshPatternData();
   });
 
   document.getElementById('shutdown-server-btn').addEventListener('click', async () => {
@@ -1056,6 +1119,7 @@
         </div>
         <div class="rank-meta">
           <span class="rank-group">${escapeHtml(codeToTopFolder[c.code] || '未分類')}</span>
+          <button type="button" class="rank-pattern-btn" title="查看 ${escapeHtml(c.code)} ${escapeHtml(c.name)} 的型態教學">🎓 型態</button>
         </div>
       `;
       row.title = `${c.code} ${c.name} － ${c.date || '日期未知'} － 點擊查看 AI 分析`;
@@ -1064,6 +1128,11 @@
       delBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         openReportDeleteModal(c.code, c.name);
+      });
+      const patternBtn = row.querySelector('.rank-pattern-btn');
+      patternBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openPatternForStock(c.code);
       });
       list.appendChild(row);
     });
@@ -1140,6 +1209,7 @@
     setGenerateUI(false);
     await loadTree();
     await loadList();
+    await refreshPatternData();
   }
 
   async function updateCategory(path, name){
