@@ -33,3 +33,4 @@
 !pattern_viewer/js/chart_engine.js
 !pattern_viewer/js/parser.js
 !pattern_viewer/js/pattern_engine.js
+!pattern_viewer/js/viewer_app.js

@@ -3,376 +3,100 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI 股市型態視覺教學與 K線圖形介面 (PatternViewer)</title>
-  
-  <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="css/viewer.css?v=4">
-  
-  <!-- Apache ECharts CDN (with fallback handling) -->
+  <title>AI 股市型態視覺教學與 K線圖形介面</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/viewer.css?v=5">
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 </head>
-<body>
-
-  <!-- Top Navigation Header -->
-  <header class="navbar">
-    <div class="brand">
-      <div class="brand-icon">📈</div>
-      <div class="brand-text">
-        <h1>AI 個股型態視覺化教學介面</h1>
-        <p>Pattern Visual Teaching & Interactive 5-Pane K-Line Engine</p>
+<body class="pattern-page">
+  <div class="pattern-viewer">
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-icon">📈</div>
+        <div class="brand-text">
+          <h1>AI 個股型態視覺化教學介面</h1>
+          <p>Pattern Visual Teaching &amp; Interactive 5-Pane K-Line Engine</p>
+        </div>
       </div>
+      <div class="controls-bar">
+        <label for="stockSelect">選擇個股：</label>
+        <select id="stockSelect" class="stock-selector"></select>
+      </div>
+    </header>
+
+    <div class="main-container">
+      <aside class="sidebar">
+        <div class="card">
+          <div class="card-title"><span>📊</span> <span id="cardStockName">尚未選擇個股</span></div>
+          <div class="stock-stats">
+            <div class="stat-box">
+              <div class="stat-label">最新收盤價</div>
+              <div id="statCurrentPrice" class="stat-value up">—</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">報表區間高 / 低</div>
+              <div id="statHighLow" class="stat-value stat-value-compact">—</div>
+            </div>
+            <div class="stat-box full" id="statCardBox" style="display:none;">
+              <div class="stat-label">AI 卡片判斷（<span id="statCardDate"></span>）</div>
+              <div id="statCardDecision" class="stat-value small">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>🎓</span> 視覺化來源</div>
+          <div class="pattern-buttons" id="viewToggleContainer">
+            <button class="btn-pattern active" data-view="card">🎯 卡片型態視覺化</button>
+            <button class="btn-pattern" data-view="data">💡 指標數據解構</button>
+          </div>
+          <div id="sourceTextNote" class="source-note"></div>
+        </div>
+
+        <div class="card teaching-card">
+          <div class="teaching-header">
+            <div class="card-title teaching-title"><span>💡</span> 型態教學說明</div>
+            <span id="teachingBadge" class="pattern-badge">等待真實資料</span>
+          </div>
+          <div class="teaching-content">
+            <p id="teachingExplanation">請選擇已有報表的個股。</p>
+            <div class="pivot-heading">關鍵幾何轉折標籤（Pivots）：</div>
+            <ul id="pivotList" class="pivot-list"></ul>
+          </div>
+        </div>
+      </aside>
+
+      <main class="chart-viewport">
+        <div class="chart-header">
+          <div class="chart-title-group">
+            <h2 id="chartTitle">K線 / RSI / MACD / KD / 成交量圖</h2>
+            <div class="chart-sub-info">滑鼠移動十字光標可跨圖表同步連動觀察數值</div>
+          </div>
+          <div class="chart-toggles">
+            <label class="toggle-label"><input type="checkbox" id="toggleBoll" checked> 布林通道（BOLL）</label>
+            <label class="toggle-label"><input type="checkbox" id="toggleMa" checked> 均線（MA5）</label>
+          </div>
+        </div>
+        <div id="patternEmptyState" class="empty-state">
+          <div class="empty-state-icon">📊</div>
+          <h3 id="patternEmptyTitle">正在讀取報表資料…</h3>
+          <p id="patternEmptyDetail">型態線圖只使用真實報表，不會產生模擬行情。</p>
+        </div>
+        <div id="echart-main" hidden></div>
+      </main>
     </div>
 
-    <div class="controls-bar">
-      <label for="stockSelect" style="font-size:0.85rem; color:#94a3b8;">選擇個股：</label>
-      <select id="stockSelect" class="stock-selector">
-        <option value="2330">2330 台積電 (晶圓代工)</option>
-      </select>
-    </div>
-  </header>
-
-  <!-- Main Grid Layout -->
-  <div class="main-container">
-    
-    <!-- Left Sidebar: Controls & Teaching Cards -->
-    <aside class="sidebar">
-      
-      <!-- 1. Stock Quick Overview Card -->
-      <div class="card">
-        <div class="card-title">
-          <span>📊</span> <span id="cardStockName">2330 台積電</span>
-        </div>
-        <div class="stock-stats">
-          <div class="stat-box">
-            <div class="stat-label">最新收盤價</div>
-            <div id="statCurrentPrice" class="stat-value up">$2,425.0</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">52週高 / 低</div>
-            <div id="statHighLow" class="stat-value" style="font-size:0.85rem;">2535 / 1135</div>
-          </div>
-          <div class="stat-box full" id="statCardBox" style="display:none;">
-            <div class="stat-label">AI 卡片判斷 (<span id="statCardDate"></span>)</div>
-            <div id="statCardDecision" class="stat-value small">—</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 2. View Toggle: card-driven pattern visualization vs. raw indicator readout -->
-      <div class="card">
-        <div class="card-title">
-          <span>🎓</span> 視覺化來源
-        </div>
-        <div class="pattern-buttons" id="viewToggleContainer">
-          <button class="btn-pattern active" data-view="card">🎯 卡片型態視覺化</button>
-          <button class="btn-pattern" data-view="data">💡 指標數據解構</button>
-        </div>
-        <div id="sourceTextNote" style="margin-top:8px; font-size:0.78rem; color:#64748b;"></div>
-      </div>
-
-      <!-- 3. AI Pattern Teaching Card -->
-      <div class="card teaching-card">
-        <div class="teaching-header">
-          <div class="card-title" style="margin-bottom:0; border-bottom:none; padding-bottom:0;">
-            <span>💡</span> 型態教學說明
-          </div>
-          <span id="teachingBadge" class="pattern-badge">多頭續攻型態</span>
-        </div>
-
-        <div class="teaching-content">
-          <p id="teachingExplanation">
-            【N字教學心法】：價格在 P1 起漲發動，衝破至 P2 遇壓；隨後拉回 P3 縮量洗盤（守穩 P1 低點不破）；當 P4 帶量強勢收復 P2 前高壓力時，確認發動二階段強攻！
-          </p>
-
-          <div style="font-weight:600; font-size:0.82rem; color:#94a3b8; margin-bottom:6px;">關鍵幾何轉折標籤 (Pivots)：</div>
-          <ul id="pivotList" class="pivot-list">
-            <!-- Dynamic pivot items inserted by JS -->
-          </ul>
-        </div>
-      </div>
-
-    </aside>
-
-    <!-- Right Main Area: Interactive 5-Pane Chart -->
-    <main class="chart-viewport">
-      <div class="chart-header">
-        <div class="chart-title-group">
-          <h2 id="chartTitle">2330 台積電 — K線 / RSI / MACD / KD / 成交量圖</h2>
-          <div class="chart-sub-info">滑鼠移動十字光標可跨圖表同步連動觀察數值</div>
-        </div>
-
-        <div class="chart-toggles">
-          <label class="toggle-label">
-            <input type="checkbox" id="toggleBoll" checked> 布林通道 (BOLL)
-          </label>
-          <label class="toggle-label">
-            <input type="checkbox" id="toggleMa" checked> 均線 (MA5)
-          </label>
-        </div>
-      </div>
-
-      <!-- ECharts Canvas Container -->
-      <div id="echart-main"></div>
-    </main>
-
+    <footer>個股分析中心・型態視覺教學元件</footer>
   </div>
 
-  <!-- Footer -->
-  <footer>
-    獨立 AI 型態視覺教學介面 模組 (pattern_viewer) — 專案隔離測試版 | 零風險完全可移轉整合
-  </footer>
-
-  <!-- App Scripts -->
   <script src="../data.js"></script>
   <script src="js/parser.js?v=13"></script>
   <script src="js/pattern_engine.js?v=13"></script>
-  <script src="js/chart_engine.js?v=15"></script>
-
+  <script src="js/chart_engine.js?v=16"></script>
+  <script src="js/viewer_app.js?v=1"></script>
   <script>
-    // App Controller Logic
-    document.addEventListener('DOMContentLoaded', async () => {
-      let currentStockData = null;
-      let currentCode = null;
-      let currentView = 'card'; // 'card' = visualize the real STOCK_CARDS pattern text, 'data' = raw indicator readout
-      let reportsIndex = []; // [{code, name, market, path}] from /api/reports-index
-      const cards = (typeof STOCK_CARDS !== 'undefined') ? STOCK_CARDS : [];
-      const cardByCode = {};
-      cards.forEach(c => { cardByCode[c.code] = c; });
-
-      // Fetch the server-built index of report HTML files (code -> relative path under reports/)
-      async function loadReportsIndex() {
-        try {
-          const res = await fetch('/api/reports-index');
-          if (res.ok) reportsIndex = await res.json();
-        } catch (e) {
-          console.warn('reports-index unavailable (likely running via file://), falling back to mock data', e);
-        }
-      }
-
-      // Populate stock dropdown from real STOCK_CARDS data, grouped like the main site
-      function populateStockSelect() {
-        const select = document.getElementById('stockSelect');
-        if (cards.length === 0) return; // keep the static fallback option
-
-        const byGroup = {};
-        cards.forEach(c => {
-          (byGroup[c.group] = byGroup[c.group] || []).push(c);
-        });
-
-        select.innerHTML = '';
-        Object.keys(byGroup).sort().forEach(group => {
-          const optgroup = document.createElement('optgroup');
-          optgroup.label = group;
-          byGroup[group]
-            .sort((a, b) => b.winRate - a.winRate)
-            .forEach(c => {
-              const opt = document.createElement('option');
-              opt.value = c.code;
-              opt.textContent = `${c.code} ${c.name} (${c.decision})`;
-              optgroup.appendChild(opt);
-            });
-          select.appendChild(optgroup);
-        });
-      }
-
-      // Load Stock Data from report HTML (resolved via reports index) or demo fallback
-      async function loadStock(code) {
-        let htmlText = '';
-        currentStockData = null;
-        currentCode = code;
-
-        const entry = reportsIndex.find(e => e.code === code);
-
-        try {
-          if (entry) {
-            let reportUrl = `/reports/${entry.path}`;
-            if (window.location.protocol === 'file:') {
-              reportUrl = `../reports/${entry.path}`;
-            }
-            const response = await fetch(reportUrl);
-            if (response.ok) {
-              htmlText = await response.text();
-            }
-          }
-        } catch (e) {
-          console.warn('Fetch local html failed, using mock data loader', e);
-        }
-
-        if (htmlText) {
-          currentStockData = PatternParser.parseStockHtml(htmlText);
-        }
-
-        // Fallback / Mock Data if no matching report file was found or parse failed
-        if (!currentStockData || !currentStockData.dates || currentStockData.dates.length === 0) {
-          currentStockData = generateMockStockData(code);
-        }
-
-        updateAiCardBox(code);
-        updateUI();
-      }
-
-      // Show the real card's decision/winRate/pattern text (from data.js STOCK_CARDS) alongside the chart
-      function updateAiCardBox(code) {
-        const box = document.getElementById('statCardBox');
-        const card = cardByCode[code];
-        if (!card) {
-          box.style.display = 'none';
-          return;
-        }
-        box.style.display = '';
-        document.getElementById('statCardDate').textContent = card.date;
-        document.getElementById('statCardDecision').textContent =
-          `${card.decision}｜勝率 ${card.winRate}%｜${card.pattern}`;
-      }
-
-      // Generate realistic 50-day mock data if viewing via file:// without web server
-      function generateMockStockData(stockCode) {
-        const dates = [];
-        const candles = [];
-        const volumes = [];
-        const ma5 = [];
-        const rsi = [];
-        const macdHist = [];
-        const kList = [];
-        const dList = [];
-        const bollUpper = [];
-        const bollMid = [];
-        const bollLower = [];
-
-        const cardForPrice = cardByCode[stockCode];
-        let basePrice = cardForPrice ? parseFloat(cardForPrice.current) : 540;
-        if (!basePrice || isNaN(basePrice)) basePrice = 540;
-        let currPrice = basePrice;
-        const now = new Date(2026, 7, 13);
-
-        for (let i = 49; i >= 0; i--) {
-          const d = new Date(now);
-          d.setDate(d.getDate() - i);
-          const dateStr = `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
-          dates.push(dateStr);
-
-          // Simulated price movement with N-shape trend
-          let change = (Math.random() - 0.48) * (basePrice * 0.02);
-          if (i > 30 && i < 40) change += basePrice * 0.01; // initial rise P1 -> P2
-          if (i >= 20 && i <= 30) change -= basePrice * 0.008; // pullback P2 -> P3
-          if (i < 15) change += basePrice * 0.012; // breakout P3 -> P4
-
-          let open = currPrice;
-          let close = open + change;
-          let low = Math.min(open, close) - Math.random() * (basePrice * 0.005);
-          let high = Math.max(open, close) + Math.random() * (basePrice * 0.005);
-          currPrice = close;
-
-          candles.push([
-            parseFloat(open.toFixed(1)),
-            parseFloat(close.toFixed(1)),
-            parseFloat(low.toFixed(1)),
-            parseFloat(high.toFixed(1))
-          ]);
-
-          volumes.push(parseFloat((Math.random() * 30 + 15).toFixed(1)));
-          ma5.push(parseFloat((close * (1 + (Math.random() - 0.5) * 0.01)).toFixed(1)));
-          rsi.push(parseFloat((Math.random() * 40 + 40).toFixed(1)));
-          macdHist.push(parseFloat(((Math.random() - 0.45) * 15).toFixed(2)));
-          kList.push(parseFloat((Math.random() * 50 + 35).toFixed(1)));
-          dList.push(parseFloat((Math.random() * 40 + 40).toFixed(1)));
-          bollMid.push(parseFloat((close * 0.98).toFixed(1)));
-          bollUpper.push(parseFloat((close * 1.05).toFixed(1)));
-          bollLower.push(parseFloat((close * 0.91).toFixed(1)));
-        }
-
-        const card = cardByCode[stockCode];
-        const title = card ? `${card.code} ${card.name}` : `${stockCode} 個股`;
-        return {
-          title,
-          dates, candles, volumes, ma5, rsi, macdHist, kList, dList, bollUpper, bollMid, bollLower
-        };
-      }
-
-      // Build the overlay for whichever view is active: the real card's pattern text, or the raw data guide
-      function getActiveOverlay() {
-        if (!currentStockData) return null;
-        if (currentView === 'data') {
-          return PatternEngine.buildDataGuideOverlay(currentStockData);
-        }
-        const card = cardByCode[currentCode];
-        const patternText = card ? card.pattern : '';
-        return PatternEngine.buildOverlayForCard(patternText, currentStockData);
-      }
-
-      // Update Chart & Left Teaching Panel UI
-      function updateUI() {
-        if (!currentStockData) return;
-
-        const overlay = getActiveOverlay();
-
-        // Render Chart
-        const showBoll = document.getElementById('toggleBoll').checked;
-        const showMa = document.getElementById('toggleMa').checked;
-        ChartEngine.render('#echart-main', currentStockData, overlay, { showBoll, showMa });
-
-        // Update Left Teaching Card UI
-        const sourceNote = document.getElementById('sourceTextNote');
-        if (overlay) {
-          document.getElementById('teachingBadge').innerText = overlay.badge || 'AI 型態分析';
-          document.getElementById('teachingBadge').style.color = overlay.color || '#f59e0b';
-          document.getElementById('teachingExplanation').innerText = overlay.explanation;
-
-          sourceNote.textContent = overlay.sourceText ? `依卡片型態文字「${overlay.sourceText}」比對繪製：${overlay.name}` : '';
-
-          // Render Pivot Items List
-          const pivotListEl = document.getElementById('pivotList');
-          pivotListEl.innerHTML = '';
-          if (overlay.pivots) {
-            overlay.pivots.forEach(pivot => {
-              const li = document.createElement('li');
-              li.className = 'pivot-item';
-              li.style.borderLeftColor = overlay.color || '#3b82f6';
-              li.innerHTML = `
-                <span class="pivot-tag" style="background:${overlay.color}">${pivot.tag}</span>
-                <span>${pivot.label}</span>
-                <span class="pivot-date">(${pivot.date})</span>
-                <span class="pivot-price">$${pivot.price}</span>
-              `;
-              pivotListEl.appendChild(li);
-            });
-          }
-        } else {
-          sourceNote.textContent = '';
-        }
-
-        // Update Header & Stat Cards
-        document.getElementById('chartTitle').innerText = `${currentStockData.title} — K線 / RSI / MACD / KD / 成交量圖`;
-        document.getElementById('cardStockName').innerText = currentStockData.title;
-
-        const lastCandle = currentStockData.candles[currentStockData.candles.length - 1];
-        if (lastCandle) {
-          const closePrice = lastCandle[1];
-          document.getElementById('statCurrentPrice').innerText = `$${closePrice}`;
-        }
-      }
-
-      // Event Listeners
-      document.getElementById('stockSelect').addEventListener('change', (e) => {
-        loadStock(e.target.value);
-      });
-
-      document.getElementById('viewToggleContainer').addEventListener('click', (e) => {
-        const btn = e.target.closest('.btn-pattern');
-        if (!btn) return;
-        document.querySelectorAll('#viewToggleContainer .btn-pattern').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentView = btn.getAttribute('data-view');
-        updateUI();
-      });
-
-      document.getElementById('toggleBoll').addEventListener('change', updateUI);
-      document.getElementById('toggleMa').addEventListener('change', updateUI);
-
-      // Initial Load
-      await loadReportsIndex();
-      populateStockSelect();
-      loadStock(document.getElementById('stockSelect').value);
+    document.addEventListener('DOMContentLoaded', () => {
+      PatternViewer.init(document.querySelector('.pattern-viewer'));
     });
   </script>
 </body>

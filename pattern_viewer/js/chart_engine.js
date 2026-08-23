@@ -6,6 +6,7 @@
 
 window.ChartEngine = {
   chartInstance: null,
+  _resizeHandler: null,
 
   /**
    * Initialize or update the 5-pane chart
@@ -23,9 +24,14 @@ window.ChartEngine = {
     const dom = typeof container === 'string' ? document.querySelector(container) : container;
     if (!dom) return;
 
+    if (this.chartInstance && this.chartInstance.getDom() !== dom) {
+      this.destroy();
+    }
+
     if (!this.chartInstance) {
       this.chartInstance = echarts.init(dom, 'dark');
-      window.addEventListener('resize', () => this.chartInstance.resize());
+      this._resizeHandler = () => this.resize();
+      window.addEventListener('resize', this._resizeHandler);
     }
 
     // Default to the most recent 10 trading days so candles aren't squished on a 50-day chart.
@@ -459,5 +465,23 @@ window.ChartEngine = {
     }
 
     this.chartInstance.setOption(option, true);
+  },
+
+  resize() {
+    if (this.chartInstance && !this.chartInstance.isDisposed()) {
+      this.chartInstance.resize();
+    }
+  },
+
+  destroy() {
+    if (this._resizeHandler) {
+      window.removeEventListener('resize', this._resizeHandler);
+      this._resizeHandler = null;
+    }
+    if (this.chartInstance && !this.chartInstance.isDisposed()) {
+      this.chartInstance.dispose();
+    }
+    this.chartInstance = null;
+    this._lastStockKey = null;
   }
 };
