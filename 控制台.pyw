@@ -1,11 +1,8 @@
 """
-統一控制台 -- 滑鼠點擊即可開啟三個原本分散的進入點：
-- reports_manager.bat          （檔案系統：整理 reports/ 底下的報表分類，上方輸入框可以
-                                  直接觸發 stock_report_generator.py 產生/更新報表，右側
-                                  排行榜可直接看到卡片系統的 AI 分析內容，不用再另外開
-                                  獨立的「分析個股」或「卡片系統」入口）
+統一控制台 -- 滑鼠點擊即可開啟兩個主要工作區：
+- reports_manager.bat          （個股分析中心：整合 reports/ 檔案管理、報表產生/更新、
+                                  AI 分析排行榜與型態視覺教學，共用同一個本機 server）
 - 指標數據/update.bat          （總經分析：總經/VIX 追蹤器）
-- pattern_viewer/start_viewer.bat （型態教學：K線型態視覺教學介面，串接 data.js 卡片資料）
 
 每個按鈕做的事情，跟你直接在檔案總管雙擊那個檔案完全一樣（用系統預設程式打開），
 不重新實作各自的執行邏輯，維持原本各工具獨立運作。
@@ -16,15 +13,14 @@ import urllib.request
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-WIN_W, WIN_H = 680, 220
+WIN_W, WIN_H = 500, 220
 
 TARGETS = [
-    ("🗂 檔案系統", os.path.join(BASE_DIR, "reports_manager.bat")),
+    ("📊 個股分析中心", os.path.join(BASE_DIR, "reports_manager.bat")),
     ("📈 總經分析", os.path.join(BASE_DIR, "指標數據", "update.bat")),
-    ("🎓 型態教學", os.path.join(BASE_DIR, "pattern_viewer", "start_viewer.bat")),
 ]
 
-# 這兩顆按鈕各自開出來的本機 server（reports_manager.bat -> reports_manager_server.py，
+# 兩個工作區各自的本機 server（reports_manager.bat -> reports_manager_server.py，
 # update.bat -> 指標數據/server.py）都有做 POST /api/shutdown 讓自己乾淨結束。控制台
 # 本身沒有在追蹤它們的 process，用打自己的 shutdown API 這個既有機制關掉最簡單，
 # 不用去猜 PID／找哪個 process 佔用哪個 port。
