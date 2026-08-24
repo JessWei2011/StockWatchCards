@@ -12,6 +12,7 @@ the default static file handler) from the repo root, plus a small JSON API
 under /api/ for the tree/list/create/rename/delete/move operations.
 """
 import glob
+import html
 import json
 import os
 import re
@@ -70,6 +71,7 @@ def read_stock_cards():
         existing = by_code.get(code)
         if not existing or c.get("date", "") > existing.get("date", ""):
             by_code[code] = c
+    attach_report_flows(by_code)
     return by_code
 
 
@@ -208,6 +210,86 @@ def build_reports_index():
         index.append(selected)
 
     return sorted(index, key=lambda item: (item["code"], item["path"]))
+
+
+def _cell_text(fragment):
+    return html.unescape(re.sub(r"<[^>]+>", "", fragment)).strip()
+
+
+def _signed_int(value):
+    cleaned = value.replace(",", "").replace("＋", "+").replace("－", "-").strip()
+    try:
+        return int(cleaned)
+    except ValueError:
+        return None
+
+
+def _report_table_rows(report_text, heading_pattern, value_keys):
+    """從既有報表的指定表格擷取每日數據；略過表頭與累計列。"""
+    match = re.search(
+        rf"<h2[^>]*>[^<]*{heading_pattern}[^<]*</h2>.*?<table[^>]*>(.*?)</table>",
+        report_text,
+        re.I | re.S,
+    )
+    if not match:
+        return []
+    parsed = []
+    for row_html in re.findall(r"<tr[^>]*>(.*?)</tr>", match.group(1), re.I | re.S):
+        cells = [_cell_text(cell) for cell in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row_html, re.I | re.S)]
+        if len(cells) != len(value_keys) + 1 or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", cells[0]):
+            continue
+        values = [_signed_int(value) for value in cells[1:]]
+        if any(value is None for value in values):
+            continue
+        parsed.append({"date": cells[0], **dict(zip(value_keys, values))})
+    return parsed
+
+
+def _report_close_prices(report_text):
+    """擷取技術資料表中的每日收盤價，以 MM-DD 為 key 供法人日期對齊。"""
+    prices = {}
+    for table_html in re.findall(r"<table[^>]*>(.*?)</table>", report_text, re.I | re.S):
+        header_text = _cell_text(table_html[:1000])
+        if not all(label in header_text for label in ("日期", "開", "高", "低", "收", "量")):
+            continue
+        for row_html in re.findall(r"<tr[^>]*>(.*?)</tr>", table_html, re.I | re.S):
+            cells = [_cell_text(cell) for cell in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row_html, re.I | re.S)]
+            if len(cells) < 5 or not re.fullmatch(r"\d{2}/\d{2}", cells[0]):
+                continue
+            try:
+                prices[cells[0].replace("/", "-")] = float(cells[4].replace(",", ""))
+            except ValueError:
+                continue
+        if prices:
+            break
+    return prices
+
+
+def attach_report_flows(cards_by_code):
+    """將最新報表內的法人與融資券日資料附加到卡片 API，供首頁標籤及迷你圖使用。"""
+    reports_by_code = {item["code"]: item for item in build_reports_index()}
+    for code, card in cards_by_code.items():
+        report = reports_by_code.get(code)
+        if not report:
+            card["institutionalFlow"] = []
+            card["marginFlow"] = []
+            continue
+        try:
+            report_text = (REPORTS_DIR / report["path"]).read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            card["institutionalFlow"] = []
+            card["marginFlow"] = []
+            continue
+        institutional = _report_table_rows(
+            report_text, "三大法人", ("foreign", "trust", "dealer", "total")
+        )[:20]
+        close_prices = _report_close_prices(report_text)
+        for row in institutional:
+            row["close"] = close_prices.get(row["date"][5:])
+        card["institutionalFlow"] = institutional
+        card["marginFlow"] = _report_table_rows(
+            report_text, "融資融券", ("marginBalance", "marginChange", "shortBalance", "shortChange")
+        )[:5]
 
 
 def count_contents(path):
