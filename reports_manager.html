@@ -409,9 +409,24 @@
   }
   .inst-chart-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:3px; }
   .inst-chart-note{ color:var(--text-dim); font-size:10.5px; }
-  .inst-chart-legend{ display:flex; align-items:center; gap:10px; color:var(--text-dim); font-size:10.5px; }
-  .inst-legend-dot{ width:8px; height:8px; border-radius:2px; display:inline-block; margin-right:3px; }
-  .inst-chart-svg{ display:block; width:100%; height:142px; overflow:visible; }
+  .inst-week-table{ width:100%; border-collapse:separate; border-spacing:0 4px; table-layout:fixed; }
+  .inst-week-table th{
+    padding:2px 7px 4px; color:var(--text-dim); font-size:10.5px; font-weight:700; text-align:right;
+  }
+  .inst-week-table th:first-child{ width:150px; text-align:left; }
+  .inst-week-table td{
+    padding:7px; background:rgba(255,255,255,.035); border-top:1px solid rgba(71,85,105,.45);
+    border-bottom:1px solid rgba(71,85,105,.45); text-align:right; font-size:12px; font-variant-numeric:tabular-nums;
+  }
+  .inst-week-table td:first-child{ border-left:1px solid rgba(71,85,105,.45); border-radius:6px 0 0 6px; text-align:left; }
+  .inst-week-table td:last-child{ border-right:1px solid rgba(71,85,105,.45); border-radius:0 6px 6px 0; font-weight:850; }
+  .inst-week-label{ display:block; color:#e2e8f0; font-weight:800; }
+  .inst-week-range{ display:block; margin-top:1px; color:var(--text-dim); font-size:9.5px; }
+  .inst-flow-value{ display:inline-flex; justify-content:flex-end; gap:3px; font-weight:750; white-space:nowrap; }
+  .inst-flow-value.buy{ color:#f87171; }
+  .inst-flow-value.sell{ color:#4ade80; }
+  .inst-flow-value.flat{ color:#94a3b8; }
+  .inst-flow-side{ font-size:9.5px; opacity:.85; }
   .rank-latest-summary{
     display:flex; align-items:center; justify-content:center; gap:3px;
     min-width:0; white-space:nowrap;
@@ -1396,72 +1411,41 @@
     ).join('');
   }
 
-  function renderInstitutionChart(card){
-    const rows = institutionalRows(card).slice(0, 20).reverse();
-    if (!rows.length) return '<div class="inst-chart-empty">沒有法人日資料可繪圖</div>';
-    const width = 760, height = 132, left = 42, right = 716, top = 12, bottom = 103, zeroY = 58;
-    const halfHeight = Math.min(zeroY - top, bottom - zeroY) - 3;
-    const positiveStack = row => [row.foreign, row.trust, row.dealer].reduce((sum, value) => sum + Math.max(0, value || 0), 0);
-    const negativeStack = row => [row.foreign, row.trust, row.dealer].reduce((sum, value) => sum + Math.abs(Math.min(0, value || 0)), 0);
-    const maxFlow = Math.max(1, ...rows.flatMap(row => [positiveStack(row), negativeStack(row)]));
-    const step = (right - left) / rows.length;
-    const barWidth = Math.max(8, step * 0.68);
-    const actorDefs = [
-      ['foreign', '外資', '#159bd7'],
-      ['trust', '投信', '#ef5547'],
-      ['dealer', '自營商', '#8b5bb1']
-    ];
-    const bars = rows.map((row, index) => {
-      const x = left + index * step + (step - barWidth) / 2;
-      let positiveY = zeroY;
-      let negativeY = zeroY;
-      const rects = actorDefs.map(([key, _label, color]) => {
-        const value = Number(row[key]) || 0;
-        if (!value) return '';
-        const rectHeight = Math.max(1.5, Math.abs(value) / maxFlow * halfHeight);
-        if (value > 0) {
-          positiveY -= rectHeight;
-          return `<rect x="${x.toFixed(2)}" y="${positiveY.toFixed(2)}" width="${barWidth.toFixed(2)}" height="${rectHeight.toFixed(2)}" fill="${color}" rx="1"/>`;
-        }
-        const result = `<rect x="${x.toFixed(2)}" y="${negativeY.toFixed(2)}" width="${barWidth.toFixed(2)}" height="${rectHeight.toFixed(2)}" fill="${color}" rx="1"/>`;
-        negativeY += rectHeight;
-        return result;
-      }).join('');
-      const title = `${row.date}｜外資 ${formatSignedLots(row.foreign)}｜投信 ${formatSignedLots(row.trust)}｜自營 ${formatSignedLots(row.dealer)}｜合計 ${formatSignedLots(row.total)} 張${Number.isFinite(row.close) ? `｜收盤 ${row.close}` : ''}`;
-      const dateText = String(row.date || '').slice(5).replace('-', '/');
-      return `<g><title>${escapeHtml(title)}</title>${rects}<text x="${(x + barWidth / 2).toFixed(2)}" y="122" text-anchor="middle" fill="#94a3b8" font-size="8.5">${escapeHtml(dateText)}</text></g>`;
-    }).join('');
+  function formatApproxLots(value){
+    if (!Number.isFinite(value) || value === 0) return '0';
+    const absolute = Math.abs(value);
+    let amount;
+    if (absolute >= 10000) amount = `${(absolute / 10000).toFixed(absolute >= 100000 ? 0 : 1).replace(/\.0$/, '')}萬`;
+    else if (absolute >= 1000) amount = `${(absolute / 1000).toFixed(1).replace(/\.0$/, '')}千`;
+    else amount = Math.round(absolute).toLocaleString('zh-TW');
+    return `${value > 0 ? '+' : '-'}${amount}`;
+  }
 
-    const priceRows = rows.map((row, index) => ({ row, index })).filter(item => Number.isFinite(item.row.close));
-    let priceSvg = '';
-    if (priceRows.length >= 2) {
-      let minPrice = Math.min(...priceRows.map(item => item.row.close));
-      let maxPrice = Math.max(...priceRows.map(item => item.row.close));
-      if (maxPrice === minPrice) { maxPrice += 1; minPrice -= 1; }
-      const point = item => {
-        const x = left + item.index * step + step / 2;
-        const y = top + (maxPrice - item.row.close) / (maxPrice - minPrice) * (bottom - top);
-        return [x, y];
-      };
-      const points = priceRows.map(item => point(item));
-      const path = points.map(([x, y], index) => `${index ? 'L' : 'M'}${x.toFixed(2)},${y.toFixed(2)}`).join(' ');
-      const dots = points.map(([x, y]) => `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="2.1" fill="#f5b51b"/>`).join('');
-      priceSvg = `<path d="${path}" fill="none" stroke="#f5b51b" stroke-width="1.6"/>${dots}
-        <text x="722" y="16" fill="#f5b51b" font-size="9">${maxPrice.toLocaleString('zh-TW')}</text>
-        <text x="722" y="102" fill="#f5b51b" font-size="9">${minPrice.toLocaleString('zh-TW')}</text>`;
-    }
-    const flowLabel = maxFlow.toLocaleString('zh-TW');
-    const svg = `<svg class="inst-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="近四週二十個交易日三大法人買賣超與股價走勢">
-      <line x1="${left}" y1="${zeroY}" x2="${right}" y2="${zeroY}" stroke="#64748b" stroke-width="1"/>
-      <line x1="${left}" y1="${top}" x2="${right}" y2="${top}" stroke="#334155" stroke-width=".6"/>
-      <line x1="${left}" y1="${bottom}" x2="${right}" y2="${bottom}" stroke="#334155" stroke-width=".6"/>
-      <text x="38" y="16" text-anchor="end" fill="#94a3b8" font-size="9">+${flowLabel}</text>
-      <text x="38" y="61" text-anchor="end" fill="#94a3b8" font-size="9">0</text>
-      <text x="38" y="103" text-anchor="end" fill="#94a3b8" font-size="9">-${flowLabel}</text>
-      ${bars}${priceSvg}
-    </svg>`;
-
-    return svg;
+  function renderInstitutionSummary(card){
+    const rows = institutionalRows(card).slice(0, 20);
+    if (!rows.length) return '<div class="inst-chart-empty">沒有法人日資料可彙整</div>';
+    const keys = ['foreign', 'trust', 'dealer', 'total'];
+    const weekLabels = ['近 1 週', '前 2 週', '前 3 週', '前 4 週'];
+    const weeks = Array.from({ length: 4 }, (_, index) => {
+      const sessions = rows.slice(index * 5, index * 5 + 5);
+      if (!sessions.length) return null;
+      const sums = Object.fromEntries(keys.map(key => [key, sessions.reduce((sum, row) => sum + (Number(row[key]) || 0), 0)]));
+      const newest = String(sessions[0].date || '').slice(5).replace('-', '/');
+      const oldest = String(sessions[sessions.length - 1].date || '').slice(5).replace('-', '/');
+      return { label: weekLabels[index], range: `${oldest}–${newest}`, ...sums };
+    }).filter(Boolean);
+    const flowCell = value => {
+      const tone = value > 0 ? 'buy' : (value < 0 ? 'sell' : 'flat');
+      const side = value > 0 ? '買' : (value < 0 ? '賣' : '平');
+      return `<span class="inst-flow-value ${tone}"><span class="inst-flow-side">${side}</span>${escapeHtml(formatApproxLots(value))}</span>`;
+    };
+    return `<table class="inst-week-table" aria-label="近四週三大法人買賣超概數，單位張">
+      <thead><tr><th>期間</th><th>外資</th><th>投信</th><th>自營商</th><th>三大法人合計</th></tr></thead>
+      <tbody>${weeks.map(week => `<tr>
+        <td><span class="inst-week-label">${week.label}</span><span class="inst-week-range">${escapeHtml(week.range)}</span></td>
+        <td>${flowCell(week.foreign)}</td><td>${flowCell(week.trust)}</td><td>${flowCell(week.dealer)}</td><td>${flowCell(week.total)}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
   }
 
   function renderLatestInstitutionSummary(card){
@@ -1580,15 +1564,10 @@
           </div>
           <div class="inst-mini-chart">
             <div class="inst-chart-head">
-              <span class="rank-detail-label">三大法人近四週（20 個交易日）與股價走勢</span>
-              <span class="inst-chart-legend">
-                <span><i class="inst-legend-dot" style="background:#159bd7"></i>外資</span>
-                <span><i class="inst-legend-dot" style="background:#ef5547"></i>投信</span>
-                <span><i class="inst-legend-dot" style="background:#8b5bb1"></i>自營商</span>
-                <span><i class="inst-legend-dot" style="background:#f5b51b;border-radius:50%"></i>股價</span>
-              </span>
+              <span class="rank-detail-label">三大法人近四週買賣超概數</span>
+              <span class="inst-chart-note">單位：張｜紅色買超・綠色賣超｜每週約 5 個交易日</span>
             </div>
-            ${renderInstitutionChart(c)}
+            ${renderInstitutionSummary(c)}
           </div>
         </div>
       `;
