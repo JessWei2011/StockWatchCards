@@ -1358,9 +1358,9 @@
     if (latest.foreign > 0 && latest.trust < 0) add('外資買、投信調節', 'mixed', '外資買超、投信賣超');
 
     const totalStreak = consecutiveDirection(rows, 'total');
-    if (totalStreak >= 2) add(`法人連${totalStreak}${latest.total > 0 ? '買' : '賣'}`, latest.total > 0 ? 'positive' : 'negative', `三大法人合計連續 ${totalStreak} 日同方向`);
+    if (totalStreak >= 2) add(`法人合計連${totalStreak}日${latest.total > 0 ? '買超' : '賣超'}`, latest.total > 0 ? 'positive' : 'negative', `三大法人合計連續 ${totalStreak} 日${latest.total > 0 ? '淨買超' : '淨賣超'}`);
     const trustStreak = consecutiveDirection(rows, 'trust');
-    if (trustStreak >= 3) add(`投信連${trustStreak}${latest.trust > 0 ? '買' : '賣'}`, latest.trust > 0 ? 'positive' : 'negative', `投信連續 ${trustStreak} 日同方向`);
+    if (trustStreak >= 3) add(`投信連${trustStreak}日${latest.trust > 0 ? '買超' : '賣超'}`, latest.trust > 0 ? 'positive' : 'negative', `投信連續 ${trustStreak} 日${latest.trust > 0 ? '買超' : '賣超'}`);
     if (rows.length >= 2 && Math.sign(latest.total) * Math.sign(rows[1].total) < 0) {
       add(latest.total > 0 ? '法人由賣轉買' : '法人由買轉賣', latest.total > 0 ? 'positive' : 'negative', '三大法人合計方向較前一日反轉');
     }
