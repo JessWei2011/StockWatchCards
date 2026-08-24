@@ -486,19 +486,79 @@ window.PatternEngine = {
     const lastIdx = total - 1;
     const cur = this.lastPoint(stockData);
 
+    const close = cur.price;
+    const upper = stockData.bollUpper && stockData.bollUpper[lastIdx];
+    const mid = stockData.bollMid && stockData.bollMid[lastIdx];
+    const lower = stockData.bollLower && stockData.bollLower[lastIdx];
+    const previousClose = lastIdx > 0 ? stockData.candles[lastIdx - 1][1] : null;
+    const previousUpper = lastIdx > 0 && stockData.bollUpper ? stockData.bollUpper[lastIdx - 1] : null;
+    const fmt = value => Number.isFinite(value) ? Number(value.toFixed(2)) : '—';
+
+    let bollLabel = '布林通道資料不足';
+    let bollTag = 'BOLL';
+    let bollBadge = '布林位置待確認';
+    let color = '#64748b';
+    if ([upper, mid, lower].every(Number.isFinite)) {
+      if (close > upper) {
+        const crossedToday = Number.isFinite(previousClose) && Number.isFinite(previousUpper)
+          && previousClose <= previousUpper;
+        bollLabel = crossedToday ? '收盤突破布林上軌' : '收盤位於布林上軌之上';
+        bollTag = crossedToday ? '突破' : '上軌外';
+        bollBadge = crossedToday ? '布林上軌突破' : '布林上軌之上';
+        color = '#f43f5e';
+      } else if (close >= mid) {
+        bollLabel = '站上布林中軌，尚未突破上軌';
+        bollTag = '中軌上';
+        bollBadge = '布林中上區間';
+        color = '#10b981';
+      } else if (close >= lower) {
+        bollLabel = '位於布林中軌下方、下軌上方';
+        bollTag = '中軌下';
+        bollBadge = '布林中下區間';
+        color = '#f59e0b';
+      } else {
+        bollLabel = '收盤跌破布林下軌';
+        bollTag = '跌破';
+        bollBadge = '布林下軌跌破';
+        color = '#22c55e';
+      }
+    }
+
+    const ma5 = stockData.ma5 && stockData.ma5[lastIdx];
+    const ma10 = stockData.ma10 && stockData.ma10[lastIdx];
+    const ma20 = stockData.ma20 && stockData.ma20[lastIdx];
+    let maLabel = '均線資料不足';
+    let maTag = '均線';
+    if ([ma5, ma10, ma20].every(Number.isFinite)) {
+      if (ma5 > ma10 && ma10 > ma20) {
+        maLabel = 'MA5 > MA10 > MA20，多頭排列';
+        maTag = '多頭';
+      } else if (ma5 < ma10 && ma10 < ma20) {
+        maLabel = 'MA5 < MA10 < MA20，空頭排列';
+        maTag = '空頭';
+      } else {
+        maLabel = '短中期均線交錯，尚未形成標準排列';
+        maTag = '交錯';
+      }
+    }
+
+    const bollDetail = [upper, mid, lower].every(Number.isFinite)
+      ? `收盤 ${fmt(close)}；上軌 ${fmt(upper)}、中軌 ${fmt(mid)}、下軌 ${fmt(lower)}。`
+      : `收盤 ${fmt(close)}；布林通道資料不足。`;
+
     return {
       name: '技術數據視覺解構',
-      badge: '多方數據共振',
-      color: '#f43f5e',
+      badge: bollBadge,
+      color,
       pivots: [
-        { date: cur.date, price: stockData.candles[lastIdx][3], label: '強勢突破布林上軌', tag: '突破' },
-        { date: stockData.dates[total - 5], price: stockData.candles[total - 5][2], label: '短中長均線多頭發散', tag: '多頭' }
+        { date: cur.date, price: close, label: bollLabel, tag: bollTag },
+        { date: cur.date, price: Number.isFinite(ma10) ? ma10 : close, label: maLabel, tag: maTag }
       ],
       vectorPath: [],
-      explanation: '【技術數據視覺化導讀】：\n1. 【K線與布林】：注意右上角K線，收盤價與布林上軌的相對位置，通道開口是否擴張。\n2. 【均線排列】：MA5 / MA10 / MA20 的排列順序是否為標準多頭（或空頭）發散。\n3. 【MACD】：觀察下方 MACD 柱狀圖，紅色柱體是否加速擴大，二階動能是否轉強。\n4. 【KD指標】：最下方 KD 指標是否進入高檔鈍化或低檔鈍化區。',
+      explanation: `【技術數據視覺化導讀】：\n1. 【K線與布林】：${bollDetail}${bollLabel}。\n2. 【均線排列】：MA5=${fmt(ma5)}、MA10=${fmt(ma10)}、MA20=${fmt(ma20)}；${maLabel}。\n3. 【MACD】：觀察下方 MACD 柱狀圖近 1～3 日是擴大或縮減。\n4. 【KD指標】：觀察 K、D 的交叉方向與邊際變化。`,
       indicatorAnnotations: [
-        { seriesName: 'K線', type: 'markPoint', coord: [cur.date, stockData.candles[lastIdx][3]], label: '目前最高點\n對照布林上軌', color: '#f43f5e', yOffset: -30 },
-        { seriesName: 'MA10', type: 'markPoint', coord: [stockData.dates[total - 5], stockData.ma10 ? stockData.ma10[total - 5] : stockData.candles[total - 5][2]], label: '均線排列觀察點', color: '#3b82f6', yOffset: 20 },
+        { seriesName: 'K線', type: 'markPoint', coord: [cur.date, close], label: `${bollLabel}\n收盤 ${fmt(close)}／上軌 ${fmt(upper)}`, color, yOffset: -30 },
+        { seriesName: 'MA10', type: 'markPoint', coord: [cur.date, Number.isFinite(ma10) ? ma10 : close], label: maLabel, color: '#3b82f6', yOffset: 20 },
         { seriesName: 'MACD', type: 'markPoint', coord: [cur.date, 0], label: '柱狀圖加速度\n觀察點', color: '#ef4444', yOffset: -25 },
         { seriesName: 'K值', type: 'markArea', yAxisStart: 80, yAxisEnd: 100, label: 'KD 高檔區', color: 'rgba(244, 63, 94, 0.15)' }
       ]
