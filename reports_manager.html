@@ -629,7 +629,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 <script src="pattern_viewer/js/parser.js?v=13"></script>
-<script src="pattern_viewer/js/pattern_engine.js?v=15"></script>
+<script src="pattern_viewer/js/pattern_engine.js?v=16"></script>
 <script src="pattern_viewer/js/chart_engine.js?v=16"></script>
 <script src="pattern_viewer/js/viewer_app.js?v=1"></script>
 <script src="render-shared.js"></script>
@@ -1221,13 +1221,13 @@
 
     const current = Number(card.current);
     const ma20 = signedNumber(text, /MA20\s*=\s*([\d.]+)/i);
-    if (Number.isFinite(current) && ma20 !== null) add(current >= ma20 ? '站上月線' : '跌破月線', current >= ma20 ? 'positive' : 'negative', `收盤 ${current}／MA20 ${ma20}`);
+    if (Number.isFinite(current) && ma20 !== null) add(current >= ma20 ? '收盤高於月線' : '收盤低於月線', current >= ma20 ? 'positive' : 'negative', `收盤 ${current}／MA20 ${ma20}`);
 
     const boll = text.match(/BOLL\s*:\s*上\s*=\s*([\d.]+)\s*中\s*=\s*([\d.]+)\s*下\s*=\s*([\d.]+)/i);
     if (boll && Number.isFinite(current)) {
       const upper = Number(boll[1]), lower = Number(boll[3]);
-      if (current > upper) add('突破布林上軌', 'positive', `收盤 ${current}／上軌 ${upper}`);
-      else if (current < lower) add('跌破布林下軌', 'negative', `收盤 ${current}／下軌 ${lower}`);
+      if (current > upper) add('收盤高於布林上軌', 'positive', `收盤 ${current}／上軌 ${upper}`);
+      else if (current < lower) add('收盤低於布林下軌', 'negative', `收盤 ${current}／下軌 ${lower}`);
     }
     const macd = signedNumber(text, /MACD(?:\s+Hist)?[^；。\n]*?([+-][\d,.]+)/i);
     if (macd !== null) add(macd >= 0 ? 'MACD 多方' : 'MACD 空方', macd >= 0 ? 'positive' : 'negative', `MACD Hist ${macd > 0 ? '+' : ''}${macd}`);
@@ -1242,7 +1242,7 @@
     if (kdMatch) {
       const k = Number(kdMatch[1]);
       const d = Number(kdMatch[2]);
-      add(k >= d ? 'KD 金叉' : 'KD 死叉', k >= d ? 'positive' : 'negative', `K ${k}／D ${d}`);
+      add(k >= d ? 'K值高於D值' : 'K值低於D值', k >= d ? 'positive' : 'negative', `目前位置：K ${k}／D ${d}；僅憑單日位置不判定交叉`);
       if (k >= 80 && d >= 80) add('KD 高檔鈍化', 'mixed', `K ${k}／D ${d}`);
       if (k <= 20 && d <= 20) add('KD 低檔區', 'mixed', `K ${k}／D ${d}`);
     } else if (/金叉/.test(text)) {

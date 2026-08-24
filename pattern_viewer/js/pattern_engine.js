@@ -492,6 +492,8 @@ window.PatternEngine = {
     const lower = stockData.bollLower && stockData.bollLower[lastIdx];
     const previousClose = lastIdx > 0 ? stockData.candles[lastIdx - 1][1] : null;
     const previousUpper = lastIdx > 0 && stockData.bollUpper ? stockData.bollUpper[lastIdx - 1] : null;
+    const previousMid = lastIdx > 0 && stockData.bollMid ? stockData.bollMid[lastIdx - 1] : null;
+    const previousLower = lastIdx > 0 && stockData.bollLower ? stockData.bollLower[lastIdx - 1] : null;
     const fmt = value => Number.isFinite(value) ? Number(value.toFixed(2)) : '—';
 
     let bollLabel = '布林通道資料不足';
@@ -507,19 +509,29 @@ window.PatternEngine = {
         bollBadge = crossedToday ? '布林上軌突破' : '布林上軌之上';
         color = '#f43f5e';
       } else if (close >= mid) {
-        bollLabel = '站上布林中軌，尚未突破上軌';
-        bollTag = '中軌上';
+        const crossedMidToday = Number.isFinite(previousClose) && Number.isFinite(previousMid)
+          && previousClose < previousMid;
+        bollLabel = crossedMidToday
+          ? '收盤站上布林中軌，尚未突破上軌'
+          : '收盤位於布林中軌之上，尚未突破上軌';
+        bollTag = crossedMidToday ? '站上中軌' : '中軌上';
         bollBadge = '布林中上區間';
         color = '#10b981';
       } else if (close >= lower) {
-        bollLabel = '位於布林中軌下方、下軌上方';
-        bollTag = '中軌下';
+        const fellBelowMidToday = Number.isFinite(previousClose) && Number.isFinite(previousMid)
+          && previousClose >= previousMid;
+        bollLabel = fellBelowMidToday
+          ? '收盤跌破布林中軌，仍在下軌之上'
+          : '收盤位於布林中軌下方、下軌上方';
+        bollTag = fellBelowMidToday ? '跌破中軌' : '中軌下';
         bollBadge = '布林中下區間';
         color = '#f59e0b';
       } else {
-        bollLabel = '收盤跌破布林下軌';
-        bollTag = '跌破';
-        bollBadge = '布林下軌跌破';
+        const fellBelowLowerToday = Number.isFinite(previousClose) && Number.isFinite(previousLower)
+          && previousClose >= previousLower;
+        bollLabel = fellBelowLowerToday ? '收盤跌破布林下軌' : '收盤位於布林下軌之下';
+        bollTag = fellBelowLowerToday ? '跌破' : '下軌外';
+        bollBadge = fellBelowLowerToday ? '布林下軌跌破' : '布林下軌之下';
         color = '#22c55e';
       }
     }
