@@ -88,7 +88,7 @@ def validate_ai_ranking(entry):
         try:
             score = float(score)
         except (TypeError, ValueError):
-            raise ValueError("第二次 Gemini 分析的每筆 score 必須是數字")
+            raise ValueError("第二次 AI 獨立分析的每筆 score 必須是數字")
         seen_ranks.add(rank)
         seen_codes.add(code)
         cleaned.append({
@@ -106,7 +106,7 @@ def validate_ai_ranking(entry):
         expected_text = "、".join(f"#{i+1} {code} {score:g}分" for i, (code, score) in enumerate(expected))
         actual_text = "、".join(f"#{i+1} {code} {score:g}分" for i, (code, score) in enumerate(actual))
         raise ValueError(
-            "AI 分析發生矛盾，本次結果未儲存，請 Gemini 使用同一份 GEMINI.md 規則重新判定。"
+            "AI 分析發生矛盾，本次結果未儲存，請使用同一份 AI_SCORING_RULES.md 共用規則重新判定。"
             f" 第一次綜合分數：{expected_text}；第二次推薦結果：{actual_text}"
         )
     return {"date": date, "ai": ai, "top5": cleaned}
@@ -160,7 +160,7 @@ def read_stock_cards():
 
 
 def canonical_top5_cards():
-    """第一次 Gemini 綜合分析的 TOP 5，只用於與第二次獨立分析做一致性比對。"""
+    """第一次 AI 綜合分析的 TOP 5，只用於與第二次獨立分析做一致性比對。"""
     cards = list(read_stock_cards().values())
     scored = [card for card in cards if isinstance(card.get("winRate"), (int, float))]
     scored.sort(key=lambda card: (-float(card["winRate"]), str(card.get("code", ""))))
