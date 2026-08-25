@@ -33,6 +33,7 @@ if sys.stdout.encoding != "utf-8":
 ROOT_DIR = Path(__file__).resolve().parent
 REPORTS_DIR = ROOT_DIR / "reports"
 DATA_JS_FILE = ROOT_DIR / "data.js"
+AI_RANKINGS_FILE = ROOT_DIR / "ai_rankings.json"
 PORT = 8935
 
 REPORTS_DIR.mkdir(exist_ok=True)
@@ -40,6 +41,77 @@ REPORTS_DIR.mkdir(exist_ok=True)
 TRACKED_FILENAME_RE = re.compile(r'^([0-9A-Za-z]{2,6})_(.+?)\((TW|TWO)\)')
 FORBIDDEN_NAME_CHARS = set('\\/:*?"<>|')
 STOCK_CARDS_RE = re.compile(r"const\s+STOCK_CARDS\s*=\s*(\[.*\])\s*;?\s*$", re.S)
+
+
+def read_ai_rankings():
+    try:
+        payload = json.loads(AI_RANKINGS_FILE.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {"version": 1, "rankings": []}
+    rankings = payload.get("rankings") if isinstance(payload, dict) else None
+    return {"version": 1, "rankings": rankings if isinstance(rankings, list) else []}
+
+
+def validate_ai_ranking(entry):
+    if not isinstance(entry, dict):
+        raise ValueError("排行榜資料必須是 JSON 物件")
+    date = str(entry.get("date") or "").strip()
+    ai = str(entry.get("ai") or "").strip()
+    top5 = entry.get("top5")
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+        raise ValueError("date 必須是 YYYY-MM-DD")
+    if not ai or len(ai) > 50:
+        raise ValueError("ai 名稱不可空白且最多 50 字")
+    if not isinstance(top5, list) or len(top5) != 5:
+        raise ValueError("top5 必須剛好包含 5 筆")
+    cleaned = []
+    seen_codes = set()
+    seen_ranks = set()
+    for item in top5:
+        if not isinstance(item, dict):
+            raise ValueError("top5 每一筆都必須是物件")
+        try:
+            rank = int(item.get("rank"))
+        except (TypeError, ValueError):
+            raise ValueError("rank 必須是 1 到 5")
+        code = str(item.get("code") or "").strip()
+        name = str(item.get("name") or "").strip()
+        decision = str(item.get("decision") or "").strip()
+        reason = str(item.get("reason") or "").strip()
+        score = item.get("score")
+        if rank not in range(1, 6) or rank in seen_ranks:
+            raise ValueError("rank 必須為不重複的 1 到 5")
+        if not re.fullmatch(r"[0-9A-Za-z]{2,8}", code) or code in seen_codes:
+            raise ValueError("股票代號不可空白、重複或含特殊字元")
+        if not name or not reason:
+            raise ValueError("每筆必須包含股票名稱與推薦原因")
+        if score is not None:
+            try:
+                score = float(score)
+            except (TypeError, ValueError):
+                raise ValueError("score 必須是數字或 null")
+        seen_ranks.add(rank)
+        seen_codes.add(code)
+        cleaned.append({
+            "rank": rank, "code": code, "name": name[:50], "score": score,
+            "decision": decision[:30], "reason": reason[:1000],
+        })
+    cleaned.sort(key=lambda item: item["rank"])
+    return {"date": date, "ai": ai, "top5": cleaned}
+
+
+def upsert_ai_ranking(entry):
+    cleaned = validate_ai_ranking(entry)
+    payload = read_ai_rankings()
+    rankings = [item for item in payload["rankings"]
+                if not (item.get("date") == cleaned["date"] and item.get("ai") == cleaned["ai"])]
+    rankings.append(cleaned)
+    rankings.sort(key=lambda item: (item.get("date", ""), item.get("ai", "")))
+    payload = {"version": 1, "rankings": rankings}
+    temp_path = AI_RANKINGS_FILE.with_suffix(".json.tmp")
+    temp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temp_path.replace(AI_RANKINGS_FILE)
+    return cleaned
 
 
 def read_stock_cards():
@@ -433,6 +505,9 @@ class Handler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/cards":
             self._json(200, {"ok": True, "cards": read_stock_cards()})
             return
+        if parsed.path == "/api/ai-rankings":
+            self._json(200, {"ok": True, **read_ai_rankings()})
+            return
         if parsed.path == "/api/reports-index":
             # 保持原 PatternViewer API 的裸陣列格式，第二階段元件化前即可直接換用
             # reports_manager_server.py，不必同步修改舊介面。
@@ -474,6 +549,19 @@ class Handler(SimpleHTTPRequestHandler):
                 generate_job["running"] = True
             threading.Thread(target=_run_generate, args=(args,), daemon=True).start()
             self._json(200, {"ok": True})
+            return
+
+        if parsed.path == "/api/ai-rankings/upsert":
+            try:
+                body = self._read_json_body()
+                saved = upsert_ai_ranking(body)
+            except (ValueError, json.JSONDecodeError) as e:
+                self._json(400, {"ok": False, "error": str(e)})
+                return
+            except OSError as e:
+                self._json(500, {"ok": False, "error": f"排行榜寫入失敗: {e}"})
+                return
+            self._json(200, {"ok": True, "ranking": saved})
             return
 
         try:

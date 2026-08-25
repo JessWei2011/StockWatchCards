@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "rankings": [
+    {
+      "date": "2026-08-25",
+      "ai": "ChatGPT",
+      "top5": [
+        {"rank": 1, "code": "3034", "name": "聯詠", "score": 79, "decision": "進場", "reason": "價格、動能、法人三構面同步轉強；MACD負柱連續收斂，法人合計近3日連買，未觸發防禦牆。"},
+        {"rank": 2, "code": "2301", "name": "光寶科", "score": 64, "decision": "進場", "reason": "量增長紅收在當日高點，價格與動能兩項轉強；法人仍拉鋸、融資增加，故低於聯詠。"},
+        {"rank": 3, "code": "3532", "name": "台勝科", "score": 58, "decision": "續抱觀望", "reason": "價格結構轉強，但KD與法人方向尚未完整共振，僅一項構面成立。"},
+        {"rank": 4, "code": "2324", "name": "仁寶", "score": 56, "decision": "續抱觀望", "reason": "價格量增轉強，但法人由賣轉買而非連買，融資浮額明顯增加。"},
+        {"rank": 5, "code": "3693", "name": "營邦", "score": 55, "decision": "續抱觀望", "reason": "價格位於短中期均線之上；MACD、KD與法人一致性尚不足。"}
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "ai": "Gemini",
+      "top5": [
+        {"rank": 1, "code": "2301", "name": "光寶科", "score": 85, "decision": "加碼", "reason": "量增長紅收在高點，最新外資由賣轉買，判定為強勢換手攻頂。"},
+        {"rank": 2, "code": "3532", "name": "台勝科", "score": 85, "decision": "加碼", "reason": "帶量站上短期攻擊線，MACD正柱回升，最新法人買盤轉強。"},
+        {"rank": 3, "code": "2324", "name": "仁寶", "score": 78, "decision": "進場", "reason": "量增站上MA5，MACD正柱回升，最新外資大幅由賣轉買。"},
+        {"rank": 4, "code": "3324", "name": "雙鴻", "score": 78, "decision": "進場", "reason": "帶量站上MA5且MACD柱狀圖由負轉正，價格與動能改善。"},
+        {"rank": 5, "code": "3693", "name": "營邦", "score": 78, "decision": "進場", "reason": "量增站上MA5，MACD正柱由低點回升，最新外資轉買。"}
+      ]
+    }
+  ]
+}

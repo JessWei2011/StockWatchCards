@@ -183,8 +183,20 @@ Repo: https://github.com/JessWei2011/StockWatchCards
 
 ## 其他檔案
 
+### 多 AI 每日排行榜
+
+- 排行榜的唯一資料來源是版控內的 `ai_rankings.json`；程式與資料一起 commit/push，換電腦 clone/pull 後即可同步。
+- 每位 AI 每天一筆，格式為 `{ "date": "YYYY-MM-DD", "ai": "ChatGPT", "top5": [...] }`；`top5` 必須恰好 5 筆，
+  每筆包含 `rank`（1~5且不可重複）、`code`、`name`、`score`（可為 null）及具體 `reason`。
+- 同一 `date + ai` 再寫入時視為修正，覆蓋舊紀錄，不新增重複資料。可直接編輯檔案，或 POST 至
+  `http://localhost:8935/api/ai-rankings/upsert`；報表管理的「排行榜」頁也提供 JSON 貼上區與提示詞複製按鈕。
+- 「最新共同推薦」只比較整份資料中最新日期的各 AI TOP5，不往前追溯；至少兩位 AI 同日推薦才列入。
+- 「連續上榜」按 AI 與股票分開計算：從該 AI 的最新評分日往前，股票每天都在其 TOP5 才累加，首次缺席即中斷。
+- 要 AI 寫入時，要求只輸出上述單一 JSON 物件、不得使用 Markdown code fence，理由需引用實際指標，並明示將資料寫入
+  `ai_rankings.json`（或呼叫上述 API）。
+
 - `.gitignore` 只允許 `.gitignore` / `index.html` / `style.css` / `data.js` / `render.js` / `CLAUDE.md` / `GEMINI.md` /
-  `stock_report_generator.py` / `clone-stockwatchcards.bat` / `控制台.pyw` / `pattern_viewer/`（僅 `index.html`、`server.py`、
+  `ai_rankings.json` / `stock_report_generator.py` / `clone-stockwatchcards.bat` / `控制台.pyw` / `pattern_viewer/`（僅 `index.html`、`server.py`、
   `start_viewer.bat`、`INTEGRATION_GUIDE.md`、`css/viewer.css`、`js/*.js`，`__pycache__/` 與資料夾裡的其他雜項檔案不算）進版控，
   其餘像 `reports/` 資料夾內的個股分析 html/png、`cache/`、`margin_data.db`、`.claude/` 都刻意排除，只留在本機。
 - `控制台.pyw`：統一控制台（Tkinter GUI），滑鼠點擊即可開啟三個原本分散的進入點
