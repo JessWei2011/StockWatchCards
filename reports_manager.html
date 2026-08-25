@@ -5,6 +5,7 @@
 <title>報表資料夾管理</title>
 <style>
   :root{
+    --ui-scale:1;
     --bg:#111317; --card-bg:#1b1e24; --text:#f3f5f7; --text-dim:#c3cad4;
     --border:#3a4050; --accent:#7db4ff; --danger:#ff8a8a; --hover:#232833;
 
@@ -359,6 +360,13 @@
   .ai-top-row{ display:grid; grid-template-columns:30px minmax(105px,.7fr) 50px 76px minmax(180px,2fr); gap:8px; align-items:start; padding:9px; border-radius:9px; background:#1b2029; font-size:12px; }
   .ai-rank-no{ width:25px; height:25px; display:grid; place-items:center; border-radius:50%; background:#334155; font-weight:900; }
   .ai-stock-name{ font-weight:850; color:#fff; }
+  .ai-stock-link{
+    color:#93c5fd; font-weight:850; text-decoration:none; border-bottom:1px dashed rgba(147,197,253,.6);
+    cursor:pointer;
+  }
+  .ai-stock-link:hover, .ai-stock-link:focus{ color:#fff; border-bottom-color:#fff; outline:none; }
+  .ai-stock-unavailable{ color:var(--text-dim); font-weight:750; }
+  .ai-history-stocks{ display:flex; flex-wrap:wrap; gap:5px 10px; }
   .ai-score{ color:#fbbf24; font-weight:900; }
   .ai-reason{ color:var(--text-dim); line-height:1.45; }
   .ai-streak-table,.ai-history-table{ width:100%; border-collapse:collapse; font-size:12px; }
@@ -376,6 +384,22 @@
     .ai-import-grid{ grid-template-columns:1fr; }
     .ai-top-row{ grid-template-columns:30px 1fr 48px 72px; }
     .ai-reason{ grid-column:2/-1; }
+  }
+  .display-scale-control{
+    margin-left:auto; display:flex; align-items:center; gap:8px; padding:6px 10px;
+    border:1px solid var(--border); border-radius:9px; background:var(--card-bg);
+    color:var(--text-dim); font-size:12.5px; font-weight:700; white-space:nowrap;
+  }
+  .display-scale-control input[type="number"]{
+    width:72px; padding:5px 7px; border:1px solid var(--border); border-radius:6px;
+    background:var(--bg); color:var(--text); font:inherit; text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  .display-scale-control input[type="number"]:focus{
+    outline:2px solid var(--accent); outline-offset:-1px;
+  }
+  @media (max-width:700px){
+    .display-scale-control{ order:3; width:100%; margin-left:0; }
   }
 
   /* 報表管理改為兩欄：左側分類，右側完整寬度的決策資訊。 */
@@ -497,7 +521,12 @@
   <header>
     <h1>📌 個股分析中心</h1>
     <div class="breadcrumb" id="breadcrumb"></div>
-    <button class="btn danger" id="shutdown-server-btn" style="margin-left:auto;" title="關閉本機伺服器進程並關掉這個分頁">🔴 關閉伺服器</button>
+    <label class="display-scale-control" for="display-scale">
+      <span>🔍 顯示大小</span>
+      <input type="number" id="display-scale" min="100" max="200" step="1" value="100" inputmode="numeric" aria-label="全域顯示大小">
+      <span aria-hidden="true">%</span>
+    </label>
+    <button class="btn danger" id="shutdown-server-btn" title="關閉本機伺服器進程並關掉這個分頁">🔴 關閉伺服器</button>
   </header>
   <nav class="app-tabs" aria-label="主要工作區">
     <button type="button" class="app-tab active" data-workspace="reports">🗂️ 報表管理</button>
@@ -736,9 +765,40 @@
 <script src="pattern_viewer/js/viewer_app.js?v=1"></script>
 <script src="render-shared.js"></script>
 <script>
+  const DISPLAY_SCALE_KEY = 'stock-analysis-display-scale';
+
+  function applyDisplayScale(rawValue){
+    const value = Math.min(200, Math.max(100, Number(rawValue) || 100));
+    const scale = value / 100;
+    const input = document.getElementById('display-scale');
+    input.value = String(value);
+
+    // CSS zoom 會同時放大字體、間距與圖表，並讓 flex/grid 依放大後的可用空間重新排版。
+    document.body.style.zoom = String(scale);
+    document.body.style.width = '100%';
+    document.body.style.height = `${100 / scale}vh`;
+    localStorage.setItem(DISPLAY_SCALE_KEY, String(value));
+
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new Event('resize'));
+      if (patternViewerInitialized && window.PatternViewer) PatternViewer.resize();
+    });
+  }
+
   let patternViewerInitialized = false;
   let aiRankingsLoaded = false;
   let aiRankings = [];
+
+  const displayScaleInput = document.getElementById('display-scale');
+  applyDisplayScale(localStorage.getItem(DISPLAY_SCALE_KEY) || 100);
+  displayScaleInput.addEventListener('change', event => applyDisplayScale(event.target.value));
+  displayScaleInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      applyDisplayScale(event.target.value);
+      event.target.blur();
+    }
+  });
 
   async function activateWorkspace(name){
     const target = ['pattern', 'ranking'].includes(name) ? name : 'reports';
@@ -768,6 +828,30 @@
 
   function rankingEscape(value){ return escapeHtml(String(value ?? '')); }
 
+  function findReportByCode(code){
+    const normalizedCode = String(code || '');
+    if (!normalizedCode || !tree) return null;
+    let found = null;
+    (function walk(node){
+      if (found) return;
+      const report = (node.reports || []).find(item => String(item.code || '') === normalizedCode && item.html);
+      if (report) {
+        found = { path:node.path || '', report };
+        return;
+      }
+      (node.children || []).forEach(walk);
+    })(tree);
+    return found;
+  }
+
+  function rankingStockLink(code, name, prefix=''){
+    const label = `${prefix}${code || ''} ${name || ''}`.trim();
+    const found = findReportByCode(code);
+    if (!found) return `<span class="ai-stock-unavailable" title="尚無可開啟的個股報表">${rankingEscape(label)}</span>`;
+    const href = 'reports/' + encodeURI(joinPath(found.path, found.report.html));
+    return `<a class="ai-stock-link" href="${rankingEscape(href)}" target="_blank" rel="noopener" title="開啟 ${rankingEscape(code)} ${rankingEscape(name)} 詳細報表">${rankingEscape(label)}</a>`;
+  }
+
   function renderAiRankings(){
     const dateEl = document.getElementById('ai-latest-date');
     const consensusEl = document.getElementById('ai-consensus-grid');
@@ -788,7 +872,7 @@
       .sort((a,b) => b.ais.length-a.ais.length || (a.ranks.reduce((x,y)=>x+y,0)/a.ranks.length)-(b.ranks.reduce((x,y)=>x+y,0)/b.ranks.length));
     consensusEl.innerHTML = shared.length ? shared.map(item => {
       const avg = item.ranks.reduce((a,b)=>a+b,0)/item.ranks.length;
-      return `<article class="ai-consensus-card"><strong>${rankingEscape(item.code)} ${rankingEscape(item.name)}</strong>
+      return `<article class="ai-consensus-card"><strong>${rankingStockLink(item.code, item.name)}</strong>
         <div class="ai-consensus-meta">${item.ais.length} 位AI共同推薦・平均名次 ${avg.toFixed(1)}</div>
         <div class="ai-rank-muted">${rankingEscape(item.ais.map((ai,i)=>`${ai} #${item.ranks[i]} ${item.decisions[i]}`).join('｜'))}</div></article>`;
     }).join('') : '<div class="ai-empty">最新排行榜目前沒有至少兩位AI共同推薦的股票。</div>';
@@ -796,7 +880,7 @@
     playersEl.innerHTML = latest.length ? latest.map(entry => `<article class="ai-player-card">
       <div class="ai-player-head"><span class="ai-player-name">${rankingEscape(entry.ai)}</span><span class="ai-rank-muted">${rankingEscape(entry.date)}</span></div>
       <div class="ai-top-list">${(entry.top5 || []).slice().sort((a,b)=>a.rank-b.rank).map(stock => `<div class="ai-top-row">
-        <span class="ai-rank-no">${stock.rank}</span><span class="ai-stock-name">${rankingEscape(stock.code)} ${rankingEscape(stock.name)}</span>
+        <span class="ai-rank-no">${stock.rank}</span><span class="ai-stock-name">${rankingStockLink(stock.code, stock.name)}</span>
         <span class="ai-score">${stock.score == null ? '—' : rankingEscape(stock.score)}</span><span>${rankingEscape(stock.decision || '—')}</span>
         <span class="ai-reason">${rankingEscape(stock.reason)}</span></div>`).join('')}</div></article>`).join('')
       : '<div class="ai-empty">尚無AI排行榜資料。</div>';
@@ -815,12 +899,12 @@
     });
     currentStreaks.sort((a,b)=>b.days-a.days || a.latestRank-b.latestRank || a.code.localeCompare(b.code));
     streakEl.innerHTML = currentStreaks.length ? `<table class="ai-streak-table"><thead><tr><th>排行</th><th>AI</th><th>股票</th><th>目前連續上榜</th><th>最新名次</th></tr></thead><tbody>
-      ${currentStreaks.map((item,index)=>`<tr><td>${index+1}</td><td>${rankingEscape(item.ai)}</td><td>${rankingEscape(item.code)} ${rankingEscape(item.name)}</td><td class="ai-streak-days">${item.days} 個評分日</td><td>#${item.latestRank}</td></tr>`).join('')}</tbody></table>`
+      ${currentStreaks.map((item,index)=>`<tr><td>${index+1}</td><td>${rankingEscape(item.ai)}</td><td>${rankingStockLink(item.code, item.name)}</td><td class="ai-streak-days">${item.days} 個評分日</td><td>#${item.latestRank}</td></tr>`).join('')}</tbody></table>`
       : '<div class="ai-empty">尚無連續上榜資料。</div>';
 
     const historyRows = aiRankings.slice().sort((a,b)=>b.date.localeCompare(a.date)||a.ai.localeCompare(b.ai));
     historyEl.innerHTML = historyRows.length ? `<table class="ai-history-table"><thead><tr><th>日期</th><th>AI</th><th>TOP 5</th></tr></thead><tbody>
-      ${historyRows.map(entry=>`<tr><td>${rankingEscape(entry.date)}</td><td>${rankingEscape(entry.ai)}</td><td>${rankingEscape((entry.top5||[]).sort((a,b)=>a.rank-b.rank).map(x=>`#${x.rank} ${x.code} ${x.name}`).join('｜'))}</td></tr>`).join('')}</tbody></table>`
+      ${historyRows.map(entry=>`<tr><td>${rankingEscape(entry.date)}</td><td>${rankingEscape(entry.ai)}</td><td><div class="ai-history-stocks">${(entry.top5||[]).slice().sort((a,b)=>a.rank-b.rank).map(x=>rankingStockLink(x.code, x.name, `#${x.rank} `)).join('')}</div></td></tr>`).join('')}</tbody></table>`
       : '<div class="ai-empty">尚無歷史紀錄。</div>';
   }
 
