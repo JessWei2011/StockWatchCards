@@ -367,7 +367,7 @@
   .ai-rank-no{ width:25px; height:25px; display:grid; place-items:center; border-radius:50%; background:#334155; font-weight:900; }
   .ai-stock-name{ font-weight:850; color:#fff; }
   .ai-stock-link{
-    color:#93c5fd; font-weight:850; text-decoration:none; border-bottom:1px dashed rgba(147,197,253,.6);
+    appearance:none; padding:0; background:none; color:#93c5fd; font:inherit; font-weight:850; text-decoration:none; border:0; border-bottom:1px dashed rgba(147,197,253,.6);
     cursor:pointer;
   }
   .ai-stock-link:hover, .ai-stock-link:focus{ color:#fff; border-bottom-color:#fff; outline:none; }
@@ -436,6 +436,10 @@
   .rank-row:nth-child(odd):hover, .rank-row:nth-child(even):hover{
     background:#293d59;
     box-shadow:inset 4px 0 0 #60a5fa;
+  }
+  .rank-row.ai-focus-target{
+    background:#29466b;
+    box-shadow:inset 5px 0 0 #60a5fa,0 0 0 2px rgba(96,165,250,.45),0 0 24px rgba(59,130,246,.3);
   }
   .rank-row:last-child{ border-bottom:0; }
   .rank-row-main{
@@ -561,7 +565,7 @@
         <div class="insight-header">
           <div class="insight-title">
             <h2 id="insight-heading">📊 全部個股狀態總覽</h2>
-            <p>點擊任一個股，直接進入完整 K 線、型態教學與 AI 分析。</p>
+            <p>點擊左側個股或排行榜股票，直接定位這裡的 AI 分析結果。</p>
           </div>
           <div class="insight-actions">
             <select id="rank-group-filter"></select>
@@ -859,28 +863,30 @@
     return {ok, expected, actual};
   }
 
-  function findReportByCode(code){
-    const normalizedCode = String(code || '');
-    if (!normalizedCode || !tree) return null;
-    let found = null;
-    (function walk(node){
-      if (found) return;
-      const report = (node.reports || []).find(item => String(item.code || '') === normalizedCode && item.html);
-      if (report) {
-        found = { path:node.path || '', report };
-        return;
-      }
-      (node.children || []).forEach(walk);
-    })(tree);
-    return found;
-  }
-
   function rankingStockLink(code, name, prefix=''){
     const label = `${prefix}${code || ''} ${name || ''}`.trim();
-    const found = findReportByCode(code);
-    if (!found) return `<span class="ai-stock-unavailable" title="尚無可開啟的個股報表">${rankingEscape(label)}</span>`;
-    const href = 'reports/' + encodeURI(joinPath(found.path, found.report.html));
-    return `<a class="ai-stock-link" href="${rankingEscape(href)}" target="_blank" rel="noopener" title="開啟 ${rankingEscape(code)} ${rankingEscape(name)} 詳細報表">${rankingEscape(label)}</a>`;
+    const normalizedCode = String(code || '');
+    if (!cardsByCode[normalizedCode]) return `<span class="ai-stock-unavailable" title="尚無 AI 分析結果">${rankingEscape(label)}</span>`;
+    return `<button type="button" class="ai-stock-link" data-ai-stock-code="${rankingEscape(normalizedCode)}" title="定位 ${rankingEscape(code)} ${rankingEscape(name)} 的 AI 分析結果">${rankingEscape(label)}</button>`;
+  }
+
+  async function focusAiResult(code){
+    const normalizedCode = String(code || '');
+    if (!cardsByCode[normalizedCode]) return false;
+    await activateWorkspace('reports');
+    rankGroupFilter = '';
+    const filter = document.getElementById('rank-group-filter');
+    if (filter) filter.value = '';
+    renderRankPanel();
+    requestAnimationFrame(() => {
+      const target = Array.from(document.querySelectorAll('#rank-list .rank-row'))
+        .find(row => row.dataset.code === normalizedCode);
+      if (!target) return;
+      target.scrollIntoView({ behavior:'smooth', block:'center' });
+      target.classList.add('ai-focus-target');
+      window.setTimeout(() => target.classList.remove('ai-focus-target'), 2200);
+    });
+    return true;
   }
 
   function renderAiRankings(){
@@ -1009,6 +1015,11 @@
   document.getElementById('ai-import-date').value = new Date().toISOString().slice(0,10);
   document.getElementById('ai-import-name').value = 'ChatGPT';
   document.getElementById('ai-save-ranking-btn').addEventListener('click', saveAiRanking);
+  document.getElementById('ranking-workspace').addEventListener('click', event => {
+    const link = event.target.closest('[data-ai-stock-code]');
+    if (!link) return;
+    focusAiResult(link.dataset.aiStockCode);
+  });
   document.getElementById('ai-copy-prompt-btn').addEventListener('click', async () => {
     const status = document.getElementById('ai-import-status');
     try {
@@ -1165,9 +1176,7 @@
       patternBtn.addEventListener('mousedown', (e) => e.stopPropagation());
       item.appendChild(patternBtn);
     }
-    item.addEventListener('click', () => {
-      window.open('reports/' + encodeURI(joinPath(folderPath, r.html)), '_blank');
-    });
+    item.addEventListener('click', () => focusAiResult(r.code));
     item.addEventListener('dragstart', (e) => {
       item.classList.add('dragging');
       e.dataTransfer.setData('text/plain', r.base);
@@ -1280,9 +1289,7 @@
         });
         patternBtn.addEventListener('mousedown', (e) => e.stopPropagation());
       }
-      card.addEventListener('click', () => {
-        window.open('reports/' + encodeURI(joinPath(currentPath, r.html)), '_blank');
-      });
+      card.addEventListener('click', () => focusAiResult(r.code));
       card.addEventListener('dragstart', (e) => {
         card.classList.add('dragging');
         e.dataTransfer.setData('text/plain', r.base);
@@ -1843,6 +1850,7 @@
     rankedCards.forEach((c, i) => {
       const row = document.createElement('div');
       row.className = 'rank-row';
+      row.dataset.code = String(c.code || '');
       const isFresh = c.date === today;
       const aiScore = Number(c.winRate);
       row.innerHTML = `
