@@ -49,7 +49,7 @@ def read_ai_rankings():
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         return {"version": 1, "rankings": []}
     rankings = payload.get("rankings") if isinstance(payload, dict) else None
-    return {"version": 2, "rankings": rankings if isinstance(rankings, list) else []}
+    return {"version": 3, "rankings": rankings if isinstance(rankings, list) else []}
 
 
 def validate_ai_ranking(entry):
@@ -58,12 +58,15 @@ def validate_ai_ranking(entry):
     date = str(entry.get("date") or "").strip()
     ai = str(entry.get("ai") or "").strip()
     top5 = entry.get("top5")
+    audit = entry.get("audit")
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
         raise ValueError("date 必須是 YYYY-MM-DD")
     if not ai or len(ai) > 50:
         raise ValueError("ai 名稱不可空白且最多 50 字")
     if not isinstance(top5, list) or len(top5) != 5:
         raise ValueError("top5 必須剛好包含 5 筆")
+    if not isinstance(audit, dict) or audit.get("status") != "passed":
+        raise ValueError("缺少第二次規則稽核；audit.status 必須是 passed")
     cleaned = []
     seen_codes = set()
     seen_ranks = set()
@@ -88,28 +91,64 @@ def validate_ai_ranking(entry):
         try:
             score = float(score)
         except (TypeError, ValueError):
-            raise ValueError("第二次 AI 獨立分析的每筆 score 必須是數字")
+            raise ValueError("每筆 score 必須是數字")
         seen_ranks.add(rank)
         seen_codes.add(code)
         cleaned.append({
             "rank": rank, "code": code, "name": name[:50], "score": score,
             "decision": decision[:30], "reason": reason[:1000],
         })
+    cleaned.sort(key=lambda item: item["rank"])
+    scores = [item["score"] for item in cleaned]
+    if any(scores[index] < scores[index + 1] for index in range(len(scores) - 1)):
+        raise ValueError("top5 必須依綜合分數降冪排列")
+    if any(
+        cleaned[index]["score"] == cleaned[index + 1]["score"]
+        and cleaned[index]["code"] > cleaned[index + 1]["code"]
+        for index in range(len(cleaned) - 1)
+    ):
+        raise ValueError("top5 同分時必須依股票代號排序")
+
+    audit_top5 = audit.get("top5")
+    if not isinstance(audit_top5, list) or len(audit_top5) != 5:
+        raise ValueError("audit.top5 必須包含稽核確認後的 5 筆名次、代號與分數")
+    try:
+        audited = sorted(
+            [(int(item.get("rank")), str(item.get("code") or "").strip(), float(item.get("score")))
+             for item in audit_top5],
+            key=lambda item: item[0],
+        )
+    except (AttributeError, TypeError, ValueError):
+        raise ValueError("audit.top5 的 rank、code、score 格式不正確")
+    submitted = [(item["rank"], item["code"], float(item["score"])) for item in cleaned]
+    if audited != submitted:
+        raise ValueError("第二次稽核結果尚未與第一次榜單同步；請先依稽核意見修正，再重新稽核")
+
     canonical = canonical_top5_cards()
     if len(canonical) != 5:
-        raise ValueError("個股綜合分數資料不足 5 筆，無法建立統一排行榜")
-    required_codes = [str(card["code"]) for card in canonical]
-    cleaned.sort(key=lambda item: item["rank"])
+        raise ValueError("個股綜合分數資料不足 5 筆，無法驗證排行榜")
     expected = [(str(card["code"]), float(card["winRate"])) for card in canonical]
     actual = [(item["code"], float(item["score"])) for item in cleaned]
     if actual != expected:
         expected_text = "、".join(f"#{i+1} {code} {score:g}分" for i, (code, score) in enumerate(expected))
         actual_text = "、".join(f"#{i+1} {code} {score:g}分" for i, (code, score) in enumerate(actual))
         raise ValueError(
-            "AI 分析發生矛盾，本次結果未儲存，請使用同一份 AI_SCORING_RULES.md 共用規則重新判定。"
-            f" 第一次綜合分數：{expected_text}；第二次推薦結果：{actual_text}"
+            "排行榜與目前首頁 AI 分數尚未同步，本次結果未儲存。請先更新 data.js，再執行第二次規則稽核。"
+            f" 首頁 TOP 5：{expected_text}；送出榜單：{actual_text}"
         )
-    return {"date": date, "ai": ai, "top5": cleaned}
+    issues = audit.get("issues")
+    if issues not in (None, []):
+        raise ValueError("audit.status 為 passed 時，audit.issues 必須是空陣列")
+    return {
+        "date": date,
+        "ai": ai,
+        "top5": cleaned,
+        "verification": {
+            "status": "passed",
+            "method": "evidence_audit",
+            "checkedAt": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        },
+    }
 
 
 def upsert_ai_ranking(entry):
@@ -119,7 +158,7 @@ def upsert_ai_ranking(entry):
                 if not (item.get("date") == cleaned["date"] and item.get("ai") == cleaned["ai"])]
     rankings.append(cleaned)
     rankings.sort(key=lambda item: (item.get("date", ""), item.get("ai", "")))
-    payload = {"version": 1, "rankings": rankings}
+    payload = {"version": 3, "rankings": rankings}
     temp_path = AI_RANKINGS_FILE.with_suffix(".json.tmp")
     temp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temp_path.replace(AI_RANKINGS_FILE)
@@ -160,7 +199,7 @@ def read_stock_cards():
 
 
 def canonical_top5_cards():
-    """第一次 AI 綜合分析的 TOP 5，只用於與第二次獨立分析做一致性比對。"""
+    """目前首頁 AI 綜合分析的 TOP 5，用於儲存當下的同步檢查。"""
     cards = list(read_stock_cards().values())
     scored = [card for card in cards if isinstance(card.get("winRate"), (int, float))]
     scored.sort(key=lambda card: (-float(card["winRate"]), str(card.get("code", ""))))

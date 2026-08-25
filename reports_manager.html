@@ -361,6 +361,7 @@
   .ai-consistency{ margin-left:auto; padding:3px 8px; border-radius:999px; font-size:10.5px; font-weight:850; }
   .ai-consistency.ok{ color:#86efac; border:1px solid rgba(74,222,128,.45); background:rgba(34,197,94,.1); }
   .ai-consistency.conflict{ color:#fca5a5; border:1px solid rgba(248,113,113,.5); background:rgba(239,68,68,.12); }
+  .ai-consistency.legacy{ color:#fde68a; border:1px solid rgba(251,191,36,.5); background:rgba(245,158,11,.12); }
   .ai-top-list{ display:grid; gap:8px; }
   .ai-top-head{ display:grid; grid-template-columns:30px minmax(105px,.7fr) 50px 76px minmax(180px,2fr); gap:8px; padding:0 9px; color:var(--text-dim); font-size:10.5px; font-weight:750; }
   .ai-top-row{ display:grid; grid-template-columns:30px minmax(105px,.7fr) 50px 76px minmax(180px,2fr); gap:8px; align-items:start; padding:9px; border-radius:9px; background:#1b2029; font-size:12px; }
@@ -697,7 +698,7 @@
       <div class="ai-rank-hero">
         <div>
           <h2>🏆 多AI每日選股排行榜</h2>
-          <p>用同一份 AI_SCORING_RULES.md 共用規則進行第二次獨立分析；僅在股票、名次與分數全部吻合時採用。</p>
+          <p>第一次完成評分，第二次依同一份 AI_SCORING_RULES.md 核對數據、規則與排序；稽核通過後才採用。</p>
         </div>
         <div class="ai-latest-date" id="ai-latest-date">尚無資料</div>
       </div>
@@ -710,7 +711,7 @@
 
       <section class="ai-rank-section">
         <h3>🧠 最新各AI榜單</h3>
-        <p class="ai-rank-muted">綠色「分析吻合」才代表第二次 AI 推薦與第一次綜合評分使用相同標準得到同一結果。</p>
+        <p class="ai-rank-muted">綠色「規則稽核通過」代表第二次已逐項核對第一次的數據引用、判斷規則與分數排序。</p>
         <div class="ai-player-grid" id="ai-player-grid"></div>
       </section>
 
@@ -721,15 +722,15 @@
       </section>
 
       <section class="ai-rank-section">
-        <h3>📝 匯入AI第二次獨立分析</h3>
-        <p class="ai-rank-muted">系統會比對兩次的 TOP 5、名次與分數；不一致時不儲存，並要求 AI 依同一規則重新判定。</p>
+        <h3>📝 匯入AI規則稽核結果</h3>
+        <p class="ai-rank-muted">稽核發現具體錯誤時先修正首頁結果；確認數據、規則及排序正確後，才儲存已驗證榜單。</p>
         <div class="ai-import-grid">
           <input type="date" id="ai-import-date" aria-label="評分日期">
           <input type="text" id="ai-import-name" list="ai-player-options" placeholder="AI名稱，例如 ChatGPT">
           <datalist id="ai-player-options"><option value="ChatGPT"><option value="Gemini"></datalist>
           <div class="ai-rank-muted">儲存位置：<code>ai_rankings.json</code>；API：<code>POST /api/ai-rankings/upsert</code></div>
         </div>
-        <textarea class="ai-json-input" id="ai-json-input" spellcheck="false" placeholder='貼上 {"date":"YYYY-MM-DD","ai":"ChatGPT","top5":[...]} 全部JSON'></textarea>
+        <textarea class="ai-json-input" id="ai-json-input" spellcheck="false" placeholder='貼上 {"date":"YYYY-MM-DD","ai":"ChatGPT","top5":[...],"audit":{"status":"passed","issues":[],"top5":[...]}} 全部JSON'></textarea>
         <div class="ai-import-actions">
           <button type="button" class="btn primary" id="ai-save-ranking-btn">儲存排行榜</button>
           <button type="button" class="btn" id="ai-copy-prompt-btn">複製給AI的提示詞</button>
@@ -845,22 +846,11 @@
     return Number.isFinite(value) ? value : null;
   }
 
-  function canonicalTopCards(){
-    return Object.values(cardsByCode)
-      .filter(card => Number.isFinite(Number(card.winRate)))
-      .sort((a,b) => Number(b.winRate)-Number(a.winRate) || String(a.code).localeCompare(String(b.code)))
-      .slice(0, 5);
-  }
-
   function rankingConsistency(entry){
-    const expected = canonicalTopCards().map((card,index) => ({rank:index+1,code:String(card.code),score:Number(card.winRate)}));
-    const actual = (entry.top5 || []).slice().sort((a,b)=>a.rank-b.rank)
-      .map(item => ({rank:Number(item.rank),code:String(item.code),score:Number(item.score)}));
-    const ok = expected.length === 5 && actual.length === 5 && expected.every((item,index) => {
-      const other = actual[index];
-      return other && item.rank === other.rank && item.code === other.code && item.score === other.score;
-    });
-    return {ok, expected, actual};
+    const status = entry?.verification?.status;
+    if (status === 'passed') return {className:'ok', label:'✓ 規則稽核通過'};
+    if (status === 'failed') return {className:'conflict', label:'⚠ 稽核未通過'};
+    return {className:'legacy', label:'舊資料・未經新稽核'};
   }
 
   function rankingStockLink(code, name, prefix=''){
@@ -918,11 +908,11 @@
     playersEl.innerHTML = latest.length ? latest.map(entry => {
       const consistency = rankingConsistency(entry);
       return `<article class="ai-player-card">
-      <div class="ai-player-head"><span class="ai-player-name">${rankingEscape(entry.ai)}</span><span class="ai-consistency ${consistency.ok ? 'ok' : 'conflict'}">${consistency.ok ? '✓ 分析吻合' : '⚠ 分析矛盾・請重新判定'}</span><span class="ai-rank-muted">${rankingEscape(entry.date)}</span></div>
+      <div class="ai-player-head"><span class="ai-player-name">${rankingEscape(entry.ai)}</span><span class="ai-consistency ${consistency.className}">${consistency.label}</span><span class="ai-rank-muted">${rankingEscape(entry.date)}</span></div>
       <div class="ai-top-head"><span>名次</span><span>個股</span><span>綜合分數</span><span>AI決策</span><span>推薦理由</span></div>
       <div class="ai-top-list">${(entry.top5 || []).slice().sort((a,b)=>a.rank-b.rank).map(stock => `<div class="ai-top-row">
         <span class="ai-rank-no">${stock.rank}</span><span class="ai-stock-name">${rankingStockLink(stock.code, stock.name)}</span>
-        <span class="ai-score" title="第二次 AI 獨立分析分數">${Number.isFinite(Number(stock.score)) ? `${rankingEscape(stock.score)}分` : '—'}</span><span>${rankingEscape(stock.decision || '—')}</span>
+        <span class="ai-score" title="經第二次規則稽核確認的綜合分數">${Number.isFinite(Number(stock.score)) ? `${rankingEscape(stock.score)}分` : '—'}</span><span>${rankingEscape(stock.decision || '—')}</span>
         <span class="ai-reason">${rankingEscape(stock.reason)}</span></div>`).join('')}</div></article>`;
     }).join('')
       : '<div class="ai-empty">尚無AI排行榜資料。</div>';
