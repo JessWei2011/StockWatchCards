@@ -358,7 +358,11 @@
   .ai-consensus-meta{ color:#fbbf24; font-size:12px; margin-top:5px; }
   .ai-player-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
   .ai-player-name{ font-size:17px; font-weight:900; }
+  .ai-consistency{ margin-left:auto; padding:3px 8px; border-radius:999px; font-size:10.5px; font-weight:850; }
+  .ai-consistency.ok{ color:#86efac; border:1px solid rgba(74,222,128,.45); background:rgba(34,197,94,.1); }
+  .ai-consistency.conflict{ color:#fca5a5; border:1px solid rgba(248,113,113,.5); background:rgba(239,68,68,.12); }
   .ai-top-list{ display:grid; gap:8px; }
+  .ai-top-head{ display:grid; grid-template-columns:30px minmax(105px,.7fr) 50px 76px minmax(180px,2fr); gap:8px; padding:0 9px; color:var(--text-dim); font-size:10.5px; font-weight:750; }
   .ai-top-row{ display:grid; grid-template-columns:30px minmax(105px,.7fr) 50px 76px minmax(180px,2fr); gap:8px; align-items:start; padding:9px; border-radius:9px; background:#1b2029; font-size:12px; }
   .ai-rank-no{ width:25px; height:25px; display:grid; place-items:center; border-radius:50%; background:#334155; font-weight:900; }
   .ai-stock-name{ font-weight:850; color:#fff; }
@@ -369,7 +373,7 @@
   .ai-stock-link:hover, .ai-stock-link:focus{ color:#fff; border-bottom-color:#fff; outline:none; }
   .ai-stock-unavailable{ color:var(--text-dim); font-weight:750; }
   .ai-history-stocks{ display:flex; flex-wrap:wrap; gap:5px 10px; }
-  .ai-score{ color:#fbbf24; font-weight:900; }
+  .ai-score{ color:#fbbf24; font-weight:900; white-space:nowrap; }
   .ai-reason{ color:var(--text-dim); line-height:1.45; }
   .ai-streak-table,.ai-history-table{ width:100%; border-collapse:collapse; font-size:12px; }
   .ai-streak-table th,.ai-streak-table td,.ai-history-table th,.ai-history-table td{ text-align:left; padding:9px 10px; border-bottom:1px solid #2c3340; vertical-align:top; }
@@ -385,6 +389,7 @@
     .ai-rank-hero{ flex-direction:column; }
     .ai-import-grid{ grid-template-columns:1fr; }
     .ai-top-row{ grid-template-columns:30px 1fr 48px 72px; }
+    .ai-top-head{ display:none; }
     .ai-reason{ grid-column:2/-1; }
   }
   .display-scale-control{
@@ -688,7 +693,7 @@
       <div class="ai-rank-hero">
         <div>
           <h2>🏆 多AI每日選股排行榜</h2>
-          <p>彙整各AI的每日TOP 5；共同推薦只看最新日期，連續上榜依每位AI的歷史評分日計算。</p>
+          <p>用同一份 GEMINI.md 規則進行第二次獨立分析；僅在股票、名次與分數全部吻合時採用。</p>
         </div>
         <div class="ai-latest-date" id="ai-latest-date">尚無資料</div>
       </div>
@@ -701,6 +706,7 @@
 
       <section class="ai-rank-section">
         <h3>🧠 最新各AI榜單</h3>
+        <p class="ai-rank-muted">綠色「分析吻合」才代表第二次 AI 推薦與第一次綜合評分使用相同標準得到同一結果。</p>
         <div class="ai-player-grid" id="ai-player-grid"></div>
       </section>
 
@@ -711,8 +717,8 @@
       </section>
 
       <section class="ai-rank-section">
-        <h3>📝 匯入AI評分</h3>
-        <p class="ai-rank-muted">把AI輸出的單一JSON物件貼入；相同日期與AI會覆蓋舊紀錄。</p>
+        <h3>📝 匯入AI第二次獨立分析</h3>
+        <p class="ai-rank-muted">系統會比對兩次的 TOP 5、名次與分數；不一致時不儲存，並要求 AI 依同一規則重新判定。</p>
         <div class="ai-import-grid">
           <input type="date" id="ai-import-date" aria-label="評分日期">
           <input type="text" id="ai-import-name" list="ai-player-options" placeholder="AI名稱，例如 ChatGPT">
@@ -830,6 +836,29 @@
 
   function rankingEscape(value){ return escapeHtml(String(value ?? '')); }
 
+  function canonicalStockScore(code){
+    const value = Number(cardsByCode[String(code || '')]?.winRate);
+    return Number.isFinite(value) ? value : null;
+  }
+
+  function canonicalTopCards(){
+    return Object.values(cardsByCode)
+      .filter(card => Number.isFinite(Number(card.winRate)))
+      .sort((a,b) => Number(b.winRate)-Number(a.winRate) || String(a.code).localeCompare(String(b.code)))
+      .slice(0, 5);
+  }
+
+  function rankingConsistency(entry){
+    const expected = canonicalTopCards().map((card,index) => ({rank:index+1,code:String(card.code),score:Number(card.winRate)}));
+    const actual = (entry.top5 || []).slice().sort((a,b)=>a.rank-b.rank)
+      .map(item => ({rank:Number(item.rank),code:String(item.code),score:Number(item.score)}));
+    const ok = expected.length === 5 && actual.length === 5 && expected.every((item,index) => {
+      const other = actual[index];
+      return other && item.rank === other.rank && item.code === other.code && item.score === other.score;
+    });
+    return {ok, expected, actual};
+  }
+
   function findReportByCode(code){
     const normalizedCode = String(code || '');
     if (!normalizedCode || !tree) return null;
@@ -874,17 +903,22 @@
       .sort((a,b) => b.ais.length-a.ais.length || (a.ranks.reduce((x,y)=>x+y,0)/a.ranks.length)-(b.ranks.reduce((x,y)=>x+y,0)/b.ranks.length));
     consensusEl.innerHTML = shared.length ? shared.map(item => {
       const avg = item.ranks.reduce((a,b)=>a+b,0)/item.ranks.length;
+      const score = canonicalStockScore(item.code);
       return `<article class="ai-consensus-card"><strong>${rankingStockLink(item.code, item.name)}</strong>
-        <div class="ai-consensus-meta">${item.ais.length} 位AI共同推薦・平均名次 ${avg.toFixed(1)}</div>
+        <div class="ai-consensus-meta">${item.ais.length} 位AI共同推薦・平均名次 ${avg.toFixed(1)}${score === null ? '' : `・綜合分數 ${score}`}</div>
         <div class="ai-rank-muted">${rankingEscape(item.ais.map((ai,i)=>`${ai} #${item.ranks[i]} ${item.decisions[i]}`).join('｜'))}</div></article>`;
     }).join('') : '<div class="ai-empty">最新排行榜目前沒有至少兩位AI共同推薦的股票。</div>';
 
-    playersEl.innerHTML = latest.length ? latest.map(entry => `<article class="ai-player-card">
-      <div class="ai-player-head"><span class="ai-player-name">${rankingEscape(entry.ai)}</span><span class="ai-rank-muted">${rankingEscape(entry.date)}</span></div>
+    playersEl.innerHTML = latest.length ? latest.map(entry => {
+      const consistency = rankingConsistency(entry);
+      return `<article class="ai-player-card">
+      <div class="ai-player-head"><span class="ai-player-name">${rankingEscape(entry.ai)}</span><span class="ai-consistency ${consistency.ok ? 'ok' : 'conflict'}">${consistency.ok ? '✓ 分析吻合' : '⚠ 分析矛盾・請重新判定'}</span><span class="ai-rank-muted">${rankingEscape(entry.date)}</span></div>
+      <div class="ai-top-head"><span>名次</span><span>個股</span><span>綜合分數</span><span>AI決策</span><span>推薦理由</span></div>
       <div class="ai-top-list">${(entry.top5 || []).slice().sort((a,b)=>a.rank-b.rank).map(stock => `<div class="ai-top-row">
         <span class="ai-rank-no">${stock.rank}</span><span class="ai-stock-name">${rankingStockLink(stock.code, stock.name)}</span>
-        <span class="ai-score">${stock.score == null ? '—' : rankingEscape(stock.score)}</span><span>${rankingEscape(stock.decision || '—')}</span>
-        <span class="ai-reason">${rankingEscape(stock.reason)}</span></div>`).join('')}</div></article>`).join('')
+        <span class="ai-score" title="第二次 AI 獨立分析分數">${Number.isFinite(Number(stock.score)) ? `${rankingEscape(stock.score)}分` : '—'}</span><span>${rankingEscape(stock.decision || '—')}</span>
+        <span class="ai-reason">${rankingEscape(stock.reason)}</span></div>`).join('')}</div></article>`;
+    }).join('')
       : '<div class="ai-empty">尚無AI排行榜資料。</div>';
 
     const currentStreaks = [];
@@ -925,9 +959,7 @@
   }
 
   function aiPromptText(){
-    const date = document.getElementById('ai-import-date').value || new Date().toISOString().slice(0,10);
-    const ai = document.getElementById('ai-import-name').value.trim() || '你的AI名稱';
-    return `請依我提供的最新個股報表，完成全量分析並選出TOP 5。評分時逐日核對近1～3日價格、MACD/KD、三大法人與融資，集保資料不得計分，且防禦牆優先。\n\n請將結果存入專案根目錄 ai_rankings.json；若可存取本機API，POST 到 /api/ai-rankings/upsert。相同date＋ai請覆蓋。若無法直接寫入，只輸出下列格式的純JSON（不要Markdown圍欄），讓我貼入排行榜匯入區：\n{\n  "date": "${date}",\n  "ai": "${ai}",\n  "top5": [\n    {"rank":1,"code":"股票代號","name":"股票名稱","score":數字或null,"decision":"進場/加碼/續抱觀望/減碼/出場","reason":"包含具體數字的精簡原因"},\n    {"rank":2,"code":"...","name":"...","score":null,"decision":"...","reason":"..."},\n    {"rank":3,"code":"...","name":"...","score":null,"decision":"...","reason":"..."},\n    {"rank":4,"code":"...","name":"...","score":null,"decision":"...","reason":"..."},\n    {"rank":5,"code":"...","name":"...","score":null,"decision":"...","reason":"..."}\n  ]\n}`;
+    return '開始選股';
   }
 
   async function saveAiRanking(){

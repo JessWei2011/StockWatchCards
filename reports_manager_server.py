@@ -49,7 +49,7 @@ def read_ai_rankings():
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         return {"version": 1, "rankings": []}
     rankings = payload.get("rankings") if isinstance(payload, dict) else None
-    return {"version": 1, "rankings": rankings if isinstance(rankings, list) else []}
+    return {"version": 2, "rankings": rankings if isinstance(rankings, list) else []}
 
 
 def validate_ai_ranking(entry):
@@ -85,18 +85,30 @@ def validate_ai_ranking(entry):
             raise ValueError("股票代號不可空白、重複或含特殊字元")
         if not name or not reason:
             raise ValueError("每筆必須包含股票名稱與推薦原因")
-        if score is not None:
-            try:
-                score = float(score)
-            except (TypeError, ValueError):
-                raise ValueError("score 必須是數字或 null")
+        try:
+            score = float(score)
+        except (TypeError, ValueError):
+            raise ValueError("第二次 Gemini 分析的每筆 score 必須是數字")
         seen_ranks.add(rank)
         seen_codes.add(code)
         cleaned.append({
             "rank": rank, "code": code, "name": name[:50], "score": score,
             "decision": decision[:30], "reason": reason[:1000],
         })
+    canonical = canonical_top5_cards()
+    if len(canonical) != 5:
+        raise ValueError("個股綜合分數資料不足 5 筆，無法建立統一排行榜")
+    required_codes = [str(card["code"]) for card in canonical]
     cleaned.sort(key=lambda item: item["rank"])
+    expected = [(str(card["code"]), float(card["winRate"])) for card in canonical]
+    actual = [(item["code"], float(item["score"])) for item in cleaned]
+    if actual != expected:
+        expected_text = "、".join(f"#{i+1} {code} {score:g}分" for i, (code, score) in enumerate(expected))
+        actual_text = "、".join(f"#{i+1} {code} {score:g}分" for i, (code, score) in enumerate(actual))
+        raise ValueError(
+            "AI 分析發生矛盾，本次結果未儲存，請 Gemini 使用同一份 GEMINI.md 規則重新判定。"
+            f" 第一次綜合分數：{expected_text}；第二次推薦結果：{actual_text}"
+        )
     return {"date": date, "ai": ai, "top5": cleaned}
 
 
@@ -145,6 +157,14 @@ def read_stock_cards():
             by_code[code] = c
     attach_report_flows(by_code)
     return by_code
+
+
+def canonical_top5_cards():
+    """第一次 Gemini 綜合分析的 TOP 5，只用於與第二次獨立分析做一致性比對。"""
+    cards = list(read_stock_cards().values())
+    scored = [card for card in cards if isinstance(card.get("winRate"), (int, float))]
+    scored.sort(key=lambda card: (-float(card["winRate"]), str(card.get("code", ""))))
+    return scored[:5]
 
 
 def resolve_safe_path(rel_path):
