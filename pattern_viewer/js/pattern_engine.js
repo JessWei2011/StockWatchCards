@@ -112,7 +112,7 @@ window.PatternEngine = {
     return {
       name: '頭頭高／底底高（上升階梯結構）',
       badge: '上升趨勢結構',
-      color: '#10b981',
+      color: '#ef4444', // 台股：上漲紅
       pivots,
       vectorPath: pivots.map(p => [p.date, p.price]),
       explanation: `【底底高教學心法】：依近期高低點回推 ${swings.map(p => `${p.date} ${p.type === 'low' ? '低點' : '高點'} $${p.price}`).join('、')}，每一段的低點都比前一段高，屬於連續墊高的階梯上升結構；只要低點不被跌破，多方架構就沒有被破壞。`
@@ -132,7 +132,7 @@ window.PatternEngine = {
     return {
       name: '頭頭低／底底低（下降階梯結構）',
       badge: '下降趨勢結構',
-      color: '#ef4444',
+      color: '#10b981', // 台股：下跌綠
       pivots,
       vectorPath: pivots.map(p => [p.date, p.price]),
       explanation: `【頭頭低教學心法】：依近期高低點回推 ${swings.map(p => `${p.date} ${p.type === 'high' ? '高點' : '低點'} $${p.price}`).join('、')}，每一段的高點都比前一段低，屬於連續破底的階梯下降結構，反彈只要碰到前一個高點就再度受阻。`
@@ -158,7 +158,7 @@ window.PatternEngine = {
     return {
       name: 'W底（雙重底）',
       badge: broke ? '底部型態已確立' : '底部型態醞釀中',
-      color: '#10b981',
+      color: '#ef4444', // 台股：偏多紅
       pivots,
       vectorPath: pivots.map(p => [p.date, p.price]),
       resistanceLine: p2 ? { price: p2.price, label: 'P2 雙底頸線壓力' } : undefined,
@@ -185,7 +185,7 @@ window.PatternEngine = {
     return {
       name: 'M頭（雙重頂）',
       badge: broke ? '空頭型態已確立' : '高檔警訊型態',
-      color: '#ef4444',
+      color: '#10b981', // 台股：偏空綠
       pivots,
       vectorPath: pivots.map(p => [p.date, p.price]),
       resistanceLine: p2 ? { price: p2.price, label: 'P2 頸線防守線' } : undefined,
@@ -311,7 +311,7 @@ window.PatternEngine = {
     return {
       name: isBottom ? '頭肩底' : '頭肩頂',
       badge: broke ? '型態已確立' : '型態醞釀中（兩肩對稱度僅供參考）',
-      color: isBottom ? '#10b981' : '#ef4444',
+      color: isBottom ? '#ef4444' : '#10b981',
       pivots,
       vectorPath: [[leftShoulder.date, leftShoulder.price], [head.date, head.price], [rightShoulder.date, rightShoulder.price]],
       boundaryLines: [
@@ -343,7 +343,7 @@ window.PatternEngine = {
     return {
       name: '破底翻（V型反轉）',
       badge: crossPoint ? '打底反彈已攻克月線' : '打底反彈進行中',
-      color: '#10b981',
+      color: '#ef4444', // 台股：反轉向上紅
       pivots,
       vectorPath: pivots.map(p => [p.date, p.price]),
       explanation: `【破底翻教學心法】：${bottom.date} 出現波段最低點 $${bottom.price}，${crossPoint ? `${crossPoint.date} 帶量收復月線(MA20) $${crossPoint.price.toFixed(1)}，反彈格局確立。` : '目前反彈力道仍在驗證中，尚未站穩月線(MA20)。'}`
@@ -516,7 +516,7 @@ window.PatternEngine = {
           : '收盤位於布林中軌之上，尚未突破上軌';
         bollTag = crossedMidToday ? '站上中軌' : '中軌上';
         bollBadge = '布林中上區間';
-        color = '#10b981';
+        color = '#ef4444';
       } else if (close >= lower) {
         const fellBelowMidToday = Number.isFinite(previousClose) && Number.isFinite(previousMid)
           && previousClose >= previousMid;
@@ -571,7 +571,7 @@ window.PatternEngine = {
       indicatorAnnotations: [
         { seriesName: 'K線', type: 'markPoint', coord: [cur.date, close], label: `${bollLabel}\n收盤 ${fmt(close)}／上軌 ${fmt(upper)}`, color, yOffset: -30 },
         { seriesName: 'MA10', type: 'markPoint', coord: [cur.date, Number.isFinite(ma10) ? ma10 : close], label: maLabel, color: '#3b82f6', yOffset: 20 },
-        { seriesName: 'MACD', type: 'markPoint', coord: [cur.date, 0], label: '柱狀圖加速度\n觀察點', color: '#ef4444', yOffset: -25 },
+        { seriesName: 'MACD', type: 'markPoint', coord: [cur.date, 0], label: '柱狀圖加速度\n觀察點', color: '#f59e0b', yOffset: -25 },
         { seriesName: 'K值', type: 'markArea', yAxisStart: 80, yAxisEnd: 100, label: 'KD 高檔區', color: 'rgba(244, 63, 94, 0.15)' }
       ]
     };

@@ -7,8 +7,14 @@
   --text-dim: #94a3b8;
   --border: #262a36;
   
-  --entry: #22c55e;
-  --stop: #ef4444;
+  /* 台股配色規範：漲／買超／偏多=紅，跌／賣超／偏空=綠。 */
+  --tw-up: #f87171;
+  --tw-up-strong: #ef4444;
+  --tw-down: #4ade80;
+  --tw-down-strong: #22c55e;
+  --entry: var(--tw-up);
+  --stop: var(--tw-down);
+  --danger: #ef4444;
   --resist: #f59e0b;
   --accent: #3b82f6;
 
@@ -218,7 +224,7 @@ main{ padding: 24px 24px 60px; }
   opacity: 0; transition: opacity .15s;
 }
 .flip-card:hover .del-btn{ opacity: 1; }
-.del-btn:hover{ color: var(--stop); border-color: var(--stop); background: rgba(239, 68, 68, 0.15); }
+.del-btn:hover{ color: var(--danger); border-color: var(--danger); background: rgba(239, 68, 68, 0.15); }
 
 /* Disposition Badge (關緊閉) */
 .disposition-badge{
@@ -383,11 +389,11 @@ main{ padding: 24px 24px 60px; }
   padding: 6px 10px;
 }
 .evidence-block.bull{ border-left: 3px solid var(--entry); }
-.evidence-block.bear{ border-left: 3px solid var(--stop); }
+.evidence-block.bear{ border-left: 3px solid var(--tw-down); }
 
 .evidence-block .ev-title{ font-weight: 800; margin-bottom: 4px; font-size: 12px; }
 .evidence-block.bull .ev-title{ color: var(--entry); }
-.evidence-block.bear .ev-title{ color: var(--stop); }
+.evidence-block.bear .ev-title{ color: var(--tw-down); }
 
 .evidence-block ul{ margin: 0; padding-left: 16px; color: var(--text); }
 .evidence-block li{ margin-bottom: 2px; line-height: 1.35; color: #cbd5e1; }
@@ -508,17 +514,17 @@ main{ padding: 24px 24px 60px; }
 
 /* 5. 支持進場證據 - 綠色 */
 .raw-block.sec-bull {
-  border-left-color: #22c55e;
-  background: rgba(34, 197, 94, 0.09);
+  border-left-color: var(--tw-up-strong);
+  background: rgba(239, 68, 68, 0.09);
 }
-.raw-block.sec-bull .raw-block-title { color: #4ade80; }
+.raw-block.sec-bull .raw-block-title { color: var(--tw-up); }
 
 /* 6. 反對進場證據 - 紅色 */
 .raw-block.sec-bear {
-  border-left-color: #ef4444;
-  background: rgba(239, 68, 68, 0.09);
+  border-left-color: var(--tw-down-strong);
+  background: rgba(34, 197, 94, 0.09);
 }
-.raw-block.sec-bear .raw-block-title { color: #f87171; }
+.raw-block.sec-bear .raw-block-title { color: var(--tw-down); }
 
 /* 7. 最終持股建議 - 亮天藍色 */
 .raw-block.sec-action {
@@ -552,7 +558,7 @@ main{ padding: 24px 24px 60px; }
   font-size: 13.5px; font-weight: 600; cursor: pointer;
 }
 .btn.ghost{ background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
-.btn.danger{ background: var(--stop); color: #fff; }
+.btn.danger{ background: var(--danger); color: #fff; }
 .btn:hover{ filter: brightness(1.1); }
 
 /* Zoom Modal — spacious reading view, tuned for long raw-report text */
@@ -585,7 +591,7 @@ main{ padding: 24px 24px 60px; }
   transition: all 0.15s ease;
 }
 .zoom-flip-btn:hover{ border-color: var(--accent); color: var(--accent); }
-.zoom-close-btn:hover{ border-color: var(--stop); color: var(--stop); }
+.zoom-close-btn:hover{ border-color: var(--danger); color: var(--danger); }
 
 .zoom-stage-outer{
   flex: 1;

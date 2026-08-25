@@ -12,7 +12,9 @@
     /* 以下這組是 AI 分析卡片彈窗(ZoomModal，跟卡片系統共用 render-shared.js)專用的變數，
        對應 style.css 那邊同名色彩，只是換一套變數名稱接到這個頁面既有的深色主題上。 */
     --card-back-bg:#0d0f13; --card-back-text:#dfe3e8;
-    --entry:#4ade80; --stop:#f87171; --resist:#fbbf24;
+    /* 台股配色規範：漲／買超／偏多=紅，跌／賣超／偏空=綠。 */
+    --tw-up:#f87171; --tw-up-strong:#ef4444; --tw-down:#4ade80; --tw-down-strong:#22c55e;
+    --entry:var(--tw-up); --stop:var(--tw-down); --resist:#fbbf24;
     --shadow:0 4px 12px rgba(0,0,0,0.3); --shadow-hover:0 12px 28px rgba(0,0,0,0.5);
     --c-red:#ef4444; --c-red-bg:rgba(239,68,68,0.12); --c-red-border:rgba(239,68,68,0.4);
     --c-orange:#f97316; --c-orange-bg:rgba(249,115,22,0.12); --c-orange-border:rgba(249,115,22,0.4);
@@ -269,10 +271,10 @@
   .evidence-container{ display:flex; flex-direction:column; gap:8px; }
   .evidence-block{ font-size:15px; background:rgba(0,0,0,0.15); border-radius:8px; padding:12px 16px; }
   .evidence-block.bull{ border-left:3px solid var(--entry); }
-  .evidence-block.bear{ border-left:3px solid var(--stop); }
+  .evidence-block.bear{ border-left:3px solid var(--tw-down); }
   .evidence-block .ev-title{ font-weight:800; margin-bottom:4px; font-size:15px; }
   .evidence-block.bull .ev-title{ color:var(--entry); }
-  .evidence-block.bear .ev-title{ color:var(--stop); }
+  .evidence-block.bear .ev-title{ color:var(--tw-down); }
   .evidence-block ul{ margin:0; padding-left:16px; }
   .evidence-block li{ margin-bottom:2px; line-height:1.35; color:var(--card-back-text); }
   .action-summary{ font-size:14.5px; color:var(--text-dim); line-height:1.6; }
@@ -300,10 +302,10 @@
   .raw-block.sec-chip .raw-block-title{ color:#facc15; }
   .raw-block.sec-signal{ border-left-color:#14b8a6; background:rgba(20,184,166,0.08); }
   .raw-block.sec-signal .raw-block-title{ color:#2dd4bf; }
-  .raw-block.sec-bull{ border-left-color:#22c55e; background:rgba(34,197,94,0.09); }
-  .raw-block.sec-bull .raw-block-title{ color:#4ade80; }
-  .raw-block.sec-bear{ border-left-color:#ef4444; background:rgba(239,68,68,0.09); }
-  .raw-block.sec-bear .raw-block-title{ color:#f87171; }
+  .raw-block.sec-bull{ border-left-color:var(--tw-up-strong); background:rgba(239,68,68,0.09); }
+  .raw-block.sec-bull .raw-block-title{ color:var(--tw-up); }
+  .raw-block.sec-bear{ border-left-color:var(--tw-down-strong); background:rgba(34,197,94,0.09); }
+  .raw-block.sec-bear .raw-block-title{ color:var(--tw-down); }
   .raw-block.sec-action{ border-left-color:#06b6d4; background:rgba(6,182,212,0.12); }
   .raw-block.sec-action .raw-block-title{ color:#38bdf8; }
 

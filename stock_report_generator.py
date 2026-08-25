@@ -469,8 +469,9 @@ table { border-collapse: collapse; width:100%; font-size:0.9em; }
 th, td { padding:5px 8px; text-align:right; border-bottom:1px solid #23262e; white-space:nowrap; }
 th:first-child, td:first-child { text-align:left; }
 th { color:#9aa0a6; font-weight:normal; }
-.pos { color:#7ee787; }
-.neg { color:#ff8080; }
+/* 台股配色：正值／買超為紅，負值／賣超為綠。 */
+.pos { color:#ff8080; }
+.neg { color:#7ee787; }
 .kv { display:flex; flex-wrap:wrap; gap:8px 24px; }
 .kv div { min-width:120px; }
 .kv b { color:#9aa0a6; font-weight:normal; }
