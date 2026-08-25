@@ -124,17 +124,17 @@ def validate_ai_ranking(entry):
     if audited != submitted:
         raise ValueError("第二次稽核結果尚未與第一次榜單同步；請先依稽核意見修正，再重新稽核")
 
-    canonical = canonical_top5_cards()
+    canonical = canonical_top5_cards(ai)
     if len(canonical) != 5:
-        raise ValueError("個股綜合分數資料不足 5 筆，無法驗證排行榜")
+        raise ValueError(f"data.js 內 {ai} 的獨立分析不足 5 筆，禁止借用其他 AI 的分數")
     expected = [(str(card["code"]), float(card["winRate"])) for card in canonical]
     actual = [(item["code"], float(item["score"])) for item in cleaned]
     if actual != expected:
         expected_text = "、".join(f"#{i+1} {code} {score:g}分" for i, (code, score) in enumerate(expected))
         actual_text = "、".join(f"#{i+1} {code} {score:g}分" for i, (code, score) in enumerate(actual))
         raise ValueError(
-            "排行榜與目前首頁 AI 分數尚未同步，本次結果未儲存。請先更新 data.js，再執行第二次規則稽核。"
-            f" 首頁 TOP 5：{expected_text}；送出榜單：{actual_text}"
+            f"排行榜與 data.js 內 {ai} 的獨立分析尚未同步，本次結果未儲存。請先更新該 AI 的 aiAnalysis 欄位，再執行第二次規則稽核。"
+            f" {ai} TOP 5：{expected_text}；送出榜單：{actual_text}"
         )
     issues = audit.get("issues")
     if issues not in (None, []):
@@ -198,9 +198,33 @@ def read_stock_cards():
     return by_code
 
 
-def canonical_top5_cards():
-    """目前首頁 AI 綜合分析的 TOP 5，用於儲存當下的同步檢查。"""
+def card_for_ai(card, ai_name):
+    """Return one AI's isolated analysis without borrowing another AI's score."""
+    analyses = card.get("aiAnalysis")
+    if not isinstance(analyses, dict):
+        return None
+    wanted = str(ai_name or "").strip().casefold()
+    analysis = next(
+        (value for key, value in analyses.items()
+         if str(key).strip().casefold() == wanted and isinstance(value, dict)),
+        None,
+    )
+    if not analysis or not isinstance(analysis.get("score"), (int, float)):
+        return None
+    isolated = dict(card)
+    isolated["winRate"] = analysis["score"]
+    isolated["decision"] = analysis.get("decision") or card.get("decision")
+    isolated["action"] = analysis.get("reason") or card.get("action")
+    isolated["date"] = analysis.get("date") or card.get("date")
+    isolated["verified"] = analysis.get("verified") is True
+    return isolated
+
+
+def canonical_top5_cards(ai_name=None):
+    """Return display TOP 5, or an isolated AI TOP 5 when ai_name is supplied."""
     cards = list(read_stock_cards().values())
+    if ai_name:
+        cards = [isolated for card in cards if (isolated := card_for_ai(card, ai_name))]
     scored = [card for card in cards if isinstance(card.get("winRate"), (int, float))]
     scored.sort(key=lambda card: (-float(card["winRate"]), str(card.get("code", ""))))
     return scored[:5]

@@ -6,9 +6,11 @@ from reports_manager_server import canonical_top5_cards, upsert_ai_ranking
 
 
 def build_entry(ai_name):
-    cards = canonical_top5_cards()
+    cards = canonical_top5_cards(ai_name)
     if len(cards) != 5:
-        raise ValueError("data.js 內有效綜合分數不足 5 筆")
+        raise ValueError(f"data.js 內 {ai_name} 的獨立 aiAnalysis 分數不足 5 筆；禁止借用其他 AI 結果")
+    if not all(card.get("verified") is True for card in cards):
+        raise ValueError(f"{ai_name} TOP 5 尚未全部通過自己的第二次稽核")
     dates = [str(card.get("date") or "") for card in cards]
     date = max(dates)
     if not date:
