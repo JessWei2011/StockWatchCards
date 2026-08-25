@@ -8,6 +8,9 @@
 不重新實作各自的執行邏輯，維持原本各工具獨立運作。
 """
 import os
+import queue
+import subprocess
+import threading
 import tkinter as tk
 import urllib.request
 
@@ -16,8 +19,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WIN_W, WIN_H = 500, 220
 
 TARGETS = [
-    ("📊 個股分析中心", os.path.join(BASE_DIR, "reports_manager.bat")),
-    ("📈 總經分析", os.path.join(BASE_DIR, "指標數據", "update.bat")),
+    ("📊 個股分析中心", os.path.join(BASE_DIR, "reports_manager.bat"), True),
+    ("📈 總經分析", os.path.join(BASE_DIR, "指標數據", "update.bat"), False),
 ]
 
 # 兩個工作區各自的本機 server（reports_manager.bat -> reports_manager_server.py，
@@ -41,17 +44,45 @@ BORDER = "#262a36"
 TEXT = "#f1f5f9"
 TEXT_DIM = "#94a3b8"
 ACCENT = "#3b82f6"
+UI_QUEUE = queue.Queue()
 
 
-def launch(path, status_label):
+def launch(path, status_label, update_git=False):
     if not os.path.exists(path):
         status_label.config(text=f"❌ 找不到檔案：{path}", fg="#ef4444")
         return
-    try:
-        os.startfile(path)
-        status_label.config(text=f"✅ 已開啟：{os.path.basename(path)}", fg="#22c55e")
-    except OSError as e:
-        status_label.config(text=f"❌ 開啟失敗：{e}", fg="#ef4444")
+
+    def worker():
+        git_warning = ""
+        if update_git:
+            try:
+                result = subprocess.run(
+                    ["git", "pull", "--ff-only"], cwd=BASE_DIR,
+                    capture_output=True, text=True, encoding="utf-8", errors="replace",
+                    timeout=120,
+                )
+                if result.returncode != 0:
+                    output = (result.stderr or result.stdout or "未知錯誤").strip().splitlines()
+                    git_warning = output[-1] if output else "未知錯誤"
+            except (OSError, subprocess.TimeoutExpired) as e:
+                git_warning = str(e)
+
+        try:
+            os.startfile(path)
+            if git_warning:
+                message = f"⚠ Git 更新失敗，但已開啟現有版本：{git_warning}"
+                color = "#f59e0b"
+            else:
+                message = f"✅ {'Git 已更新並' if update_git else ''}開啟：{os.path.basename(path)}"
+                color = "#22c55e"
+        except OSError as e:
+            message = f"❌ 開啟失敗：{e}"
+            color = "#ef4444"
+        UI_QUEUE.put((status_label, message, color))
+
+    if update_git:
+        status_label.config(text="⏳ 正在從 Git 更新程式碼…", fg=TEXT_DIM)
+    threading.Thread(target=worker, daemon=True).start()
 
 
 def main():
@@ -73,10 +104,21 @@ def main():
 
     status_label = tk.Label(root, text="", font=("Microsoft JhengHei", 9), bg=BG, fg=TEXT_DIM, wraplength=440)
 
+    def process_ui_queue():
+        try:
+            while True:
+                label, message, color = UI_QUEUE.get_nowait()
+                label.config(text=message, fg=color)
+        except queue.Empty:
+            pass
+        root.after(100, process_ui_queue)
+
+    root.after(100, process_ui_queue)
+
     button_row = tk.Frame(root, bg=BG)
     button_row.pack(pady=6)
 
-    for label, path in TARGETS:
+    for label, path, update_git in TARGETS:
         btn = tk.Button(
             button_row,
             text=label,
@@ -92,7 +134,7 @@ def main():
             pady=12,
             width=16,
             cursor="hand2",
-            command=lambda p=path: launch(p, status_label),
+            command=lambda p=path, should_update=update_git: launch(p, status_label, should_update),
         )
         btn.pack(side=tk.LEFT, padx=8)
 
