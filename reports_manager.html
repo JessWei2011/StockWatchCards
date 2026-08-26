@@ -638,9 +638,19 @@
   /* ── 分析報告工作區樣式 ── */
   #analysis-workspace{ overflow:auto; background:#0f1117; }
   #analysis-workspace[hidden]{ display:none !important; }
-  .analysis-shell{ max-width:100%; width:100%; margin:0; padding:18px 24px 60px; box-sizing:border-box; }
+  .analysis-shell{ max-width:1360px; width:100%; margin:0 auto; padding:18px 20px 60px; box-sizing:border-box; }
   .analysis-empty{ padding:60px 20px; text-align:center; color:var(--text-dim); font-size:15px; background:var(--card-bg); border-radius:12px; border:1px solid var(--border); }
   
+  .analysis-top-nav-bar{
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    margin-bottom:18px; padding:12px 18px; background:rgba(0,0,0,0.3); border-radius:12px; border:1px solid var(--border);
+  }
+  .analysis-stock-select{
+    padding:7px 14px; border-radius:8px; border:1px solid var(--border);
+    background:var(--card-bg); color:var(--text); font-size:13.5px; font-weight:750; cursor:pointer;
+  }
+  .analysis-stock-select:focus{ outline:2px solid var(--accent); border-color:var(--accent); }
+
   .analysis-card{
     background:var(--card-bg); border:1px solid var(--border); border-radius:14px;
     padding:26px 30px; margin-bottom:24px; box-shadow:0 6px 18px rgba(0,0,0,0.3);
@@ -984,8 +994,12 @@
     }
     if (target === 'ranking') await loadWinrateRankingReport();
     if (target === 'analysis') {
+      if (!selectedStockCode && typeof cardsByCode !== 'undefined') {
+        const allCodes = Object.keys(cardsByCode);
+        if (allCodes.length > 0) selectedStockCode = allCodes[0];
+      }
       if (selectedStockCode) {
-        loadMarkdownReport(selectedStockCode);
+        await loadMarkdownReport(selectedStockCode);
       }
     }
   }
@@ -1063,6 +1077,29 @@
     if (chipM) chipTags = chipM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
     const patM = mdText.match(/型態標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/);
     if (patM) patternTags = patM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
+
+    // Top Navigation & Quick Switcher
+    const sortedCards = Object.values(cardsByCode || {}).sort((a, b) => {
+      const wa = parseFloat(window.winrateMapByCode?.[a.code]?.winRate) || 0;
+      const wb = parseFloat(window.winrateMapByCode?.[b.code]?.winRate) || 0;
+      return wb - wa || String(a.code).localeCompare(String(b.code));
+    });
+
+    html += `
+      <div class="analysis-top-nav-bar">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <label style="font-size:13px; font-weight:800; color:#93c5fd;">🎯 切換分析個股：</label>
+          <select id="analysis-stock-switcher" class="analysis-stock-select" onchange="switchToStockAnalysis(this.value);">
+            ${sortedCards.map(c => `<option value="${escapeHtml(c.code)}" ${String(c.code) === String(code) ? 'selected' : ''}>${escapeHtml(c.code)} ${escapeHtml(c.name)} (${escapeHtml(c.group || '個股')})</option>`).join('')}
+          </select>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn" onclick="openPatternForStock('${escapeHtml(code)}')">🎓 查看此股型態教學</button>
+          <button type="button" class="btn" onclick="activateWorkspace('ranking')">🏆 查看總排行榜</button>
+          <button type="button" class="btn" onclick="activateWorkspace('reports')">🗂️ 返回報表管理</button>
+        </div>
+      </div>
+    `;
 
     html += `<div class="analysis-card">`;
 
@@ -1548,19 +1585,15 @@
     });
   }
 
-  async function switchToStockAnalysis(code){
-    selectedStockCode = code;
-    await loadMarkdownReport(code);
-    await activateWorkspace('analysis');
-  }
-
-  async function focusAiResult(code){
-    const normalizedCode = String(code || '');
-    if (!normalizedCode) return false;
+  async function selectStockGlobal(code, { switchWorkspace = null, highlightRanking = true } = {}){
+    const normalizedCode = String(code || '').trim();
+    if (!normalizedCode) return;
     selectedStockCode = normalizedCode;
+
+    // 1. 同步「📑 分析報告」
     loadMarkdownReport(normalizedCode);
 
-    // 同步連動「🎓 型態教學」選取的個股與線圖
+    // 2. 同步「🎓 型態教學」選單與線圖
     if (typeof PatternViewer !== 'undefined' && typeof PatternViewer.loadStock === 'function') {
       try {
         const select = document.querySelector('#pattern-workspace #stockSelect');
@@ -1574,29 +1607,46 @@
       } catch (e) {}
     }
 
-    rankGroupFilter = '';
-    renderRankPanel();
-    requestAnimationFrame(() => {
-      const target = Array.from(document.querySelectorAll('#rank-list .rank-row'))
-        .find(row => row.dataset.code === normalizedCode);
-      if (!target) return;
-      target.scrollIntoView({ behavior:'smooth', block:'center' });
-      target.classList.add('ai-focus-target');
-      window.setTimeout(() => target.classList.remove('ai-focus-target'), 2200);
+    // 3. 左側目錄樹高亮對應項目
+    document.querySelectorAll('.tree-report-row').forEach(row => {
+      const c = row.querySelector('.code');
+      if (c && c.textContent.trim() === normalizedCode) {
+        row.classList.add('active');
+      } else {
+        row.classList.remove('active');
+      }
     });
+
+    // 4. 同步「🗂️ 報表管理」與「🏆 排行榜」滾動高亮聚焦
+    if (highlightRanking) {
+      requestAnimationFrame(() => {
+        const target = Array.from(document.querySelectorAll('#rank-list .rank-row, #ranking-workspace tr[data-stock-code]'))
+          .find(el => (el.dataset.code === normalizedCode || el.dataset.stockCode === normalizedCode));
+        if (target) {
+          target.scrollIntoView({ behavior:'smooth', block:'nearest' });
+          target.classList.add('ai-focus-target');
+          setTimeout(() => target.classList.remove('ai-focus-target'), 2200);
+        }
+      });
+    }
+
+    // 5. 若指定切換 Workspace，立即切換
+    if (switchWorkspace) {
+      await activateWorkspace(switchWorkspace);
+    }
+  }
+
+  async function switchToStockAnalysis(code){
+    await selectStockGlobal(code, { switchWorkspace: 'analysis' });
+  }
+
+  async function focusAiResult(code){
+    await selectStockGlobal(code, { highlightRanking: true });
     return true;
   }
 
   async function openPatternForStock(code){
-    const normalizedCode = String(code || '');
-    if (!normalizedCode) return;
-    await activateWorkspace('pattern');
-
-    await PatternViewer.refresh();
-    const select = document.querySelector('#pattern-workspace #stockSelect');
-    const option = Array.from(select.options).find(item => item.value === normalizedCode);
-    if (option) select.value = normalizedCode;
-    await PatternViewer.loadStock(normalizedCode);
+    await selectStockGlobal(code, { switchWorkspace: 'pattern' });
     document.getElementById('pattern-workspace').scrollTo({ top: 0, behavior: 'auto' });
     requestAnimationFrame(() => PatternViewer.resize());
   }
@@ -2483,8 +2533,8 @@
         <div class="rank-row-main">
           <span class="rank-identity">
             <span class="rank-num">${i + 1}</span>
-            <span class="rank-code">${escapeHtml(c.code)}</span>
-            <span class="rank-name">${escapeHtml(c.name)}</span>
+            <span class="rank-code" style="cursor:pointer;" title="點擊查看 ${escapeHtml(c.name)} (${escapeHtml(c.code)}) 的分析報告" onclick="event.stopPropagation(); switchToStockAnalysis('${escapeHtml(c.code)}');">${escapeHtml(c.code)}</span>
+            <span class="rank-name" style="cursor:pointer;" title="點擊查看 ${escapeHtml(c.name)} (${escapeHtml(c.code)}) 的分析報告" onclick="event.stopPropagation(); switchToStockAnalysis('${escapeHtml(c.code)}');">${escapeHtml(c.name)}</span>
             <span class="rank-decision">${escapeHtml(decVal)}</span>
             ${c.isDisposition ? `<span class="rank-dispo-inline" title="處置期間 ${escapeHtml(c.dispositionDate || '')}">⚠ ${escapeHtml(c.dispositionDate || '')}</span>` : ''}
           </span>
@@ -2519,8 +2569,8 @@
           </div>
         </div>
       `;
-      row.title = `${c.code} ${c.name} － ${c.date || '日期未知'} － 點擊進入整合分析與型態教學`;
-      row.addEventListener('click', () => openPatternForStock(c.code));
+      row.title = `${c.code} ${c.name} － 點擊選取並同步全部頁面`;
+      row.addEventListener('click', () => selectStockGlobal(c.code));
       const delBtn = row.querySelector('.rank-del-btn');
       delBtn.addEventListener('click', (e) => {
         e.stopPropagation();
