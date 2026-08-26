@@ -59,6 +59,7 @@
   .rank-row-main{ display:flex; align-items:center; gap:8px; font-size:14px; }
   .rank-identity, .rank-row-actions{ display:flex; align-items:center; gap:10px; min-width:0; }
   .rank-row-actions{ justify-content:flex-end; }
+  .rank-row-actions .tree-stat-pill{ width:auto; min-width:38px; padding:2px 6px; }
   .rank-row .rank-num{ width:20px; flex-shrink:0; text-align:center; color:var(--text-dim); font-size:12px; font-weight:700; }
   .rank-row .rank-code{ color:var(--text-dim); font-size:12.5px; flex-shrink:0; }
   .rank-row .rank-name{
@@ -117,21 +118,30 @@
   .tree-row:hover .tree-actions{ display:flex; }
   .tree-report-row{
     display:flex; align-items:center; gap:6px; padding:4px 8px 4px 22px; border-radius:6px;
-    cursor:grab; font-size:13.5px; color:var(--text-dim); white-space:nowrap; overflow:hidden;
+    cursor:grab; font-size:13px; color:var(--text-dim); white-space:nowrap; overflow:hidden;
   }
   .tree-report-row:hover{ background:var(--hover); color:var(--text); }
   .tree-report-row.dragging{ opacity:0.4; }
-  .tree-report-row .code{ color:var(--text-dim); flex-shrink:0; }
-  .tree-report-row .name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
-  .tree-stat-pills{ display:flex; align-items:center; gap:3px; flex-shrink:0; }
-  .tree-stat-pill{
-    min-width:28px; padding:2px 5px; border-radius:5px; text-align:center;
-    font-size:10px; font-weight:850; line-height:1.25; font-variant-numeric:tabular-nums;
+  .tree-report-row .code{
+    color:var(--text-dim); flex-shrink:0; width:36px;
+    font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-variant-numeric:tabular-nums; font-size:12.5px;
   }
-  .tree-stat-pill.winrate{ color:#fca5a5; border:1px solid rgba(239,68,68,.4); background:rgba(239,68,68,.14); }
+  .tree-report-row .name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .tree-stat-pills{
+    display:inline-flex; align-items:center; justify-content:flex-end; gap:4px; flex-shrink:0; margin-left:auto;
+  }
+  .tree-stat-pill{
+    display:inline-flex; align-items:center; justify-content:center;
+    box-sizing:border-box; height:19px; border-radius:5px;
+    font-size:10.5px; font-weight:800; line-height:1;
+    font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-variant-numeric:tabular-nums; text-align:center;
+  }
+  .tree-stat-pill.winrate{ width:40px; color:#fca5a5; border:1px solid rgba(239,68,68,.4); background:rgba(239,68,68,.14); }
   .tree-stat-pill.winrate.high{ color:#f87171; border:1px solid rgba(239,68,68,.65); background:rgba(239,68,68,.25); }
-  .tree-stat-pill.rr{ color:#93c5fd; border:1px solid rgba(59,130,246,.4); background:rgba(59,130,246,.14); }
-  .tree-stat-pill.missing{ color:var(--text-dim); border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); }
+  .tree-stat-pill.rr{ width:36px; color:#93c5fd; border:1px solid rgba(59,130,246,.4); background:rgba(59,130,246,.14); }
+  .tree-stat-pill.missing{ width:28px; color:var(--text-dim); border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); }
   .tree-actions button{
     background:none; border:none; color:inherit; opacity:0.7; cursor:pointer; font-size:12px; padding:2px 4px;
   }
@@ -1729,8 +1739,15 @@
 
     const code = String(r.code || '').trim();
     const stat = (window.winrateMapByCode && window.winrateMapByCode[code]) ? window.winrateMapByCode[code] : {};
-    const winRateVal = stat.winRate ? stat.winRate.replace(/[%`*]/g, '') : null;
-    const rrVal = stat.rr ? stat.rr.replace(/[`*]/g, '') : null;
+    let winRateVal = stat.winRate ? stat.winRate.replace(/[%`*]/g, '') : null;
+    let rrVal = stat.rr ? stat.rr.replace(/[`*]/g, '') : null;
+
+    if (winRateVal && !isNaN(parseFloat(winRateVal))) {
+      winRateVal = parseFloat(winRateVal).toFixed(1);
+    }
+    if (rrVal && !isNaN(parseFloat(rrVal))) {
+      rrVal = parseFloat(rrVal).toFixed(2);
+    }
 
     const winRateTitle = winRateVal ? `預期勝率：${winRateVal}%` : `尚未進行勝率掃描`;
     const rrTitle = rrVal ? `風險報酬比 (R/R)：${rrVal}` : `尚未計算風報比`;
