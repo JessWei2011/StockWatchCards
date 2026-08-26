@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>8021 尖點 台股分析</title>
+<style>
+body { font-family: "Segoe UI", "Microsoft JhengHei", sans-serif; background:#0f1115; color:#e6e6e6; margin:0; padding:24px; }
+.wrap { max-width: 960px; margin: 0 auto; }
+h1 { font-size: 1.4em; margin-bottom: 4px; }
+.sub { color:#9aa0a6; margin-bottom: 20px; }
+.card { background:#1a1d24; border:1px solid #2a2e37; border-radius:8px; padding:16px 20px; margin-bottom:16px; }
+.card h2 { font-size:1.05em; margin:0 0 10px 0; color:#7fb3ff; border-bottom:1px solid #2a2e37; padding-bottom:6px; }
+.badge { display:inline-block; padding:2px 10px; border-radius:12px; font-weight:bold; font-size:0.9em; }
+.badge.warn { background:#4a2a2a; color:#ff8080; }
+.badge.ok { background:#1f3a2a; color:#7ee787; }
+table { border-collapse: collapse; width:100%; font-size:0.9em; }
+th, td { padding:5px 8px; text-align:right; border-bottom:1px solid #23262e; white-space:nowrap; }
+th:first-child, td:first-child { text-align:left; }
+th { color:#9aa0a6; font-weight:normal; }
+/* 台股配色：正值／買超為紅，負值／賣超為綠。 */
+.pos { color:#ff8080; }
+.neg { color:#7ee787; }
+.kv { display:flex; flex-wrap:wrap; gap:8px 24px; }
+.kv div { min-width:120px; }
+.kv b { color:#9aa0a6; font-weight:normal; }
+.ma-order { font-family: Consolas, monospace; color:#e0c46a; }
+footer { color:#666; font-size:0.8em; text-align:center; margin-top:24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <h1>8021 尖點 台股分析</h1>
+    <div class="sub">產生時間：2026-08-25 19:39</div>
+
+    <div class="card">
+        <h2>基本資訊</h2>
+        <div style="margin-bottom:10px;"><span class="badge ok">處置期間：否</span></div>
+        <div class="kv"><div><b>價：</b>387.5</div><div><b>52週高/低：</b>627.0 / 75.0</div><div><b>PE：</b>77.3</div><div><b>PB：</b>10.45</div><div><b>殖利率：</b>0.5%</div><div><b>市值：</b>570億</div></div>
+    </div>
+
+    <div class="card">
+        <h2>K線圖</h2>
+        <img src="8021_尖點(TW)_chart.png" alt="K線圖" style="max-width:100%;border-radius:6px;">
+    </div>
+
+    <div class="card">
+        <h2>技術指標</h2>
+        
+        <div class="kv" style="margin-bottom:10px;">
+            <div><b>MA5：</b>398.30</div>
+            <div><b>MA10：</b>411.80</div>
+            <div><b>MA20：</b>393.95</div>
+            <div><b>MA60：</b>462.06</div>
+            <div><b>RSI：</b>47.7</div>
+            <div><b>MACD：</b>-8.731 / Signal -10.974 / Hist 2.243</div>
+            <div><b>KDJ：</b>K=26.3 D=34.3 J=10.2</div>
+            <div><b>BOLL：</b>上=476.58 中=393.95 下=311.32</div>
+        </div>
+        <div><b>均線排列：</b><span class="ma-order">MA60&gt;MA10&gt;MA5&gt;MA20</span></div>
+        
+    </div>
+
+    <div class="card">
+        <h2>近50日K線</h2>
+        
+        <table>
+            <tr><th>日期</th><th>開</th><th>高</th><th>低</th><th>收</th><th>量</th>
+                <th>MA5</th><th>RSI</th><th>MACD_hist</th><th>K</th><th>D</th>
+                <th>BOLL上</th><th>BOLL中</th><th>BOLL下</th></tr>
+            <tr><td>06/16</td><td>493.0</td><td>520.9</td><td>493.0</td><td>515.9</td><td>1.9M</td><td>532.2</td><td>58.4</td><td>4.172</td><td>60.0</td><td>69.9</td><td>568.4</td><td>463.9</td><td>359.4</td></tr><tr><td>06/17</td><td>521.9</td><td>547.8</td><td>521.9</td><td>539.8</td><td>2.3M</td><td>529.4</td><td>61.3</td><td>4.28</td><td>60.1</td><td>66.6</td><td>570.4</td><td>472.9</td><td>375.4</td></tr><tr><td>06/18</td><td>551.8</td><td>551.8</td><td>528.9</td><td>540.8</td><td>1.1M</td><td>524.1</td><td>61.4</td><td>3.927</td><td>60.4</td><td>64.5</td><td>572.9</td><td>480.8</td><td>388.7</td></tr><tr><td>06/22</td><td>548.8</td><td>578.6</td><td>548.8</td><td>578.6</td><td>2.4M</td><td>535.8</td><td>65.8</td><td>5.648</td><td>63.8</td><td>64.3</td><td>586.0</td><td>488.7</td><td>391.5</td></tr><tr><td>06/23</td><td>578.6</td><td>578.6</td><td>556.7</td><td>564.7</td><td>1.3M</td><td>548.0</td><td>63.0</td><td>5.259</td><td>60.7</td><td>63.1</td><td>595.9</td><td>493.9</td><td>391.8</td></tr><tr><td>06/24</td><td>552.8</td><td>568.7</td><td>536.8</td><td>567.7</td><td>1.5M</td><td>558.3</td><td>63.3</td><td>4.637</td><td>59.4</td><td>61.9</td><td>605.2</td><td>499.1</td><td>393.1</td></tr><tr><td>06/25</td><td>567.7</td><td>567.7</td><td>547.8</td><td>554.7</td><td>0.9M</td><td>561.3</td><td>60.6</td><td>2.874</td><td>55.3</td><td>59.7</td><td>609.3</td><td>505.1</td><td>401.0</td></tr><tr><td>06/26</td><td>547.8</td><td>550.8</td><td>508.9</td><td>532.8</td><td>2.0M</td><td>559.7</td><td>56.1</td><td>-0.091</td><td>52.3</td><td>57.2</td><td>607.0</td><td>511.0</td><td>415.0</td></tr><tr><td>06/29</td><td>542.8</td><td>542.8</td><td>512.9</td><td>519.9</td><td>1.6M</td><td>548.0</td><td>53.6</td><td>-3.08</td><td>45.4</td><td>53.3</td><td>605.9</td><td>514.6</td><td>423.2</td></tr><tr><td>06/30</td><td>539.8</td><td>571.7</td><td>539.8</td><td>571.7</td><td>1.8M</td><td>549.4</td><td>61.1</td><td>-1.79</td><td>60.2</td><td>55.6</td><td>611.3</td><td>520.0</td><td>428.8</td></tr><tr><td>07/01</td><td>588.6</td><td>620.5</td><td>553.8</td><td>558.7</td><td>13.1M</td><td>547.6</td><td>58.5</td><td>-2.014</td><td>55.0</td><td>55.4</td><td>611.0</td><td>525.8</td><td>440.6</td></tr><tr><td>07/02</td><td>545.8</td><td>581.6</td><td>528.9</td><td>541.8</td><td>10.1M</td><td>545.0</td><td>55.3</td><td>-3.423</td><td>46.5</td><td>52.4</td><td>610.5</td><td>529.5</td><td>448.6</td></tr><tr><td>07/03</td><td>526.9</td><td>555.7</td><td>517.9</td><td>555.7</td><td>1.6M</td><td>549.6</td><td>57.4</td><td>-3.523</td><td>45.0</td><td>50.0</td><td>604.9</td><td>535.3</td><td>465.8</td></tr><tr><td>07/06</td><td>566.7</td><td>566.7</td><td>527.9</td><td>527.9</td><td>0.6M</td><td>551.2</td><td>52.1</td><td>-5.46</td><td>35.7</td><td>45.2</td><td>597.9</td><td>538.9</td><td>479.9</td></tr><tr><td>07/07</td><td>527.9</td><td>527.9</td><td>481.0</td><td>496.0</td><td>1.4M</td><td>536.0</td><td>46.8</td><td>-8.688</td><td>27.3</td><td>39.2</td><td>590.6</td><td>540.8</td><td>491.0</td></tr><tr><td>07/08</td><td>504.0</td><td>517.9</td><td>498.0</td><td>515.9</td><td>1.2M</td><td>527.5</td><td>50.2</td><td>-9.23</td><td>26.6</td><td>35.0</td><td>589.6</td><td>541.4</td><td>493.2</td></tr><tr><td>07/09</td><td>531.8</td><td>531.8</td><td>505.9</td><td>518.9</td><td>0.5M</td><td>522.9</td><td>50.7</td><td>-9.121</td><td>26.8</td><td>32.3</td><td>588.5</td><td>539.7</td><td>490.9</td></tr><tr><td>07/10</td><td>518.9</td><td>518.9</td><td>518.9</td><td>518.9</td><td>0.0M</td><td>515.5</td><td>50.7</td><td>-8.779</td><td>26.9</td><td>30.5</td><td>585.0</td><td>537.2</td><td>489.4</td></tr><tr><td>07/13</td><td>525.9</td><td>525.9</td><td>497.0</td><td>505.9</td><td>0.6M</td><td>511.1</td><td>48.2</td><td>-9.116</td><td>23.9</td><td>28.3</td><td>585.7</td><td>536.5</td><td>487.3</td></tr><tr><td>07/14</td><td>505.9</td><td>505.9</td><td>458.6</td><td>485.5</td><td>1.0M</td><td>509.0</td><td>44.5</td><td>-10.315</td><td>23.2</td><td>26.6</td><td>588.0</td><td>535.6</td><td>483.2</td></tr><tr><td>07/15</td><td>500.0</td><td>532.0</td><td>499.0</td><td>532.0</td><td>0.9M</td><td>512.3</td><td>53.3</td><td>-7.701</td><td>38.1</td><td>30.4</td><td>588.0</td><td>536.4</td><td>484.8</td></tr><tr><td>07/16</td><td>514.0</td><td>530.0</td><td>505.0</td><td>505.0</td><td>0.5M</td><td>509.5</td><td>48.5</td><td>-7.504</td><td>39.7</td><td>33.5</td><td>588.1</td><td>534.7</td><td>481.2</td></tr><tr><td>07/17</td><td>473.0</td><td>473.0</td><td>454.5</td><td>454.5</td><td>0.8M</td><td>496.6</td><td>41.1</td><td>-10.316</td><td>26.5</td><td>31.2</td><td>594.5</td><td>530.4</td><td>466.2</td></tr><tr><td>07/20</td><td>416.0</td><td>422.0</td><td>409.5</td><td>409.5</td><td>3.7M</td><td>477.3</td><td>35.8</td><td>-14.491</td><td>17.6</td><td>26.7</td><td>601.9</td><td>521.9</td><td>441.9</td></tr><tr><td>07/21</td><td>401.5</td><td>409.5</td><td>380.0</td><td>380.5</td><td>9.8M</td><td>456.3</td><td>32.9</td><td>-18.248</td><td>11.9</td><td>21.7</td><td>612.0</td><td>512.7</td><td>413.3</td></tr><tr><td>07/22</td><td>407.5</td><td>418.5</td><td>397.0</td><td>418.5</td><td>4.4M</td><td>433.6</td><td>39.8</td><td>-17.229</td><td>16.4</td><td>19.9</td><td>609.5</td><td>505.2</td><td>401.0</td></tr><tr><td>07/23</td><td>420.5</td><td>435.0</td><td>399.0</td><td>406.5</td><td>7.9M</td><td>413.9</td><td>38.5</td><td>-16.421</td><td>16.7</td><td>18.9</td><td>608.1</td><td>497.8</td><td>387.5</td></tr><tr><td>07/24</td><td>396.0</td><td>417.0</td><td>367.5</td><td>370.0</td><td>8.1M</td><td>397.0</td><td>34.6</td><td>-17.314</td><td>11.7</td><td>16.5</td><td>612.4</td><td>489.7</td><td>366.9</td></tr><tr><td>07/27</td><td>372.0</td><td>390.5</td><td>360.5</td><td>390.5</td><td>6.6M</td><td>393.2</td><td>38.3</td><td>-15.549</td><td>13.6</td><td>15.5</td><td>612.7</td><td>483.2</td><td>353.7</td></tr><tr><td>07/28</td><td>360.0</td><td>366.0</td><td>351.5</td><td>351.5</td><td>3.2M</td><td>387.4</td><td>34.3</td><td>-15.972</td><td>9.1</td><td>13.4</td><td>607.3</td><td>472.2</td><td>337.0</td></tr><tr><td>07/29</td><td>346.0</td><td>349.5</td><td>316.5</td><td>316.5</td><td>2.0M</td><td>367.0</td><td>31.2</td><td>-17.453</td><td>6.0</td><td>10.9</td><td>605.6</td><td>460.1</td><td>314.6</td></tr><tr><td>07/30</td><td>290.5</td><td>320.0</td><td>285.0</td><td>294.0</td><td>8.5M</td><td>344.5</td><td>29.3</td><td>-18.682</td><td>6.0</td><td>9.3</td><td>605.6</td><td>447.7</td><td>289.8</td></tr><tr><td>07/31</td><td>323.0</td><td>323.0</td><td>323.0</td><td>323.0</td><td>0.6M</td><td>335.1</td><td>34.7</td><td>-16.359</td><td>12.5</td><td>10.3</td><td>594.7</td><td>436.1</td><td>277.4</td></tr><tr><td>08/03</td><td>331.5</td><td>355.0</td><td>330.0</td><td>355.0</td><td>3.1M</td><td>328.0</td><td>40.2</td><td>-11.704</td><td>23.9</td><td>14.9</td><td>583.8</td><td>427.4</td><td>271.0</td></tr><tr><td>08/04</td><td>370.0</td><td>390.5</td><td>363.5</td><td>390.5</td><td>5.2M</td><td>335.8</td><td>45.6</td><td>-5.58</td><td>39.4</td><td>23.0</td><td>575.9</td><td>422.1</td><td>268.4</td></tr><tr><td>08/05</td><td>429.5</td><td>429.5</td><td>392.0</td><td>396.0</td><td>11.0M</td><td>351.7</td><td>46.4</td><td>-0.758</td><td>51.8</td><td>32.6</td><td>563.7</td><td>416.1</td><td>268.5</td></tr><tr><td>08/06</td><td>395.5</td><td>432.0</td><td>384.5</td><td>417.5</td><td>9.9M</td><td>376.4</td><td>49.6</td><td>4.017</td><td>64.6</td><td>43.3</td><td>550.5</td><td>411.1</td><td>271.6</td></tr><tr><td>08/07</td><td>420.0</td><td>424.0</td><td>392.0</td><td>395.0</td><td>6.8M</td><td>390.8</td><td>46.5</td><td>5.696</td><td>68.0</td><td>51.5</td><td>534.9</td><td>404.9</td><td>274.9</td></tr><tr><td>08/10</td><td>408.5</td><td>434.5</td><td>408.5</td><td>434.5</td><td>5.8M</td><td>406.7</td><td>52.1</td><td>9.29</td><td>78.7</td><td>60.6</td><td>523.3</td><td>401.3</td><td>279.3</td></tr><tr><td>08/11</td><td>424.5</td><td>444.0</td><td>414.0</td><td>439.0</td><td>1.3M</td><td>416.4</td><td>52.8</td><td>11.64</td><td>84.7</td><td>68.6</td><td>515.9</td><td>399.0</td><td>282.1</td></tr><tr><td>08/12</td><td>439.5</td><td>441.0</td><td>421.0</td><td>427.0</td><td>1.1M</td><td>422.6</td><td>50.9</td><td>12.009</td><td>85.1</td><td>74.1</td><td>493.7</td><td>393.7</td><td>293.8</td></tr><tr><td>08/13</td><td>439.0</td><td>446.5</td><td>427.5</td><td>429.0</td><td>1.0M</td><td>424.9</td><td>51.2</td><td>11.982</td><td>85.1</td><td>77.8</td><td>477.0</td><td>389.9</td><td>302.9</td></tr><tr><td>08/14</td><td>431.0</td><td>437.0</td><td>415.0</td><td>434.0</td><td>1.1M</td><td>432.7</td><td>52.0</td><td>11.873</td><td>85.0</td><td>80.2</td><td>473.2</td><td>388.9</td><td>304.6</td></tr><tr><td>08/17</td><td>423.5</td><td>431.0</td><td>395.0</td><td>428.0</td><td>1.5M</td><td>431.4</td><td>50.9</td><td>10.99</td><td>80.1</td><td>80.2</td><td>475.5</td><td>389.8</td><td>304.2</td></tr><tr><td>08/18</td><td>437.0</td><td>452.0</td><td>400.0</td><td>408.5</td><td>10.4M</td><td>425.3</td><td>47.4</td><td>8.78</td><td>65.2</td><td>75.2</td><td>477.2</td><td>391.2</td><td>305.3</td></tr><tr><td>08/19</td><td>392.0</td><td>413.0</td><td>391.0</td><td>393.5</td><td>5.1M</td><td>418.6</td><td>44.8</td><td>6.122</td><td>44.9</td><td>65.1</td><td>475.0</td><td>390.0</td><td>305.0</td></tr><tr><td>08/20</td><td>402.5</td><td>418.5</td><td>401.0</td><td>408.5</td><td>4.9M</td><td>414.5</td><td>47.9</td><td>5.223</td><td>39.5</td><td>56.5</td><td>475.1</td><td>390.1</td><td>305.0</td></tr><tr><td>08/21</td><td>407.0</td><td>410.5</td><td>394.0</td><td>397.0</td><td>3.3M</td><td>407.1</td><td>45.8</td><td>3.771</td><td>29.6</td><td>47.6</td><td>476.0</td><td>391.4</td><td>306.8</td></tr><tr><td>08/24</td><td>397.0</td><td>411.0</td><td>388.0</td><td>388.5</td><td>3.1M</td><td>399.2</td><td>44.3</td><td>2.231</td><td>20.0</td><td>38.4</td><td>475.9</td><td>391.3</td><td>306.7</td></tr><tr><td>08/25</td><td>384.0</td><td>404.0</td><td>373.5</td><td>404.0</td><td>3.9M</td><td>398.3</td><td>47.7</td><td>2.243</td><td>26.3</td><td>34.3</td><td>476.6</td><td>393.9</td><td>311.3</td></tr>
+        </table>
+        
+    </div>
+
+    <div class="card">
+        <h2>三大法人近20日（單位：張）</h2>
+        
+        <table>
+            <tr><th>日期</th><th>外資</th><th>投信</th><th>自營</th><th>合計</th></tr>
+            <tr><td>2026-08-25</td><td><span class="pos">+191</span></td><td><span class="neg">-25</span></td><td><span class="pos">+1</span></td><td><span class="pos">+167</span></td></tr><tr><td>2026-08-24</td><td><span class="neg">-500</span></td><td><span class="">+0</span></td><td><span class="neg">-2</span></td><td><span class="neg">-502</span></td></tr><tr><td>2026-08-21</td><td><span class="neg">-1,033</span></td><td><span class="neg">-105</span></td><td><span class="pos">+14</span></td><td><span class="neg">-1,124</span></td></tr><tr><td>2026-08-20</td><td><span class="pos">+661</span></td><td><span class="pos">+123</span></td><td><span class="neg">-27</span></td><td><span class="pos">+756</span></td></tr><tr><td>2026-08-19</td><td><span class="pos">+10</span></td><td><span class="neg">-760</span></td><td><span class="neg">-24</span></td><td><span class="neg">-774</span></td></tr><tr><td>2026-08-18</td><td><span class="neg">-2,832</span></td><td><span class="neg">-34</span></td><td><span class="neg">-133</span></td><td><span class="neg">-2,999</span></td></tr><tr><td>2026-08-17</td><td><span class="neg">-102</span></td><td><span class="">+0</span></td><td><span class="pos">+93</span></td><td><span class="neg">-9</span></td></tr><tr><td>2026-08-14</td><td><span class="neg">-106</span></td><td><span class="">+0</span></td><td><span class="pos">+13</span></td><td><span class="neg">-93</span></td></tr><tr><td>2026-08-13</td><td><span class="neg">-69</span></td><td><span class="">+0</span></td><td><span class="neg">-19</span></td><td><span class="neg">-88</span></td></tr><tr><td>2026-08-12</td><td><span class="neg">-43</span></td><td><span class="neg">-47</span></td><td><span class="pos">+37</span></td><td><span class="neg">-53</span></td></tr><tr><td>2026-08-11</td><td><span class="pos">+448</span></td><td><span class="pos">+9</span></td><td><span class="neg">-75</span></td><td><span class="pos">+382</span></td></tr><tr><td>2026-08-10</td><td><span class="pos">+1,878</span></td><td><span class="pos">+324</span></td><td><span class="pos">+53</span></td><td><span class="pos">+2,255</span></td></tr><tr><td>2026-08-07</td><td><span class="neg">-1,449</span></td><td><span class="pos">+253</span></td><td><span class="neg">-8</span></td><td><span class="neg">-1,204</span></td></tr><tr><td>2026-08-06</td><td><span class="neg">-638</span></td><td><span class="pos">+741</span></td><td><span class="pos">+17</span></td><td><span class="pos">+121</span></td></tr><tr><td>2026-08-05</td><td><span class="neg">-1,210</span></td><td><span class="pos">+16</span></td><td><span class="neg">-85</span></td><td><span class="neg">-1,279</span></td></tr><tr><td>2026-08-04</td><td><span class="neg">-201</span></td><td><span class="neg">-73</span></td><td><span class="pos">+2</span></td><td><span class="neg">-272</span></td></tr><tr><td>2026-08-03</td><td><span class="pos">+116</span></td><td><span class="neg">-160</span></td><td><span class="neg">-1</span></td><td><span class="neg">-44</span></td></tr><tr><td>2026-07-31</td><td><span class="neg">-28</span></td><td><span class="">+0</span></td><td><span class="">+0</span></td><td><span class="neg">-28</span></td></tr><tr><td>2026-07-30</td><td><span class="pos">+1,539</span></td><td><span class="pos">+33</span></td><td><span class="pos">+1</span></td><td><span class="pos">+1,574</span></td></tr><tr><td>2026-07-29</td><td><span class="pos">+546</span></td><td><span class="pos">+9</span></td><td><span class="neg">-19</span></td><td><span class="pos">+536</span></td></tr><tr style='font-weight:bold;border-top:2px solid #2a2e37;'><td>20日累計</td><td><span class="neg">-2,822</span></td><td><span class="pos">+304</span></td><td><span class="neg">-162</span></td><td><span class="neg">-2,680</span></td></tr>
+        </table>
+        
+    </div>
+
+    <div class="card">
+        <h2>融資融券近20日（單位：張）</h2>
+        
+        <table>
+            <tr><th>日期</th><th>融資餘額</th><th>融資增減</th><th>融券餘額</th><th>融券增減</th></tr>
+            <tr><td>2026-08-24</td><td>10,374</td><td><span class="pos">+60</span></td><td>134</td><td><span class="neg">-18</span></td></tr><tr><td>2026-08-21</td><td>10,314</td><td><span class="pos">+106</span></td><td>152</td><td><span class="neg">-13</span></td></tr><tr><td>2026-08-20</td><td>10,208</td><td><span class="neg">-119</span></td><td>165</td><td><span class="pos">+38</span></td></tr><tr><td>2026-08-19</td><td>10,327</td><td><span class="neg">-288</span></td><td>127</td><td><span class="pos">+9</span></td></tr><tr><td>2026-08-18</td><td>10,615</td><td><span class="pos">+450</span></td><td>118</td><td><span class="neg">-4</span></td></tr><tr><td>2026-08-17</td><td>10,165</td><td><span class="neg">-446</span></td><td>122</td><td><span class="neg">-20</span></td></tr><tr><td>2026-08-14</td><td>10,611</td><td><span class="neg">-227</span></td><td>142</td><td><span class="neg">-5</span></td></tr><tr><td>2026-08-13</td><td>10,838</td><td><span class="neg">-231</span></td><td>147</td><td><span class="neg">-10</span></td></tr><tr><td>2026-08-12</td><td>11,069</td><td><span class="neg">-62</span></td><td>157</td><td><span class="neg">-111</span></td></tr><tr><td>2026-08-11</td><td>11,131</td><td><span class="neg">-297</span></td><td>268</td><td><span class="neg">-202</span></td></tr><tr><td>2026-08-10</td><td>11,428</td><td><span class="pos">+172</span></td><td>470</td><td><span class="pos">+310</span></td></tr><tr><td>2026-08-07</td><td>11,256</td><td><span class="neg">-1</span></td><td>160</td><td><span class="neg">-18</span></td></tr><tr><td>2026-08-06</td><td>11,257</td><td><span class="pos">+570</span></td><td>178</td><td><span class="pos">+52</span></td></tr><tr><td>2026-08-05</td><td>10,687</td><td><span class="pos">+762</span></td><td>126</td><td><span class="neg">-42</span></td></tr><tr><td>2026-08-04</td><td>9,925</td><td><span class="pos">+553</span></td><td>168</td><td><span class="pos">+85</span></td></tr><tr><td>2026-08-03</td><td>9,372</td><td><span class="pos">+621</span></td><td>83</td><td><span class="pos">+45</span></td></tr><tr><td>2026-07-31</td><td>8,751</td><td><span class="pos">+115</span></td><td>38</td><td><span class="pos">+6</span></td></tr><tr><td>2026-07-30</td><td>8,636</td><td><span class="neg">-1,077</span></td><td>32</td><td><span class="neg">-109</span></td></tr><tr><td>2026-07-29</td><td>9,713</td><td><span class="neg">-607</span></td><td>141</td><td><span class="neg">-38</span></td></tr><tr><td>2026-07-28</td><td>10,320</td><td><span class="neg">-490</span></td><td>179</td><td><span class="pos">+125</span></td></tr>
+        </table>
+        
+    </div>
+
+    <div class="card">
+        <h2>大戶持股比例（集保週報，近6週）</h2>
+        
+        <table>
+            <tr><th>日期</th><th>400張以上</th><th>600張以上</th><th>800張以上</th>
+                <th>1000張以上</th><th>散戶(&lt;400張)</th><th>集保戶數</th></tr>
+            <tr><td>2026-07-17</td><td>47.46%</td><td>43.19%</td><td>40.91%</td><td>37.93%</td><td>52.54%</td><td>81,357</td></tr><tr><td>2026-07-24</td><td>46.23%</td><td>42.15%</td><td>39.9%</td><td>36.93%</td><td>53.77%</td><td>82,591</td></tr><tr><td>2026-07-31</td><td>46.38%</td><td>42.83%</td><td>38.67%</td><td>33.85%</td><td>53.62%</td><td>82,446</td></tr><tr><td>2026-08-07</td><td>46.88%</td><td>42.08%</td><td>38.32%</td><td>35.82%</td><td>53.12%</td><td>82,013</td></tr><tr><td>2026-08-14</td><td>47.1%</td><td>42.51%</td><td>40.13%</td><td>38.29%</td><td>52.9%</td><td>81,191</td></tr><tr><td>2026-08-21</td><td>45.88%</td><td>41.24%</td><td>38.87%</td><td>35.75%</td><td>54.12%</td><td>83,971</td></tr>
+        </table>
+        
+    </div>
+
+    <footer>台股分析工具自動產生</footer>
+</div>
+</body>
+</html>

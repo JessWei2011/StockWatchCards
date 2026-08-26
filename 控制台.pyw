@@ -31,12 +31,15 @@ SERVER_SHUTDOWN_PORTS = [8934, 8935]
 
 
 def shutdown_all_servers():
-    for port in SERVER_SHUTDOWN_PORTS:
-        try:
-            req = urllib.request.Request(f"http://localhost:{port}/api/shutdown", method="POST", data=b"")
-            urllib.request.urlopen(req, timeout=1)
-        except Exception:
-            pass  # 那個 server 本來就沒開，或已經關了，不用理會
+    def _worker():
+        for port in SERVER_SHUTDOWN_PORTS:
+            try:
+                req = urllib.request.Request(f"http://localhost:{port}/api/shutdown", method="POST", data=b"")
+                urllib.request.urlopen(req, timeout=0.5)
+            except Exception:
+                pass  # 那個 server 本來就沒開，或已經關了，不用理會
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
 
 BG = "#0f1117"
 CARD_BG = "#181b22"

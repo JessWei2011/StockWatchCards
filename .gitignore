@@ -1,36 +1,49 @@
-# Track the stock-cards web app + the report-generation source/docs.
-# Per-stock reports (reports/), caches, and the margin db stay local-only.
+# Default ignore
 *
-
+.*
 !.gitignore
+
+# Documentation
+!CLAUDE.md
+!GEMINI.md
+!AI_SCORING_RULES.md
+!AI_DOUBLE_CHECK.md
+!CHATGPT_PROJECT_INSTRUCTIONS.md
+
+# Web app and source scripts
 !index.html
 !style.css
 !data.js
-!ai_rankings.json
 !render.js
-!CLAUDE.md
-!GEMINI.md
+!render-shared.js
 !stock_report_generator.py
+!batch_scanner.py
+!stock_winrate_ranking.md
 !clone-stockwatchcards.bat
 !控制台.pyw
-
-# Unified local reports manager / stock analysis center. These source files must be
-# tracked so the integrated app can be reviewed, reverted, and restored after clone.
 !reports_manager.html
 !reports_manager_server.py
 !reports_manager.bat
-!render-shared.js
 
-# pattern_viewer/ app code is tracked so it syncs across machines; __pycache__ and any stray
-# local files dropped in the folder (e.g. screenshots) stay untracked since they aren't listed.
+# Pattern viewer app
 !pattern_viewer/
-!pattern_viewer/css/
-!pattern_viewer/js/
-!pattern_viewer/index.html
-!pattern_viewer/start_viewer.bat
-!pattern_viewer/INTEGRATION_GUIDE.md
-!pattern_viewer/css/viewer.css
-!pattern_viewer/js/chart_engine.js
-!pattern_viewer/js/parser.js
-!pattern_viewer/js/pattern_engine.js
-!pattern_viewer/js/viewer_app.js
+!pattern_viewer/**
+
+# Reports directory: track HTML and MD, ignore PNG
+!reports/
+!reports/**/
+!reports/**/*.html
+!reports/**/*.md
+
+# Strictly ignore all PNGs and images
+*.png
+*.jpg
+*.jpeg
+
+# Ignore caches, local DB, backups, shortcuts
+_backups/
+__pycache__/
+.yf_cache/
+.claude/
+margin_data.db
+*.lnk

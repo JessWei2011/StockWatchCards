@@ -475,6 +475,49 @@ def _new_generate_job():
 
 generate_job = _new_generate_job()
 
+BATCH_SCANNER_SCRIPT = ROOT_DIR / "batch_scanner.py"
+BATCH_SCANNER_LOCK = threading.Lock()
+
+
+def _new_batch_scanner_job():
+    return {
+        "running": False,
+        "lines": [],
+        "done": False,
+        "returncode": None,
+    }
+
+
+batch_scanner_job = _new_batch_scanner_job()
+
+
+def _run_batch_scanner():
+    global batch_scanner_job
+    child_env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+    try:
+        proc = subprocess.Popen(
+            [sys.executable, str(BATCH_SCANNER_SCRIPT)],
+            cwd=ROOT_DIR, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, encoding="utf-8", errors="replace", env=child_env,
+        )
+    except OSError as e:
+        with BATCH_SCANNER_LOCK:
+            batch_scanner_job["lines"].append(f"❌ 無法啟動 batch_scanner.py: {e}")
+            batch_scanner_job["done"] = True
+            batch_scanner_job["running"] = False
+        return
+
+    for raw_line in proc.stdout:
+        line = raw_line.rstrip("\n")
+        with BATCH_SCANNER_LOCK:
+            batch_scanner_job["lines"].append(line)
+
+    proc.wait()
+    with BATCH_SCANNER_LOCK:
+        batch_scanner_job["done"] = True
+        batch_scanner_job["running"] = False
+        batch_scanner_job["returncode"] = proc.returncode
+
 
 def _run_generate(args):
     """在背景執行緒裡跑 `python stock_report_generator.py <args...>`（跟直接在命令列
@@ -600,6 +643,55 @@ class Handler(SimpleHTTPRequestHandler):
             with GENERATE_LOCK:
                 self._json(200, {"ok": True, **generate_job})
             return
+        if parsed.path == "/api/batch-scanner/status":
+            with BATCH_SCANNER_LOCK:
+                self._json(200, {"ok": True, **batch_scanner_job})
+            return
+        if parsed.path == "/api/markdown-report":
+            qs = parse_qs(parsed.query)
+            code = (qs.get("code") or [""])[0].strip()
+            if not code:
+                self._json(400, {"ok": False, "error": "缺少股票代號"})
+                return
+            pattern = str(REPORTS_DIR / "**" / f"{code}_*.md")
+            matches = glob.glob(pattern, recursive=True)
+            if not matches:
+                all_mds = glob.glob(str(REPORTS_DIR / "**" / "*.md"), recursive=True)
+                matches = [f for f in all_mds if f"{code}_" in os.path.basename(f) or os.path.basename(f).startswith(f"{code}")]
+            if not matches:
+                self._json(404, {"ok": False, "error": f"找不到 {code} 的 Markdown 分析報告（可點擊上方 Batch Scanner 產生）"})
+                return
+            matches.sort(key=os.path.getmtime, reverse=True)
+            target_path = Path(matches[0])
+            try:
+                content = target_path.read_text(encoding="utf-8", errors="replace")
+                rel_path = target_path.relative_to(REPORTS_DIR).as_posix()
+                self._json(200, {
+                    "ok": True,
+                    "code": code,
+                    "filename": target_path.name,
+                    "relPath": rel_path,
+                    "content": content,
+                })
+            except Exception as e:
+                self._json(500, {"ok": False, "error": f"讀取報告失敗: {e}"})
+            return
+        if parsed.path == "/api/winrate-ranking-report":
+            ranking_file = ROOT_DIR / "stock_winrate_ranking.md"
+            if not ranking_file.exists():
+                self._json(404, {"ok": False, "error": "尚未找到 stock_winrate_ranking.md，請先點擊上方 Batch Scanner 進行全市場掃描產生。"})
+                return
+            try:
+                content = ranking_file.read_text(encoding="utf-8", errors="replace")
+                mtime = os.path.getmtime(ranking_file)
+                self._json(200, {
+                    "ok": True,
+                    "content": content,
+                    "mtime": mtime,
+                })
+            except Exception as e:
+                self._json(500, {"ok": False, "error": f"讀取排行榜失敗: {e}"})
+            return
         super().do_GET()
 
     def do_POST(self):
@@ -609,6 +701,18 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(200, {"ok": True})
             # 給回應一點時間真的送到瀏覽器，再結束 process
             threading.Thread(target=lambda: (time.sleep(0.3), os._exit(0))).start()
+            return
+
+        if parsed.path == "/api/batch-scanner":
+            global batch_scanner_job
+            with BATCH_SCANNER_LOCK:
+                if batch_scanner_job["running"]:
+                    self._json(409, {"ok": False, "error": "已經有 Batch Scanner 任務在執行，請稍候"})
+                    return
+                batch_scanner_job = _new_batch_scanner_job()
+                batch_scanner_job["running"] = True
+            threading.Thread(target=_run_batch_scanner, daemon=True).start()
+            self._json(200, {"ok": True})
             return
 
         if parsed.path == "/api/generate":

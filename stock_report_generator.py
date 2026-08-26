@@ -1217,38 +1217,26 @@ def run(ticker_input):
     target_dir = find_existing_report_dir(sid)
     os.makedirs(target_dir, exist_ok=True)
     fname = os.path.join(target_dir, f"{base_name}.html")
-    chart_fname = os.path.join(target_dir, f"{base_name}_chart.png")
 
-    # 出關/名稱變動時(例如進入/出了處置導致檔名多/少了"(處置期間xx-xx)"標記)，清掉這檔股票
-    # 在整個 reports/ (含使用者用 reports_manager 手動分類過的子資料夾)裡的舊檔名殘留，
-    # 不然舊檔名的版本會留在原地變孤兒、新檔名的版本又在別處多存一份，變成兩份資料並存。
+    # 出關/名稱變動時清掉這檔股票在 reports/ 裡的舊檔名殘留，並順便清理舊 _chart.png
     for old_path in glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*.html"), recursive=True) + \
                      glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*_chart.png"), recursive=True):
-        if os.path.abspath(old_path) not in (os.path.abspath(fname), os.path.abspath(chart_fname)):
+        if os.path.abspath(old_path) != os.path.abspath(fname):
             try:
                 os.remove(old_path)
                 print(f" 🗑 移除舊檔: {os.path.relpath(old_path, REPORTS_DIR)}")
             except OSError:
                 pass
 
-    print(" 產生K線圖…", end="", flush=True)
-    # Matplotlib/mplfinance 共用全域繪圖狀態，不可同時寫圖；網路抓取仍可並行。
-    with _chart_render_lock:
-        chart_ok = build_chart(sid, name, df, ma5, ma10, ma20, ma60, bu, bm, bl, n_tail, chart_fname)
-    print(" ✅" if chart_ok else " ❌ 失敗")
-
     html = build_html(
         sid, name, dispo, info, df, ma5, ma10, ma20, ma60, ri, mc, ms, mh, K, D, J, bu, bm, bl, inst, mg,
-        holders_hist, chart_filename=os.path.basename(chart_fname) if chart_ok else None,
+        holders_hist, chart_filename=None,
     )
 
     with open(fname, "w", encoding="utf-8") as f:
         f.write(html)
 
-    print(f"\n✅ 已存檔: {fname}")
-    if chart_ok:
-        print(f"✅ K線圖: {chart_fname}\n")
-
+    print(f"\n✅ 已存檔: {fname}\n")
     return True
 
 def parse_tickers(raw):

@@ -223,9 +223,11 @@
         return;
       }
       box.style.display = '';
+      const winText = card.winRate ? (String(card.winRate).includes('%') ? card.winRate : `${card.winRate}%`) : '—';
+      const rrText = card.rr ? `｜風報比 ${card.rr}` : '';
       this.q('#statCardDate').textContent = card.date || '—';
       this.q('#statCardDecision').textContent =
-        `${card.decision || '—'}｜勝率 ${card.winRate ?? '—'}%｜${card.pattern || '無明確型態'}`;
+        `${card.decision || '—'}｜勝率 ${winText}${rrText}｜${card.pattern || '無明確型態'}`;
       this.updateAnalysisPanel(card);
     }
 
@@ -239,10 +241,12 @@
         return;
       }
 
+      const winText = card.winRate ? (String(card.winRate).includes('%') ? card.winRate : `${card.winRate}%`) : '—';
+      const rrText = card.rr ? `｜風報比 ${card.rr}` : '';
       section.hidden = false;
-      this.q('#patternAnalysisTitle').textContent = `${card.code} ${card.name}・完整 AI 分析`;
+      this.q('#patternAnalysisTitle').textContent = `${card.code} ${card.name}・技術分析`;
       this.q('#patternAnalysisMeta').textContent =
-        `${card.date || '日期未知'}｜${card.decision || '未定'}｜勝率 ${card.winRate ?? '—'}%｜${card.pattern || '無明確型態'}`;
+        `${card.date || '日期未知'}｜${card.decision || '未定'}｜勝率 ${winText}${rrText}｜${card.pattern || '無明確型態'}`;
 
       if (card.raw && typeof renderRaw === 'function') {
         body.innerHTML = renderRaw(card.raw);
