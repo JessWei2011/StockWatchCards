@@ -437,7 +437,7 @@ def attach_report_flows(cards_by_code):
             continue
         institutional = _report_table_rows(
             report_text, "三大法人", ("foreign", "trust", "dealer", "total")
-        )[:20]
+        )[:15]
         close_prices = _report_close_prices(report_text)
         for row in institutional:
             row["close"] = close_prices.get(row["date"][5:])

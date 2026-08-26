@@ -499,23 +499,23 @@
     grid-column:1 / -1; min-width:0; padding:8px 10px 7px;
     border:1px solid rgba(71,85,105,.55); border-radius:8px; background:#11161c;
   }
-  .inst-chart-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:3px; }
+  .inst-chart-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px; }
   .inst-chart-note{ color:var(--text-dim); font-size:10.5px; }
-  .inst-flow-scroll{ width:100%; overflow-x:auto; padding-bottom:3px; scrollbar-width:thin; }
-  .inst-flow-table{ width:100%; min-width:1120px; border-collapse:separate; border-spacing:2px; table-layout:fixed; }
+  .inst-flow-scroll{ width:100%; overflow:hidden; }
+  .inst-flow-table{ width:100%; border-collapse:separate; border-spacing:2px; table-layout:fixed; }
   .inst-flow-table th{
-    padding:4px 3px; color:var(--text-dim); font-size:9.5px; font-weight:700; text-align:center; white-space:nowrap;
+    padding:3px 1px; color:var(--text-dim); font-size:9.5px; font-weight:700; text-align:center; white-space:nowrap;
   }
   .inst-flow-table th:first-child, .inst-flow-table td:first-child{
-    position:sticky; left:0; z-index:1; width:72px; background:#18202a; box-shadow:5px 0 8px rgba(0,0,0,.22);
+    width:52px; background:#18202a;
   }
   .inst-flow-table td{
-    padding:6px 3px; background:rgba(255,255,255,.035); border:1px solid rgba(71,85,105,.42);
-    border-radius:4px; text-align:center; font-size:10.5px; font-variant-numeric:tabular-nums;
+    padding:4px 1px; background:rgba(255,255,255,.035); border:1px solid rgba(71,85,105,.38);
+    border-radius:3px; text-align:center; font-size:10px; font-variant-numeric:tabular-nums;
   }
-  .inst-flow-table td:first-child{ color:#e2e8f0; font-size:11px; font-weight:850; text-align:left; padding-left:8px; }
+  .inst-flow-table td:first-child{ color:#e2e8f0; font-size:10.5px; font-weight:800; text-align:center; padding-left:0; }
   .inst-flow-table tr.total-row td{ border-top-color:rgba(148,163,184,.75); font-weight:850; }
-  .inst-flow-value{ display:inline-flex; justify-content:center; gap:2px; font-weight:750; white-space:nowrap; }
+  .inst-flow-value{ display:inline-flex; justify-content:center; font-weight:750; white-space:nowrap; font-size:10px; }
   .inst-flow-value.buy{ color:#f87171; }
   .inst-flow-value.sell{ color:#4ade80; }
   .inst-flow-value.flat{ color:#94a3b8; }
@@ -2169,7 +2169,7 @@
 
   function institutionalRows(card){
     const rows = Array.isArray(card.institutionalFlow) ? card.institutionalFlow : [];
-    if (rows.length) return rows.slice(0, 20);
+    if (rows.length) return rows.slice(0, 15);
     const latest = latestInstitutionalFlow(card);
     if (![latest.foreign, latest.trust, latest.dealer].some(Number.isFinite)) return [];
     return [{ date: card.date || '', ...latest }];
@@ -2266,7 +2266,7 @@
   }
 
   function renderInstitutionSummary(card){
-    const rows = institutionalRows(card).slice(0, 20);
+    const rows = institutionalRows(card).slice(0, 15);
     if (!rows.length) return '<div class="inst-chart-empty">沒有法人日資料可彙整</div>';
     const flowCell = value => {
       const tone = value > 0 ? 'buy' : (value < 0 ? 'sell' : 'flat');
@@ -2276,7 +2276,7 @@
     const actors = [
       ['foreign', '外資'], ['trust', '投信'], ['dealer', '自營商'], ['total', '合計']
     ];
-    return `<div class="inst-flow-scroll"><table class="inst-flow-table" aria-label="近四週三大法人逐日買賣超概數，單位張">
+    return `<div class="inst-flow-scroll"><table class="inst-flow-table" aria-label="近15日三大法人逐日買賣超概數，單位張">
       <thead><tr><th>法人＼日期</th>${rows.map(row => `<th>${escapeHtml(String(row.date || '').slice(5).replace('-', '/'))}</th>`).join('')}</tr></thead>
       <tbody>${actors.map(([key, label]) => `<tr class="${key === 'total' ? 'total-row' : ''}">
         <td>${label}</td>${rows.map(row => `<td>${flowCell(Number(row[key]) || 0)}</td>`).join('')}
@@ -2391,8 +2391,8 @@
           </div>
           <div class="inst-mini-chart">
             <div class="inst-chart-head">
-              <span class="rank-detail-label">三大法人近四週逐日買賣超概數</span>
-              <span class="inst-chart-note">日期橫向排列｜紅色買超・綠色賣超｜可左右捲動</span>
+              <span class="rank-detail-label">三大法人近15日逐日買賣超概數</span>
+              <span class="inst-chart-note">日期橫向排列｜紅色買超・綠色賣超</span>
             </div>
             ${renderInstitutionSummary(c)}
           </div>
