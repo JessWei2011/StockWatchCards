@@ -364,29 +364,29 @@
   #reports-workspace{ display:flex; flex-direction:column; }
   #pattern-workspace{ overflow:auto; background:#0f1117; }
   #pattern-workspace .pattern-viewer{ min-height:100%; }
-  #ranking-workspace{ overflow:auto; background:#0f1117; }
+  #ranking-workspace{ overflow-y:auto; overflow-x:hidden; background:#0f1117; }
   #ranking-workspace[hidden]{ display:none !important; }
-  .ranking-shell{ max-width:100%; width:100%; margin:0; padding:18px 24px 60px; box-sizing:border-box; }
+  .ranking-shell{ max-width:1360px; width:100%; margin:0 auto; padding:18px 20px 60px; box-sizing:border-box; }
   
   .ranking-card{
     background:var(--card-bg); border:1px solid var(--border); border-radius:14px;
-    padding:22px 24px; margin-bottom:24px; box-shadow:0 6px 18px rgba(0,0,0,0.3);
+    padding:18px 20px; margin-bottom:20px; box-shadow:0 6px 18px rgba(0,0,0,0.3);
   }
   .ranking-hero-header{
-    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;
-    margin-bottom:20px; padding-bottom:18px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border);
   }
-  .ranking-hero-title{ margin:0; font-size:22px; font-weight:800; color:#fff; display:flex; align-items:center; gap:10px; }
+  .ranking-hero-title{ margin:0; font-size:20px; font-weight:800; color:#fff; display:flex; align-items:center; gap:10px; }
   .ranking-hero-meta{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
   
   .ranking-filter-bar{
     display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
-    margin-bottom:18px; padding:12px 16px; background:rgba(0,0,0,0.25); border-radius:10px; border:1px solid var(--border);
+    margin-bottom:14px; padding:10px 14px; background:rgba(0,0,0,0.25); border-radius:10px; border:1px solid var(--border);
   }
-  .ranking-filter-bar .search-box{ display:flex; align-items:center; gap:8px; flex:1; min-width:220px; max-width:400px; }
+  .ranking-filter-bar .search-box{ display:flex; align-items:center; gap:8px; flex:1; min-width:200px; max-width:360px; }
   .ranking-filter-bar .search-input{
-    width:100%; padding:7px 12px; border-radius:6px; border:1px solid var(--border);
-    background:var(--bg); color:var(--text); font-size:13px;
+    width:100%; padding:6px 12px; border-radius:6px; border:1px solid var(--border);
+    background:var(--bg); color:var(--text); font-size:12.5px;
   }
   .ranking-filter-tabs{ display:flex; gap:6px; flex-wrap:wrap; }
   .rank-filter-btn{
@@ -396,11 +396,19 @@
   .rank-filter-btn:hover{ color:var(--text); background:var(--hover); }
   .rank-filter-btn.active{ color:#fff; background:var(--accent); border-color:var(--accent); }
 
-  .ranking-table-wrap{ overflow-x:auto; margin:16px 0 24px; border-radius:10px; border:1px solid var(--border); }
-  .ranking-full-table{ width:100%; border-collapse:collapse; font-size:12.5px; text-align:left; table-layout:auto; }
-  .ranking-full-table th, .ranking-full-table td{ padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .ranking-table-wrap{ overflow:hidden; margin:14px 0 20px; border-radius:10px; border:1px solid var(--border); background:#11161c; width:100%; }
+  .ranking-full-table{ width:100%; border-collapse:collapse; font-size:12px; text-align:left; table-layout:fixed; }
+  .ranking-full-table th, .ranking-full-table td{
+    padding:8px 6px; border-bottom:1px solid rgba(255,255,255,0.06);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .ranking-full-table td:last-child{ padding:4px 4px; overflow:visible; }
   .ranking-full-table th{ background:#19202c; color:#93c5fd; font-weight:750; position:sticky; top:0; z-index:2; border-bottom:2px solid var(--border); white-space:nowrap; }
   .ranking-full-table tr:hover{ background:rgba(59,130,246,0.08); }
+  .rank-report-btn{
+    padding:3px 8px; font-size:11px; font-weight:750; border-radius:5px; height:24px;
+    display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; cursor:pointer;
+  }
   
   .rank-badge-num{
     display:inline-flex; align-items:center; justify-content:center;
@@ -419,7 +427,9 @@
   .rank-score-pill.low{ background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3); }
 
   .rank-decision-tag{
-    display:inline-flex; align-items:center; padding:3px 9px; border-radius:6px; font-size:12px; font-weight:750;
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:3px 8px; border-radius:6px; font-size:11.5px; font-weight:750;
+    white-space:nowrap; max-width:100%; box-sizing:border-box;
   }
   .rank-decision-tag.strong-buy{ background:rgba(239,68,68,0.22); color:#f87171; border:1px solid rgba(239,68,68,0.5); font-weight:850; box-shadow:0 0 8px rgba(239,68,68,0.2); }
   .rank-decision-tag.buy{ background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.35); }
@@ -1429,19 +1439,19 @@
           <table class="ranking-full-table">
             <thead>
               <tr>
-                <th style="width:50px; text-align:center;">名次</th>
-                <th style="width:70px;">代號</th>
-                <th style="width:90px;">股票名稱</th>
-                <th style="width:80px;">產業分類</th>
-                <th style="width:80px; text-align:right;">當前價格</th>
-                <th style="width:85px; text-align:center;">預期勝率</th>
-                <th style="width:80px; text-align:right;">風報比(R/R)</th>
-                <th style="width:80px; text-align:right;">建議進場</th>
-                <th style="width:80px; text-align:right;">建議停損</th>
-                <th style="width:80px; text-align:right;">目標價</th>
-                <th>自動識別型態</th>
-                <th style="width:95px; text-align:center;">評級建議</th>
-                <th style="width:70px; text-align:center;">操作</th>
+                <th style="width:36px; text-align:center;">名次</th>
+                <th style="width:52px;">代號</th>
+                <th style="width:76px;">股票名稱</th>
+                <th style="width:65px;">產業分類</th>
+                <th style="width:70px; text-align:right;">當前價格</th>
+                <th style="width:72px; text-align:center;">預期勝率</th>
+                <th style="width:62px; text-align:right;">風報比</th>
+                <th style="width:72px; text-align:right;">建議進場</th>
+                <th style="width:72px; text-align:right;">建議停損</th>
+                <th style="width:72px; text-align:right;">目標價</th>
+                <th style="min-width:110px;">自動識別型態</th>
+                <th style="width:145px; text-align:center;">評級建議</th>
+                <th style="width:68px; text-align:center;">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -1478,7 +1488,7 @@
                     <td><span style="font-size:12.5px; color:#cbd5e1;">${escapeHtml(item.pattern)}</span></td>
                     <td style="text-align:center;"><span class="rank-decision-tag ${decClass}">${escapeHtml(item.decision)}</span></td>
                     <td style="text-align:center;">
-                      <button type="button" class="btn" style="padding:2px 8px; font-size:11px;" onclick="event.stopPropagation(); switchToStockAnalysis('${escapeHtml(item.code)}');">📑 報告</button>
+                      <button type="button" class="btn rank-report-btn" onclick="event.stopPropagation(); switchToStockAnalysis('${escapeHtml(item.code)}');">📑 報告</button>
                     </td>
                   </tr>
                 `;
@@ -2090,10 +2100,21 @@
             batchScannerBtn.disabled = false;
             batchScannerBtn.className = 'btn success';
             batchScannerBtn.textContent = '✅ 掃描完成';
-            loadWinrateMap();
+            
+            // 全域即時無感重整資料與畫面，無需手動 F5
+            await loadCards();
+            await loadTree();
+            await loadList();
+            await loadWinrateMap();
             if (typeof activeWorkspaceName !== 'undefined' && activeWorkspaceName === 'ranking') {
-              loadWinrateRankingReport();
+              await loadWinrateRankingReport();
+            } else if (typeof activeWorkspaceName !== 'undefined' && activeWorkspaceName === 'analysis') {
+              if (selectedStockCode) await loadMarkdownReport(selectedStockCode);
+            } else if (typeof activeWorkspaceName !== 'undefined' && activeWorkspaceName === 'pattern') {
+              await PatternViewer.refresh();
+              if (selectedStockCode) await PatternViewer.loadStock(selectedStockCode);
             }
+
             setTimeout(() => {
               batchScannerBtn.className = 'btn primary';
               batchScannerBtn.textContent = '⚡ Batch Scanner';
