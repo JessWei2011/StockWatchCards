@@ -411,6 +411,7 @@
   .rank-decision-tag{
     display:inline-flex; align-items:center; padding:3px 9px; border-radius:6px; font-size:12px; font-weight:750;
   }
+  .rank-decision-tag.strong-buy{ background:rgba(239,68,68,0.22); color:#f87171; border:1px solid rgba(239,68,68,0.5); font-weight:850; box-shadow:0 0 8px rgba(239,68,68,0.2); }
   .rank-decision-tag.buy{ background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.35); }
   .rank-decision-tag.watch{ background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.35); }
   .rank-decision-tag.avoid{ background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.35); }
@@ -1443,7 +1444,8 @@
                 else if (rankNum === 3) badgeClass = 'top3';
 
                 let decClass = 'watch';
-                if (item.decision.includes('買入')) decClass = 'buy';
+                if (item.decision.includes('強烈買入')) decClass = 'strong-buy';
+                else if (item.decision.includes('買入')) decClass = 'buy';
                 else if (item.decision.includes('避開') || item.decision.includes('減碼')) decClass = 'avoid';
 
                 const winVal = parseFloat(item.winRate) || 0;

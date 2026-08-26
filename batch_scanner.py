@@ -300,15 +300,15 @@ def calculate_winrate(stock_info):
     total_score = min(100.0, score_trend + score_momentum + score_pattern + score_support + score_rr + score_chip)
     
     # 換算預期勝率 % (基礎勝率 50% + 分數係數)
-    win_rate = round(50.0 + (total_score - 50.0) * 0.55, 1)
-    win_rate = max(45.0, min(85.0, win_rate))
+    win_rate = round(50.0 + (total_score - 50.0) * 0.75, 1)
+    win_rate = max(42.0, min(88.0, win_rate))
     
-    # 建議方向
-    if win_rate >= 72.0:
+    # 建議方向 (對齊 Morgan Stanley 5 維量化評級體系)
+    if win_rate >= 68.0:
         action = "強烈買入 (Strong Buy)"
-    elif win_rate >= 64.0:
+    elif win_rate >= 60.0:
         action = "買入 (Buy)"
-    elif win_rate >= 55.0:
+    elif win_rate >= 52.0:
         action = "觀望 / 擇優佈局"
     else:
         action = "避開 / 減碼"
@@ -431,6 +431,25 @@ def save_stage4_report(r):
     lines.append(f"  - 條件 2：帶量突破強烈前高阻力點 {r['swing_high']} 元。")
     lines.append(f"【停損位】：{r['stop_loss']} 元 (跌破波段防禦平台)")
     lines.append("【形態失敗警示】：若連續 3 日無法站穩阻力點並爆量下破 38.2% 支撐，警惕形態轉弱。\n")
+    
+    # 判斷第三階段推薦策略與理由
+    if ('突破' in r['pattern'] or '新高' in r['pattern'] or '杯柄' in r['pattern']) and r['win_rate'] >= 60.0:
+        stage3_strat = "右側突破"
+        stage3_reason = f"當前形態呈現「{r['pattern']}」，多頭攻擊結構完整且突破關鍵阻力，順勢跟隨量能放大進場之勝率較高。"
+    elif '回調' in r['pattern'] or '雙重底' in r['pattern'] or 'W底' in r['pattern'] or (52.0 <= r['win_rate'] < 60.0):
+        stage3_strat = "左側佈局"
+        stage3_reason = f"當前形態呈現「{r['pattern']}」，價格回測至關鍵支撐/斐波那契回調區間，下檔風險有限，適合逢低分批建立防禦部位。"
+    else:
+        stage3_strat = "混合策略 / 觀望"
+        stage3_reason = "形態處於轉換震盪期，多空動能尚未完全明朗，建議採取極小部位試單或等待更明確突破信號。"
+
+    lines.append("【進場策略建議】")
+    lines.append("根據當前形態和趨勢，推薦：")
+    lines.append("- 如果形態為「整理後突破」（三角形、旗形、杯柄）：建議右側突破進場")
+    lines.append("- 如果形態為「回調至支撐」（斐波那契回調、前低支撐）：建議左側分批佈局")
+    lines.append("- 如果形態不明確：建議觀望或極小部位試單\n")
+    lines.append(f"推薦策略：**{stage3_strat}**")
+    lines.append(f"理由：{stage3_reason}\n")
     lines.append("---")
     
     lines.append("\n## 第四階段：Morgan Stanley 技術分析儀表板（生成最終交易計劃）\n")
@@ -443,15 +462,71 @@ def save_stage4_report(r):
     lines.append(f"- 長期 (200 日)：多頭（穩居 200 日均線之上）\n")
     lines.append("■ **關鍵價位與 Pivot Point**")
     lines.append(f"- Pivot Point：{pp} 元 | S1：{s1} 元 | R1：{r1} 元\n")
-    lines.append("■ **操作建議**")
-    lines.append(f"【交易方向】：{'做多' if r['win_rate'] >= 60 else '觀望'}")
-    lines.append(f"【進場區域】：{entry_zone}")
-    lines.append(f"【停損位】：{r['stop_loss']} 元")
-    lines.append(f"【目標價 1】：{r['swing_high']} 元")
-    lines.append(f"【目標價 2】：{r['target_price']} 元")
+    # 判斷交易風格與策略情境
+    is_bull = r['win_rate'] >= 60.0 or '買入' in r['action']
+    is_neutral = (52.0 <= r['win_rate'] < 60.0) or '觀望' in r['action']
+    
+    trade_dir = "做多" if is_bull else ("做多 (左側)" if is_neutral else "觀望")
+    if is_bull:
+        strat_name = "右側突破策略 (情境 A)"
+        entry_desc = f"{r['price'] * 0.995:.2f} ~ {r['price'] * 1.02:.2f} 元 (突破關鍵前高/阻力確認區間)"
+        first_entry = f"{r['price']:.2f} 元 (部位 50%)"
+        add_point_1 = f"{r['price'] * 1.02:.2f} 元 (帶量突破前高並站穩時加碼 30%)"
+        add_point_2 = f"{r['swing_high']:.2f} 元 (創波段新高後回測不破加碼 20%)"
+        position_ratio = "80% ~ 100% (標準多頭部位)"
+    elif is_neutral:
+        strat_name = "左側分批佈局策略 (情境 B)"
+        entry_desc = f"{r['fib382']:.2f} ~ {r['price'] * 0.98:.2f} 元 (近波段 38.2% 斐波那契回調支撐位，分批承接)"
+        first_entry = f"{r['price'] * 0.98:.2f} 元 (部位 30%)"
+        add_point_1 = f"{r['fib382']:.2f} 元 (回測斐波 38.2% 支撐回升時加碼 30%)"
+        add_point_2 = f"{r['fib500']:.2f} 元 (若回測 50% 支撐站穩加碼 20%)"
+        position_ratio = "30% ~ 50% (左側防禦部位，嚴控風險)"
+    else:
+        strat_name = "防守觀望策略 (情境 C)"
+        entry_desc = f"{r['fib500']:.2f} ~ {r['fib618']:.2f} 元 (深度回調觀察區，未見止跌信號前不進場)"
+        first_entry = "暫緩進場 (部位 0%)"
+        add_point_1 = f"{r['swing_low']:.2f} 元 (打底結構確立後再行評估)"
+        add_point_2 = "無 (不盲目向下攤平)"
+        position_ratio = "0% ~ 30% (極小部位或空手觀望)"
+
+    lines.append("■ **操作建議**\n")
+    lines.append("【交易風格選擇】")
+    lines.append("根據第一階段【趨勢方向】的判斷，選擇對應策略：\n")
+    lines.append("情境 A：趨勢方向 = 多頭（右側為主）")
+    lines.append("- 進場策略：等待突破關鍵阻力位後進場")
+    lines.append("- 進場區域：[突破價位 + 0.5~2% 的確認區間]")
+    lines.append("- 加碼點：突破後回測支撐不破時加碼 30-50%")
+    lines.append("- 停損位：跌破突破 K 棒低點或關鍵支撐位")
+    lines.append("- 部位比例：標準部位的 80-100%\n")
+    lines.append("情境 B：趨勢方向 = 觀望/盤整（左側為主）")
+    lines.append("- 進場策略：在支撐位/斐波那契回調位分批佈局")
+    lines.append("- 進場區域：[支撐位 1 附近，可分 2-3 批]")
+    lines.append("- 加碼點：每下跌 3-5% 加碼一次，最多 3 次")
+    lines.append("- 停損位：跌破支撐位 3 或關鍵技術無效點")
+    lines.append("- 部位比例：標準部位的 30-50%（左側風險較高）\n")
+    lines.append("情境 C：趨勢方向 = 空頭（右側做空或觀望）")
+    lines.append("- 進場策略：等待反彈至阻力位受阻後做空，或觀望")
+    lines.append("- 進場區域：[阻力位 1-2 附近]")
+    lines.append("- 停損位：突破阻力位 3")
+    lines.append("- 部位比例：標準部位的 50-70%\n")
+    lines.append("【最終執行方案】")
+    lines.append(f"【交易方向】：{trade_dir}")
+    lines.append(f"【推薦策略】：{strat_name}")
+    lines.append(f"【進場區域】：{entry_desc}")
+    lines.append(f"【第一批進場】：{first_entry}")
+    lines.append(f"【加碼點 1】：{add_point_1}")
+    lines.append(f"【加碼點 2】：{add_point_2}")
+    lines.append(f"【停損位】：{r['stop_loss']} 元 (跌破波段防禦平台與關鍵支撐執行停損)")
+    lines.append(f"【目標價 1】：{r['swing_high']} 元 (波段前高阻力位，可減碼 30-50% 鎖定獲利)")
+    lines.append(f"【目標價 2】：{r['target_price']} 元 (形態滿足點與斐波擴展主要目標)")
     lines.append(f"【風險報酬比】：**{r['rr_ratio']}**")
+    lines.append(f"【建議總部位比例】：{position_ratio}")
     lines.append(f"【預期勝率】：**`{r['win_rate']}%`** (評分: {r['total_score']} / 100)")
     lines.append(f"【建議評級】：**{r['action']}**\n")
+    lines.append("【混合策略特別提醒】")
+    lines.append("- 如果使用左側佈局：嚴格控制第一批部位不超過 50%，保留加碼子彈")
+    lines.append("- 如果使用右側突破：確認成交量放大，避免假突破")
+    lines.append("- 如果趨勢不明：降低總部位至 30-50%，等待更明確信號\n")
     lines.append("---")
     lines.append("\n*本報告由 Python batch_scanner 依據 4 階段 Morgan Stanley 模型自動生成。*")
 
