@@ -1055,6 +1055,22 @@ def run(ticker_input):
     if not name:
         name = info.get("longName") or info.get("shortName") or sid
 
+    STOCK_NAME_MAP = {
+        '2301': '光寶科', '2308': '台達電', '2368': '金像電', '2408': '南亞科', '2467': '志聖',
+        '3037': '欣興', '3189': '景碩', '4958': '臻鼎-KY', '6213': '聯茂', '6214': '精誠',
+        '6531': '愛普', '8021': '尖點', '8039': '台虹', '8046': '南電',
+    }
+    dict_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stock_name_dict.json")
+    if os.path.exists(dict_file):
+        try:
+            with open(dict_file, "r", encoding="utf-8") as f:
+                STOCK_NAME_MAP.update(json.load(f))
+        except Exception:
+            pass
+
+    if sid in STOCK_NAME_MAP and (not name or any(c.isascii() and c.isalpha() for c in name.replace('-KY', ''))):
+        name = STOCK_NAME_MAP[sid]
+
     print(" 查詢處置期間…", end="", flush=True)
     dispo = fetch_disposition_info(sid, is_otc)
     print(f" {'是' if dispo['is_disposition'] else '否'}")

@@ -88,7 +88,7 @@ const STOCK_CARDS = [
   },
   {
     "code": "2308",
-    "name": "Delta",
+    "name": "台達電",
     "date": "2026-08-25",
     "group": "電力",
     "decision": "避開 / 減碼",
@@ -178,7 +178,7 @@ const STOCK_CARDS = [
   },
   {
     "code": "2327",
-    "name": "國巨*",
+    "name": "國巨",
     "date": "2026-08-25",
     "group": "被動元件",
     "decision": "避開 / 減碼",
@@ -1261,7 +1261,7 @@ const STOCK_CARDS = [
   },
   {
     "code": "5536",
-    "name": "聖暉*",
+    "name": "聖暉",
     "date": "2026-08-25",
     "group": "廠務",
     "decision": "避開 / 減碼",
@@ -1705,7 +1705,7 @@ const STOCK_CARDS = [
   },
   {
     "code": "6531",
-    "name": "愛普*",
+    "name": "愛普",
     "date": "2026-08-25",
     "group": "記憶體",
     "decision": "觀望 / 擇優佈局",
