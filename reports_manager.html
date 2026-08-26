@@ -129,12 +129,14 @@
   .tree-report-row.dragging{ opacity:0.4; }
   .tree-report-row .code{ color:var(--text-dim); flex-shrink:0; }
   .tree-report-row .name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
-  .tree-pattern-btn{
-    flex-shrink:0; border:1px solid rgba(125,180,255,0.35); border-radius:6px;
-    background:rgba(59,130,246,0.12); color:#93c5fd; cursor:pointer; font-weight:700;
+  .tree-ai-scores{ display:flex; align-items:center; gap:3px; flex-shrink:0; }
+  .tree-ai-score{
+    min-width:44px; padding:2px 4px; border-radius:5px; text-align:center;
+    font-size:9.5px; font-weight:850; line-height:1.25;
   }
-  .tree-pattern-btn{ padding:2px 5px; font-size:11px; }
-  .tree-pattern-btn:hover{ background:rgba(59,130,246,0.28); color:#fff; }
+  .tree-ai-score.gemini{ color:#e9d5ff; border:1px solid rgba(192,132,252,.5); background:rgba(147,51,234,.18); }
+  .tree-ai-score.chatgpt{ color:#99f6e4; border:1px solid rgba(45,212,191,.5); background:rgba(13,148,136,.18); }
+  .tree-ai-score.missing{ color:#fde68a; border-color:rgba(251,191,36,.5); background:rgba(245,158,11,.12); }
   .tree-actions button{
     background:none; border:none; color:inherit; opacity:0.7; cursor:pointer; font-size:12px; padding:2px 4px;
   }
@@ -1152,20 +1154,21 @@
     const item = document.createElement('div');
     item.className = 'tree-report-row';
     item.draggable = true;
-    item.innerHTML = `<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(r.name || r.base)}">${escapeHtml(r.name || r.base)}</span>`;
-    if (r.code) {
-      const patternBtn = document.createElement('button');
-      patternBtn.type = 'button';
-      patternBtn.className = 'tree-pattern-btn';
-      patternBtn.textContent = '🎓';
-      patternBtn.title = `查看 ${r.code} ${r.name || ''} 的型態教學`;
-      patternBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openPatternForStock(r.code);
-      });
-      patternBtn.addEventListener('mousedown', (e) => e.stopPropagation());
-      item.appendChild(patternBtn);
-    }
+    const card = cardsByCode[String(r.code || '')] || {};
+    const analyses = card.aiAnalysis && typeof card.aiAnalysis === 'object' ? card.aiAnalysis : {};
+    const findAnalysis = aiName => Object.entries(analyses)
+      .find(([name,value]) => name.toLowerCase() === aiName.toLowerCase() && value && typeof value === 'object')?.[1];
+    const gemini = findAnalysis('Gemini');
+    const chatgpt = findAnalysis('ChatGPT');
+    const scorePill = (label, analysis, className) => {
+      const score = Number(analysis?.score);
+      const hasScore = Number.isFinite(score);
+      const title = hasScore
+        ? `${label}：${score} 分｜${analysis.decision || '未判定'}${analysis.verified === true ? '｜已稽核' : '｜未稽核'}`
+        : `${label}：尚無獨立分析`;
+      return `<span class="tree-ai-score ${className}${hasScore ? '' : ' missing'}" title="${escapeHtml(title)}">${label} ${hasScore ? escapeHtml(String(score)) : '—'}</span>`;
+    };
+    item.innerHTML = `<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(r.name || r.base)}">${escapeHtml(r.name || r.base)}</span><span class="tree-ai-scores">${scorePill('Gemini', gemini, 'gemini')}${scorePill('ChatGPT', chatgpt, 'chatgpt')}</span>`;
     item.addEventListener('click', () => focusAiResult(r.code));
     item.addEventListener('dragstart', (e) => {
       item.classList.add('dragging');
@@ -1493,6 +1496,7 @@
       const { ok, data } = await api('GET', '/api/cards');
       if (ok) cardsByCode = data.cards || {};
     } catch (e) {}
+    if (tree) renderTree();
     populateRankGroupFilter();
     renderRankPanel();
   }
