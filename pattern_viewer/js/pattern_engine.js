@@ -430,6 +430,163 @@ window.PatternEngine = {
     };
   },
 
+  buildCupAndHandle(stockData, text) {
+    const candles = stockData.candles || [];
+    const dates = stockData.dates || [];
+    const n = candles.length;
+    if (n < 15) return this.buildFlatFallback(stockData);
+
+    // 1. Find Left Rim (左杯口): highest high in the first part
+    const startSearch = Math.max(0, n - 45);
+    const midSearch = Math.max(startSearch + 5, n - 15);
+    let p1Idx = startSearch, p1Price = -Infinity;
+    for (let i = startSearch; i < midSearch; i++) {
+      if (candles[i][3] > p1Price) {
+        p1Price = candles[i][3];
+        p1Idx = i;
+      }
+    }
+
+    // 2. Find Cup Bottom (杯底低點): lowest low after p1Idx
+    let p2Idx = p1Idx, p2Price = Infinity;
+    const bottomEnd = Math.max(p1Idx + 2, n - 5);
+    for (let i = p1Idx; i < bottomEnd; i++) {
+      if (candles[i][2] < p2Price) {
+        p2Price = candles[i][2];
+        p2Idx = i;
+      }
+    }
+
+    // 3. Find Right Rim (右杯口 / 杯柄起點): rally peak after cup bottom
+    let p3Idx = p2Idx, p3Price = -Infinity;
+    const rightRimEnd = Math.max(p2Idx + 2, n - 2);
+    for (let i = p2Idx; i < rightRimEnd; i++) {
+      if (candles[i][3] > p3Price) {
+        p3Price = candles[i][3];
+        p3Idx = i;
+      }
+    }
+    if (p3Price === -Infinity || p3Idx === p2Idx) {
+      p3Idx = Math.min(n - 2, p2Idx + Math.max(1, Math.floor((n - 1 - p2Idx) / 2)));
+      p3Price = candles[p3Idx][3];
+    }
+
+    // 4. Find Handle Low (杯柄拉回低點): shallow pullback between p3 and current
+    let p4Idx = p3Idx, p4Price = Infinity;
+    for (let i = p3Idx; i < n; i++) {
+      if (candles[i][2] < p4Price) {
+        p4Price = candles[i][2];
+        p4Idx = i;
+      }
+    }
+    if (p4Idx === p3Idx && p3Idx < n - 1) {
+      p4Idx = n - 1;
+      p4Price = candles[p4Idx][2];
+    }
+
+    const cur = this.lastPoint(stockData);
+    const necklinePrice = Math.max(p1Price, p3Price);
+    const isBreakout = cur.price >= necklinePrice * 0.98;
+
+    const p1 = { date: dates[p1Idx], price: p1Price, label: 'P1 左杯口高點', tag: '左杯口' };
+    const p2 = { date: dates[p2Idx], price: p2Price, label: 'P2 杯底洗盤支撐', tag: '杯底' };
+    const p3 = { date: dates[p3Idx], price: p3Price, label: 'P3 右杯口/杯柄起點', tag: '右杯口' };
+    const p4 = { date: dates[p4Idx], price: p4Price, label: 'P4 杯柄回測守穩', tag: '杯柄' };
+    const p5 = { date: cur.date, price: cur.price, label: isBreakout ? 'P5 帶量突破頸線' : 'P5 杯柄右側推進', tag: isBreakout ? '突破' : '進行中' };
+
+    const pivots = [p1, p2, p3, p4, p5];
+
+    // Generate smooth U-curve between P1 -> P2 -> P3, and Handle P3 -> P4 -> P5
+    const vectorPath = [];
+    vectorPath.push([p1.date, p1.price]);
+    if (p2Idx - p1Idx > 3) {
+      const mid1Idx = Math.floor((p1Idx + p2Idx) / 2);
+      vectorPath.push([dates[mid1Idx], candles[mid1Idx][1]]);
+    }
+    vectorPath.push([p2.date, p2.price]);
+    if (p3Idx - p2Idx > 3) {
+      const mid2Idx = Math.floor((p2Idx + p3Idx) / 2);
+      vectorPath.push([dates[mid2Idx], candles[mid2Idx][1]]);
+    }
+    vectorPath.push([p3.date, p3.price]);
+    if (p4.date !== p3.date) vectorPath.push([p4.date, p4.price]);
+    if (p5.date !== p4.date) vectorPath.push([p5.date, p5.price]);
+
+    const cupDepthPct = ((p1Price - p2Price) / p1Price * 100).toFixed(1);
+    const handleDepthPct = ((p3Price - p4Price) / p3Price * 100).toFixed(1);
+
+    return {
+      name: isBreakout ? '大層級杯柄型態 (測試/突破頸線)' : '杯柄型態 (Cup & Handle)',
+      badge: isBreakout ? '經典多頭突破攻擊' : '杯柄整理成型中',
+      color: '#ef4444', // 台股多方紅
+      pivots,
+      vectorPath,
+      resistanceLine: { price: necklinePrice, label: `杯柄頸線關鍵壓力位 $${necklinePrice.toFixed(1)}` },
+      explanation: `【杯柄型態（Cup & Handle）教學心法】：
+1. **左杯口 (P1)**：${p1.date} 於 $${p1.price.toFixed(1)} 形成前波波段高點。
+2. **圓弧杯底 (P2)**：經歷 U 型洗盤打底於 ${p2.date} $${p2.price.toFixed(1)}（杯深約 ${cupDepthPct}%，符合經典 12~35% 範圍），籌碼充分沉澱。
+3. **右杯口 (P3)**：回升至 ${p3.date} $${p3.price.toFixed(1)} 逼近頸線。
+4. **杯柄洗盤 (P4)**：在杯口高檔展開淺幅回測 $${p4.price.toFixed(1)}（幅度僅 ${handleDepthPct}%，屬於強勢量縮淺柄）。
+5. **操作建議**：${isBreakout ? '最新價格已挑戰/突破頸線壓力，為經典威廉·歐尼爾（William O\'Neil）右側突破進場黃金買點！' : '目前在杯柄右側醞釀，等待帶量突破頸線後進場。'}`
+    };
+  },
+
+  buildVcpSqueeze(stockData, text) {
+    const swings = this.zigzag(stockData, 0.02);
+    const highs = swings.filter(p => p.type === 'high').slice(-3);
+    const lows = swings.filter(p => p.type === 'low').slice(-3);
+    if (highs.length < 2 || lows.length < 2) return this.buildTriangle(stockData);
+
+    const cur = this.lastPoint(stockData);
+    const maxHigh = Math.max(...highs.map(h => h.price));
+    const pivots = [];
+    highs.forEach((h, i) => pivots.push({ ...h, label: `T${i + 1} 波動收縮高點`, tag: `T${i + 1}H` }));
+    lows.forEach((l, i) => pivots.push({ ...l, label: `T${i + 1} 波動收縮低點`, tag: `T${i + 1}L` }));
+    pivots.push({ date: cur.date, price: cur.price, label: '目前收盤', tag: '現在' });
+
+    return {
+      name: 'VCP 波動收縮整理 (Minervini VCP)',
+      badge: '量縮收斂即將噴發',
+      color: '#38bdf8',
+      pivots,
+      vectorPath: pivots.slice().sort((a, b) => (stockData.dates.indexOf(a.date) - stockData.dates.indexOf(b.date))).map(p => [p.date, p.price]),
+      resistanceLine: { price: maxHigh, label: `VCP 突破臨界點 $${maxHigh.toFixed(1)}` },
+      explanation: `【VCP 波動收縮教學心法】：每次回檔幅度逐步遞減（波浪振幅由寬變窄），代表市場浮額已遭主力鎖碼吸收，最新收盤價逼近臨界壓力線 $${maxHigh.toFixed(1)}，一旦帶量突破即為絕佳右側買點。`
+    };
+  },
+
+  buildBreakoutHigh(stockData, text) {
+    const candles = stockData.candles || [];
+    const dates = stockData.dates || [];
+    const n = candles.length;
+    if (n < 10) return this.buildFlatFallback(stockData);
+
+    let priorMaxHigh = -Infinity, priorMaxIdx = 0;
+    for (let i = 0; i < n - 1; i++) {
+      if (candles[i][3] > priorMaxHigh) {
+        priorMaxHigh = candles[i][3];
+        priorMaxIdx = i;
+      }
+    }
+    const cur = this.lastPoint(stockData);
+    const isNewHigh = cur.price >= priorMaxHigh;
+
+    const pivots = [
+      { date: dates[priorMaxIdx], price: priorMaxHigh, label: '前波歷史/波段最高點', tag: '前高' },
+      { date: cur.date, price: cur.price, label: isNewHigh ? '歷史新高突破確認' : '最新收盤價', tag: isNewHigh ? '創天價' : '挑戰新高' }
+    ];
+
+    return {
+      name: '歷史/波段新高爆量突破 (Breakout)',
+      badge: '強勢無套牢壓力',
+      color: '#f59e0b',
+      pivots,
+      vectorPath: [[dates[priorMaxIdx], priorMaxHigh], [cur.date, cur.price]],
+      resistanceLine: { price: priorMaxHigh, label: `前波歷史高點壓力線 $${priorMaxHigh.toFixed(1)}` },
+      explanation: `【新高突破教學心法】：${dates[priorMaxIdx]} 創下前波高點 $${priorMaxHigh.toFixed(1)}，目前最新收盤價 $${cur.price.toFixed(1)} ${isNewHigh ? '已強勢越過歷史高點，上方無任何套牢賣壓，多頭籌碼乾淨！' : '正在挑戰前波最高點阻力。'}`
+    };
+  },
+
   buildGenericTrend(stockData) {
     const swings = this.zigzag(stockData, 0.03);
     if (swings.length < 2) return this.buildFlatFallback(stockData);
@@ -441,14 +598,17 @@ window.PatternEngine = {
   },
 
   MATCHERS: [
-    { re: /底底高|頭頭高|墊高|階梯式上升|打底拉升|拉升墊高/, fn: 'buildLadderUp' },
+    { re: /杯柄|Cup\s*&\s*Handle|杯狀|杯形/i, fn: 'buildCupAndHandle' },
+    { re: /VCP|收縮|旗形|窄幅/i, fn: 'buildVcpSqueeze' },
+    { re: /歷史新高|波段新高|新高|爆量突破|Breakout/i, fn: 'buildBreakoutHigh' },
+    { re: /底底高|頭頭高|墊高|階梯式上升|打底拉升|拉升墊高|多頭排列/i, fn: 'buildLadderUp' },
     { re: /底底低|頭頭低|階梯式下降|節節敗退/, fn: 'buildLadderDown' },
-    { re: /雙重底|W底/, fn: 'buildWBottom' },
+    { re: /雙重底|W底|Double Bottom/i, fn: 'buildWBottom' },
     { re: /雙重頂|M頭/, fn: 'buildMHead' },
     { re: /三角收斂|收斂三角|三角形/, fn: 'buildTriangle' },
     { re: /頭肩頂|頭肩底|頭肩型/, fn: 'buildHeadShoulders' },
     { re: /N字/, fn: 'buildNShape' },
-    { re: /箱型|箱體|區間整理/, fn: 'buildBox' },
+    { re: /箱型|箱體|區間整理|區間震盪|高檔盤整/, fn: 'buildBox' },
     { re: /破底翻|V轉|V型反轉|打底翻揚/, fn: 'buildVReversal' },
     { re: /漲停|噴發|噴出|強勢攻擊/, fn: 'buildBreakoutSpike' },
     { re: /攻克|站上|突破/, fn: 'buildMaCross' },

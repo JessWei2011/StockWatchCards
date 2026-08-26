@@ -46,8 +46,7 @@ window.ChartEngine = {
       if (prevZoom) { zoomStart = prevZoom.start; zoomEnd = prevZoom.end; }
     }
     if (zoomStart == null) {
-      const defaultVisibleDays = 14;
-      zoomStart = total > defaultVisibleDays ? Math.max(0, (1 - defaultVisibleDays / total) * 100) : 0;
+      zoomStart = 0;
       zoomEnd = 100;
     }
     this._lastStockKey = stockKey;
