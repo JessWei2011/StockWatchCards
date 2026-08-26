@@ -131,8 +131,8 @@
   .tree-report-row .name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
   .tree-ai-scores{ display:flex; align-items:center; gap:3px; flex-shrink:0; }
   .tree-ai-score{
-    min-width:44px; padding:2px 4px; border-radius:5px; text-align:center;
-    font-size:9.5px; font-weight:850; line-height:1.25;
+    min-width:25px; padding:2px 5px; border-radius:5px; text-align:center;
+    font-size:10.5px; font-weight:900; line-height:1.25;
   }
   .tree-ai-score.gemini{ color:#e9d5ff; border:1px solid rgba(192,132,252,.5); background:rgba(147,51,234,.18); }
   .tree-ai-score.chatgpt{ color:#99f6e4; border:1px solid rgba(45,212,191,.5); background:rgba(13,148,136,.18); }
@@ -1166,7 +1166,7 @@
       const title = hasScore
         ? `${label}：${score} 分｜${analysis.decision || '未判定'}${analysis.verified === true ? '｜已稽核' : '｜未稽核'}`
         : `${label}：尚無獨立分析`;
-      return `<span class="tree-ai-score ${className}${hasScore ? '' : ' missing'}" title="${escapeHtml(title)}">${label} ${hasScore ? escapeHtml(String(score)) : '—'}</span>`;
+      return `<span class="tree-ai-score ${className}${hasScore ? '' : ' missing'}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">${hasScore ? escapeHtml(String(score)) : '—'}</span>`;
     };
     item.innerHTML = `<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(r.name || r.base)}">${escapeHtml(r.name || r.base)}</span><span class="tree-ai-scores">${scorePill('Gemini', gemini, 'gemini')}${scorePill('ChatGPT', chatgpt, 'chatgpt')}</span>`;
     item.addEventListener('click', () => focusAiResult(r.code));
