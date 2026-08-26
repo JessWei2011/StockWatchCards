@@ -532,6 +532,64 @@
   .rank-latest-stat strong.positive{ color:#f87171; }
   .rank-latest-stat strong.negative{ color:#4ade80; }
   .inst-chart-empty{ color:var(--text-dim); font-size:11.5px; padding:12px 0; }
+
+  /* ── 台股大盤三大法人買賣金額看板 ── */
+  .market-inst-card{
+    background:#11161c; border:1px solid rgba(71,85,105,.55); border-radius:12px;
+    padding:12px 16px; margin-bottom:14px; box-shadow:0 4px 12px rgba(0,0,0,0.25);
+  }
+  .market-inst-header{
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
+    margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(71,85,105,.35);
+  }
+  .market-inst-title{
+    display:flex; align-items:center; gap:8px; font-size:14px; font-weight:800; color:#f8fafc;
+  }
+  .market-inst-title .icon{ font-size:16px; }
+  .market-inst-date-badge{
+    font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px;
+    background:rgba(96,165,250,.18); color:#93c5fd; border:1px solid rgba(96,165,250,.4);
+  }
+  .market-inst-date-badge.stale{
+    background:rgba(148,163,184,.15); color:#94a3b8; border-color:rgba(148,163,184,.3);
+  }
+  .market-inst-actions{ display:flex; align-items:center; gap:8px; }
+  .market-inst-status{ font-size:11.5px; color:var(--text-dim); }
+  .market-refresh-btn{
+    height:28px; padding:0 10px; font-size:11.5px; font-weight:700; border-radius:6px;
+    background:rgba(255,255,255,.06); border:1px solid var(--border); color:var(--text); cursor:pointer;
+  }
+  .market-refresh-btn:hover{ background:var(--hover); color:#fff; }
+  .market-inst-grid{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px;
+  }
+  .market-inst-cell{
+    background:rgba(255,255,255,.025); border:1px solid rgba(71,85,105,.4); border-radius:8px;
+    padding:8px 12px; display:flex; flex-direction:column; gap:4px;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .market-inst-cell:hover{ background:rgba(255,255,255,.05); }
+  .market-inst-cell.total{
+    background:rgba(234,179,8,.06); border:1.5px solid rgba(234,179,8,.45);
+    box-shadow:0 0 12px rgba(234,179,8,.08);
+  }
+  .market-inst-cell-name{
+    font-size:12px; font-weight:700; color:var(--text-dim); display:flex; align-items:center; justify-content:space-between;
+  }
+  .market-inst-cell.total .market-inst-cell-name{ color:#fde047; font-weight:800; }
+  .market-inst-cell-net{
+    font-size:16px; font-weight:900; font-family:"Courier New", Courier, monospace;
+    display:flex; align-items:center; gap:4px;
+  }
+  .market-inst-cell-net.buy{ color:#f87171; }
+  .market-inst-cell-net.sell{ color:#4ade80; }
+  .market-inst-cell-net.flat{ color:#94a3b8; }
+  .market-inst-cell-sub{
+    font-size:10.5px; color:var(--text-dim); font-family:"Courier New", Courier, monospace;
+  }
+  .market-inst-loading{ padding:12px; text-align:center; color:var(--text-dim); font-size:12.5px; }
+  .market-inst-error{ padding:12px; text-align:center; color:var(--danger); font-size:12.5px; }
+
   .organizer-panel{ margin-top:18px; padding-top:16px; border-top:1px solid var(--border); }
   .organizer-panel[hidden]{ display:none; }
   .organizer-heading{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
@@ -647,6 +705,24 @@
     </div>
     <div class="resizer" id="resizer-left"></div>
     <div class="main">
+      <!-- 📊 台股大盤三大法人買賣金額明細看板 -->
+      <div class="market-inst-card" id="market-inst-card">
+        <div class="market-inst-header">
+          <div class="market-inst-title">
+            <span class="icon">📊</span>
+            <span class="title-text">台股大盤三大法人買賣金額明細</span>
+            <span class="market-inst-date-badge" id="market-inst-date-badge">載入中...</span>
+          </div>
+          <div class="market-inst-actions">
+            <span class="market-inst-status" id="market-inst-status"></span>
+            <button type="button" class="btn market-refresh-btn" id="market-inst-refresh-btn" title="向證交所重新整理大盤法人最新數據">🔄 即時重整</button>
+          </div>
+        </div>
+        <div class="market-inst-body" id="market-inst-body">
+          <div class="market-inst-loading">⏳ 正在連線台灣證券交易所取得大盤三大法人數據...</div>
+        </div>
+      </div>
+
       <div class="rank-panel">
         <div id="rank-list"></div>
       </div>
@@ -2555,10 +2631,77 @@
     });
   }
 
+  // ── 大盤三大法人買賣金額明細 ──
+  function formatMarketYi(v, withSign){
+    if (v === null || v === undefined || isNaN(v)) return '—';
+    const sign = withSign && v > 0 ? '+' : '';
+    return sign + v.toLocaleString('zh-TW', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '億';
+  }
+
+  async function loadMarketInstBreakdown(){
+    const bodyEl = document.getElementById('market-inst-body');
+    const badgeEl = document.getElementById('market-inst-date-badge');
+    const statusEl = document.getElementById('market-inst-status');
+    if (!bodyEl) return;
+
+    statusEl.textContent = '⏳ 正在查詢...';
+    try {
+      const resp = await fetch('/api/institutional-breakdown');
+      const json = await resp.json();
+      if (!json.ok || !json.data) {
+        bodyEl.innerHTML = `<div class="market-inst-error">❌ ${escapeHtml(json.error || '無法取得大盤數據')}</div>`;
+        statusEl.textContent = '';
+        return;
+      }
+
+      const { date: dataDate, rows } = json.data;
+      const today = todayDateStr();
+      const isStale = dataDate !== today;
+      badgeEl.textContent = dataDate ? `資料日期：${dataDate}` : '日期未知';
+      badgeEl.classList.toggle('stale', isStale);
+      statusEl.textContent = `查詢時間 ${new Date().toLocaleTimeString('zh-TW', { hour12: false })}`;
+
+      let cellsHtml = '';
+      rows.forEach(r => {
+        const isTotal = r.label === '合計';
+        const isBuy = r.net > 0;
+        const isSell = r.net < 0;
+        const netCls = isBuy ? 'buy' : (isSell ? 'sell' : 'flat');
+        const netIcon = isBuy ? '🔴' : (isSell ? '🟢' : '⚪');
+        cellsHtml += `
+          <div class="market-inst-cell ${isTotal ? 'total' : ''}">
+            <div class="market-inst-cell-name">
+              <span>${escapeHtml(r.label)}</span>
+              ${isTotal ? '<span style="font-size:10px; background:#eab308; color:#000; padding:1px 5px; border-radius:4px; font-weight:800;">大盤合計</span>' : ''}
+            </div>
+            <div class="market-inst-cell-net ${netCls}">
+              <span>${netIcon}</span>
+              <span>${formatMarketYi(r.net, true)}</span>
+            </div>
+            <div class="market-inst-cell-sub">
+              <span>買 ${formatMarketYi(r.buy, false)} ｜ 賣 ${formatMarketYi(r.sell, false)}</span>
+            </div>
+          </div>
+        `;
+      });
+
+      bodyEl.innerHTML = `<div class="market-inst-grid">${cellsHtml}</div>`;
+    } catch (err) {
+      bodyEl.innerHTML = `<div class="market-inst-error">❌ 連線失敗: ${escapeHtml(err.message)}</div>`;
+      statusEl.textContent = '';
+    }
+  }
+
+  const marketRefreshBtn = document.getElementById('market-inst-refresh-btn');
+  if (marketRefreshBtn) {
+    marketRefreshBtn.addEventListener('click', () => loadMarketInstBreakdown());
+  }
+
   applyPanelWidths();
   setupResizer(document.getElementById('resizer-left'), document.querySelector('.sidebar'), 'sidebar', true);
 
   loadTree().then(() => loadCards()).then(loadList);
+  loadMarketInstBreakdown();
 </script>
 </body>
 </html>

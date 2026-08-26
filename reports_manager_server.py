@@ -25,6 +25,7 @@ from http.server import SimpleHTTPRequestHandler
 from pathlib import Path
 from socketserver import ThreadingTCPServer
 from urllib.parse import urlparse, parse_qs
+import requests
 
 if sys.stdout.encoding != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
@@ -578,6 +579,40 @@ def _run_generate(args):
         generate_job["returncode"] = proc.returncode
 
 
+def fetch_institutional_breakdown():
+    """即時打 TWSE 官方「三大法人買賣金額統計表」API，回傳當天大盤完整明細（自營商自行買賣/避險、投信、外資及陸資、合計）"""
+    try:
+        resp = requests.get("https://www.twse.com.tw/rwd/zh/fund/BFI82U?response=json", timeout=10)
+        resp.raise_for_status()
+        payload = resp.json()
+    except Exception as e:
+        return None, f"連線 TWSE 失敗: {e}"
+
+    if payload.get("stat") != "OK":
+        return None, payload.get("stat") or "TWSE 回應異常"
+
+    rows = []
+    for item in payload.get("data", []):
+        if len(item) < 4:
+            continue
+        label, buy, sell, net = item[0], item[1], item[2], item[3]
+        if label == "外資自營商":
+            continue
+        try:
+            rows.append({
+                "label": label,
+                "buy": round(float(buy.replace(",", "")) / 1e8, 2),
+                "sell": round(float(sell.replace(",", "")) / 1e8, 2),
+                "net": round(float(net.replace(",", "")) / 1e8, 2),
+            })
+        except ValueError:
+            continue
+
+    raw_date = payload.get("date", "")
+    date_str = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:]}" if len(raw_date) == 8 else raw_date
+    return {"date": date_str, "rows": rows}, None
+
+
 class Handler(SimpleHTTPRequestHandler):
     def end_headers(self):
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
@@ -598,6 +633,13 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path == "/api/institutional-breakdown":
+            data, error = fetch_institutional_breakdown()
+            if data is not None:
+                self._json(200, {"ok": True, "data": data})
+            else:
+                self._json(502, {"ok": False, "error": error})
+            return
         if parsed.path == "/api/tree":
             self._json(200, {"ok": True, "tree": build_tree()})
             return
