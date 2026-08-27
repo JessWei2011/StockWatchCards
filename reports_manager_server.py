@@ -166,35 +166,61 @@ def upsert_ai_ranking(entry):
     return cleaned
 
 
+def parse_md_report_card(md_path):
+    try:
+        text = md_path.read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        return None
+    m_code = re.search(r'股票代號[】\]\s\*]*[：:]\s*([0-9A-Za-z]+)', text)
+    m_name = re.search(r'#\s*📈\s*(.*?)\s*\(', text)
+    m_pat = re.search(r'型態標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text)
+    m_win = re.search(r'預期勝率[】\]\s\*]*[：:]\s*[\*`\s]*([0-9.]+%?)', text)
+    m_action = re.search(r'建議評級[】\]\s\*]*[：:]\s*[\*`\s]*([^\r\n*`]+)', text)
+    m_date = re.search(r'分析日期[】\]\s\*]*[：:]\s*([^\r\n*`]+)', text)
+    m_price = re.search(r'當前價格[】\]\s\*]*[：:]\s*([0-9.]+)', text)
+    
+    code = m_code.group(1).strip() if m_code else ""
+    if not code:
+        fname = md_path.stem
+        code = fname.split('_')[0]
+    name = m_name.group(1).strip() if m_name else ""
+    if not name:
+        parts = md_path.stem.split('_')
+        if len(parts) >= 2:
+            name = parts[1]
+            
+    pattern = m_pat.group(1).strip() if m_pat else "多頭排列階梯推升"
+    win_str = m_win.group(1).replace('%', '').strip() if m_win else "70"
+    try:
+        win_rate = float(win_str)
+    except ValueError:
+        win_rate = 70.0
+
+    group = md_path.parent.name if md_path.parent != REPORTS_DIR else "未分類"
+    return {
+        "code": code,
+        "name": name,
+        "group": group,
+        "date": m_date.group(1).strip() if m_date else "",
+        "current": m_price.group(1).strip() if m_price else "",
+        "decision": m_action.group(1).strip() if m_action else "多頭順勢",
+        "winRate": win_rate,
+        "pattern": pattern,
+        "reportPath": md_path.relative_to(REPORTS_DIR).as_posix()
+    }
+
+
 def read_stock_cards():
-    """讀 data.js 拿目前所有 AI 分析卡片，用股票代號當 key（同代號取最新日期那筆）。
-
-    data.js 是 `const STOCK_CARDS = [...];` 包裝的 JS 檔，但 STOCK_CARDS 這個陣列本身
-    是用雙引號字串 + \\n 寫的（不是 JS 專屬的 backtick 樣板字串），所以拿掉頭尾這層
-    JS 變數宣告的包裝之後，內容本身就是合法 JSON，可以直接 json.loads，不用真的去跑
-    JS engine 解析。如果以後改成 backtick 或塞了非字面值的 JS 表達式，這裡就會解析失敗
-    (回傳空字典)，不會噴錯把整個檔案系統弄掛。
-    """
-    try:
-        text = DATA_JS_FILE.read_text(encoding="utf-8")
-    except FileNotFoundError:
-        return {}
-    m = STOCK_CARDS_RE.search(text)
-    if not m:
-        return {}
-    try:
-        cards = json.loads(m.group(1))
-    except json.JSONDecodeError:
-        return {}
-
+    """直接解析 reports/ 底下所有最新的個股 .md 技術分析報告，完全揚棄 data.js。"""
     by_code = {}
-    for c in cards:
-        code = c.get("code")
-        if not code:
-            continue
-        existing = by_code.get(code)
-        if not existing or c.get("date", "") > existing.get("date", ""):
-            by_code[code] = c
+    if not REPORTS_DIR.is_dir():
+        return by_code
+        
+    for md_path in REPORTS_DIR.glob("**/*_4階段技術分析報告.md"):
+        card = parse_md_report_card(md_path)
+        if card and card.get("code"):
+            by_code[card["code"]] = card
+
     attach_report_flows(by_code)
     return by_code
 
