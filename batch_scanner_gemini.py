@@ -206,12 +206,34 @@ def recognize_pattern(df):
                 return "高檔 VCP 窄幅窒息量整理 (VCP Squeeze)", 12.0
             return "高檔旗形箱型整理 (Flag / Consolidation)", 10.0
 
-    # 4. 雙底 W底 (Double Bottom) 識別 (底底高或平底)
-    if n >= 35:
-        recent_lows = np.sort(low[-35:])
-        l1, l2 = recent_lows[0], recent_lows[1]
-        if abs(l1 - l2) / l1 <= 0.035 and curr_close > l1 * 1.08:
-            return "雙重底 W底形成突破 (Double Bottom)", 11.0
+    # 4. 雙底 W底 (Double Bottom) 嚴格幾何識別：
+    # 左腳 (L1) -> 頸線高點 (Peak) -> 右腳 (L2) -> 衝破頸線
+    # 兩腳之間必須間隔至少 8~40 個交易日，且中間必須有明顯反彈頸線高點 (至少反彈 5% 以上)
+    if n >= 30:
+        # 尋找最近 60 日內的擺動低點
+        search_window = min(n, 60)
+        sub_low = low[-search_window:]
+        sub_high = high[-search_window:]
+        
+        # 尋找左腳候選與右腳候選
+        for i in range(search_window - 25, search_window - 8):
+            l1_val = sub_low[i]
+            # 檢查 i 是否為局部低點
+            if l1_val == np.min(sub_low[max(0, i-4):min(search_window, i+5)]):
+                # 尋找中間反彈頸線高點 peak
+                for j in range(i + 3, search_window - 3):
+                    peak_val = sub_high[j]
+                    if peak_val >= l1_val * 1.05 and peak_val == np.max(sub_high[max(0, j-3):min(search_window, j+4)]):
+                        # 尋找右腳 l2
+                        for k in range(j + 3, search_window):
+                            l2_val = sub_low[k]
+                            if l2_val == np.min(sub_low[max(0, k-3):min(search_window, k+4)]):
+                                # 兩腳價位接近 (差距 <= 3.5%) 且右腳不破左腳過多
+                                if abs(l1_val - l2_val) / l1_val <= 0.035:
+                                    if curr_close >= peak_val * 0.98:
+                                        return "雙重底 W底形成突破 (Double Bottom)", 11.0
+                                    elif curr_close > l2_val * 1.03:
+                                        return "雙底打底成型蓄勢中 (Double Bottom Base)", 9.0
 
     # 5. 上升月線支撐 / 均線多頭排列
     ma50 = np.mean(close[-50:]) if n >= 50 else np.mean(close)

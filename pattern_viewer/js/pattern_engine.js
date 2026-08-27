@@ -142,18 +142,38 @@ window.PatternEngine = {
   buildWBottom(stockData) {
     const swings = this.zigzag(stockData, 0.03);
     const valleys = swings.filter(p => p.type === 'low');
-    if (valleys.length < 1) return this.buildFlatFallback(stockData);
-    const p3 = valleys[valleys.length - 1];
-    const p1 = valleys.length >= 2 ? valleys[valleys.length - 2] : p3;
-    const p2 = swings.filter(p => p.type === 'high' && p.idx > p1.idx && p.idx < p3.idx)
-      .sort((a, b) => b.price - a.price)[0];
-    const cur = this.lastPoint(stockData);
-    const broke = p2 ? cur.price > p2.price : null;
+    if (valleys.length < 2) return this.buildGenericTrend(stockData);
+    
+    // 尋找最後兩個擺動低點作為 W 雙腳
+    let p1 = null, p2 = null, p3 = null;
+    for (let i = valleys.length - 1; i >= 1; i--) {
+      const vRight = valleys[i];
+      const vLeft = valleys[i - 1];
+      // 兩腳之間必須有至少 4 天以上的時間間隔
+      if (vRight.idx - vLeft.idx >= 4) {
+        // 尋找兩腳之間的最高頸線反彈點
+        const peak = swings.filter(p => p.type === 'high' && p.idx > vLeft.idx && p.idx < vRight.idx)
+          .sort((a, b) => b.price - a.price)[0];
+        if (peak && peak.price >= vLeft.price * 1.03) {
+          p1 = vLeft;
+          p2 = peak;
+          p3 = vRight;
+          break;
+        }
+      }
+    }
 
-    const pivots = [{ ...p1, label: 'P1 左腳低點', tag: 'W1' }];
-    if (p2) pivots.push({ ...p2, label: 'P2 頸線高點', tag: '頸線' });
-    if (p3.idx !== p1.idx) pivots.push({ ...p3, label: 'P3 右腳打底', tag: 'W2' });
-    pivots.push({ date: cur.date, price: cur.price, label: broke ? 'P4 衝破頸線' : 'P4 尚在整理', tag: broke ? '突破' : '整理中' });
+    if (!p1 || !p2 || !p3) return this.buildGenericTrend(stockData);
+
+    const cur = this.lastPoint(stockData);
+    const broke = cur.price >= p2.price;
+
+    const pivots = [
+      { ...p1, label: 'P1 左腳低點', tag: 'W1' },
+      { ...p2, label: 'P2 頸線高點', tag: '頸線' },
+      { ...p3, label: 'P3 右腳打底', tag: 'W2' },
+      { date: cur.date, price: cur.price, label: broke ? 'P4 衝破頸線' : 'P4 尚在整理', tag: broke ? '突破' : '整理中' }
+    ];
 
     return {
       name: 'W底（雙重底）反轉型態',
@@ -161,8 +181,8 @@ window.PatternEngine = {
       color: '#ef4444', // 台股：偏多紅
       pivots,
       vectorPath: pivots.map(p => [p.date, p.price]),
-      resistanceLine: p2 ? { price: p2.price, label: 'P2 雙底頸線壓力' } : undefined,
-      explanation: `【W底教學心法】：第一次打底於 ${p1.date}（$${p1.price}）${p2 ? `，拉回測試 P2 頸線 $${p2.price} 後` : ''}二次測試 ${p3.date}（$${p3.price}）完成 W 雙腳打底，${broke ? '最新收盤價已強勢衝破頸線，W 底反轉型態正式確立！' : '目前價格正在頸線附近蓄勢整理，若帶量突破頸線則底部翻揚。'}`
+      resistanceLine: { price: p2.price, label: `P2 雙底頸線壓力 ($${p2.price.toFixed(1)})` },
+      explanation: `【W底教學心法】：第一次打底於 ${p1.date}（$${p1.price}），反彈至頸線 ${p2.date}（$${p2.price}）後拉回二次測試 ${p3.date}（$${p3.price}）完成 W 雙腳打底，${broke ? '最新收盤價已強勢衝破頸線，W 底反轉型態正式確立！' : '目前價格正在頸線附近蓄勢整理，若帶量突破頸線則底部翻揚。'}`
     };
   },
 
