@@ -731,7 +731,8 @@
   <div class="generate-bar">
     <input type="text" id="generate-input" placeholder="輸入股票代號/名稱（可用逗號分隔多筆），或輸入 ALL 更新全部追蹤清單">
     <button class="btn primary" id="generate-btn">🚀 產生/更新報表</button>
-    <button class="btn primary" id="batch-scanner-btn" title="執行 Batch Scanner 掃描與型態評分">⚡ Batch Scanner</button>
+    <button class="btn" id="batch-scanner-btn" title="呼叫 batch_scanner.bat 執行 ChatGPT 雙軌量化掃描並存入 stock_winrate_ranking.md" style="background:#10b981; color:#000; font-weight:750; border-color:#10b981;">🟢 Chatgpt Scanner</button>
+    <button class="btn primary" id="gemini-scanner-btn" title="呼叫 batch_scanner_gemini.bat 執行 Gemini 雙軌動能掃描並存入 stock_winrate_ranking_gemini.md" style="font-weight:750;">✨ Gemini Scanner</button>
     <span class="spinner" id="generate-spinner"></span>
     <span class="generate-status" id="generate-status"></span>
   </div>
@@ -1297,46 +1298,62 @@
   }
 
   window.winrateMapByCode = {};
-  let winrateRankingData = null;
+  let winrateRankingSource = 'gemini'; // 'gemini' | 'chatgpt'
+  let winrateActiveTrack = 'momentum'; // 'momentum' | 'defensive'
+  let winrateParsedData = { gemini: null, chatgpt: null };
   let winrateFilterDecision = 'all';
   let winrateSearchQuery = '';
 
-  async function loadWinrateRankingReport(){
+  async function loadWinrateRankingReport(forcedSource){
+    if (forcedSource) winrateRankingSource = forcedSource;
     const container = document.getElementById('ranking-content');
     if (!container) return;
-    container.innerHTML = '<div class="analysis-empty">⏳ 正在載入並解析勝率排行榜...</div>';
+    container.innerHTML = '<div class="analysis-empty">⏳ 正在載入雙 AI 排行榜資料...</div>';
     try {
-      const resp = await fetch('/api/winrate-ranking-report');
-      const data = await resp.json();
-      if (!resp.ok || !data.ok) {
+      // 同時取得 Gemini 與 ChatGPT 兩份資料，以便上方呈現 4 榜總覽
+      const [resG, resC] = await Promise.all([
+        fetch('/api/winrate-ranking-report?source=gemini').then(r => r.json()).catch(() => null),
+        fetch('/api/winrate-ranking-report?source=chatgpt').then(r => r.json()).catch(() => null)
+      ]);
+
+      if (resG && resG.ok) winrateParsedData.gemini = parseDualTrackRankingMd(resG.content, 'gemini');
+      if (resC && resC.ok) winrateParsedData.chatgpt = parseDualTrackRankingMd(resC.content, 'chatgpt');
+
+      const currentData = winrateParsedData[winrateRankingSource];
+      if (!currentData) {
         container.innerHTML = `
           <div class="analysis-empty">
             <div style="font-size:32px; margin-bottom:10px;">🏆</div>
-            <div style="font-weight:700; color:#fff; font-size:16px; margin-bottom:6px;">尚無勝率排行榜資料</div>
-            <div style="color:var(--text-dim); font-size:13px; margin-bottom:16px;">${escapeHtml(data.error || '未找到排行榜檔案')}</div>
-            <button type="button" class="btn primary" onclick="document.getElementById('batch-scanner-btn').click();" style="padding:6px 16px;">🚀 執行 Batch Scanner 產生</button>
+            <div style="font-weight:700; color:#fff; font-size:16px; margin-bottom:6px;">尚無 ${winrateRankingSource === 'gemini' ? 'Gemini' : 'ChatGPT'} 排行榜資料</div>
+            <button type="button" class="btn primary" onclick="triggerScannerRun('${winrateRankingSource}');" style="padding:6px 16px;">🚀 執行 ${winrateRankingSource === 'gemini' ? 'Gemini Scanner' : 'ChatGPT Scanner'} 產生</button>
           </div>
         `;
         return;
       }
-      winrateRankingData = parseWinrateRankingMd(data.content);
       renderWinrateRankingUI();
     } catch (e) {
       container.innerHTML = `<div class="analysis-empty">⚠️ 載入排行榜失敗: ${escapeHtml(e.message)}</div>`;
     }
   }
 
-  function parseWinrateRankingMd(mdText){
-    const lines = (mdText || '').split(/\r?\n/);
-    let title = '📊 股票勝率與線型型態自動掃描總排行榜';
-    let scanDate = '';
-    let scanCount = '';
-    let modelName = '';
-    const items = [];
-    const dimensions = [];
+  function triggerScannerRun(source){
+    if (source === 'gemini') {
+      fetch('/api/batch-scanner-gemini', { method: 'POST' }).then(() => {
+        alert('🚀 Gemini 掃描器已在背景啟動，約 3~5 秒後請點擊重新整理！');
+        setTimeout(() => loadWinrateRankingReport('gemini'), 4000);
+      });
+    } else {
+      document.getElementById('batch-scanner-btn')?.click();
+    }
+  }
 
-    let inTable = false;
-    let inDim = false;
+  function parseDualTrackRankingMd(mdText, source){
+    const lines = (mdText || '').split(/\r?\n/);
+    let title = source === 'gemini' ? '📊 Gemini 雙軌動能排行榜' : '📊 ChatGPT 雙軌量化排行榜';
+    let scanDate = '';
+    const momentumItems = [];
+    const defensiveItems = [];
+    let currentSection = ''; // 'momentum' | 'defensive' | 'other'
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -1347,211 +1364,222 @@
         continue;
       }
 
-      if (line.startsWith('> ')) {
-        const dateM = line.match(/掃描日期[：:]\s*([0-9-]+)/);
-        if (dateM) scanDate = dateM[1];
-        const countM = line.match(/掃描檔數[：:]\s*(\d+)/);
-        if (countM) scanCount = countM[1];
-        const modelM = line.match(/模型[：:]\s*([^|\r\n]+)/);
-        if (modelM) modelName = modelM[1].trim();
+      if (line.startsWith('> ') && line.includes('截止日')) {
+        const m = line.match(/截止日[：:]\s*([0-9\/-]+)/);
+        if (m) scanDate = m[1];
+        continue;
+      }
+
+      if (line.includes('【暴漲動能型') || line.includes('攻擊型') || line.includes('攻擊榜')) {
+        currentSection = 'momentum';
+        continue;
+      } else if (line.includes('【穩健防守型') || line.includes('穩健型') || line.includes('穩健榜')) {
+        currentSection = 'defensive';
+        continue;
+      } else if (line.startsWith('## ') && !line.includes('TOP 10') && !line.includes('Top 10')) {
+        currentSection = 'other';
         continue;
       }
 
       if (line.startsWith('|') && line.endsWith('|')) {
         const cells = line.split('|').slice(1, -1).map(c => c.trim());
-        if (cells.every(c => /^:?-+:?$/.test(c))) {
-          inTable = true;
-          continue;
-        }
-        if (cells[0] === '排名') continue;
+        if (cells.every(c => /^:?-+:?$/.test(c))) continue;
+        if (cells[0].includes('排名')) continue;
 
-        if (inTable && cells.length >= 10) {
+        if (cells.length >= 7) {
           const item = {
-            rank: cells[0] || '',
-            code: (cells[1] || '').replace(/[`*]/g, ''),
-            name: (cells[2] || '').replace(/[`*]/g, ''),
-            category: (cells[3] || '').replace(/[`*]/g, ''),
-            price: (cells[4] || '').replace(/[`*]/g, ''),
-            winRate: (cells[5] || '').replace(/[`*]/g, ''),
-            rr: (cells[6] || '').replace(/[`*]/g, ''),
-            entryPrice: (cells[7] || '').replace(/[`*]/g, ''),
-            stopLoss: (cells[8] || '').replace(/[`*]/g, ''),
-            targetPrice: (cells[9] || '').replace(/[`*]/g, ''),
-            pattern: (cells[10] || '').replace(/[`*]/g, ''),
-            decision: (cells[11] || '').replace(/[`*]/g, ''),
+            rank: cells[0].replace(/[*`]/g, '').trim(),
+            code: cells[1].replace(/[*`]/g, '').trim(),
+            name: cells[2].replace(/[*`]/g, '').trim(),
+            category: (cells[3] || '').replace(/[*`]/g, '').trim(),
+            price: (cells[4] || '').replace(/[*`]/g, '').trim(),
+            slope: (cells[5] || '').replace(/[*`]/g, '').trim(),
+            metric: (cells[6] || '').replace(/[*`]/g, '').trim(),
+            volOrChip: (cells[7] || '').replace(/[*`]/g, '').trim(),
+            score: (cells[8] || '').replace(/[*`]/g, '').trim(),
+            feature: (cells[9] || cells[8] || '').replace(/[*`]/g, '').trim(),
           };
-          items.push(item);
+
+          if (currentSection === 'momentum') {
+            momentumItems.push(item);
+          } else if (currentSection === 'defensive') {
+            defensiveItems.push(item);
+          }
           winrateMapByCode[item.code] = item;
-        }
-        continue;
-      } else {
-        inTable = false;
-      }
-
-      if (line.includes('勝率評分指標維度說明')) {
-        inDim = true;
-        continue;
-      }
-
-      if (inDim && /^\d+\.\s/.test(line)) {
-        const dimM = line.match(/^\d+\.\s*\*\*([^*]+)\*\*[：:]\s*(.*)/);
-        if (dimM) {
-          dimensions.push({ title: dimM[1], desc: dimM[2] });
-        } else {
-          dimensions.push({ title: line.replace(/^\d+\.\s*/, ''), desc: '' });
         }
       }
     }
 
-    return { title, scanDate, scanCount, modelName, items, dimensions };
+    return { title, scanDate, momentumItems, defensiveItems, source };
   }
 
   function renderWinrateRankingUI(){
     const container = document.getElementById('ranking-content');
-    if (!container || !winrateRankingData) return;
+    if (!container) return;
+    const currentData = winrateParsedData[winrateRankingSource];
+    if (!currentData) {
+      loadWinrateRankingReport();
+      return;
+    }
 
-    const { title, scanDate, scanCount, modelName, items, dimensions } = winrateRankingData;
+    const { title, scanDate, momentumItems, defensiveItems, source } = currentData;
+    const isMomo = winrateActiveTrack === 'momentum';
+    const activeItems = isMomo ? momentumItems : defensiveItems;
 
-    const filtered = items.filter(item => {
-      if (winrateFilterDecision === 'buy' && !item.decision.includes('買入')) return false;
-      if (winrateFilterDecision === 'watch' && !item.decision.includes('觀望') && !item.decision.includes('佈局')) return false;
-      if (winrateFilterDecision === 'avoid' && !item.decision.includes('避開') && !item.decision.includes('減碼')) return false;
-
+    const filtered = activeItems.filter(item => {
       if (winrateSearchQuery) {
         const q = winrateSearchQuery.toLowerCase();
         const match = item.code.toLowerCase().includes(q) ||
                       item.name.toLowerCase().includes(q) ||
                       item.category.toLowerCase().includes(q) ||
-                      item.pattern.toLowerCase().includes(q);
+                      item.feature.toLowerCase().includes(q);
         if (!match) return false;
       }
       return true;
     });
 
-    const buyCount = items.filter(i => i.decision.includes('買入')).length;
-    const watchCount = items.filter(i => i.decision.includes('觀望') || i.decision.includes('佈局')).length;
-    const maxWinrate = items.length ? items[0].winRate : '—';
-    const avgWinrate = items.length ? (items.reduce((acc, i) => acc + (parseFloat(i.winRate) || 0), 0) / items.length).toFixed(1) + '%' : '—';
+    const isGemini = source === 'gemini';
+
+    // 4 大總榜快速對照資料
+    const gMomo = winrateParsedData.gemini?.momentumItems || [];
+    const gDef = winrateParsedData.gemini?.defensiveItems || [];
+    const cMomo = winrateParsedData.chatgpt?.momentumItems || [];
+    const cDef = winrateParsedData.chatgpt?.defensiveItems || [];
+
+    function renderMiniOverviewCol(titleText, icon, colorTheme, items, src, track){
+      const isCur = (winrateRankingSource === src && winrateActiveTrack === track);
+      return `
+        <div style="flex:1; min-width:230px; background:rgba(0,0,0,0.35); border:1.5px solid ${isCur ? colorTheme : 'rgba(255,255,255,0.08)'}; border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; box-shadow:${isCur ? `0 0 12px ${colorTheme}33` : 'none'};">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; cursor:pointer;" onclick="winrateRankingSource='${src}'; winrateActiveTrack='${track}'; renderWinrateRankingUI();">
+            <span style="font-weight:850; font-size:13px; color:${colorTheme}; display:flex; align-items:center; gap:5px;">
+              ${icon} ${escapeHtml(titleText)}
+            </span>
+            <span style="font-size:11px; padding:1px 6px; border-radius:4px; background:${isCur ? colorTheme : 'rgba(255,255,255,0.1)'}; color:${isCur ? '#000' : '#cbd5e1'}; font-weight:750;">
+              ${isCur ? '檢視中' : '切換'}
+            </span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:3px;">
+            ${items.length === 0 ? '<div style="color:var(--text-dim); font-size:11px; padding:8px; text-align:center;">無資料</div>' : items.slice(0, 10).map((it, idx) => `
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:3px 6px; border-radius:5px; background:rgba(255,255,255,0.02); font-size:12px; cursor:pointer; transition:background .12s ease;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'" onclick="switchToStockAnalysis('${escapeHtml(it.code)}')">
+                <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;">
+                  <span style="font-weight:800; color:var(--text-dim); width:14px; font-size:11px; text-align:right;">${idx + 1}</span>
+                  <span style="font-weight:800; color:#93c5fd; font-family:monospace; font-size:12px;">${escapeHtml(it.code)}</span>
+                  <span style="font-weight:750; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</span>
+                </div>
+                <span style="font-size:11px; font-weight:700; color:${colorTheme}; opacity:0.9;">${escapeHtml(it.price || it.score || '')}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
 
     let html = `
       <div class="ranking-card">
-        <div class="ranking-hero-header">
-          <div>
-            <h2 class="ranking-hero-title">${escapeHtml(title)}</h2>
-            <div class="ranking-hero-meta" style="margin-top:8px;">
-              ${scanDate ? `<span class="analysis-badge neutral">📅 掃描日期：${escapeHtml(scanDate)}</span>` : ''}
-              ${modelName ? `<span class="analysis-badge accent">🧠 模型：${escapeHtml(modelName)}</span>` : ''}
-              <span class="analysis-badge">📊 總檔數：${items.length} 檔</span>
+        <!-- 🚀 4 榜全景總覽 (Master Overview) 一覽無遺 -->
+        <div style="margin-bottom:20px; background:#11161f; border:1px solid rgba(125,180,255,0.25); border-radius:12px; padding:14px 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+            <div style="font-size:15px; font-weight:850; color:#fff; display:flex; align-items:center; gap:8px;">
+              <span>🏆</span> 雙 AI 四大榜單全景一覽 (點擊股票直接查看技術報告)
+            </div>
+            <div style="font-size:12px; color:var(--text-dim);">
+              截止日：<strong style="color:#93c5fd;">${escapeHtml(scanDate || '最新')}</strong>
             </div>
           </div>
-          <div class="ranking-hero-meta">
-            <button type="button" class="btn" onclick="document.getElementById('batch-scanner-btn').click();">🔄 重新執行全市場掃描</button>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            ${renderMiniOverviewCol('Gemini 暴漲動能 TOP 10', '🚀', '#f87171', gMomo, 'gemini', 'momentum')}
+            ${renderMiniOverviewCol('Gemini 穩健防守 TOP 10', '🛡️', '#4ade80', gDef, 'gemini', 'defensive')}
+            ${renderMiniOverviewCol('ChatGPT 攻擊型 TOP 10', '⚡', '#f97316', cMomo, 'chatgpt', 'momentum')}
+            ${renderMiniOverviewCol('ChatGPT 穩健型 TOP 10', '🌱', '#38bdf8', cDef, 'chatgpt', 'defensive')}
           </div>
         </div>
 
-        <div class="analysis-metrics-bar">
-          <div class="analysis-metric-tile">
-            <div class="tile-label">總掃描檔數</div>
-            <div class="tile-value">${items.length} 檔</div>
+        <!-- 4 榜一鍵直達切換器 (整合為同一行) -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border);">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex:1;">
+            <div style="font-size:13.5px; font-weight:800; color:var(--text-dim); margin-right:4px;">🤖 詳細報表：</div>
+            
+            <button type="button" class="btn" style="padding:7px 14px; font-size:13px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${isGemini && isMomo ? '#f87171' : 'var(--border)'}; background:${isGemini && isMomo ? 'rgba(239,68,68,0.22)' : 'var(--card-bg)'}; color:${isGemini && isMomo ? '#fca5a5' : 'var(--text)'};" onclick="winrateRankingSource='gemini'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
+              <span>🚀</span> ✨ Gemini 暴漲進攻
+            </button>
+            
+            <button type="button" class="btn" style="padding:7px 14px; font-size:13px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${isGemini && !isMomo ? '#4ade80' : 'var(--border)'}; background:${isGemini && !isMomo ? 'rgba(34,197,94,0.22)' : 'var(--card-bg)'}; color:${isGemini && !isMomo ? '#86efac' : 'var(--text)'};" onclick="winrateRankingSource='gemini'; winrateActiveTrack='defensive'; renderWinrateRankingUI();">
+              <span>🛡️</span> ✨ Gemini 穩健防守
+            </button>
+            
+            <button type="button" class="btn" style="padding:7px 14px; font-size:13px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${!isGemini && isMomo ? '#f97316' : 'var(--border)'}; background:${!isGemini && isMomo ? 'rgba(249,115,22,0.22)' : 'var(--card-bg)'}; color:${!isGemini && isMomo ? '#fdba74' : 'var(--text)'};" onclick="winrateRankingSource='chatgpt'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
+              <span>⚡</span> 🟢 ChatGPT 攻擊型
+            </button>
+            
+            <button type="button" class="btn" style="padding:7px 14px; font-size:13px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${!isGemini && !isMomo ? '#38bdf8' : 'var(--border)'}; background:${!isGemini && !isMomo ? 'rgba(56,189,248,0.22)' : 'var(--card-bg)'}; color:${!isGemini && !isMomo ? '#7dd3fc' : 'var(--text)'};" onclick="winrateRankingSource='chatgpt'; winrateActiveTrack='defensive'; renderWinrateRankingUI();">
+              <span>🌱</span> 🟢 ChatGPT 穩健型
+            </button>
           </div>
-          <div class="analysis-metric-tile">
-            <div class="tile-label">買入評級 (Buy)</div>
-            <div class="tile-value positive">${buyCount} 檔</div>
-          </div>
-          <div class="analysis-metric-tile">
-            <div class="tile-label">最高預期勝率</div>
-            <div class="tile-value positive">${escapeHtml(maxWinrate)}</div>
-          </div>
-          <div class="analysis-metric-tile">
-            <div class="tile-label">全市場平均勝率</div>
-            <div class="tile-value">${escapeHtml(avgWinrate)}</div>
+          
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn" onclick="triggerScannerRun('${source}');">🔄 重新執行 ${isGemini ? 'Gemini 掃描' : 'ChatGPT Scanner'}</button>
           </div>
         </div>
 
-        <div class="ranking-filter-bar">
-          <div class="search-box">
+        <!-- 搜尋列 -->
+        <div class="ranking-filter-bar" style="margin-bottom:12px;">
+          <div class="search-box" style="flex:1;">
             <span>🔍</span>
-            <input type="text" class="search-input" id="winrate-search-input" placeholder="搜尋代號、名稱、產業或形態..." value="${escapeHtml(winrateSearchQuery)}">
+            <input type="text" class="search-input" id="winrate-search-input" placeholder="搜尋代號、名稱、類群或特徵..." value="${escapeHtml(winrateSearchQuery)}">
           </div>
-          <div class="ranking-filter-tabs">
-            <button type="button" class="rank-filter-btn ${winrateFilterDecision === 'all' ? 'active' : ''}" data-filter="all">全部 (${items.length})</button>
-            <button type="button" class="rank-filter-btn ${winrateFilterDecision === 'buy' ? 'active' : ''}" data-filter="buy">買入 (${buyCount})</button>
-            <button type="button" class="rank-filter-btn ${winrateFilterDecision === 'watch' ? 'active' : ''}" data-filter="watch">觀望/佈局 (${watchCount})</button>
-            <button type="button" class="rank-filter-btn ${winrateFilterDecision === 'avoid' ? 'active' : ''}" data-filter="avoid">避開/減碼 (${items.length - buyCount - watchCount})</button>
+          <div style="font-size:13px; color:var(--text-dim); padding-right:6px;">
+            目前顯示：<strong style="color:#fff;">${filtered.length}</strong> 檔
           </div>
         </div>
 
+        <!-- 榜單表格 -->
         <div class="ranking-table-wrap">
           <table class="ranking-full-table">
             <thead>
               <tr>
-                <th style="width:40px; text-align:center;">名次</th>
-                <th style="width:58px;">代號</th>
-                <th style="width:85px;">股票名稱</th>
-                <th style="width:72px;">產業分類</th>
-                <th style="width:78px; text-align:right;">當前價格</th>
-                <th style="width:80px; text-align:center;">預期勝率</th>
-                <th style="width:70px; text-align:right;">風報比</th>
-                <th style="width:80px; text-align:right;">建議進場</th>
-                <th style="width:80px; text-align:right;">建議停損</th>
-                <th style="width:80px; text-align:right;">目標價</th>
-                <th style="min-width:140px;">自動識別型態</th>
-                <th style="width:155px; text-align:center;">評級建議</th>
+                <th style="width:45px; text-align:center;">名次</th>
+                <th style="width:60px;">代號</th>
+                <th style="width:90px;">股票名稱</th>
+                <th style="width:80px;">類群/路徑</th>
+                <th style="width:80px; text-align:right;">收盤價</th>
+                <th style="width:85px; text-align:center;">${isMomo ? '5MA斜率' : '20MA斜率'}</th>
+                <th style="width:85px; text-align:center;">${isMomo ? 'RSI(14)' : '月乖離率'}</th>
+                <th style="width:90px; text-align:center;">${isMomo ? '成交量比' : '法人買超'}</th>
+                <th style="width:80px; text-align:center;">${isMomo ? '動能評分' : '穩健評分'}</th>
+                <th style="min-width:180px;">核心多空與型態特徵</th>
               </tr>
             </thead>
             <tbody>
-              ${filtered.length === 0 ? `<tr><td colspan="12" style="text-align:center; padding:30px; color:var(--text-dim);">無符合篩選條件的股票。</td></tr>` : ''}
-              ${filtered.map(item => {
-                const rankNum = parseInt(item.rank) || 0;
+              ${filtered.length === 0 ? `<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim);">無符合條件的股票。</td></tr>` : ''}
+              ${filtered.map((item, idx) => {
+                const rankNum = parseInt(item.rank) || (idx + 1);
                 let badgeClass = 'normal';
                 if (rankNum === 1) badgeClass = 'top1';
                 else if (rankNum === 2) badgeClass = 'top2';
                 else if (rankNum === 3) badgeClass = 'top3';
 
-                let decClass = 'watch';
-                if (item.decision.includes('強烈買入')) decClass = 'strong-buy';
-                else if (item.decision.includes('買入')) decClass = 'buy';
-                else if (item.decision.includes('避開') || item.decision.includes('減碼')) decClass = 'avoid';
-
-                const winVal = parseFloat(item.winRate) || 0;
-                let scoreClass = 'low';
-                if (winVal >= 65) scoreClass = 'high';
-                else if (winVal >= 58) scoreClass = 'medium';
+                const scoreVal = parseFloat(item.score) || 0;
+                let scoreClass = 'high';
+                if (scoreVal < 100) scoreClass = 'medium';
 
                 return `
-                  <tr data-stock-code="${escapeHtml(item.code)}" title="點擊直接查看 ${escapeHtml(item.name)} (${escapeHtml(item.code)}) 的專業分析報告">
+                  <tr data-stock-code="${escapeHtml(item.code)}" title="點擊直接查看 ${escapeHtml(item.name)} (${escapeHtml(item.code)}) 的詳細技術分析">
                     <td style="text-align:center;"><span class="rank-badge-num ${badgeClass}">${escapeHtml(item.rank)}</span></td>
                     <td><span class="rank-stock-link"><span class="stock-code">${escapeHtml(item.code)}</span></span></td>
                     <td><span class="rank-stock-link"><span class="stock-name">${escapeHtml(item.name)}</span></span></td>
                     <td><span class="tag-pill" style="font-size:11.5px;">${escapeHtml(item.category)}</span></td>
-                    <td style="text-align:right; font-weight:750;">${escapeHtml(item.price)}</td>
-                    <td style="text-align:center;"><span class="rank-score-pill ${scoreClass}">${escapeHtml(item.winRate)}</span></td>
-                    <td style="text-align:right; font-weight:700;">${escapeHtml(item.rr)}</td>
-                    <td style="text-align:right; color:#bfdbfe;">${escapeHtml(item.entryPrice)}</td>
-                    <td style="text-align:right; color:#fca5a5;">${escapeHtml(item.stopLoss)}</td>
-                    <td style="text-align:right; color:#86efac; font-weight:750;">${escapeHtml(item.targetPrice)}</td>
-                    <td><span style="font-size:12.5px; color:#cbd5e1;">${escapeHtml(item.pattern)}</span></td>
-                    <td style="text-align:center;"><span class="rank-decision-tag ${decClass}">${escapeHtml(item.decision)}</span></td>
+                    <td style="text-align:right; font-weight:750; font-size:14.5px;">${escapeHtml(item.price)}</td>
+                    <td style="text-align:center; color:#fca5a5; font-weight:700;">${escapeHtml(item.slope)}</td>
+                    <td style="text-align:center; color:#93c5fd; font-weight:700;">${escapeHtml(item.metric)}</td>
+                    <td style="text-align:center; color:#cbd5e1;">${escapeHtml(item.volOrChip)}</td>
+                    <td style="text-align:center;"><span class="rank-score-pill ${scoreClass}">${escapeHtml(item.score)}</span></td>
+                    <td><span style="font-size:12.5px; color:#e2e8f0;">${escapeHtml(item.feature)}</span></td>
                   </tr>
                 `;
               }).join('')}
             </tbody>
           </table>
         </div>
-
-        ${dimensions.length ? `
-          <div style="margin-top:20px; padding-top:18px; border-top:1px solid var(--border);">
-            <h3 style="font-size:15px; margin:0 0 10px; color:#93c5fd;">💡 勝率評分指標五大維度說明</h3>
-            <div class="dimension-grid">
-              ${dimensions.map(d => `
-                <div class="dimension-box">
-                  <div class="dim-title">${escapeHtml(d.title)}</div>
-                  <p class="dim-desc">${escapeHtml(d.desc)}</p>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        ` : ''}
       </div>
     `;
 
@@ -1569,13 +1597,6 @@
         }
       });
     }
-
-    container.querySelectorAll('.rank-filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        winrateFilterDecision = btn.dataset.filter;
-        renderWinrateRankingUI();
-      });
-    });
 
     container.querySelectorAll('tr[data-stock-code]').forEach(row => {
       row.addEventListener('click', () => {
@@ -2125,6 +2146,7 @@
     await refreshPatternData();
   });
 
+  // 🟢 ChatGPT Scanner 按鈕點擊處理
   const batchScannerBtn = document.getElementById('batch-scanner-btn');
   if (batchScannerBtn) {
     batchScannerBtn.addEventListener('click', async () => {
@@ -2141,10 +2163,9 @@
         return;
       }
 
-      // 按下後按鈕為紅色
       batchScannerBtn.className = 'btn danger';
       batchScannerBtn.disabled = true;
-      batchScannerBtn.textContent = '⏳ Batch Scanner...';
+      batchScannerBtn.textContent = '⏳ ChatGPT Scanning...';
 
       const timer = setInterval(async () => {
         try {
@@ -2154,15 +2175,15 @@
             clearInterval(timer);
             batchScannerBtn.disabled = false;
             batchScannerBtn.className = 'btn success';
-            batchScannerBtn.textContent = '✅ 掃描完成';
+            batchScannerBtn.textContent = '✅ ChatGPT 掃描完成';
             
-            // 全域即時無感重整資料與畫面，無需手動 F5
+            // 全域即時無感重整資料與畫面
             await loadCards();
             await loadTree();
             await loadList();
             await loadWinrateMap();
             if (typeof activeWorkspaceName !== 'undefined' && activeWorkspaceName === 'ranking') {
-              await loadWinrateRankingReport();
+              await loadWinrateRankingReport('chatgpt');
             } else if (typeof activeWorkspaceName !== 'undefined' && activeWorkspaceName === 'analysis') {
               if (selectedStockCode) await loadMarkdownReport(selectedStockCode);
             } else if (typeof activeWorkspaceName !== 'undefined' && activeWorkspaceName === 'pattern') {
@@ -2171,8 +2192,69 @@
             }
 
             setTimeout(() => {
-              batchScannerBtn.className = 'btn primary';
-              batchScannerBtn.textContent = '⚡ Batch Scanner';
+              batchScannerBtn.className = 'btn';
+              batchScannerBtn.style.background = '#10b981';
+              batchScannerBtn.style.color = '#000';
+              batchScannerBtn.style.borderColor = '#10b981';
+              batchScannerBtn.textContent = '🟢 Chatgpt Scanner';
+            }, 3000);
+          }
+        } catch (err) {}
+      }, 1000);
+    });
+  }
+
+  // ✨ Gemini Scanner 按鈕點擊處理
+  const geminiScannerBtn = document.getElementById('gemini-scanner-btn');
+  if (geminiScannerBtn) {
+    geminiScannerBtn.addEventListener('click', async () => {
+      if (geminiScannerBtn.disabled) return;
+      try {
+        const res = await fetch('/api/batch-scanner-gemini', { method: 'POST' });
+        const data = await res.json();
+        if (!data.ok) {
+          alert(data.error || '啟動失敗');
+          return;
+        }
+      } catch (e) {
+        alert('連線失敗: ' + e);
+        return;
+      }
+
+      geminiScannerBtn.className = 'btn danger';
+      geminiScannerBtn.disabled = true;
+      geminiScannerBtn.textContent = '⏳ Gemini Scanning...';
+
+      const timer = setInterval(async () => {
+        try {
+          const res = await fetch('/api/batch-scanner-gemini/status');
+          const status = await res.json();
+          if (status.ok && status.done) {
+            clearInterval(timer);
+            geminiScannerBtn.disabled = false;
+            geminiScannerBtn.className = 'btn success';
+            geminiScannerBtn.textContent = '✅ Gemini 掃描完成';
+            
+            // 全域即時無感重整資料與畫面
+            await loadCards();
+            await loadTree();
+            await loadList();
+            await loadWinrateMap();
+            if (typeof activeWorkspaceName !== 'undefined' && activeWorkspaceName === 'ranking') {
+              await loadWinrateRankingReport('gemini');
+            } else if (typeof activeWorkspaceName !== 'undefined' && activeWorkspaceName === 'analysis') {
+              if (selectedStockCode) await loadMarkdownReport(selectedStockCode);
+            } else if (typeof activeWorkspaceName !== 'undefined' && activeWorkspaceName === 'pattern') {
+              await PatternViewer.refresh();
+              if (selectedStockCode) await PatternViewer.loadStock(selectedStockCode);
+            }
+
+            setTimeout(() => {
+              geminiScannerBtn.className = 'btn primary';
+              geminiScannerBtn.style.background = '';
+              geminiScannerBtn.style.color = '';
+              geminiScannerBtn.style.borderColor = '';
+              geminiScannerBtn.textContent = '✨ Gemini Scanner';
             }, 3000);
           }
         } catch (err) {}

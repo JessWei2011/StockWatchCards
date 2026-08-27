@@ -18,7 +18,13 @@
 !render-shared.js
 !stock_report_generator.py
 !batch_scanner.py
+!batch_scanner_gemini.py
+!batch_scanner.bat
+!batch_scanner_gemini.bat
 !stock_winrate_ranking.md
+!stock_winrate_ranking_gemini.md
+!breakout_watchlist.md
+!breakout_watchlist_gemini.md
 !clone-stockwatchcards.bat
 !控制台.pyw
 !啟動控制台.bat

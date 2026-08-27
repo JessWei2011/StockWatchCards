@@ -491,6 +491,10 @@ def _new_batch_scanner_job():
 
 batch_scanner_job = _new_batch_scanner_job()
 
+BATCH_SCANNER_GEMINI_SCRIPT = ROOT_DIR / "batch_scanner_gemini.py"
+BATCH_SCANNER_GEMINI_LOCK = threading.Lock()
+batch_scanner_gemini_job = _new_batch_scanner_job()
+
 
 def _run_batch_scanner():
     global batch_scanner_job
@@ -518,6 +522,34 @@ def _run_batch_scanner():
         batch_scanner_job["done"] = True
         batch_scanner_job["running"] = False
         batch_scanner_job["returncode"] = proc.returncode
+
+
+def _run_batch_scanner_gemini():
+    global batch_scanner_gemini_job
+    child_env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+    try:
+        proc = subprocess.Popen(
+            [sys.executable, str(BATCH_SCANNER_GEMINI_SCRIPT)],
+            cwd=ROOT_DIR, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, encoding="utf-8", errors="replace", env=child_env,
+        )
+    except OSError as e:
+        with BATCH_SCANNER_GEMINI_LOCK:
+            batch_scanner_gemini_job["lines"].append(f"❌ 無法啟動 batch_scanner_gemini.py: {e}")
+            batch_scanner_gemini_job["done"] = True
+            batch_scanner_gemini_job["running"] = False
+        return
+
+    for raw_line in proc.stdout:
+        line = raw_line.rstrip("\n")
+        with BATCH_SCANNER_GEMINI_LOCK:
+            batch_scanner_gemini_job["lines"].append(line)
+
+    proc.wait()
+    with BATCH_SCANNER_GEMINI_LOCK:
+        batch_scanner_gemini_job["done"] = True
+        batch_scanner_gemini_job["running"] = False
+        batch_scanner_gemini_job["returncode"] = proc.returncode
 
 
 def _run_generate(args):
@@ -689,6 +721,10 @@ class Handler(SimpleHTTPRequestHandler):
             with BATCH_SCANNER_LOCK:
                 self._json(200, {"ok": True, **batch_scanner_job})
             return
+        if parsed.path == "/api/batch-scanner-gemini/status":
+            with BATCH_SCANNER_GEMINI_LOCK:
+                self._json(200, {"ok": True, **batch_scanner_gemini_job})
+            return
         if parsed.path == "/api/markdown-report":
             qs = parse_qs(parsed.query)
             code = (qs.get("code") or [""])[0].strip()
@@ -719,15 +755,23 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json(500, {"ok": False, "error": f"讀取報告失敗: {e}"})
             return
         if parsed.path == "/api/winrate-ranking-report":
-            ranking_file = ROOT_DIR / "stock_winrate_ranking.md"
+            qs = parse_qs(parsed.query)
+            source = (qs.get("source") or ["chatgpt"])[0].lower()
+            if source == "gemini":
+                ranking_file = ROOT_DIR / "stock_winrate_ranking_gemini.md"
+            else:
+                ranking_file = ROOT_DIR / "stock_winrate_ranking.md"
+
             if not ranking_file.exists():
-                self._json(404, {"ok": False, "error": "尚未找到 stock_winrate_ranking.md，請先點擊上方 Batch Scanner 進行全市場掃描產生。"})
+                self._json(404, {"ok": False, "error": f"尚未找到 {ranking_file.name}，請先執行對應的 Scanner 進行全市場掃描產生。"})
                 return
             try:
                 content = ranking_file.read_text(encoding="utf-8", errors="replace")
                 mtime = os.path.getmtime(ranking_file)
                 self._json(200, {
                     "ok": True,
+                    "source": source,
+                    "filename": ranking_file.name,
                     "content": content,
                     "mtime": mtime,
                 })
@@ -754,6 +798,18 @@ class Handler(SimpleHTTPRequestHandler):
                 batch_scanner_job = _new_batch_scanner_job()
                 batch_scanner_job["running"] = True
             threading.Thread(target=_run_batch_scanner, daemon=True).start()
+            self._json(200, {"ok": True})
+            return
+
+        if parsed.path == "/api/batch-scanner-gemini":
+            global batch_scanner_gemini_job
+            with BATCH_SCANNER_GEMINI_LOCK:
+                if batch_scanner_gemini_job["running"]:
+                    self._json(409, {"ok": False, "error": "已經有 Gemini Scanner 任務在執行，請稍候"})
+                    return
+                batch_scanner_gemini_job = _new_batch_scanner_job()
+                batch_scanner_gemini_job["running"] = True
+            threading.Thread(target=_run_batch_scanner_gemini, daemon=True).start()
             self._json(200, {"ok": True})
             return
 

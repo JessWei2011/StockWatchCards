@@ -36,6 +36,7 @@ except ImportError:
 ROOT = Path(__file__).resolve().parent
 REPORTS_DIR = ROOT / "reports"
 OUTPUT_MD = ROOT / "stock_winrate_ranking.md"
+BREAKOUT_OUTPUT_MD = ROOT / "breakout_watchlist.md"
 YFINANCE_CACHE_DIR = ROOT / ".cache" / "yfinance"
 
 # yfinance 預設會將時區／Cookie 快取寫到使用者設定目錄；在受限環境下會
@@ -48,6 +49,8 @@ if YFINANCE_AVAILABLE:
 def parse_html_report(file_path):
     """解析單一 HTML 報告中的指標、籌碼與歷史 K 線數據"""
     text = file_path.read_text(encoding="utf-8", errors="ignore")
+    pe_match = re.search(r'<b>PE：</b>\s*([\d.]+)', text)
+    trailing_pe = float(pe_match.group(1)) if pe_match else None
     
     # 提取檔名代號與市場
     # 範例：2426_鼎元(TW).html 或 3081_聯亞(TWO)(處置期間0824-0828).html
@@ -84,18 +87,36 @@ def parse_html_report(file_path):
             except ValueError:
                 continue
                 
-    # 提取三大法人買賣超 (Table 2，若有)
+    # 提取三大法人、融資融券。舊版只計算「買超天數」，會把小量買超和
+    # 大額承接混為一談；保留逐日資料供新的突破篩選器判讀。
     inst_buy_days = 0
+    institutions = []
+    margin = []
     if len(tables) >= 2:
         inst_rows = re.findall(r'<tr[^>]*>(.*?)</tr>', tables[1], re.S)
-        for r in inst_rows[1:6]: # 看最近 5 天
+        for r in inst_rows[1:]:
             cells = [re.sub(r'<[^>]+>', '', c).strip() for c in re.findall(r'<t[dh][^>]*>(.*?)</t[dh]>', r, re.S)]
             if len(cells) >= 5:
-                total_val = cells[4].replace(',', '')
                 try:
-                    val = float(total_val)
+                    foreign = float(cells[1].replace(',', '').replace('+', ''))
+                    trust = float(cells[2].replace(',', '').replace('+', ''))
+                    dealer = float(cells[3].replace(',', '').replace('+', ''))
+                    val = float(cells[4].replace(',', '').replace('+', ''))
+                    institutions.append({'date': cells[0], 'foreign': foreign, 'trust': trust,
+                                         'dealer': dealer, 'total': val})
                     if val > 0:
                         inst_buy_days += 1
+                except ValueError:
+                    pass
+
+    if len(tables) >= 3:
+        margin_rows = re.findall(r'<tr[^>]*>(.*?)</tr>', tables[2], re.S)
+        for r in margin_rows[1:]:
+            cells = [re.sub(r'<[^>]+>', '', c).strip() for c in re.findall(r'<t[dh][^>]*>(.*?)</t[dh]>', r, re.S)]
+            if len(cells) >= 5:
+                try:
+                    margin.append({'date': cells[0], 'balance': float(cells[1].replace(',', '')),
+                                   'change': float(cells[2].replace(',', '').replace('+', ''))})
                 except ValueError:
                     pass
 
@@ -107,6 +128,9 @@ def parse_html_report(file_path):
         'category': category,
         'kline': kline_data,
         'inst_buy_days': inst_buy_days,
+        'institutions': institutions,
+        'margin': margin,
+        'trailing_pe': trailing_pe,
         'path': str(file_path)
     }
 
@@ -641,9 +665,546 @@ def save_stage4_report(r):
     return output_path
 
 
+def _pct_change(now, before):
+    return (now / before - 1) * 100 if before else 0.0
+
+
+def analyse_breakout_candidate(stock_info):
+    """用昨天收盤資料找「接近突破」而非把碰到前高視為已突破。"""
+    df = pd.DataFrame(stock_info['kline'])
+    # 既有 HTML 報表保留約 50 根日 K 線；40 日線已可用來判斷中期方向，
+    # 不因資料呈現長度而讓所有股票被錯誤排除。
+    if len(df) < 50:
+        return None
+    for col in ('open', 'high', 'low', 'close', 'volume'):
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    df = df.dropna().reset_index(drop=True)
+    if len(df) < 50 or (df['volume'].tail(20) <= 0).any():
+        return None
+
+    close, high, low, volume = (df[c].to_numpy(dtype=float) for c in ('close', 'high', 'low', 'volume'))
+    price = close[-1]
+    ma10 = pd.Series(close).rolling(10).mean()
+    ma20 = pd.Series(close).rolling(20).mean()
+    ma40 = pd.Series(close).rolling(40).mean()
+    ma20_slope = _pct_change(ma20.iloc[-1], ma20.iloc[-6])
+    ma40_slope = _pct_change(ma40.iloc[-1], ma40.iloc[-6])
+
+    # 壓力位只從今天以前的資料取得；最後兩天不納入，避免把今天盤中碰高誤判成突破。
+    pivot = float(np.max(high[-32:-2]))
+    distance_to_pivot = (pivot / price - 1) * 100
+    prior_vol20 = float(np.mean(volume[-21:-1]))
+    vol_ratio = volume[-1] / prior_vol20 if prior_vol20 else 0.0
+    bar_range = max(high[-1] - low[-1], 1e-9)
+    close_location = (close[-1] - low[-1]) / bar_range
+    upper_wick = (high[-1] - max(close[-1], df['open'].iloc[-1])) / bar_range
+
+    # 「收斂」須同時表現在價格波動和成交量，不用主觀的杯柄/W 底名稱替代。
+    daily_range_pct = (high - low) / np.maximum(close, 1e-9)
+    recent_range = float(np.mean(daily_range_pct[-5:]))
+    base_range = float(np.mean(daily_range_pct[-25:-5]))
+    recent_vol = float(np.mean(volume[-10:]))
+    base_vol = float(np.mean(volume[-30:-10]))
+    range_contraction = recent_range / base_range if base_range else 9.0
+    volume_contraction = recent_vol / base_vol if base_vol else 9.0
+
+    inst = stock_info.get('institutions', [])[:5]
+    inst_total_5 = sum(x['total'] for x in inst)
+    inst_buy_days = sum(x['total'] > 0 for x in inst)
+    trust_buy_days = sum(x['trust'] > 0 for x in inst)
+    foreign_buy_days = sum(x['foreign'] > 0 for x in inst)
+    margin_5 = sum(x['change'] for x in stock_info.get('margin', [])[:5])
+
+    # 先排除明顯不適合等突破的情況。這比事後以大量加分掩蓋弱勢可靠。
+    trend_ok = price > ma20.iloc[-1] > ma40.iloc[-1] and ma20_slope > 0 and ma40_slope >= -0.2
+    near_pivot = 0 <= distance_to_pivot <= 5.0
+    # 突破後已拉離壓力太多，不再是可追的「剛發動」訊號；把它留給
+    # 另一種趨勢持有策略，而不是混進短線突破池。
+    breakout_extension = (price / pivot - 1) * 100
+    confirmed = (0.3 <= breakout_extension <= 3.5 and vol_ratio >= 1.5
+                 and close_location >= 0.65 and upper_wick <= 0.30)
+    if not trend_ok or not (near_pivot or confirmed):
+        return None
+    if upper_wick > 0.50 or (close[-1] < df['open'].iloc[-1] and vol_ratio >= 1.5):
+        return None  # 爆量收黑或長上影線，較像賣壓而不是突破
+
+    score = 0.0
+    reasons, risks = [], []
+    score += 22; reasons.append('價格站上 20/40 日均線，且中期均線沒有下彎')
+    if range_contraction <= 0.85:
+        score += 14; reasons.append(f'近期波動縮至整理期的 {range_contraction:.0%}')
+    else:
+        risks.append('價格波動尚未明顯收斂')
+    if volume_contraction <= 0.85:
+        score += 12; reasons.append(f'整理期量能縮至前段的 {volume_contraction:.0%}')
+    else:
+        risks.append('整理期量能未縮，賣壓可能尚未消化')
+    if confirmed:
+        score += 20; reasons.append(f'收盤有效站上 {pivot:.2f}，量為 20 日均量 {vol_ratio:.2f} 倍')
+        status = '已確認突破'
+    else:
+        score += max(0, 14 - distance_to_pivot * 2)
+        reasons.append(f'距離突破確認價 {pivot:.2f} 尚有 {distance_to_pivot:.2f}%')
+        status = '觀察：尚未突破'
+    if inst_buy_days >= 3 and inst_total_5 > 0:
+        score += 10; reasons.append(f'近 5 日法人買超 {inst_buy_days} 日')
+    else:
+        risks.append('法人承接不連續或近 5 日合計偏賣')
+    if trust_buy_days >= 3:
+        score += 5; reasons.append(f'投信買超 {trust_buy_days} 日')
+    if foreign_buy_days == 0:
+        risks.append('外資近 5 日未出現買超')
+    if margin_5 > 0:
+        risks.append(f'近 5 日融資增加 {margin_5:,.0f} 張，突破時需防籌碼浮額')
+        score -= min(8, margin_5 / max(volume[-1], 1) * 100)
+
+    stop = float(np.min(low[-10:]))
+    return {
+        'code': stock_info['code'], 'name': stock_info['name'], 'category': stock_info['category'],
+        'date': str(df['date'].iloc[-1]), 'price': price, 'status': status, 'score': round(score, 1),
+        'pivot': pivot, 'distance': round(distance_to_pivot, 2), 'vol_ratio': round(vol_ratio, 2),
+        'range_contraction': round(range_contraction, 2), 'volume_contraction': round(volume_contraction, 2),
+        'stop': stop, 'reasons': reasons, 'risks': risks,
+    }
+
+
+def rank_observed_stock(stock_info, as_of=None):
+    """在既有強勢觀察池內排序；不以硬門檻刪除股票。"""
+    df = pd.DataFrame(stock_info['kline'])
+    if as_of:
+        # 報表採同一年 MM/DD 格式；先固定到共同資料截止日，不能把少數
+        # 已更新到今天的報告混進昨天的排行。
+        df = df[df['date'].astype(str) <= as_of].copy()
+    if len(df) < 50:
+        return None
+    for col in ('open', 'high', 'low', 'close', 'volume'):
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    df = df.dropna().reset_index(drop=True)
+    if len(df) < 50:
+        return None
+    close, high, low, volume = (df[c].to_numpy(dtype=float) for c in ('close', 'high', 'low', 'volume'))
+    price = close[-1]
+    close_s = pd.Series(close)
+    ma10, ma20, ma40 = (close_s.rolling(n).mean() for n in (10, 20, 40))
+    ma20_slope = _pct_change(ma20.iloc[-1], ma20.iloc[-6])
+    ma40_slope = _pct_change(ma40.iloc[-1], ma40.iloc[-6])
+    pivot = float(np.max(high[-32:-2]))
+    distance = (pivot / price - 1) * 100
+    extension = -distance
+    prior_vol20 = float(np.mean(volume[-21:-1]))
+    vol_ratio = volume[-1] / prior_vol20 if prior_vol20 else 0.0
+    day_range = max(high[-1] - low[-1], 1e-9)
+    close_location = (price - low[-1]) / day_range
+    upper_wick = (high[-1] - max(price, df['open'].iloc[-1])) / day_range
+    recent_range = float(np.mean((high[-5:] - low[-5:]) / np.maximum(close[-5:], 1e-9)))
+    base_range = float(np.mean((high[-25:-5] - low[-25:-5]) / np.maximum(close[-25:-5], 1e-9)))
+    range_ratio = recent_range / base_range if base_range else 1.0
+    volume_ratio = float(np.mean(volume[-10:])) / max(float(np.mean(volume[-30:-10])), 1e-9)
+    inst = stock_info.get('institutions', [])[:5]
+    inst_total = sum(x['total'] for x in inst)
+    inst_buy_days = sum(x['total'] > 0 for x in inst)
+    trust_buy_days = sum(x['trust'] > 0 for x in inst)
+    margin_5 = sum(x['change'] for x in stock_info.get('margin', [])[:5])
+
+    score, reasons, risks = 0.0, [], []
+    # 趨勢：位置和方向同時成立才給高分。
+    if price > ma20.iloc[-1] > ma40.iloc[-1]:
+        score += 20; reasons.append('收盤站在 20/40 日均線之上')
+    elif price > ma20.iloc[-1]:
+        score += 9; reasons.append('收盤仍站上 20 日均線')
+    else:
+        score -= 12; risks.append('收盤跌回 20 日均線下方')
+    if ma20_slope > 0 and ma40_slope >= -0.2:
+        score += 12; reasons.append('20 日均線上彎、中期趨勢未轉弱')
+    elif ma20_slope > 0:
+        score += 4; risks.append('中期均線仍偏弱')
+    else:
+        score -= 10; risks.append('20 日均線未上彎')
+
+    # 整理品質：越縮越好，但不把未縮量的股票直接刪掉。
+    if range_ratio <= .80:
+        score += 15; reasons.append(f'最近波動縮至前段的 {range_ratio:.0%}')
+    elif range_ratio <= 1.0:
+        score += 7; reasons.append('近期波動沒有擴大')
+    else:
+        score -= 5; risks.append('近期波動放大')
+    if volume_ratio <= .85:
+        score += 12; reasons.append(f'整理期量能縮至前段的 {volume_ratio:.0%}')
+    elif volume_ratio <= 1.05:
+        score += 4
+    else:
+        score -= 4; risks.append('整理期量能未縮')
+
+    # 位置：剛接近壓力最有價值；已拉太遠則扣分，避免把漲多股排第一。
+    if 0 <= distance <= 4:
+        score += 18 - distance * 2; reasons.append(f'距突破價 {pivot:.2f} 尚有 {distance:.2f}%')
+    elif 0.3 <= extension <= 3.5 and vol_ratio >= 1.5 and close_location >= .65 and upper_wick <= .30:
+        score += 13; reasons.append('剛完成有效突破，未過度延伸')
+    elif extension > 3.5:
+        score -= min(18, extension); risks.append(f'已離前高 {extension:.1f}%，不屬剛發動位置')
+    else:
+        score += 2; risks.append('距離壓力較遠')
+    if upper_wick > .45:
+        score -= 8; risks.append('當日上影線長，壓力明顯')
+    if price < df['open'].iloc[-1] and vol_ratio >= 1.5:
+        score -= 12; risks.append('爆量收黑，疑似賣壓')
+
+    # 籌碼：看連續性，同時對融資快速增加保留風險。
+    if inst_buy_days >= 3 and inst_total > 0:
+        score += 12; reasons.append(f'近 5 日法人買超 {inst_buy_days} 日')
+    elif inst_total > 0:
+        score += 4
+    else:
+        score -= 6; risks.append('近 5 日法人合計偏賣')
+    if trust_buy_days >= 3:
+        score += 5; reasons.append(f'投信買超 {trust_buy_days} 日')
+    if margin_5 > 0:
+        penalty = min(10, margin_5 / max(volume[-1], 1) * 100)
+        score -= penalty
+        if penalty >= 2:
+            risks.append(f'近 5 日融資增加 {margin_5:,.0f} 張')
+
+    return {'code': stock_info['code'], 'name': stock_info['name'], 'category': stock_info['category'],
+            'date': str(df['date'].iloc[-1]), 'price': price, 'pivot': pivot, 'distance': round(distance, 2),
+            'score': round(score, 1), 'reasons': reasons, 'risks': risks}
+
+
+def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
+    """
+    進化版雙軌選股模型 (融合實戰分析師與多因子量化邏輯)：
+    1. 🚀 暴漲動能型 (Explosive Momentum)：
+       - 【模式 A】極致動能：歷史/波段新高突破 (Blue Sky)、RSI高檔強勢鈍化(>75)、5MA極速仰角(>2.5%)、處置股籌碼鎖定軋空、當日收盤在K棒上緣(>90%)。
+       - 【模式 B】洗盤表態點火：上升月線(20MA斜率>1%) + 窒息量回測月線(量比<0.6x，乖離<6%) + 族群共振點火。
+       - 【族群共振加權】：同題材族群（光學、CPO、被動元件、散熱）集體轉強時加權。
+    2. 🛡️ 穩健防守型 (Solid Defensive)：
+       - 均線穩健翻揚、剛脫離月線成本區 (乖離0.5%~6.5%)、法人連續買超、低風險報酬比。
+    """
+    df = pd.DataFrame(stock_info['kline'])
+    if as_of:
+        df = df[df['date'].astype(str) <= as_of].copy()
+    if len(df) < 20:
+        return None
+    for col in ('open', 'high', 'low', 'close', 'volume'):
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    df = df.dropna().reset_index(drop=True)
+    if len(df) < 20:
+        return None
+
+    close = df['close'].to_numpy(dtype=float)
+    high = df['high'].to_numpy(dtype=float)
+    low = df['low'].to_numpy(dtype=float)
+    volume = df['volume'].to_numpy(dtype=float)
+    price = close[-1]
+    
+    n = len(df)
+    close_s = pd.Series(close)
+    ma5 = close_s.rolling(5).mean()
+    ma10 = close_s.rolling(10).mean()
+    ma20 = close_s.rolling(20).mean()
+    
+    s5 = _pct_change(ma5.iloc[-1], ma5.iloc[-2]) if len(ma5) >= 2 else 0.0
+    s10 = _pct_change(ma10.iloc[-1], ma10.iloc[-2]) if len(ma10) >= 2 else 0.0
+    s20 = _pct_change(ma20.iloc[-1], ma20.iloc[-2]) if len(ma20) >= 2 else 0.0
+    s20_3d = _pct_change(ma20.iloc[-1], ma20.iloc[-4]) if len(ma20) >= 24 else s20
+    ret1 = _pct_change(close[-1], close[-2]) if n >= 2 else 0.0
+    ret3 = _pct_change(close[-1], close[-4]) if n >= 4 else ret1
+    ret5 = _pct_change(close[-1], close[-6]) if n >= 6 else ret3
+    ret10 = _pct_change(close[-1], close[-11]) if n >= 11 else ret5
+    
+    # RSI(14)
+    delta = np.diff(close)
+    gain = np.where(delta > 0, delta, 0)
+    loss = np.where(delta < 0, -delta, 0)
+    avg_gain = np.mean(gain[-14:]) if len(gain) >= 14 else 1e-5
+    avg_loss = np.mean(loss[-14:]) if len(loss) >= 14 else 1e-5
+    rs = avg_gain / (avg_loss + 1e-5)
+    rsi14 = 100 - (100 / (1 + rs))
+    
+    prior_vol20 = float(np.mean(volume[-21:-1])) if n >= 21 else float(np.mean(volume))
+    vol_ratio = volume[-1] / (prior_vol20 + 1e-5)
+    vol5_ratio = (float(np.mean(volume[-5:])) / (float(np.mean(volume[-25:-5])) + 1e-5)
+                  if n >= 25 else vol_ratio)
+    recent_range = float(np.mean((high[-5:] - low[-5:]) / np.maximum(close[-5:], 1e-9)))
+    base_range = (float(np.mean((high[-25:-5] - low[-25:-5]) / np.maximum(close[-25:-5], 1e-9)))
+                  if n >= 25 else recent_range)
+    range_ratio = recent_range / (base_range + 1e-9)
+    
+    # 處置股判斷
+    is_disposal = ('處置' in stock_info['name']) or ('處置' in stock_info['path'])
+    
+    # 乖離率
+    bias_20 = ((price - ma20.iloc[-1]) / ma20.iloc[-1] * 100) if len(ma20) >= 20 and ma20.iloc[-1] > 0 else 0.0
+    bias_5 = ((price - ma5.iloc[-1]) / ma5.iloc[-1] * 100) if len(ma5) >= 5 and ma5.iloc[-1] > 0 else 0.0
+    
+    # K棒收盤位置 (0.0 = 最低, 1.0 = 收在最高點/漲停)
+    bar_range = max(high[-1] - low[-1], 1e-9)
+    close_location = (price - low[-1]) / bar_range
+    
+    # 型態識別與歷史高點
+    pattern_name, _ = recognize_pattern(pd.DataFrame({'Close': close, 'High': high, 'Low': low, 'Volume': volume}))
+    prior_high = float(np.max(high[:-1])) if n >= 2 else float(high[0])
+    is_new_high = (price >= prior_high * 0.99) or (high[-1] >= prior_high)
+    dist_to_high = (price - prior_high) / prior_high * 100
+    
+    # 法人籌碼
+    inst = stock_info.get('institutions', [])[:5]
+    inst_buy_days = sum(x['total'] > 0 for x in inst) if inst else stock_info.get('inst_buy_days', 0)
+    inst_total = sum(x['total'] for x in inst)
+    trust_buy_days = sum(x['trust'] > 0 for x in inst)
+    margin_5 = sum(x['change'] for x in stock_info.get('margin', [])[:5])
+    trailing_pe = stock_info.get('trailing_pe')
+    
+    pivot = float(np.max(high[-32:-2])) if n >= 32 else float(np.max(high[:-1]))
+    distance = (pivot / price - 1) * 100
+    stop_loss = float(np.min(low[-10:])) if n >= 10 else price * 0.92
+
+    # ==========================================
+    # 1. 🚀 進化版暴漲動能型評分 (Explosive Momentum)
+    # ==========================================
+    momo_score = 50.0
+    momo_reasons = []
+    attack_modes = []
+    
+    # 【模式 A 因子：歷史/波段新高突破 Blue Sky】
+    if is_new_high:
+        momo_score += 30
+        momo_reasons.append("創歷史/波段新高無套牢壓(Blue Sky)")
+    elif dist_to_high >= -5.0:
+        momo_score += 15
+        momo_reasons.append(f"逼近歷史前高(距高{abs(dist_to_high):.1f}%)")
+        
+    # 【收在當日最高/漲停確認】
+    if close_location >= 0.95:
+        momo_score += 20
+        momo_reasons.append("當日強勢收在最高點/亮燈")
+    elif close_location >= 0.80:
+        momo_score += 10
+        momo_reasons.append("收盤位居高檔強勢區")
+        
+    # 【5MA 極速仰角】
+    if s5 >= 4.0:
+        momo_score += min(s5 * 4, 25)
+        momo_reasons.append(f"5MA極速仰角+{s5:.2f}%")
+    elif s5 >= 2.0:
+        momo_score += 12
+        momo_reasons.append(f"5MA加速上揚+{s5:.2f}%")
+        
+    # 【RSI 高檔強勢鈍化】
+    if rsi14 >= 75:
+        momo_score += 15
+        momo_reasons.append(f"RSI強勢主升鈍化({rsi14:.1f})")
+    elif 60 <= rsi14 < 75:
+        momo_score += 8
+        momo_reasons.append(f"RSI多頭攻擊({rsi14:.1f})")
+        
+    # 【處置股籌碼鎖定軋空】
+    if is_disposal:
+        momo_score += 15
+        momo_reasons.append("處置分盤籌碼高度鎖定(軋空)")
+        
+    # 【模式 B 因子：上升月線 + 窒息量洗盤點火】(如禾伸堂/信昌電)
+    if s20 >= 1.0 and 0 <= bias_20 <= 7.0 and vol_ratio <= 0.65:
+        momo_score += 25
+        momo_reasons.append(f"上升月線+窒息量洗盤完畢(量比{vol_ratio:.2f}x)")
+
+    # 分析師案例校準後，攻擊型不能只認「已創新高」；至少有三條不同路徑。
+    # A. 強勢續攻：前一日已大漲且收在高檔，隔日可能延續，而非一律視為漲多。
+    continuation = ret3 >= 8.0 and close_location >= 0.72 and s20_3d >= 2.0
+    if continuation:
+        momo_score += 18
+        momo_reasons.append(f"3日強勢+{ret3:.1f}%且收盤靠近高點")
+        attack_modes.append('強勢續攻')
+
+    # B. 洗盤後點火：中期成本線仍明顯上升，但短線回落到月線附近。
+    # 這能涵蓋「禾伸堂／信昌電」類型，不會只追已經噴出的股票。
+    reset_ignition = (s20_3d >= 2.0 and -15.0 <= ret5 <= 5.0 and
+                      0.0 <= bias_20 <= 8.0 and 48.0 <= rsi14 <= 66.0 and
+                      (ret1 < 0 or range_ratio <= 0.80))
+    if reset_ignition:
+        momo_score += 26
+        momo_reasons.append(f"上升月線洗盤待點火(5日{ret5:+.1f}%)")
+        attack_modes.append('洗盤點火')
+
+    # C. 估值＋籌碼推升：低本益比只在趨勢與籌碼同時支持時加分。
+    value_chip = (trailing_pe is not None and 0 < trailing_pe <= 25 and s20_3d >= 2.0 and
+                  (trust_buy_days >= 3 or inst_total > 0) and margin_5 <= 0)
+    if value_chip:
+        momo_score += 20
+        momo_reasons.append(f"低PE({trailing_pe:.1f})＋籌碼改善")
+        attack_modes.append('估值籌碼')
+
+    if trust_buy_days >= 4:
+        momo_score += 8
+        momo_reasons.append(f"投信買超{trust_buy_days}/5日")
+    if margin_5 < 0:
+        momo_score += 4
+
+    if not attack_modes:
+        attack_modes.append('一般動能')
+
+    # 類群檔數不是族群強弱；舊版用「同分類股票多」加分會造成假訊號，已取消。
+
+    # ==========================================
+    # 2. 🛡️ 穩健防守型評分 (Solid Defensive)
+    # ==========================================
+    def_score = 50.0
+    def_reasons = []
+    
+    if is_disposal:
+        def_score -= 40
+    if s20 > 1.0:
+        def_score += min(s20 * 3.5, 15)
+        def_reasons.append(f"月線穩健上揚+{s20:.2f}%")
+    elif s20 > 0:
+        def_score += 6
+    else:
+        def_score -= 20
+        
+    if price >= ma5.iloc[-1] >= ma10.iloc[-1] >= ma20.iloc[-1]:
+        def_score += 10
+        def_reasons.append("均線多頭排列")
+    elif price < ma20.iloc[-1]:
+        def_score -= 25
+        
+    if 0.5 <= bias_20 <= 6.5:
+        def_score += 18
+        def_reasons.append(f"剛脫離成本區(月乖離{bias_20:.1f}%)")
+    elif 6.5 < bias_20 <= 12.0:
+        def_score += 6
+    elif bias_20 > 14.0:
+        def_score -= 15
+    elif bias_20 < 0:
+        def_score -= 15
+        
+    if inst_buy_days >= 4:
+        def_score += 20
+        def_reasons.append(f"法人連買({inst_buy_days}/5天)")
+    elif inst_buy_days >= 2:
+        def_score += 10
+    else:
+        def_score -= 12
+        
+    if 55 <= rsi14 <= 76:
+        def_score += 8
+        def_reasons.append(f"RSI健康攻擊區({rsi14:.1f})")
+    elif rsi14 > 80:
+        def_score -= 8
+
+    # 穩健榜重視估值與回撤控制；PE 只占一部分，避免把弱勢便宜股排前面。
+    if trailing_pe is not None and 0 < trailing_pe <= 25:
+        def_score += 12
+        def_reasons.append(f"本益比相對收斂({trailing_pe:.1f})")
+    elif trailing_pe is not None and trailing_pe >= 80:
+        def_score -= 8
+    if range_ratio <= 0.85:
+        def_score += 8
+        def_reasons.append("近期波動收斂")
+    elif range_ratio > 1.20:
+        def_score -= 6
+    if margin_5 <= 0:
+        def_score += 5
+    elif margin_5 > 0 and margin_5 / max(volume[-1], 1) > 0.08:
+        def_score -= 6
+
+    return {
+        'code': stock_info['code'],
+        'name': stock_info['name'],
+        'category': stock_info['category'],
+        'date': str(df['date'].iloc[-1]),
+        'price': price,
+        'pivot': pivot,
+        'distance': round(distance, 2),
+        'stop': stop_loss,
+        's5': round(s5, 2),
+        's10': round(s10, 2),
+        's20': round(s20, 2),
+        's20_3d': round(s20_3d, 2),
+        'ret1': round(ret1, 2),
+        'ret3': round(ret3, 2),
+        'ret5': round(ret5, 2),
+        'ret10': round(ret10, 2),
+        'bias_20': round(bias_20, 2),
+        'bias_5': round(bias_5, 2),
+        'rsi14': round(rsi14, 1),
+        'vol_ratio': round(vol_ratio, 2),
+        'vol5_ratio': round(vol5_ratio, 2),
+        'range_ratio': round(range_ratio, 2),
+        'close_loc': round(close_location, 2),
+        'is_new_high': is_new_high,
+        'inst_buy_days': inst_buy_days,
+        'trust_buy_days': trust_buy_days,
+        'margin_5': margin_5,
+        'trailing_pe': trailing_pe,
+        'is_disposal': is_disposal,
+        'momo_score': round(momo_score, 1),
+        'def_score': round(def_score, 1),
+        'momo_reasons': momo_reasons,
+        'attack_modes': attack_modes,
+        'def_reasons': def_reasons,
+        'pattern': pattern_name
+    }
+
+
+def select_balanced_attack_list(evaluated, limit=10):
+    """避免創高股壟斷攻擊榜，為三種可驗證的發動路徑保留名額。"""
+    ordered = sorted(evaluated, key=lambda x: x['momo_score'], reverse=True)
+    selected = []
+    quotas = [('強勢續攻', 4), ('洗盤點火', 3), ('估值籌碼', 2)]
+    for mode, quota in quotas:
+        candidates = [r for r in ordered if mode in r['attack_modes'] and r not in selected]
+        selected.extend(candidates[:quota])
+    for r in ordered:
+        if len(selected) >= limit:
+            break
+        if r not in selected:
+            selected.append(r)
+    return sorted(selected[:limit], key=lambda x: x['momo_score'], reverse=True)
+
+
+def write_ranked_watchlist(momo_results, def_results):
+    cutoff = sorted({r['date'] for r in momo_results})[-1] if momo_results else '未知'
+    lines = [
+        '# 台股雙軌觀察排行', '',
+        f'> 資料截止日：{cutoff}。攻擊榜與穩健榜採不同邏輯；分數是條件吻合度，不是勝率。', '',
+        '---', '',
+        '## 攻擊型 Top 10',
+        '> 同時辨識三種路徑：創高續攻、上升月線洗盤後點火、低估值且籌碼改善。接受較大波動。', '',
+        '| 排名 | 股票代號 | 股票名稱 | 路徑 | 收盤價 | 5MA斜率 | RSI(14) | 成交量比 | 動能評分 | 核心動能特徵 |',
+        '|:---:|:---:|:---|:---|---:|---:|---:|---:|---:|:---|'
+    ]
+    for i, r in enumerate(momo_results[:10], 1):
+        disp = " *(處置)*" if r['is_disposal'] else ""
+        reasons = '；'.join(r['momo_reasons'][:3]) or '強勢動能'
+        modes = '／'.join(r['attack_modes'])
+        lines.append(f"| **{i}** | `{r['code']}` | **{r['name']}{disp}** | {modes} | {r['price']:.2f} | {r['s5']:+.2f}% | {r['rsi14']} | {r['vol_ratio']:.1f}x | **{r['momo_score']}** | {reasons} |")
+
+    lines.extend([
+        '', '---', '',
+        '## 穩健型 Top 10',
+        '> 著重均線穩定、低乖離、法人承接、波動收斂、融資風險與本益比；不等於保證不跌。', '',
+        '| 排名 | 股票代號 | 股票名稱 | 類群 | 收盤價 | 20MA斜率 | 月乖離率 | 法人買超 | 穩健評分 | 核心穩健特徵 |',
+        '|:---:|:---:|:---|:---|---:|---:|---:|---:|---:|:---|'
+    ])
+    for i, r in enumerate(def_results[:10], 1):
+        reasons = '；'.join(r['def_reasons'][:3]) or '穩健多頭'
+        lines.append(f"| **{i}** | `{r['code']}` | **{r['name']}** | {r['category']} | {r['price']:.2f} | +{r['s20']:.2f}% | +{r['bias_20']:.1f}% | {r['inst_buy_days']}/5天 | **{r['def_score']}** | {reasons} |")
+
+    lines.extend([
+        '', '---', '',
+        '## 判讀原則', '',
+        '1. **創高續攻**：近期漲幅、均線加速度、收盤位置及是否接近新高共同確認。',
+        '2. **洗盤後點火**：20 日線仍上升、短線回到成本區、RSI 未破壞且波動開始收斂。',
+        '3. **估值與籌碼**：低本益比必須同時搭配趨勢、投信承接或融資下降，不能單獨作為買進理由。',
+        '4. 本次規則由單日分析師案例歸納，只能視為待驗證假設，不能宣稱已有穩定命中率。'
+    ])
+    content = '\n'.join(lines)
+    BREAKOUT_OUTPUT_MD.write_text(content, encoding='utf-8')
+    OUTPUT_MD.write_text(content, encoding='utf-8')
+
+
 def main():
     print("=" * 65)
-    print("🚀 啟動個股勝率與線型型態自動化掃描器 (batch_scanner.py)")
+    print("啟動個股雙軌觀察掃描器 (batch_scanner.py)")
     print("=" * 65)
     
     if not REPORTS_DIR.exists():
@@ -653,62 +1214,56 @@ def main():
     html_files = list(REPORTS_DIR.glob("**/*.html"))
     print(f"📂 於 reports/ 目錄下搜尋到 {len(html_files)} 個 HTML 檔案")
     
-    results = []
-    generated_reports_cnt = 0
+    infos_by_code = {}
+    cat_counts = {}
     for p in html_files:
         info = parse_html_report(p)
         if not info:
             continue
-        res = calculate_winrate(info)
+        infos_by_code.setdefault(info['code'], info)
+        cat = info['category']
+        cat_counts[cat] = cat_counts.get(cat, 0) + 1
+
+    # 以最多報告共有的最後交易日為準（本批資料為 08/26）
+    date_counts = {}
+    for info in infos_by_code.values():
+        if info['kline']:
+            date = info['kline'][-1]['date']
+            date_counts[date] = date_counts.get(date, 0) + 1
+    as_of = max(date_counts, key=date_counts.get)
+    print(f"📅 本次統一使用資料截止日：{as_of}")
+
+    evaluated = []
+    for info in infos_by_code.values():
+        res = evaluate_dual_strategy(info, all_category_counts=cat_counts, as_of=as_of)
         if res:
-            results.append(res)
-            # 方案 A：為每檔個股生成獨立的 4 階段詳細 Markdown 分析報告
-            try:
-                save_stage4_report(res)
-                generated_reports_cnt += 1
-            except Exception:
-                pass
+            evaluated.append(res)
             
-    if not results:
+    if not evaluated:
         print("⚠️ 未解構出有效的個股數據。")
         return
 
-    # 按勝率高到低排序
-    results.sort(key=lambda x: x['win_rate'], reverse=True)
+    momo_results = select_balanced_attack_list(evaluated, limit=10)
+    def_results = sorted(evaluated, key=lambda x: x['def_score'], reverse=True)
     
-    print(f"✅ 成功完成 {len(results)} 檔個股之純數據型態識別與勝率量化計算！")
-    print(f"📄 已於 reports/ 下各產業資料夾獨立生成 {generated_reports_cnt} 份【4階段詳細技術分析報告.md】！\n")
-    
-    # 輸出 Console 前 10 名
-    print("🏆 勝率前 10 名個股摘要：")
-    print(f"{'排名':<4} {'代號':<6} {'股票名稱':<8} {'分類':<8} {'價格':<8} {'預期勝率':<8} {'風報比':<6} {'識別型態'}")
-    print("-" * 75)
-    for i, r in enumerate(results[:10], 1):
-        print(f"#{i:<3} {r['code']:<6} {r['name']:<8} {r['category']:<8} {r['price']:<8.2f} {r['win_rate']}%{'':<3} {r['rr_ratio']:<6} {r['pattern']}")
+    print(f"✅ 完成 {len(evaluated)} 檔個股的雙軌條件評分。")
+    print("\n【攻擊型 TOP 10】")
+    print(f"{'排名':<4} {'代號':<6} {'股票名稱':<10} {'攻擊路徑':<12} {'收盤價':<10} {'5MA斜率':<10} {'RSI':<8} {'量比':<8} {'動能分數'}")
+    print("-" * 85)
+    for i, r in enumerate(momo_results[:10], 1):
+        disp_name = r['name'] + ("(處置)" if r['is_disposal'] else "")
+        mode = '/'.join(r['attack_modes'])
+        print(f"#{i:<3} {r['code']:<6} {disp_name:<10} {mode:<12} {r['price']:<10.2f} {r['s5']:+9.2f}% {r['rsi14']:<8.1f} {r['vol_ratio']:<7.1f}x {r['momo_score']}")
 
-    # 產出完整 Markdown 排行榜檔案
-    md_content = []
-    md_content.append("# 📊 股票勝率與線型型態自動掃描總排行榜\n")
-    md_content.append(f"> **掃描日期**：2026-08-26 | **掃描檔數**：{len(results)} 檔 | **模型**：Morgan Stanley 五大維度勝率模型\n")
-    md_content.append("| 排名 | 代號 | 股票名稱 | 產業分類 | 當前價格 | 預期勝率 | 風險報酬比 | 建議進場位 | 建議停損位 | 目標價 | 自動識別型態 | 評級建議 |")
-    md_content.append("|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|")
-    
-    for i, r in enumerate(results, 1):
-        entry_price = f"{r['price'] * 0.98:.1f}" if r['win_rate'] < 70 else "現價/突破買進"
-        md_content.append(
-            f"| {i} | `{r['code']}` | **{r['name']}** | {r['category']} | **{r['price']:.2f}** | **`{r['win_rate']}%`** | {r['rr_ratio']} | {entry_price} | {r['stop_loss']} | {r['target_price']} | {r['pattern']} | {r['action']} |"
-        )
-        
-    md_content.append("\n---\n")
-    md_content.append("### 💡 勝率評分指標維度說明：\n")
-    md_content.append("1. **趨勢與均線結構 (25%)**：MA5/10/20 排列與 3 日斜率；資料完整時再加入 50D/100D/200D 趨勢。MA10 下彎會扣分。\n")
-    md_content.append("2. **動能與量能 (20%)**：RSI(14) 區間、MACD 雙線/柱狀圖與相對 20日均量倍數。\n")
-    md_content.append("3. **圖表型態 (25%)**：純數據幾何演算法識別（歷史新高、杯柄、雙底、VCP 收縮等）。\n")
-    md_content.append("4. **支撐與斐波那契 (15%)**：波段 High/Low 之 23.6%、38.2% 回調支撐涵蓋度。\n")
-    md_content.append("5. **風報比 R/R (15%)**：潛在獲利空間與停損空間之比率（> 2.0 為優秀標準）。\n")
+    print("\n【穩健型 TOP 10】")
+    print(f"{'排名':<4} {'代號':<6} {'股票名稱':<10} {'類群':<8} {'收盤價':<10} {'20MA斜率':<10} {'月乖離':<8} {'法人買':<8} {'穩健分數'}")
+    print("-" * 85)
+    for i, r in enumerate(def_results[:10], 1):
+        print(f"#{i:<3} {r['code']:<6} {r['name']:<10} {r['category']:<8} {r['price']:<10.2f} +{r['s20']:<9.2f}% {r['bias_20']:<7.1f}% {r['inst_buy_days']}/5天   {r['def_score']}")
 
-    OUTPUT_MD.write_text("\n".join(md_content), encoding="utf-8")
-    print(f"\n📄 完整排行榜已寫入至：{OUTPUT_MD}")
+    write_ranked_watchlist(momo_results, def_results)
+    print(f"\n📄 雙軌選股儀表板已寫入至：{OUTPUT_MD}")
+    print(f"📄 突破候選池已寫入至：{BREAKOUT_OUTPUT_MD}")
 
 
 if __name__ == "__main__":
