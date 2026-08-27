@@ -165,7 +165,7 @@ window.ChartEngine = {
         textStyle: { color: '#94a3b8', fontSize: 11 },
         selected: {
           'BOLL上軌': displayToggles.showBoll !== false,
-          'BOLL中軌': displayToggles.showBoll !== false,
+          'BOLL中軌': false, // 預設關閉 BOLL中軌（因與 MA20 完全重疊），避免線條混亂
           'BOLL下軌': displayToggles.showBoll !== false,
           'MA5': displayToggles.showMa !== false,
           'MA10': displayToggles.showMa !== false,
