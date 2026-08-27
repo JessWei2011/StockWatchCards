@@ -97,25 +97,31 @@
       const select = this.q('#stockSelect');
       if (!select) return;
 
-      const availableCodes = new Set(this.reportsIndex.map(item => String(item.code)));
-      // 使用卡片與真實報表的聯集：沒有 AI 卡片的報表仍可查看原始指標，
-      // 只有 AI 卡片但還沒產生報表的股票也要保留並清楚標示。
-      const candidatesByCode = new Map(
-        this.cards.map(card => [String(card.code), card])
-      );
+      const availableMap = new Map(this.reportsIndex.map(item => [String(item.code), item]));
+      const candidatesByCode = new Map();
+
+      // 以真實報表為主體
       this.reportsIndex.forEach(item => {
         const code = String(item.code);
+        const card = this.cardByCode[code];
+        candidatesByCode.set(code, {
+          code: code,
+          name: item.name || (card ? card.name : code),
+          group: (card && card.group) ? card.group : (item.path ? item.path.split('/')[0] : '未分類'),
+          decision: card ? card.decision : '技術指標',
+          winRate: card ? (card.winRate || 0) : 0
+        });
+      });
+
+      // 補足有卡片的其他項目
+      this.cards.forEach(card => {
+        const code = String(card.code);
         if (!candidatesByCode.has(code)) {
-          candidatesByCode.set(code, {
-            ...item,
-            group: '已有報表・尚無 AI 卡片',
-            decision: '原始指標',
-            winRate: 0
-          });
+          candidatesByCode.set(code, card);
         }
       });
-      const candidates = Array.from(candidatesByCode.values());
 
+      const candidates = Array.from(candidatesByCode.values());
       const groups = {};
       candidates.forEach(card => {
         const group = card.group || '未分類';
@@ -131,8 +137,9 @@
           .forEach(card => {
             const option = document.createElement('option');
             option.value = card.code;
-            const reportMark = availableCodes.has(String(card.code)) ? '' : '｜尚無報表';
-            option.textContent = `${card.code} ${card.name} (${card.decision || '尚無分析'}${reportMark})`;
+            const hasRep = availableMap.has(String(card.code));
+            const reportMark = hasRep ? '' : '｜尚無報表';
+            option.textContent = `${card.code} ${card.name || ''} (${card.decision || '技術指標'}${reportMark})`;
             optgroup.appendChild(option);
           });
         select.appendChild(optgroup);
