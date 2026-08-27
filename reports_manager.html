@@ -1449,24 +1449,24 @@
     function renderMiniOverviewCol(titleText, icon, colorTheme, items, src, track){
       const isCur = (winrateRankingSource === src && winrateActiveTrack === track);
       return `
-        <div style="flex:1; min-width:240px; background:rgba(0,0,0,0.35); border:1.5px solid ${isCur ? colorTheme : 'rgba(255,255,255,0.08)'}; border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:8px; box-shadow:${isCur ? `0 0 14px ${colorTheme}33` : 'none'};">
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px; cursor:pointer;" onclick="winrateRankingSource='${src}'; winrateActiveTrack='${track}'; renderWinrateRankingUI();">
-            <span style="font-weight:850; font-size:14.5px; color:${colorTheme}; display:flex; align-items:center; gap:6px;">
-              ${icon} ${escapeHtml(titleText)}
+        <div style="flex:1; min-width:260px; background:rgba(0,0,0,0.4); border:2px solid ${isCur ? colorTheme : 'rgba(255,255,255,0.12)'}; border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; gap:10px; box-shadow:${isCur ? `0 0 16px ${colorTheme}44` : 'none'};">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid rgba(255,255,255,0.12); padding-bottom:10px; cursor:pointer;" onclick="winrateRankingSource='${src}'; winrateActiveTrack='${track}'; renderWinrateRankingUI();">
+            <span style="font-weight:900; font-size:16px; color:${colorTheme}; display:flex; align-items:center; gap:8px;">
+              <span style="font-size:18px;">${icon}</span> ${escapeHtml(titleText)}
             </span>
-            <span style="font-size:12px; padding:2px 8px; border-radius:4px; background:${isCur ? colorTheme : 'rgba(255,255,255,0.1)'}; color:${isCur ? '#000' : '#cbd5e1'}; font-weight:750;">
+            <span style="font-size:12.5px; padding:3px 10px; border-radius:6px; background:${isCur ? colorTheme : 'rgba(255,255,255,0.12)'}; color:${isCur ? '#000' : '#e2e8f0'}; font-weight:850;">
               ${isCur ? '檢視中' : '切換'}
             </span>
           </div>
-          <div style="display:flex; flex-direction:column; gap:4px;">
-            ${items.length === 0 ? '<div style="color:var(--text-dim); font-size:13px; padding:10px; text-align:center;">無資料</div>' : items.slice(0, 10).map((it, idx) => `
-              <div style="display:flex; align-items:center; justify-content:space-between; padding:4px 8px; border-radius:6px; background:rgba(255,255,255,0.02); font-size:13.5px; cursor:pointer; transition:background .12s ease;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'" onclick="switchToStockAnalysis('${escapeHtml(it.code)}')">
-                <div style="display:flex; align-items:center; gap:8px; min-width:0; overflow:hidden;">
-                  <span style="font-weight:850; color:var(--text-dim); width:18px; font-size:13px; text-align:right;">${idx + 1}</span>
-                  <span style="font-weight:850; color:#93c5fd; font-family:monospace; font-size:13.5px;">${escapeHtml(it.code)}</span>
-                  <span style="font-weight:750; color:#fff; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</span>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            ${items.length === 0 ? '<div style="color:var(--text-dim); font-size:14px; padding:14px; text-align:center;">無資料</div>' : items.slice(0, 10).map((it, idx) => `
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-radius:8px; background:rgba(255,255,255,0.035); font-size:15px; cursor:pointer; transition:all .15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.background='rgba(255,255,255,0.035)';" onclick="switchToStockAnalysis('${escapeHtml(it.code)}')">
+                <div style="display:flex; align-items:center; gap:10px; min-width:0; overflow:hidden;">
+                  <span style="font-weight:900; color:var(--text-dim); width:20px; font-size:14px; text-align:right;">${idx + 1}</span>
+                  <span style="font-weight:850; color:#93c5fd; font-family:monospace; font-size:15px;">${escapeHtml(it.code)}</span>
+                  <span style="font-weight:800; color:#ffffff; font-size:16px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</span>
                 </div>
-                <span style="font-size:13px; font-weight:750; color:${colorTheme}; opacity:0.95;">${escapeHtml(it.price || it.score || '')}</span>
+                <span style="font-size:14.5px; font-weight:850; color:${colorTheme};">${escapeHtml(it.price || it.score || '')}</span>
               </div>
             `).join('')}
           </div>
@@ -1477,16 +1477,16 @@
     let html = `
       <div class="ranking-card">
         <!-- 🚀 4 榜全景總覽 (Master Overview) 一覽無遺 -->
-        <div style="margin-bottom:20px; background:#11161f; border:1px solid rgba(125,180,255,0.25); border-radius:12px; padding:14px 16px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-            <div style="font-size:15px; font-weight:850; color:#fff; display:flex; align-items:center; gap:8px;">
-              <span>🏆</span> 雙 AI 四大榜單全景一覽 (點擊股票直接查看技術報告)
+        <div style="margin-bottom:24px; background:#11161f; border:1.5px solid rgba(125,180,255,0.3); border-radius:14px; padding:18px 20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+            <div style="font-size:17px; font-weight:900; color:#fff; display:flex; align-items:center; gap:10px;">
+              <span style="font-size:20px;">🏆</span> 雙 AI 四大榜單全景一覽 (點擊股票直接查看技術報告)
             </div>
-            <div style="font-size:12px; color:var(--text-dim);">
-              截止日：<strong style="color:#93c5fd;">${escapeHtml(scanDate || '最新')}</strong>
+            <div style="font-size:13.5px; color:var(--text-dim);">
+              資料截止日：<strong style="color:#93c5fd; font-size:14.5px;">${escapeHtml(scanDate || '最新')}</strong>
             </div>
           </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
             ${renderMiniOverviewCol('Gemini 暴漲動能 TOP 10', '🚀', '#f87171', gMomo, 'gemini', 'momentum')}
             ${renderMiniOverviewCol('Gemini 穩健防守 TOP 10', '🛡️', '#4ade80', gDef, 'gemini', 'defensive')}
             ${renderMiniOverviewCol('ChatGPT 攻擊型 TOP 10', '⚡', '#f97316', cMomo, 'chatgpt', 'momentum')}
