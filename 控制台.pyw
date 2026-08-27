@@ -35,7 +35,6 @@ SERVERS = {
 }
 UPDATE_SCRIPT = MACRO_DIR / "update_macro_data.py"
 UPDATE_LOG = MACRO_DIR / "macro_update.log"
-UPDATE_INTERVAL_SECONDS = 30 * 60
 
 stop_event = threading.Event()
 update_lock = threading.Lock()
@@ -121,13 +120,6 @@ def run_macro_update() -> bool:
         update_lock.release()
 
 
-def update_loop() -> None:
-    # 開機先更新一次；之後以前一次完成的時間為基準，每 30 分鐘一次。
-    while not stop_event.is_set():
-        run_macro_update()
-        stop_event.wait(UPDATE_INTERVAL_SECONDS)
-
-
 def open_workspace(server_key: str) -> None:
     server = SERVERS[server_key]
     start_server(server)
@@ -150,8 +142,18 @@ def show_stock(_icon=None, _item=None) -> None:
     open_workspace("stock")
 
 
-def show_macro(_icon=None, _item=None) -> None:
+def refresh_macro_and_open() -> None:
+    """依使用者開啟總經頁面的時機更新，避免背景定時工作打擾桌面。"""
+    run_macro_update()
     open_workspace("macro")
+
+
+def show_macro(_icon=None, _item=None) -> None:
+    threading.Thread(
+        target=refresh_macro_and_open,
+        name="macro-update-before-open",
+        daemon=True,
+    ).start()
 
 
 def quit_controller(icon, _item=None) -> None:
@@ -176,12 +178,11 @@ def main() -> None:
     if not instance_mutex or ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
         return
     ensure_servers()
-    threading.Thread(target=update_loop, name="macro-update-scheduler", daemon=True).start()
     menu = pystray.Menu(
         pystray.MenuItem("開啟個股分析中心", show_stock, default=True),
         pystray.MenuItem("開啟總經分析", show_macro),
         pystray.Menu.SEPARATOR,
-        pystray.MenuItem("立即更新總經數據", update_now),
+        pystray.MenuItem("立即更新總經數據（手動）", update_now),
         pystray.MenuItem("啟動所有服務", start_all),
         pystray.MenuItem("停止所有服務", stop_all),
         pystray.Menu.SEPARATOR,

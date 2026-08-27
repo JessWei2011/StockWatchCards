@@ -36,6 +36,13 @@ except ImportError:
 ROOT = Path(__file__).resolve().parent
 REPORTS_DIR = ROOT / "reports"
 OUTPUT_MD = ROOT / "stock_winrate_ranking.md"
+YFINANCE_CACHE_DIR = ROOT / ".cache" / "yfinance"
+
+# yfinance 預設會將時區／Cookie 快取寫到使用者設定目錄；在受限環境下會
+# 失敗並讓 fetch_latest_bar 靜默回傳 None。固定放在專案可寫入的快取目錄。
+if YFINANCE_AVAILABLE:
+    YFINANCE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    yf.set_tz_cache_location(str(YFINANCE_CACHE_DIR))
 
 
 def parse_html_report(file_path):
@@ -225,10 +232,37 @@ def calculate_winrate(stock_info):
     curr_vol = volume[-1]
     vol20 = np.mean(volume[-20:]) if n >= 20 else np.mean(volume)
     
-    # 均線計算
-    ma50 = np.mean(close[-50:]) if n >= 50 else np.mean(close)
-    ma100 = np.mean(close[-100:]) if n >= 100 else np.mean(close)
-    ma200 = np.mean(close[-200:]) if n >= 200 else np.mean(close)
+    # 均線與斜率：短均線不只看相對位置，也必須確認方向。
+    # 以最新一個交易日的 MA 變動判斷當下方向；±0.25% 內視為走平。
+    # 這能避免前幾日急升、但最近一日已走平或轉弱時仍被誤判為強勢上彎。
+    close_series = pd.Series(close, dtype=float)
+
+    def latest_ma(period):
+        return close_series.rolling(window=period, min_periods=period).mean()
+
+    def slope_pct(series, days=3):
+        if len(series) <= days or pd.isna(series.iloc[-1]) or pd.isna(series.iloc[-(days + 1)]):
+            return None
+        base = series.iloc[-(days + 1)]
+        return (series.iloc[-1] - base) / base * 100 if base else None
+
+    ma5_series = latest_ma(5)
+    ma10_series = latest_ma(10)
+    ma20_series = latest_ma(20)
+    ma50_series = latest_ma(50)
+    ma100_series = latest_ma(100)
+    ma200_series = latest_ma(200)
+
+    ma5 = ma5_series.iloc[-1] if n >= 5 else None
+    ma10 = ma10_series.iloc[-1] if n >= 10 else None
+    ma20 = ma20_series.iloc[-1] if n >= 20 else None
+    ma50 = ma50_series.iloc[-1] if n >= 50 else None
+    ma100 = ma100_series.iloc[-1] if n >= 100 else None
+    ma200 = ma200_series.iloc[-1] if n >= 200 else None
+    ma5_slope = slope_pct(ma5_series, days=1)
+    ma10_slope = slope_pct(ma10_series, days=1)
+    ma20_slope = slope_pct(ma20_series, days=1)
+    ma50_slope = slope_pct(ma50_series, days=1)
     
     # RSI(14)
     delta = np.diff(close)
@@ -240,19 +274,44 @@ def calculate_winrate(stock_info):
     rsi14 = 100 - (100 / (1 + rs))
     
     # MACD
-    exp12 = pd.Series(close).ewm(span=12, adjust=False).mean().iloc[-1]
-    exp26 = pd.Series(close).ewm(span=26, adjust=False).mean().iloc[-1]
-    macd_line = exp12 - exp26
-    signal_line = pd.Series(close).ewm(span=12, adjust=False).mean().ewm(span=9, adjust=False).mean().iloc[-1]
+    ema12 = close_series.ewm(span=12, adjust=False).mean()
+    ema26 = close_series.ewm(span=26, adjust=False).mean()
+    macd_series = ema12 - ema26
+    macd_line = macd_series.iloc[-1]
+    signal_line = macd_series.ewm(span=9, adjust=False).mean().iloc[-1]
     macd_hist = macd_line - signal_line
 
     # === 五大維度評分 ===
     
-    # 1. 多時間框架趨勢 (25分)
+    # 1. 趨勢與均線結構 (25分)
     score_trend = 0.0
-    if curr_price > ma50: score_trend += 10.0
-    if ma50 > ma100: score_trend += 8.0
-    if ma100 > ma200: score_trend += 7.0
+    slope_flat = 0.25
+    short_alignment = ma5 is not None and ma5 > ma10 > ma20
+    if short_alignment:
+        score_trend += 5.0
+    if ma5_slope is not None and ma5_slope > slope_flat:
+        score_trend += 2.0
+    if ma10_slope is not None and ma10_slope > slope_flat:
+        score_trend += 4.0
+    if ma20_slope is not None and ma20_slope > slope_flat:
+        score_trend += 4.0
+    if ma50 is not None and curr_price > ma50:
+        score_trend += 5.0
+    if ma50_slope is not None and ma50_slope > slope_flat:
+        score_trend += 2.0
+    if ma50 is not None and ma100 is not None and ma50 > ma100:
+        score_trend += 2.0
+    if ma100 is not None and ma200 is not None and ma100 > ma200:
+        score_trend += 1.0
+
+    # 下彎代表短線趨勢正在變弱，即使位置暫時仍是多頭排列也需扣分。
+    if ma5_slope is not None and ma5_slope < -slope_flat:
+        score_trend -= 2.0
+    if ma10_slope is not None and ma10_slope < -slope_flat:
+        score_trend -= 5.0
+    if ma20_slope is not None and ma20_slope < -slope_flat:
+        score_trend -= 3.0
+    score_trend = max(0.0, min(25.0, score_trend))
     
     # 2. 動能與量能 (20分)
     score_momentum = 0.0
@@ -268,6 +327,11 @@ def calculate_winrate(stock_info):
     # 3. 圖表形態識別 (25分)
     pattern_name, score_pattern = recognize_pattern(df_calc)
     score_pattern = min(25.0, score_pattern + 10.0) # 基礎分 + 形態加分
+    # 型態若沒有 MA10 的即時上彎確認，只能視為候選而非完整進場訊號。
+    if ma10_slope is not None and abs(ma10_slope) <= slope_flat:
+        score_pattern = min(score_pattern, 18.0)
+    elif ma10_slope is not None and ma10_slope < -slope_flat:
+        score_pattern = min(score_pattern, 14.0)
     
     # 4. 支撐防禦與斐波那契 (15分)
     score_support = 12.0
@@ -301,6 +365,12 @@ def calculate_winrate(stock_info):
     
     # 換算預期勝率 % (基礎勝率 50% + 分數係數)
     win_rate = round(50.0 + (total_score - 50.0) * 0.75, 1)
+    # 強烈買入必須取得 MA10 當下上彎確認。走平只保留為候選型態；
+    # 下彎則不可用先前的型態或法人加分掩蓋短線轉弱。
+    if ma10_slope is not None and abs(ma10_slope) <= slope_flat:
+        win_rate = min(win_rate, 67.5)
+    elif ma10_slope is not None and ma10_slope < -slope_flat:
+        win_rate = min(win_rate, 59.5)
     win_rate = max(42.0, min(88.0, win_rate))
     
     # 建議方向 (對齊 Morgan Stanley 5 維量化評級體系)
@@ -320,9 +390,21 @@ def calculate_winrate(stock_info):
         'symbol': stock_info['symbol'],
         'category': stock_info['category'],
         'price': curr_price,
-        'ma50': round(ma50, 2),
-        'ma100': round(ma100, 2),
-        'ma200': round(ma200, 2),
+        'ma5': round(ma5, 2) if ma5 is not None else None,
+        'ma10': round(ma10, 2) if ma10 is not None else None,
+        'ma20': round(ma20, 2) if ma20 is not None else None,
+        'ma50': round(ma50, 2) if ma50 is not None else None,
+        'ma100': round(ma100, 2) if ma100 is not None else None,
+        'ma200': round(ma200, 2) if ma200 is not None else None,
+        'ma5_slope': round(ma5_slope, 2) if ma5_slope is not None else None,
+        'ma10_slope': round(ma10_slope, 2) if ma10_slope is not None else None,
+        'ma20_slope': round(ma20_slope, 2) if ma20_slope is not None else None,
+        'ma50_slope': round(ma50_slope, 2) if ma50_slope is not None else None,
+        'short_alignment': short_alignment,
+        'ma10_trend_state': ('上彎' if ma10_slope is not None and ma10_slope > slope_flat
+                              else '下彎' if ma10_slope is not None and ma10_slope < -slope_flat
+                              else '走平'),
+        'trend_score': round(score_trend, 1),
         'rsi14': round(rsi14, 1),
         'macd_line': round(macd_line, 2),
         'macd_signal': round(signal_line, 2),
@@ -360,13 +442,36 @@ def save_stage4_report(r):
     
     entry_zone = f"{r['price'] * 0.98:.2f} 元 - {r['price']:.2f} 元" if r['win_rate'] < 70 else f"現價 {r['price']:.2f} 元 或 突破買進"
 
+    def fmt_ma(value):
+        return f"{value:.2f}" if value is not None else "資料不足"
+
+    def slope_label(value):
+        if value is None:
+            return "資料不足"
+        if value > 0.25:
+            return f"上彎 {value:+.2f}%"
+        if value < -0.25:
+            return f"下彎 {value:+.2f}%"
+        return f"走平 {value:+.2f}%"
+
     technical_tags = []
-    if r['ma50'] >= r['ma100'] >= r['ma200']:
+    if r['short_alignment']:
+        technical_tags.append("MA5>MA10>MA20")
+    else:
+        technical_tags.append("短均線未完整多頭排列")
+    if r['ma10_trend_state'] == '下彎':
+        technical_tags.append("MA10 下彎（趨勢扣分）")
+    elif r['ma10_trend_state'] == '上彎':
+        technical_tags.append("MA10 上彎")
+    else:
+        technical_tags.append("MA10 走平（型態分受限）")
+
+    if all(r[key] is not None for key in ('ma50', 'ma100', 'ma200')) and r['ma50'] > r['ma100'] > r['ma200']:
         technical_tags.append("中長期均線多頭排列")
-    elif r['ma50'] < r['ma100'] < r['ma200']:
+    elif all(r[key] is not None for key in ('ma50', 'ma100', 'ma200')) and r['ma50'] < r['ma100'] < r['ma200']:
         technical_tags.append("中長期均線空頭排列")
     else:
-        technical_tags.append("中長期均線整理")
+        technical_tags.append("中長期均線資料不足／整理")
     technical_tags.append("RSI 過熱" if r['rsi14'] >= 70 else ("RSI 動能偏強" if r['rsi14'] >= 50 else "RSI 動能偏弱"))
     technical_tags.append("MACD 多方" if r['macd_hist'] > 0 else "MACD 收縮／空方")
     technical_tags.append("量能放大" if r['vol_ratio'] >= 1.5 else ("量能溫和" if r['vol_ratio'] >= 1 else "量能萎縮"))
@@ -383,7 +488,9 @@ def save_stage4_report(r):
     lines.append("- **分析日期**：2026 年 8 月 26 日")
     lines.append(f"- **當前價格**：{r['price']:.2f} 元")
     lines.append("- **技術數據摘要**：")
-    lines.append(f"  - **日線均線**：50日MA ({r['ma50']:.2f}) / 100日MA ({r['ma100']:.2f}) / 200日MA ({r['ma200']:.2f})")
+    lines.append(f"  - **短期均線**：MA5 ({fmt_ma(r['ma5'])}) / MA10 ({fmt_ma(r['ma10'])}) / MA20 ({fmt_ma(r['ma20'])})")
+    lines.append(f"  - **短均線斜率（最新1日）**：MA5 {slope_label(r['ma5_slope'])} / MA10 {slope_label(r['ma10_slope'])} / MA20 {slope_label(r['ma20_slope'])}")
+    lines.append(f"  - **日線均線**：50日MA ({fmt_ma(r['ma50'])}) / 100日MA ({fmt_ma(r['ma100'])}) / 200日MA ({fmt_ma(r['ma200'])})")
     lines.append(f"  - **RSI(14)**：{r['rsi14']} （{'超買強勢' if r['rsi14'] > 70 else '多頭推進區' if r['rsi14'] > 50 else '弱勢整理'}）")
     lines.append(f"  - **MACD**：DIF ({r['macd_line']}) / Signal ({r['macd_signal']}) / 柱狀圖 ({r['macd_hist']})")
     lines.append(f"  - **成交量**：{r['vol']:,} 股（相對 20日均量 {r['vol_ratio']} 倍）\n")
@@ -394,8 +501,8 @@ def save_stage4_report(r):
     lines.append("---")
     
     lines.append("\n## 第一階段：多時間框架趨勢分析（判斷大方向）\n")
-    lines.append("1. **週線趨勢分析**：價位高於中長期均線，大框架呈現強勢上升波段。")
-    lines.append("2. **日線趨勢分析**：50日/100日/200日均線呈現多頭排列且向上發散，日週趨勢完全共振。")
+    lines.append("1. **週線趨勢分析**：僅在完整長均線資料可用時，才判定中長期方向。")
+    lines.append(f"2. **日線趨勢分析**：MA5/10/20 {'維持多頭排列' if r['short_alignment'] else '未形成完整多頭排列'}；MA10 為{slope_label(r['ma10_slope'])}。")
     lines.append("3. **60 分線分析**：短期噴出後於高檔進行滾量換手整理。")
     lines.append("4. **綜合判斷**：")
     lines.append(f"   - **【趨勢方向】**：{'多頭' if r['win_rate'] >= 60 else '觀望'}")
@@ -406,8 +513,8 @@ def save_stage4_report(r):
     lines.append("\n## 第二階段：完整技術指標分析（識別關鍵價位）\n")
     lines.append("| 指標類型 | 數值/狀態 | 解讀 |")
     lines.append("|---------|----------|------|")
-    lines.append(f"| 50 日均線 | {r['ma50']:.2f} 元 | 中期核心多頭支撐 |")
-    lines.append(f"| 200 日均線 | {r['ma200']:.2f} 元 | 長線基底分界線 |")
+    lines.append(f"| MA5 / MA10 / MA20 | {fmt_ma(r['ma5'])} / {fmt_ma(r['ma10'])} / {fmt_ma(r['ma20'])} 元 | MA10 {slope_label(r['ma10_slope'])} |")
+    lines.append(f"| 50 / 200 日均線 | {fmt_ma(r['ma50'])} / {fmt_ma(r['ma200'])} 元 | 資料不足時不納入趨勢分數 |")
     lines.append(f"| RSI(14) | {r['rsi14']} | {'過熱強勢區' if r['rsi14'] >= 70 else '多頭動能推進區'} |")
     lines.append(f"| MACD | 柱狀圖 {r['macd_hist']} | {'零軸上方多頭擴張' if r['macd_hist'] > 0 else '震盪收縮'} |")
     lines.append(f"| 成交量 | 均量 {r['vol_ratio']} 倍 | {'爆量攻擊' if r['vol_ratio'] >= 1.5 else '溫和換手推升'} |")
@@ -415,7 +522,7 @@ def save_stage4_report(r):
     lines.append("\n【關鍵價位】")
     lines.append(f"- **支撐位 1**：{r['fib236']} 元 (Fib 23.6% 短線強弱線)")
     lines.append(f"- **支撐位 2**：{r['stop_loss']} 元 (Fib 38.2% / 波段平台支撐)")
-    lines.append(f"- **支撐位 3**：{r['ma50']} 元 (50 日均線防線)")
+    lines.append(f"- **支撐位 3**：{fmt_ma(r['ma50'])} 元 (50 日均線防線；資料足夠時適用)")
     lines.append(f"- **阻力位 1**：{r['swing_high']} 元 (近期波段/歷史高點)")
     lines.append(f"- **阻力位 2**：{r['target_price']} 元 (第一階段波段測量目標價)")
     lines.append(f"- **阻力位 3**：{r['target_price'] * 1.15:.2f} 元 (主升段第二擴展目標)\n")
@@ -594,7 +701,7 @@ def main():
         
     md_content.append("\n---\n")
     md_content.append("### 💡 勝率評分指標維度說明：\n")
-    md_content.append("1. **多時間框架趨勢 (25%)**：50D/100D/200D 均線排列與 200WMA 相對位置。\n")
+    md_content.append("1. **趨勢與均線結構 (25%)**：MA5/10/20 排列與 3 日斜率；資料完整時再加入 50D/100D/200D 趨勢。MA10 下彎會扣分。\n")
     md_content.append("2. **動能與量能 (20%)**：RSI(14) 區間、MACD 雙線/柱狀圖與相對 20日均量倍數。\n")
     md_content.append("3. **圖表型態 (25%)**：純數據幾何演算法識別（歷史新高、杯柄、雙底、VCP 收縮等）。\n")
     md_content.append("4. **支撐與斐波那契 (15%)**：波段 High/Low 之 23.6%、38.2% 回調支撐涵蓋度。\n")
