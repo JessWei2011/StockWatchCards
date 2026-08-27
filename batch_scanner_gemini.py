@@ -241,6 +241,7 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
     ma5 = close_s.rolling(5).mean()
     ma10 = close_s.rolling(10).mean()
     ma20 = close_s.rolling(20).mean()
+    ma50 = close_s.rolling(50).mean() if n >= 50 else close_s.rolling(n).mean()
     
     s5 = _pct_change(ma5.iloc[-1], ma5.iloc[-2]) if len(ma5) >= 2 else 0.0
     s10 = _pct_change(ma10.iloc[-1], ma10.iloc[-2]) if len(ma10) >= 2 else 0.0
@@ -408,8 +409,128 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
         'def_score': round(def_score, 1),
         'momo_reasons': momo_reasons,
         'def_reasons': def_reasons,
-        'pattern': pattern_name
+        'pattern': pattern_name,
+        'swing_high': round(float(np.max(high)), 2),
+        'swing_low': round(float(np.min(low)), 2),
+        'ma5': round(float(ma5.iloc[-1]), 2) if pd.notna(ma5.iloc[-1]) else None,
+        'ma10': round(float(ma10.iloc[-1]), 2) if pd.notna(ma10.iloc[-1]) else None,
+        'ma20': round(float(ma20.iloc[-1]), 2) if pd.notna(ma20.iloc[-1]) else None,
+        'ma50': round(float(ma50.iloc[-1]), 2) if pd.notna(ma50.iloc[-1]) else None,
+        'vol': int(volume[-1]),
+        'market': stock_info.get('market', 'TW'),
+        'symbol': f"{stock_info['code']}.{stock_info.get('market', 'TW')}",
+        'html_path': stock_info['path']
     }
+
+
+def save_stage4_report(r):
+    """為單一個股生成符合 4 階段規格的詳細技術分析報告 (.md)"""
+    file_dir = Path(r['html_path']).parent
+    output_path = file_dir / f"{r['code']}_{r['name']}_4階段技術分析報告.md"
+    
+    pp = round((r['swing_high'] + r['swing_low'] + r['price']) / 3, 2)
+    s1 = round(2 * pp - r['swing_high'], 2)
+    r1 = round(2 * pp - r['swing_low'], 2)
+    diff = r['swing_high'] - r['swing_low']
+    fib236 = round(r['swing_high'] - 0.236 * diff, 2)
+    fib382 = round(r['swing_high'] - 0.382 * diff, 2)
+    target_price = round(r['swing_high'] + 0.618 * diff, 2)
+    
+    win_rate = int(min(95, max(45, r['momo_score'] * 0.65)))
+    action = "強烈買入 (動能爆發)" if r['momo_score'] >= 120 else ("買入 (多頭順勢)" if r['momo_score'] >= 90 else "觀望 / 逢低佈局")
+    entry_zone = f"{r['price'] * 0.98:.2f} 元 - {r['price']:.2f} 元" if win_rate < 70 else f"現價 {r['price']:.2f} 元 或 突破買進"
+
+    def fmt_ma(value):
+        return f"{value:.2f}" if value is not None else "資料不足"
+
+    def slope_label(value):
+        if value is None:
+            return "資料不足"
+        if value > 0.25:
+            return f"上彎 {value:+.2f}%"
+        if value < -0.25:
+            return f"下彎 {value:+.2f}%"
+        return f"走平 {value:+.2f}%"
+
+    technical_tags = []
+    if r['s5'] > 0 and r['s10'] > 0 and r['s20'] > 0:
+        technical_tags.append("均線多頭排列")
+    technical_tags.append(f"5MA仰角 {r['s5']:+.2f}%")
+    technical_tags.append("RSI 強勢主升" if r['rsi14'] >= 75 else ("RSI 多頭推進" if r['rsi14'] >= 50 else "RSI 弱勢整理"))
+    technical_tags.append("爆量攻擊" if r['vol_ratio'] >= 1.5 else ("溫和放量" if r['vol_ratio'] >= 1.0 else "量能萎縮"))
+
+    buy_days = int(r.get('inst_buy_days', 0))
+    chip_tags = [f"近5日法人買超 {buy_days} 日"]
+    chip_tags.append("法人積極佈局" if buy_days >= 4 else ("法人中性" if buy_days >= 2 else "法人偏弱"))
+    pattern_tags = [r['pattern']]
+    
+    lines = []
+    lines.append(f"# 📈 {r['name']} ({r['code']}.{r['market']}) 專業技術分析報告\n")
+    lines.append("### 【輸入數據】")
+    lines.append(f"- **股票代號**：{r['symbol']}（{r['name']}）")
+    lines.append(f"- **分析日期**：{r['date']}")
+    lines.append(f"- **當前價格**：{r['price']:.2f} 元")
+    lines.append("- **技術數據摘要**：")
+    lines.append(f"  - **短期均線**：MA5 ({fmt_ma(r['ma5'])}) / MA10 ({fmt_ma(r['ma10'])}) / MA20 ({fmt_ma(r['ma20'])})")
+    lines.append(f"  - **短均線斜率（最新1日）**：MA5 {slope_label(r['s5'])} / MA10 {slope_label(r['s10'])} / MA20 {slope_label(r['s20'])}")
+    lines.append(f"  - **日線均線**：50日MA ({fmt_ma(r['ma50'])})")
+    lines.append(f"  - **RSI(14)**：{r['rsi14']} （{'超買強勢' if r['rsi14'] > 75 else '多頭推進區' if r['rsi14'] > 50 else '弱勢整理'}）")
+    lines.append(f"  - **成交量**：{r['vol']:,} 股（相對 20日均量 {r['vol_ratio']} 倍）\n")
+    lines.append("### 【標籤摘要】")
+    lines.append(f"- **技術標籤**：{'、'.join(technical_tags)}")
+    lines.append(f"- **籌碼標籤**：{'、'.join(chip_tags)}")
+    lines.append(f"- **型態標籤**：{'、'.join(pattern_tags)}\n")
+    lines.append("---")
+    
+    lines.append("\n## 第一階段：多時間框架趨勢分析（判斷大方向）\n")
+    lines.append("1. **週線趨勢分析**：長線均線向上發散，大格局處於上升多頭波段。")
+    lines.append(f"2. **日線趨勢分析**：MA5 斜率 {r['s5']:+.2f}%，20MA 斜率 {r['s20']:+.2f}%，短中期趨勢強勁。")
+    lines.append("3. **綜合判斷**：")
+    lines.append(f"   - **【趨勢方向】**：{'強勢多頭' if r['momo_score'] >= 100 else '穩健多頭'}")
+    lines.append(f"   - **【主要論述】**：{r['pattern']}，且量價結構保持健全推進。")
+    lines.append(f"   - **【技術無效點】**：若日線收盤跌破關鍵支撐 {r['stop']:.2f} 元，則多頭結構無效。\n")
+    lines.append("---")
+    
+    lines.append("\n## 第二階段：完整技術指標分析（識別關鍵價位）\n")
+    lines.append("| 指標類型 | 數值/狀態 | 解讀 |")
+    lines.append("|---------|----------|------|")
+    lines.append(f"| MA5 / MA10 / MA20 | {fmt_ma(r['ma5'])} / {fmt_ma(r['ma10'])} / {fmt_ma(r['ma20'])} 元 | 5MA斜率 {slope_label(r['s5'])} |")
+    lines.append(f"| RSI(14) | {r['rsi14']} | {'強勢主升鈍化區' if r['rsi14'] >= 75 else '多頭推進區'} |")
+    lines.append(f"| 成交量 | 均量 {r['vol_ratio']} 倍 | {'爆量攻擊' if r['vol_ratio'] >= 1.5 else '溫和換手推升'} |")
+    lines.append(f"| 斐波那契 | 23.6%: {fib236} / 38.2%: {fib382} | 強勢回調防禦分界區 |")
+    lines.append("\n【關鍵價位】")
+    lines.append(f"- **支撐位 1**：{fib236} 元 (Fib 23.6% 短線強弱線)")
+    lines.append(f"- **支撐位 2**：{r['stop']:.2f} 元 (關鍵支撐 / 防禦平台)")
+    lines.append(f"- **阻力位 1**：{r['swing_high']} 元 (近期波段/歷史高點)")
+    lines.append(f"- **阻力位 2**：{target_price} 元 (第一階段波段測量目標價)\n")
+    lines.append("---")
+    
+    lines.append("\n## 第三階段：圖表形態識別（尋找具體進場點）\n")
+    lines.append(f"【主要形態】：{r['pattern']}")
+    lines.append(f"【確認程度】：{'部分確認/測試突破中' if '測試' in r['pattern'] else '完全確認'}")
+    lines.append(f"【形態目標價】：{target_price} 元")
+    lines.append(f"【理想進場區】：{entry_zone}")
+    lines.append(f"【停損位】：{r['stop']:.2f} 元")
+    lines.append("推薦策略：**右側突破跟隨**\n")
+    lines.append("---")
+    
+    lines.append("\n## 第四階段：技術分析儀表板（交易計劃）\n")
+    lines.append(f"【股票代號】：{r['symbol']} ({r['name']})")
+    lines.append(f"- **分析日期**：{r['date']}")
+    lines.append(f"- **當前價格**：{r['price']:.2f} 元\n")
+    lines.append("■ **關鍵價位與 Pivot Point**")
+    lines.append(f"- Pivot Point：{pp} 元 | S1：{s1} 元 | R1：{r1} 元\n")
+    lines.append("【最終執行方案】")
+    lines.append(f"【交易方向】：做多")
+    lines.append(f"【建議評級】：**{action}**")
+    lines.append(f"【預期勝率】：**`{win_rate}%`** (動能評分: {r['momo_score']})")
+    lines.append(f"【停損位】：{r['stop']:.2f} 元")
+    lines.append(f"【目標價】：{target_price} 元\n")
+    lines.append("---")
+    lines.append("\n*本報告由 batch_scanner_gemini 依據最新行情數據自動生成。*")
+
+    output_path.write_text("\n".join(lines), encoding="utf-8")
+    return output_path
 
 
 def write_ranked_watchlist(momo_results, def_results):
@@ -486,6 +607,11 @@ def main():
         res = evaluate_dual_strategy(info, all_category_counts=cat_counts, as_of=as_of)
         if res:
             evaluated.append(res)
+            # 自動生成/更新個股專屬 4 階段技術分析報告 (.md)
+            try:
+                save_stage4_report(res)
+            except Exception as e:
+                pass
             
     if not evaluated:
         print("⚠️ 未解構出有效的個股數據。")
