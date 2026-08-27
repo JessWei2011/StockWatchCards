@@ -147,18 +147,26 @@
     }
 
     async loadStock(code) {
-      const normalizedCode = String(code || '');
+      const normalizedCode = String(code || '').trim();
       const requestId = ++this.requestSerial;
       this.currentCode = normalizedCode;
       this.showLoading(normalizedCode);
 
-      let entry = this.reportsIndex.find(item => String(item.code) === normalizedCode);
+      console.log(`[PatternViewer Debug] 🔄 開始載入股票: "${normalizedCode}"`);
+      console.log(`[PatternViewer Debug] 目前全域 reportsIndex 總數:`, this.reportsIndex.length);
+      console.log(`[PatternViewer Debug] reportsIndex 前 5 筆:`, this.reportsIndex.slice(0, 5));
+
+      let entry = this.reportsIndex.find(item => String(item.code).trim() === normalizedCode);
+      console.log(`[PatternViewer Debug] 比對代號 "${normalizedCode}" 結果:`, entry);
+
       if (!entry) {
+        console.warn(`[PatternViewer Debug] ❌ 在 reportsIndex 找不到代號 "${normalizedCode}"！`);
+        console.warn(`[PatternViewer Debug] 所有可用的代號清單:`, this.reportsIndex.map(x => x.code));
         this.currentStockData = null;
         this.updateAiCardBox(normalizedCode);
         this.showEmpty(
           `${normalizedCode} 尚無原始報表`,
-          'AI 卡片可能已存在，但型態線圖必須使用真實 K 線報表；請先在報表管理中產生或更新這檔股票。'
+          `【除錯資訊】在前端索引 (共 ${this.reportsIndex.length} 筆) 中找不到代號 "${normalizedCode}"。請打開 F12 Console 查看詳細清單。`
         );
         return false;
       }
@@ -168,35 +176,39 @@
           .split('/')
           .map(segment => encodeURIComponent(segment))
           .join('/');
+        console.log(`[PatternViewer Debug] 🌐 Fetch URL:`, reportUrl);
         return fetch(reportUrl, { cache: 'no-store' });
       };
 
       let parsed;
       try {
         let response = await fetchReport(entry);
+        console.log(`[PatternViewer Debug] 🌐 Fetch Response Status:`, response.status);
         if (!response.ok) {
-          // 路徑可能在元件初始化後被移動。刷新全域索引並依代號重找一次，
-          // 只自動重試一輪，避免真正的伺服器錯誤形成無限請求。
+          console.warn(`[PatternViewer Debug] 首次抓取失敗 (HTTP ${response.status})，嘗試重新整理 sources...`);
           await this.loadSources();
           if (requestId !== this.requestSerial || this.destroyed) return false;
           this.populateStockSelect();
-          entry = this.reportsIndex.find(item => String(item.code) === normalizedCode);
-          if (!entry) throw new Error('刷新索引後仍找不到這檔股票的報表');
+          entry = this.reportsIndex.find(item => String(item.code).trim() === normalizedCode);
+          if (!entry) throw new Error(`刷新索引後仍找不到代號 ${normalizedCode} 的報表路徑`);
           response = await fetchReport(entry);
         }
         if (!response.ok) throw new Error(`讀取 ${entry.path} 時伺服器回傳 HTTP ${response.status}`);
         const htmlText = await response.text();
+        console.log(`[PatternViewer Debug] 📄 成功讀取 HTML 內容，長度:`, htmlText.length);
         if (requestId !== this.requestSerial || this.destroyed) return false;
 
         parsed = PatternParser.parseStockHtml(htmlText);
+        console.log(`[PatternViewer Debug] 📊 Parser 解析結果:`, parsed);
         if (!parsed || !parsed.dates || parsed.dates.length === 0) {
           throw new Error(`報表 ${entry.path} 中找不到可解析的 K 線資料`);
         }
       } catch (error) {
+        console.error(`[PatternViewer Debug] 💥 loadStock 錯誤:`, error);
         if (requestId !== this.requestSerial || this.destroyed) return false;
         this.currentStockData = null;
         this.updateAiCardBox(normalizedCode);
-        this.showEmpty(`${normalizedCode} 報表載入失敗`, error.message || '無法讀取報表');
+        this.showEmpty(`${normalizedCode} 報表載入失敗`, `【除錯錯誤】${error.message}`);
         return false;
       }
 
