@@ -434,11 +434,11 @@ window.PatternEngine = {
     const candles = stockData.candles || [];
     const dates = stockData.dates || [];
     const n = candles.length;
-    if (n < 15) return this.buildFlatFallback(stockData);
+    if (n < 35) return this.buildFlatFallback(stockData);
 
-    // 1. Find Left Rim (左杯口): highest high in the first part
-    const startSearch = Math.max(0, n - 45);
-    const midSearch = Math.max(startSearch + 5, n - 15);
+    // 1. Find Left Rim (左杯口): highest high in the first part (大結構搜尋 40~100 天)
+    const startSearch = Math.max(0, n - 100);
+    const midSearch = Math.max(startSearch + 10, n - 25);
     let p1Idx = startSearch, p1Price = -Infinity;
     for (let i = startSearch; i < midSearch; i++) {
       if (candles[i][3] > p1Price) {
@@ -447,9 +447,9 @@ window.PatternEngine = {
       }
     }
 
-    // 2. Find Cup Bottom (杯底低點): lowest low after p1Idx
+    // 2. Find Cup Bottom (杯底低點): lowest low after p1Idx (必須在中間)
     let p2Idx = p1Idx, p2Price = Infinity;
-    const bottomEnd = Math.max(p1Idx + 2, n - 5);
+    const bottomEnd = Math.max(p1Idx + 5, n - 10);
     for (let i = p1Idx; i < bottomEnd; i++) {
       if (candles[i][2] < p2Price) {
         p2Price = candles[i][2];
@@ -459,7 +459,7 @@ window.PatternEngine = {
 
     // 3. Find Right Rim (右杯口 / 杯柄起點): rally peak after cup bottom
     let p3Idx = p2Idx, p3Price = -Infinity;
-    const rightRimEnd = Math.max(p2Idx + 2, n - 2);
+    const rightRimEnd = Math.max(p2Idx + 3, n - 2);
     for (let i = p2Idx; i < rightRimEnd; i++) {
       if (candles[i][3] > p3Price) {
         p3Price = candles[i][3];

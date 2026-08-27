@@ -138,45 +138,76 @@ def recognize_pattern(df):
     curr_vol = volume[-1]
     vol_ma20 = np.mean(volume[-20:]) if n >= 20 else volume[-1]
 
-    # 1. 歷史新高 / 多年新高突破
+    # 1. 歷史新高 / 多年新高突破 (最直接也是最強大的動能形態)
     max_high_prior = np.max(high[:-1])
     if curr_close >= max_high_prior or curr_high >= max_high_prior:
         if curr_vol >= 1.2 * vol_ma20:
             return "歷史/波段新高爆量突破 (Breakout)", 15.0
         return "創歷史/波段新高 (High Breakout)", 12.0
 
-    # 2. 杯柄型態 (Cup and Handle) 識別
-    if n >= 30:
-        start_search = max(0, n - 60)
-        end_search = max(start_search + 1, n - 15)
+    # 2. 嚴謹正統「杯柄型態 (Cup and Handle)」識別 (William O'Neil 經典標準)
+    # 條件：打底天數需足夠 (60~180天)、杯深 12%~38%、右杯口回升至左杯口 90%~105%、柄部淺幅回檔 (<15%) 且量縮窒息 (<0.8x 20MA均量)
+    if n >= 60:
+        start_search = max(0, n - 140)
+        end_search = max(start_search + 10, n - 25)
         p1_sub_idx = np.argmax(high[start_search:end_search])
         p1_idx = start_search + p1_sub_idx
         p1 = high[p1_idx]
+        
+        # 杯前必須有起漲段支撐 (左杯口高點不可是長期破底反彈)
+        if p1_idx >= 15:
+            pre_low = np.min(low[max(0, p1_idx - 25):p1_idx])
+            prior_runup = (p1 - pre_low) / (pre_low + 1e-5)
+        else:
+            prior_runup = 0.20
+            
         sub_lows = low[p1_idx:]
-        if len(sub_lows) > 0:
+        if len(sub_lows) >= 20 and prior_runup >= 0.15:
             cup_bottom = np.min(sub_lows)
+            cup_bottom_idx = p1_idx + np.argmin(sub_lows)
             cup_depth = (p1 - cup_bottom) / (p1 + 1e-5)
-            if 0.10 <= cup_depth <= 0.48 and (0.92 * p1 <= curr_close <= 1.08 * p1):
-                if curr_close >= p1 * 0.98:
-                    return "大層級杯柄型態 (測試/突破頸線)", 14.0
-                return "杯柄型態右側形成中 (Cup & Handle)", 10.0
+            
+            # 杯底在中間，且杯深合理 (12%~38%)
+            if 0.12 <= cup_depth <= 0.38 and (cup_bottom_idx - p1_idx >= 8):
+                # 尋找右杯口 (杯底之後的高點)
+                right_sub = high[cup_bottom_idx:n - 5]
+                if len(right_sub) > 0:
+                    p3_sub_idx = np.argmax(right_sub)
+                    p3_idx = cup_bottom_idx + p3_sub_idx
+                    p3 = high[p3_idx]
+                    
+                    # 右杯口接近左杯口高度 (90%~108%)
+                    if 0.90 * p1 <= p3 <= 1.08 * p1:
+                        # 柄部拉回 (右杯口至今)
+                        handle_lows = low[p3_idx:]
+                        handle_bottom = np.min(handle_lows) if len(handle_lows) > 0 else curr_close
+                        handle_depth = (p3 - handle_bottom) / (p3 + 1e-5)
+                        
+                        # 柄部回檔幅度必須很淺 (< 14%)，且柄部成交量必須萎縮
+                        handle_vol_avg = np.mean(volume[p3_idx:]) if len(volume[p3_idx:]) > 0 else curr_vol
+                        if handle_depth <= 0.14 and handle_vol_avg <= 0.85 * vol_ma20:
+                            if curr_close >= p3 * 0.98:
+                                return "正統大層級杯柄型態 (帶量突破頸線)", 15.0
+                            return "正統杯柄型態 (柄部量縮洗盤中)", 11.0
 
-    # 3. 雙底 W底 (Double Bottom) 識別
-    if n >= 30:
-        recent_lows = np.sort(low[-30:])
-        l1, l2 = recent_lows[0], recent_lows[1]
-        if abs(l1 - l2) / l1 <= 0.03 and curr_close > l1 * 1.08:
-            return "雙重底 W底形成突破 (Double Bottom)", 12.0
-
-    # 4. 波動收縮整理 (VCP / Flag)
+    # 3. 波動收縮整理 (VCP / Flag / 上升旗形)
     if n >= 20:
         high_20 = np.max(high[-20:])
         low_20 = np.min(low[-20:])
         range_pct = (high_20 - low_20) / low_20
         if range_pct <= 0.12 and curr_close >= high_20 * 0.96:
-            return "高檔 VCP 窄幅旗形整理 (VCP Squeeze)", 11.0
+            if curr_vol <= 0.8 * vol_ma20:
+                return "高檔 VCP 窄幅窒息量整理 (VCP Squeeze)", 12.0
+            return "高檔旗形箱型整理 (Flag / Consolidation)", 10.0
 
-    # 5. 常規多頭推升
+    # 4. 雙底 W底 (Double Bottom) 識別 (底底高或平底)
+    if n >= 35:
+        recent_lows = np.sort(low[-35:])
+        l1, l2 = recent_lows[0], recent_lows[1]
+        if abs(l1 - l2) / l1 <= 0.035 and curr_close > l1 * 1.08:
+            return "雙重底 W底形成突破 (Double Bottom)", 11.0
+
+    # 5. 上升月線支撐 / 均線多頭排列
     ma50 = np.mean(close[-50:]) if n >= 50 else np.mean(close)
     if curr_close > ma50:
         return "多頭排列階梯推升 (Bullish Trend)", 8.0
