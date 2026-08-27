@@ -56,25 +56,39 @@
       const fallbackCards = typeof STOCK_CARDS !== 'undefined' ? STOCK_CARDS : [];
       let cards = fallbackCards;
 
-      const [indexResult, cardsResult] = await Promise.allSettled([
-        fetch(this.options.reportsIndexUrl, { cache: 'no-store' }),
-        fetch(this.options.cardsUrl, { cache: 'no-store' })
-      ]);
+      console.log(`[PatternViewer Debug] 🚀 loadSources: 請求 ${this.options.reportsIndexUrl} 與 ${this.options.cardsUrl}`);
+      try {
+        const [indexResult, cardsResult] = await Promise.allSettled([
+          fetch(this.options.reportsIndexUrl, { cache: 'no-store' }),
+          fetch(this.options.cardsUrl, { cache: 'no-store' })
+        ]);
 
-      if (indexResult.status === 'fulfilled' && indexResult.value.ok) {
-        const payload = await indexResult.value.json();
-        this.reportsIndex = Array.isArray(payload) ? payload : (payload.reports || []);
+        console.log(`[PatternViewer Debug] indexResult status:`, indexResult.status);
+        if (indexResult.status === 'fulfilled') {
+          console.log(`[PatternViewer Debug] indexResult HTTP status:`, indexResult.value.status, indexResult.value.ok);
+          if (indexResult.value.ok) {
+            const payload = await indexResult.value.json();
+            this.reportsIndex = Array.isArray(payload) ? payload : (payload.reports || []);
+            console.log(`[PatternViewer Debug] ✅ 成功載入 reportsIndex，共 ${this.reportsIndex.length} 筆`);
+          } else {
+            console.error(`[PatternViewer Debug] ❌ reportsIndex HTTP 錯誤:`, indexResult.value.status);
+          }
+        } else {
+          console.error(`[PatternViewer Debug] ❌ reportsIndex fetch 拋出異常:`, indexResult.reason);
+        }
+
+        if (cardsResult.status === 'fulfilled' && cardsResult.value.ok) {
+          const payload = await cardsResult.value.json();
+          const apiCards = payload.cards || payload;
+          cards = Array.isArray(apiCards) ? apiCards : Object.values(apiCards || {});
+        }
+
+        this.cards = cards.filter(card => card && card.code);
+        this.cardByCode = {};
+        this.cards.forEach(card => { this.cardByCode[String(card.code)] = card; });
+      } catch (err) {
+        console.error(`[PatternViewer Debug] ❌ loadSources 總體錯誤:`, err);
       }
-
-      if (cardsResult.status === 'fulfilled' && cardsResult.value.ok) {
-        const payload = await cardsResult.value.json();
-        const apiCards = payload.cards || payload;
-        cards = Array.isArray(apiCards) ? apiCards : Object.values(apiCards || {});
-      }
-
-      this.cards = cards.filter(card => card && card.code);
-      this.cardByCode = {};
-      this.cards.forEach(card => { this.cardByCode[String(card.code)] = card; });
     }
 
     async refresh({ reloadCurrent = false } = {}) {
@@ -154,6 +168,15 @@
 
       console.log(`[PatternViewer Debug] 🔄 開始載入股票: "${normalizedCode}"`);
       console.log(`[PatternViewer Debug] 目前全域 reportsIndex 總數:`, this.reportsIndex.length);
+
+      // 如果尚未抓取索引或索引為空，主動補抓一次
+      if (!this.reportsIndex || this.reportsIndex.length === 0) {
+        console.log(`[PatternViewer Debug] reportsIndex 為空，立即呼叫 loadSources()...`);
+        await this.loadSources();
+        this.populateStockSelect();
+      }
+
+      console.log(`[PatternViewer Debug] reportsIndex 更新後總數:`, this.reportsIndex.length);
       console.log(`[PatternViewer Debug] reportsIndex 前 5 筆:`, this.reportsIndex.slice(0, 5));
 
       let entry = this.reportsIndex.find(item => String(item.code).trim() === normalizedCode);
