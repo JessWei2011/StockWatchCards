@@ -397,21 +397,21 @@
   .rank-filter-btn.active{ color:#fff; background:var(--accent); border-color:var(--accent); }
 
   .ranking-table-wrap{ overflow:hidden; margin:14px 0 20px; border-radius:10px; border:1px solid var(--border); background:#11161c; width:100%; }
-  .ranking-full-table{ width:100%; border-collapse:collapse; font-size:12px; text-align:left; table-layout:fixed; }
+  .ranking-full-table{ width:100%; border-collapse:collapse; font-size:14px; text-align:left; table-layout:fixed; }
   .ranking-full-table th, .ranking-full-table td{
-    padding:8px 8px; border-bottom:1px solid rgba(255,255,255,0.06);
+    padding:10px 10px; border-bottom:1px solid rgba(255,255,255,0.06);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
-  .ranking-full-table th{ background:#19202c; color:#93c5fd; font-weight:750; position:sticky; top:0; z-index:2; border-bottom:2px solid var(--border); white-space:nowrap; }
+  .ranking-full-table th{ background:#19202c; color:#93c5fd; font-size:14px; font-weight:750; position:sticky; top:0; z-index:2; border-bottom:2px solid var(--border); white-space:nowrap; }
   .ranking-full-table tr{ cursor:pointer; transition:background .15s ease; }
   .ranking-full-table tr:hover{ background:rgba(59,130,246,0.12); }
   
   .rank-stock-link{
     color:inherit; text-decoration:none; display:inline-flex; align-items:center;
-    transition:color .15s ease, transform .15s ease; cursor:pointer;
+    transition:color .15s ease, transform .15s ease; cursor:pointer; font-size:14.5px;
   }
-  .rank-stock-link .stock-code{ color:#93c5fd; font-weight:800; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  .rank-stock-link .stock-name{ color:#fff; font-weight:800; }
+  .rank-stock-link .stock-code{ color:#93c5fd; font-weight:800; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:14px; }
+  .rank-stock-link .stock-name{ color:#fff; font-weight:800; font-size:14.5px; }
   .ranking-full-table tr:hover .rank-stock-link .stock-code,
   .ranking-full-table tr:hover .rank-stock-link .stock-name,
   .rank-stock-link:hover .stock-code,
@@ -421,7 +421,7 @@
   
   .rank-badge-num{
     display:inline-flex; align-items:center; justify-content:center;
-    width:24px; height:24px; border-radius:50%; font-weight:900; font-size:11.5px;
+    width:26px; height:26px; border-radius:50%; font-weight:900; font-size:13px;
   }
   .rank-badge-num.top1{ background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff; box-shadow:0 0 8px rgba(245,158,11,0.5); }
   .rank-badge-num.top2{ background:linear-gradient(135deg, #94a3b8, #64748b); color:#fff; }
@@ -429,7 +429,7 @@
   .rank-badge-num.normal{ background:rgba(255,255,255,0.08); color:var(--text-dim); }
 
   .rank-score-pill{
-    display:inline-block; padding:3px 8px; border-radius:6px; font-weight:800; font-size:12.5px;
+    display:inline-block; padding:4px 10px; border-radius:6px; font-weight:800; font-size:13.5px;
   }
   .rank-score-pill.high{ background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); }
   .rank-score-pill.medium{ background:rgba(59,130,246,0.15); color:#93c5fd; border:1px solid rgba(59,130,246,0.3); }
@@ -1449,24 +1449,24 @@
     function renderMiniOverviewCol(titleText, icon, colorTheme, items, src, track){
       const isCur = (winrateRankingSource === src && winrateActiveTrack === track);
       return `
-        <div style="flex:1; min-width:230px; background:rgba(0,0,0,0.35); border:1.5px solid ${isCur ? colorTheme : 'rgba(255,255,255,0.08)'}; border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; box-shadow:${isCur ? `0 0 12px ${colorTheme}33` : 'none'};">
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; cursor:pointer;" onclick="winrateRankingSource='${src}'; winrateActiveTrack='${track}'; renderWinrateRankingUI();">
-            <span style="font-weight:850; font-size:13px; color:${colorTheme}; display:flex; align-items:center; gap:5px;">
+        <div style="flex:1; min-width:240px; background:rgba(0,0,0,0.35); border:1.5px solid ${isCur ? colorTheme : 'rgba(255,255,255,0.08)'}; border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:8px; box-shadow:${isCur ? `0 0 14px ${colorTheme}33` : 'none'};">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px; cursor:pointer;" onclick="winrateRankingSource='${src}'; winrateActiveTrack='${track}'; renderWinrateRankingUI();">
+            <span style="font-weight:850; font-size:14.5px; color:${colorTheme}; display:flex; align-items:center; gap:6px;">
               ${icon} ${escapeHtml(titleText)}
             </span>
-            <span style="font-size:11px; padding:1px 6px; border-radius:4px; background:${isCur ? colorTheme : 'rgba(255,255,255,0.1)'}; color:${isCur ? '#000' : '#cbd5e1'}; font-weight:750;">
+            <span style="font-size:12px; padding:2px 8px; border-radius:4px; background:${isCur ? colorTheme : 'rgba(255,255,255,0.1)'}; color:${isCur ? '#000' : '#cbd5e1'}; font-weight:750;">
               ${isCur ? '檢視中' : '切換'}
             </span>
           </div>
-          <div style="display:flex; flex-direction:column; gap:3px;">
-            ${items.length === 0 ? '<div style="color:var(--text-dim); font-size:11px; padding:8px; text-align:center;">無資料</div>' : items.slice(0, 10).map((it, idx) => `
-              <div style="display:flex; align-items:center; justify-content:space-between; padding:3px 6px; border-radius:5px; background:rgba(255,255,255,0.02); font-size:12px; cursor:pointer; transition:background .12s ease;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'" onclick="switchToStockAnalysis('${escapeHtml(it.code)}')">
-                <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;">
-                  <span style="font-weight:800; color:var(--text-dim); width:14px; font-size:11px; text-align:right;">${idx + 1}</span>
-                  <span style="font-weight:800; color:#93c5fd; font-family:monospace; font-size:12px;">${escapeHtml(it.code)}</span>
-                  <span style="font-weight:750; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</span>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            ${items.length === 0 ? '<div style="color:var(--text-dim); font-size:13px; padding:10px; text-align:center;">無資料</div>' : items.slice(0, 10).map((it, idx) => `
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:4px 8px; border-radius:6px; background:rgba(255,255,255,0.02); font-size:13.5px; cursor:pointer; transition:background .12s ease;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'" onclick="switchToStockAnalysis('${escapeHtml(it.code)}')">
+                <div style="display:flex; align-items:center; gap:8px; min-width:0; overflow:hidden;">
+                  <span style="font-weight:850; color:var(--text-dim); width:18px; font-size:13px; text-align:right;">${idx + 1}</span>
+                  <span style="font-weight:850; color:#93c5fd; font-family:monospace; font-size:13.5px;">${escapeHtml(it.code)}</span>
+                  <span style="font-weight:750; color:#fff; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</span>
                 </div>
-                <span style="font-size:11px; font-weight:700; color:${colorTheme}; opacity:0.9;">${escapeHtml(it.price || it.score || '')}</span>
+                <span style="font-size:13px; font-weight:750; color:${colorTheme}; opacity:0.95;">${escapeHtml(it.price || it.score || '')}</span>
               </div>
             `).join('')}
           </div>
@@ -1567,13 +1567,13 @@
                     <td style="text-align:center;"><span class="rank-badge-num ${badgeClass}">${escapeHtml(item.rank)}</span></td>
                     <td><span class="rank-stock-link"><span class="stock-code">${escapeHtml(item.code)}</span></span></td>
                     <td><span class="rank-stock-link"><span class="stock-name">${escapeHtml(item.name)}</span></span></td>
-                    <td><span class="tag-pill" style="font-size:11.5px;">${escapeHtml(item.category)}</span></td>
-                    <td style="text-align:right; font-weight:750; font-size:14.5px;">${escapeHtml(item.price)}</td>
-                    <td style="text-align:center; color:#fca5a5; font-weight:700;">${escapeHtml(item.slope)}</td>
-                    <td style="text-align:center; color:#93c5fd; font-weight:700;">${escapeHtml(item.metric)}</td>
-                    <td style="text-align:center; color:#cbd5e1;">${escapeHtml(item.volOrChip)}</td>
+                    <td><span class="tag-pill" style="font-size:12.5px; padding:3px 8px;">${escapeHtml(item.category)}</span></td>
+                    <td style="text-align:right; font-weight:800; font-size:15px;">${escapeHtml(item.price)}</td>
+                    <td style="text-align:center; color:#fca5a5; font-weight:750; font-size:14px;">${escapeHtml(item.slope)}</td>
+                    <td style="text-align:center; color:#93c5fd; font-weight:750; font-size:14px;">${escapeHtml(item.metric)}</td>
+                    <td style="text-align:center; color:#cbd5e1; font-size:13.5px;">${escapeHtml(item.volOrChip)}</td>
                     <td style="text-align:center;"><span class="rank-score-pill ${scoreClass}">${escapeHtml(item.score)}</span></td>
-                    <td><span style="font-size:12.5px; color:#e2e8f0;">${escapeHtml(item.feature)}</span></td>
+                    <td><span style="font-size:13.5px; color:#f1f5f9; line-height:1.4;">${escapeHtml(item.feature)}</span></td>
                   </tr>
                 `;
               }).join('')}
