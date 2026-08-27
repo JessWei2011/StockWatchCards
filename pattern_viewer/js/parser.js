@@ -17,16 +17,27 @@ window.PatternParser = {
     const h1 = doc.querySelector('h1');
     const titleText = h1 ? h1.innerText.trim() : '股票數據';
     
-    // Find the 50-day K-line table
-    const tables = doc.querySelectorAll('table');
+    // Find the 50-day K-line table (identify by MA5 / RSI / MACD or column structure >= 11)
+    const tables = Array.from(doc.querySelectorAll('table'));
     let klineTable = null;
 
-    tables.forEach(table => {
+    for (const table of tables) {
       const headers = Array.from(table.querySelectorAll('th')).map(th => th.innerText.trim());
-      if (headers.includes('開') && headers.includes('高') && headers.includes('低') && headers.includes('收')) {
+      const headerStr = headers.join(',');
+      if (headerStr.includes('MA5') || headerStr.includes('RSI') || (headers.length >= 11)) {
         klineTable = table;
+        break;
       }
-    });
+      if (headers.some(h => /開|高|低|收|MA/.test(h))) {
+        klineTable = table;
+        break;
+      }
+    }
+
+    // Fallback: choose the table with the most rows (> 30 rows)
+    if (!klineTable && tables.length > 0) {
+      klineTable = tables.slice().sort((a, b) => b.querySelectorAll('tr').length - a.querySelectorAll('tr').length)[0];
+    }
 
     if (!klineTable) {
       console.warn('No K-line table found in HTML report');
