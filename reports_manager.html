@@ -2433,6 +2433,8 @@
       `<span class="chip-state-tag ${tag.tone}" title="${escapeHtml(tag.title)}">${escapeHtml(tag.label)}</span>`
     ).join('');
   }
+
+  function latestInstitutionalFlow(card){
     const text = cardSection(card, '籌碼面解析');
     const foreign = signedNumber(text, /外資\s*([+-][\d,]+)\s*張/);
     const trust = signedNumber(text, /投信\s*([+-][\d,]+)\s*張/);
