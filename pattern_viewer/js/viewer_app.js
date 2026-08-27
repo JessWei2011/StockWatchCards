@@ -302,58 +302,34 @@
       const overlay = this.getActiveOverlay();
       const chart = this.q('#echart-main');
       const empty = this.q('#patternEmptyState');
-      chart.hidden = false;
-      empty.hidden = true;
+      if (chart) chart.hidden = false;
+      if (empty) empty.hidden = true;
 
-      ChartEngine.render(chart, this.currentStockData, overlay, {
-        showBoll: this.q('#toggleBoll').checked,
-        showMa: this.q('#toggleMa').checked
-      });
-
-      const sourceNote = this.q('#sourceTextNote');
-      const pivotList = this.q('#pivotList');
-      pivotList.innerHTML = '';
-      if (overlay) {
-        const badge = this.q('#teachingBadge');
-        badge.textContent = overlay.badge || 'AI 型態分析';
-        badge.style.color = overlay.color || '#f59e0b';
-        this.q('#teachingExplanation').textContent = overlay.explanation || '目前沒有型態教學說明。';
-        sourceNote.textContent = overlay.sourceText
-          ? `依卡片型態文字「${overlay.sourceText}」比對繪製：${overlay.name}`
-          : '';
-
-        (overlay.pivots || []).forEach(pivot => {
-          const item = document.createElement('li');
-          item.className = 'pivot-item';
-          item.style.borderLeftColor = overlay.color || '#3b82f6';
-          const tag = document.createElement('span');
-          tag.className = 'pivot-tag';
-          tag.style.background = overlay.color || '#3b82f6';
-          tag.textContent = pivot.tag;
-          const label = document.createElement('span');
-          label.textContent = pivot.label;
-          const date = document.createElement('span');
-          date.className = 'pivot-date';
-          date.textContent = `(${pivot.date})`;
-          const price = document.createElement('span');
-          price.className = 'pivot-price';
-          price.textContent = `$${pivot.price}`;
-          item.append(tag, label, date, price);
-          pivotList.appendChild(item);
+      if (chart) {
+        const toggleBoll = this.q('#toggleBoll');
+        const toggleMa = this.q('#toggleMa');
+        ChartEngine.render(chart, this.currentStockData, overlay, {
+          showBoll: toggleBoll ? toggleBoll.checked : true,
+          showMa: toggleMa ? toggleMa.checked : true
         });
-      } else {
-        sourceNote.textContent = '';
       }
 
-      this.q('#chartTitle').textContent = `${this.currentStockData.title} — K線 / RSI / MACD / KD / 成交量圖`;
-      this.q('#cardStockName').textContent = this.currentStockData.title;
+      const chartTitle = this.q('#chartTitle');
+      if (chartTitle) chartTitle.textContent = `${this.currentStockData.title} — K線 / RSI / MACD / KD / 成交量圖`;
+
+      const cardStockName = this.q('#cardStockName');
+      if (cardStockName) cardStockName.textContent = this.currentStockData.title;
+
       const candles = this.currentStockData.candles || [];
       const lastCandle = candles[candles.length - 1];
-      if (lastCandle) this.q('#statCurrentPrice').textContent = `$${lastCandle[1]}`;
-      if (candles.length) {
+      const statCurrentPrice = this.q('#statCurrentPrice');
+      if (statCurrentPrice && lastCandle) statCurrentPrice.textContent = `$${lastCandle[1]}`;
+
+      const statHighLow = this.q('#statHighLow');
+      if (statHighLow && candles.length) {
         const highest = Math.max(...candles.map(item => item[3]));
         const lowest = Math.min(...candles.map(item => item[2]));
-        this.q('#statHighLow').textContent = `${highest} / ${lowest}`;
+        statHighLow.textContent = `${highest} / ${lowest}`;
       }
       requestAnimationFrame(() => this.resize());
     }
