@@ -723,7 +723,7 @@
   </header>
   <nav class="app-tabs" aria-label="主要工作區">
     <button type="button" class="app-tab active" data-workspace="reports">🗂️ 報表管理</button>
-    <button type="button" class="app-tab" data-workspace="pattern">🎓 型態教學</button>
+    <button type="button" class="app-tab" data-workspace="pattern">📈 專業看盤</button>
     <button type="button" class="app-tab" data-workspace="ranking">🏆 排行榜</button>
     <button type="button" class="app-tab" data-workspace="analysis">📑 分析報告</button>
   </nav>
@@ -800,12 +800,12 @@
         <div class="brand">
           <div class="brand-icon">📈</div>
           <div class="brand-text">
-            <h1>AI 個股型態視覺化教學</h1>
-            <p>真實報表驅動的五層 K 線與技術指標</p>
+            <h1>專業看盤・技術指標終端</h1>
+            <p>真實行情驅動：五層 K 線、均線（MA5/10/20）、布林通道、成交量、RSI、MACD、KD</p>
           </div>
         </div>
         <div class="controls-bar">
-          <label for="stockSelect">選擇個股：</label>
+          <label for="stockSelect" style="font-weight:700; color:#93c5fd;">🎯 選擇看盤個股：</label>
           <select id="stockSelect" class="stock-selector"></select>
         </div>
       </header>
@@ -823,31 +823,15 @@
                 <div class="stat-label">報表區間高 / 低</div>
                 <div id="statHighLow" class="stat-value stat-value-compact">—</div>
               </div>
-              <div class="stat-box full" id="statCardBox" style="display:none;">
-                <div class="stat-label">AI 卡片判斷（<span id="statCardDate"></span>）</div>
-                <div id="statCardDecision" class="stat-value small">—</div>
-              </div>
             </div>
           </div>
 
-          <div class="card">
-            <div class="card-title"><span>🎓</span> 視覺化來源</div>
-            <div class="pattern-buttons" id="viewToggleContainer">
-              <button class="btn-pattern active" data-view="card">🎯 卡片型態視覺化</button>
-              <button class="btn-pattern" data-view="data">💡 指標數據解構</button>
-            </div>
-            <div id="sourceTextNote" class="source-note"></div>
-          </div>
-
-          <div class="card teaching-card">
-            <div class="teaching-header">
-              <div class="card-title teaching-title"><span>💡</span> 型態教學說明</div>
-              <span id="teachingBadge" class="pattern-badge">等待真實資料</span>
-            </div>
-            <div class="teaching-content">
-              <p id="teachingExplanation">請選擇已有報表的個股。</p>
-              <div class="pivot-heading">關鍵幾何轉折標籤（Pivots）：</div>
-              <ul id="pivotList" class="pivot-list"></ul>
+          <div class="card" style="margin-top:12px;">
+            <div class="card-title"><span>💡</span> 快捷切換工作區</div>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+              <button type="button" class="btn" onclick="activateWorkspace('analysis'); if(window.PatternViewer && PatternViewer.currentCode) switchToStockAnalysis(PatternViewer.currentCode);" style="text-align:center;">📑 查看此股詳細分析報告</button>
+              <button type="button" class="btn" onclick="activateWorkspace('ranking')" style="text-align:center;">🏆 查看雙 AI 排行榜</button>
+              <button type="button" class="btn" onclick="activateWorkspace('reports')" style="text-align:center;">🗂️ 返回報表檔案管理</button>
             </div>
           </div>
         </aside>
@@ -1925,7 +1909,7 @@
         ${thumb}
         <div class="code">${escapeHtml(r.code || '')}</div>
         <div class="name">${escapeHtml(r.name || r.base)}</div>
-        ${r.code ? `<button type="button" class="card-pattern-btn">🎓 查看型態</button>` : ''}
+        ${r.code ? `<button type="button" class="card-pattern-btn">📈 專業看盤</button>` : ''}
       `;
       if (aiCard) {
         const badgeEl = card.querySelector('.card-badge');

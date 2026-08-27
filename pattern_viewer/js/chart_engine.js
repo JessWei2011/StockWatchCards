@@ -164,12 +164,12 @@ window.ChartEngine = {
         top: 4,
         textStyle: { color: '#94a3b8', fontSize: 11 },
         selected: {
-          'BOLL上軌': displayToggles.showBoll,
-          'BOLL中軌': displayToggles.showBoll,
-          'BOLL下軌': displayToggles.showBoll,
-          'MA5': displayToggles.showMa,
-          'MA10': displayToggles.showMa,
-          'MA20': displayToggles.showMa
+          'BOLL上軌': displayToggles.showBoll !== false,
+          'BOLL中軌': displayToggles.showBoll !== false,
+          'BOLL下軌': displayToggles.showBoll !== false,
+          'MA5': displayToggles.showMa !== false,
+          'MA10': displayToggles.showMa !== false,
+          'MA20': displayToggles.showMa !== false
         }
       },
       grid: [

@@ -205,12 +205,8 @@
     }
 
     getActiveOverlay() {
-      if (!this.currentStockData) return null;
-      if (this.currentView === 'data') {
-        return PatternEngine.buildDataGuideOverlay(this.currentStockData);
-      }
-      const card = this.cardByCode[this.currentCode];
-      return PatternEngine.buildOverlayForCard(card ? card.pattern : '', this.currentStockData);
+      // 依使用者指示全面移除型態比對與教學折線，回歸純粹、標準、乾淨的看盤終端。
+      return null;
     }
 
     updateAiCardBox(code) {
