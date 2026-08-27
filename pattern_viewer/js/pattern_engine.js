@@ -88,12 +88,11 @@ window.PatternEngine = {
 
   // Minimal placeholder overlay when there isn't enough swing data to visualize anything specific.
   buildFlatFallback(stockData) {
-    const cur = this.lastPoint(stockData);
     return {
       name: '資料不足以判讀型態',
       badge: '資料不足',
       color: '#64748b',
-      pivots: [{ date: cur.date, price: cur.price, label: '目前收盤', tag: '現在' }],
+      pivots: [],
       vectorPath: [],
       explanation: '近期價格波動幅度過小或資料天數不足，無法可靠地畫出型態轉折點，僅顯示目前收盤位置。'
     };
@@ -102,13 +101,11 @@ window.PatternEngine = {
   buildLadderUp(stockData) {
     const swings = this.zigzag(stockData, 0.03).slice(-5);
     if (swings.length < 2) return this.buildFlatFallback(stockData);
-    const cur = this.lastPoint(stockData);
     const pivots = swings.map((p, i) => ({
       date: p.date, price: p.price,
-      label: p.type === 'low' ? '低點墊高' : '高點墊高',
-      tag: `P${i + 1}`
+      label: p.type === 'low' ? '波段低點支撐' : '波段高點突破',
+      tag: p.type === 'low' ? '低點' : '高點'
     }));
-    pivots.push({ date: cur.date, price: cur.price, label: '目前收盤', tag: '現在' });
     return {
       name: '頭頭高／底底高（上升階梯結構）',
       badge: '上升趨勢結構',
@@ -122,13 +119,11 @@ window.PatternEngine = {
   buildLadderDown(stockData) {
     const swings = this.zigzag(stockData, 0.03).slice(-5);
     if (swings.length < 2) return this.buildFlatFallback(stockData);
-    const cur = this.lastPoint(stockData);
     const pivots = swings.map((p, i) => ({
       date: p.date, price: p.price,
-      label: p.type === 'high' ? '高點下滑' : '低點破底',
-      tag: `P${i + 1}`
+      label: p.type === 'high' ? '反彈高點受阻' : '波段低點跌破',
+      tag: p.type === 'high' ? '高點' : '低點'
     }));
-    pivots.push({ date: cur.date, price: cur.price, label: '目前收盤', tag: '現在' });
     return {
       name: '頭頭低／底底低（下降階梯結構）',
       badge: '下降趨勢結構',
@@ -169,10 +164,9 @@ window.PatternEngine = {
     const broke = cur.price >= p2.price;
 
     const pivots = [
-      { ...p1, label: 'P1 左腳低點', tag: 'W1' },
-      { ...p2, label: 'P2 頸線高點', tag: '頸線' },
-      { ...p3, label: 'P3 右腳打底', tag: 'W2' },
-      { date: cur.date, price: cur.price, label: broke ? 'P4 衝破頸線' : 'P4 尚在整理', tag: broke ? '突破' : '整理中' }
+      { ...p1, label: '左腳打底低點', tag: '左腳' },
+      { ...p2, label: '頸線反彈高點', tag: '頸線' },
+      { ...p3, label: '右腳二次測試', tag: '右腳' }
     ];
 
     return {
@@ -181,7 +175,7 @@ window.PatternEngine = {
       color: '#ef4444', // 台股：偏多紅
       pivots,
       vectorPath: pivots.map(p => [p.date, p.price]),
-      resistanceLine: { price: p2.price, label: `P2 雙底頸線壓力 ($${p2.price.toFixed(1)})` },
+      resistanceLine: { price: p2.price, label: `雙底頸線壓力 ($${p2.price.toFixed(1)})` },
       explanation: `【W底教學心法】：第一次打底於 ${p1.date}（$${p1.price}），反彈至頸線 ${p2.date}（$${p2.price}）後拉回二次測試 ${p3.date}（$${p3.price}）完成 W 雙腳打底，${broke ? '最新收盤價已強勢衝破頸線，W 底反轉型態正式確立！' : '目前價格正在頸線附近蓄勢整理，若帶量突破頸線則底部翻揚。'}`
     };
   },
@@ -197,10 +191,9 @@ window.PatternEngine = {
     const cur = this.lastPoint(stockData);
     const broke = p2 ? cur.price < p2.price : null;
 
-    const pivots = [{ ...p1, label: 'P1 左頭高點', tag: 'M1' }];
-    if (p2) pivots.push({ ...p2, label: 'P2 頸線支撐', tag: '頸線' });
-    if (p3.idx !== p1.idx) pivots.push({ ...p3, label: 'P3 右頭派發', tag: 'M2' });
-    pivots.push({ date: cur.date, price: cur.price, label: broke ? 'P4 跌破頸線' : 'P4 尚在整理', tag: broke ? '跌破' : '整理中' });
+    const pivots = [{ ...p1, label: '左頭衝高頂點', tag: '左頭' }];
+    if (p2) pivots.push({ ...p2, label: '頸線回測支撐', tag: '頸線' });
+    if (p3.idx !== p1.idx) pivots.push({ ...p3, label: '右頭派發高點', tag: '右頭' });
 
     return {
       name: 'M頭（雙重頂）',
@@ -208,8 +201,8 @@ window.PatternEngine = {
       color: '#10b981', // 台股：偏空綠
       pivots,
       vectorPath: pivots.map(p => [p.date, p.price]),
-      resistanceLine: p2 ? { price: p2.price, label: 'P2 頸線防守線' } : undefined,
-      explanation: `【M頭教學心法】：高檔第一次受阻於 ${p1.date}（$${p1.price}）${p2 ? `，拉回測試 P2 頸線 $${p2.price} 後` : ''}再度受阻於 ${p3.date}（$${p3.price}），${broke ? '目前已跌破頸線，空頭型態確立。' : '目前仍在頸線附近整理，尚未確認跌破。'}`
+      resistanceLine: p2 ? { price: p2.price, label: '雙頂頸線關鍵支撐線' } : undefined,
+      explanation: `【M頭教學心法】：高檔第一次受阻於 ${p1.date}（$${p1.price}）${p2 ? `，拉回測試頸線 $${p2.price} 後` : ''}再度受阻於 ${p3.date}（$${p3.price}），${broke ? '目前已跌破頸線，空頭型態確立。' : '目前仍在頸線附近整理，尚未確認跌破。'}`
     };
   },
 
@@ -223,10 +216,9 @@ window.PatternEngine = {
     const cur = this.lastPoint(stockData);
     const broke = pk ? cur.price > pk.price : null;
 
-    const pivots = [{ ...v1, label: 'P1 起漲低點', tag: 'P1' }];
-    if (pk) pivots.push({ ...pk, label: 'P2 衝高壓力', tag: 'P2' });
-    if (v2) pivots.push({ ...v2, label: 'P3 洗盤支撐', tag: 'P3' });
-    pivots.push({ date: cur.date, price: cur.price, label: broke ? 'P4 帶量突破' : 'P4 尚未突破', tag: broke ? '突破' : '整理中' });
+    const pivots = [{ ...v1, label: '起漲轉折低點', tag: '起漲' }];
+    if (pk) pivots.push({ ...pk, label: '衝高波段壓力', tag: '前高' });
+    if (v2) pivots.push({ ...v2, label: '洗盤回測支撐', tag: '回測' });
 
     return {
       name: 'N字強勢反攻',
@@ -234,7 +226,7 @@ window.PatternEngine = {
       color: '#f59e0b',
       pivots,
       vectorPath: pivots.map(p => [p.date, p.price]),
-      resistanceLine: pk ? { price: pk.price, label: 'P2 關鍵壓力轉支撐線' } : undefined,
+      resistanceLine: pk ? { price: pk.price, label: '關鍵壓力轉支撐線' } : undefined,
       explanation: `【N字教學心法】：${v1.date} 起漲低點 $${v1.price}${pk ? `，衝高至 ${pk.date} 遇壓 $${pk.price}` : ''}${v2 ? `，拉回 ${v2.date} 洗盤守穩 $${v2.price}` : ''}，${broke ? '目前已收復前高，發動二階段強攻。' : '目前尚未收復前高，型態尚未確認。'}`
     };
   },
@@ -253,8 +245,7 @@ window.PatternEngine = {
 
     const pivots = [
       { date: stockData.dates[boxMinIdx], price: boxMin, label: '箱型整理下緣', tag: '箱底' },
-      { date: stockData.dates[boxMaxIdx], price: boxMax, label: '箱型整理上緣', tag: '箱頂' },
-      { date: cur.date, price: cur.price, label: state === 'up' ? '帶量向上突破箱頂' : (state === 'down' ? '跌破箱底' : '箱內震盪'), tag: state === 'up' ? '突破' : (state === 'down' ? '跌破' : '整理中') }
+      { date: stockData.dates[boxMaxIdx], price: boxMax, label: '箱型整理上緣', tag: '箱頂' }
     ];
 
     return {
@@ -272,181 +263,151 @@ window.PatternEngine = {
   },
 
   buildTriangle(stockData) {
-    const swings = this.zigzag(stockData, 0.02);
-    const highs = swings.filter(p => p.type === 'high').slice(-3);
-    const lows = swings.filter(p => p.type === 'low').slice(-3);
+    const swings = this.zigzag(stockData, 0.025);
+    const highs = swings.filter(p => p.type === 'high');
+    const lows = swings.filter(p => p.type === 'low');
     if (highs.length < 2 || lows.length < 2) return this.buildFlatFallback(stockData);
 
-    const upperFrom = highs[0], upperTo = highs[highs.length - 1];
-    const lowerFrom = lows[0], lowerTo = lows[lows.length - 1];
-    const converging = upperTo.price < upperFrom.price && lowerTo.price > lowerFrom.price;
+    const upperFrom = highs[highs.length - 2], upperTo = highs[highs.length - 1];
+    const lowerFrom = lows[lows.length - 2], lowerTo = lows[lows.length - 1];
+
     const cur = this.lastPoint(stockData);
+    const converging = upperTo.price <= upperFrom.price && lowerTo.price >= lowerFrom.price;
+
+    const pivots = [
+      { ...upperFrom, label: '上邊界高點 1', tag: '上軌' },
+      { ...upperTo, label: '上邊界高點 2', tag: '上軌' },
+      { ...lowerFrom, label: '下邊界低點 1', tag: '下軌' },
+      { ...lowerTo, label: '下邊界低點 2', tag: '下軌' }
+    ];
 
     return {
-      name: '三角收斂',
-      badge: converging ? '收斂三角整理' : '波動區間變化中',
-      color: '#38bdf8',
-      pivots: [
-        { ...upperFrom, label: '壓力高點(較早)', tag: '上緣1' },
-        { ...upperTo, label: '壓力高點(較新)', tag: '上緣2' },
-        { ...lowerFrom, label: '支撐低點(較早)', tag: '下緣1' },
-        { ...lowerTo, label: '支撐低點(較新)', tag: '下緣2' },
-        { date: cur.date, price: cur.price, label: '目前收盤', tag: '現在' }
-      ],
-      vectorPath: [],
+      name: converging ? '三角收斂' : '擴散/震盪三角',
+      badge: converging ? '末端即將表態' : '震盪加劇',
+      color: '#f59e0b',
+      pivots,
       boundaryLines: [
-        { points: [[upperFrom.date, upperFrom.price], [upperTo.date, upperTo.price]], dashed: true, label: '上緣壓力線' },
-        { points: [[lowerFrom.date, lowerFrom.price], [lowerTo.date, lowerTo.price]], dashed: true, label: '下緣支撐線' }
+        { points: [[upperFrom.date, upperFrom.price], [upperTo.date, upperTo.price]], color: '#ef4444' },
+        { points: [[lowerFrom.date, lowerFrom.price], [lowerTo.date, lowerTo.price]], color: '#10b981' }
       ],
-      explanation: `【三角收斂教學心法】：高點從 ${upperFrom.date} 的 $${upperFrom.price} 到 ${upperTo.date} 的 $${upperTo.price}${converging ? '逐步遞減' : '尚未明顯遞減'}，低點從 ${lowerFrom.date} 的 $${lowerFrom.price} 到 ${lowerTo.date} 的 $${lowerTo.price}${converging ? '逐步墊高' : '尚未明顯墊高'}，${converging ? '上下邊界正在收斂，變盤點通常出現在收斂到頂點附近。' : '目前收斂特徵還不夠明顯，僅供參考。'}`
+      explanation: `【三角收斂教學心法】：高點由 ${upperFrom.date} 的 $${upperFrom.price} 下移至 ${upperTo.date} 的 $${upperTo.price}，低點由 ${lowerFrom.date} 的 $${lowerFrom.price} 墊高至 ${lowerTo.date} 的 $${lowerTo.price}，震盪幅度越來越窄，代表多空即將在末端分出勝負。`
     };
   },
 
   buildHeadShoulders(stockData, text) {
-    const isBottom = /頭肩底/.test(text);
+    const isBottom = /底/.test(text);
     const swings = this.zigzag(stockData, 0.03);
-    const shoulderSrc = isBottom ? swings.filter(p => p.type === 'low') : swings.filter(p => p.type === 'high');
-    if (shoulderSrc.length < 3) return this.buildFlatFallback(stockData);
+    const targetType = isBottom ? 'low' : 'high';
+    const extremes = swings.filter(p => p.type === targetType);
+    if (extremes.length < 3) return this.buildGenericTrend(stockData);
 
-    const [leftShoulder, head, rightShoulder] = shoulderSrc.slice(-3);
-    const necklineSrc = isBottom ? swings.filter(p => p.type === 'high') : swings.filter(p => p.type === 'low');
-    const neckPts = necklineSrc.filter(p => p.idx > leftShoulder.idx && p.idx < rightShoulder.idx);
-    const necklineAvg = neckPts.length
-      ? neckPts.reduce((s, p) => s + p.price, 0) / neckPts.length
-      : (leftShoulder.price + rightShoulder.price) / 2;
-    const cur = this.lastPoint(stockData);
-    const broke = isBottom ? cur.price > necklineAvg : cur.price < necklineAvg;
+    const head = extremes[extremes.length - 2];
+    const left = extremes[extremes.length - 3];
+    const right = extremes[extremes.length - 1];
 
     const pivots = [
-      { ...leftShoulder, label: isBottom ? '左肩' : '左肩', tag: 'L' },
-      { ...head, label: isBottom ? '頭部(最低)' : '頭部(最高)', tag: '頭' },
-      { ...rightShoulder, label: '右肩', tag: 'R' },
-      { date: cur.date, price: cur.price, label: broke ? (isBottom ? '突破頸線' : '跌破頸線') : '尚未突破頸線', tag: broke ? '確立' : '整理中' }
+      { ...left, label: isBottom ? '左肩打底' : '左肩高點', tag: '左肩' },
+      { ...head, label: isBottom ? '頭部最低點' : '頭部最高點', tag: '頭部' },
+      { ...right, label: isBottom ? '右肩抬高' : '右肩受阻', tag: '右肩' }
     ];
 
-    const necklinePts = neckPts.length >= 2
-      ? [neckPts[0], neckPts[neckPts.length - 1]]
-      : [{ date: leftShoulder.date, price: necklineAvg }, { date: rightShoulder.date, price: necklineAvg }];
-
     return {
-      name: isBottom ? '頭肩底' : '頭肩頂',
-      badge: broke ? '型態已確立' : '型態醞釀中（兩肩對稱度僅供參考）',
+      name: isBottom ? '頭肩底（反轉打底）' : '頭肩頂（高檔派發）',
+      badge: isBottom ? '底部反轉形態' : '高檔頭部形態',
       color: isBottom ? '#ef4444' : '#10b981',
       pivots,
-      vectorPath: [[leftShoulder.date, leftShoulder.price], [head.date, head.price], [rightShoulder.date, rightShoulder.price]],
-      boundaryLines: [
-        { points: [[necklinePts[0].date, necklinePts[0].price], [necklinePts[1].date, necklinePts[1].price]], dashed: true, label: '頸線' }
-      ],
-      explanation: `【${isBottom ? '頭肩底' : '頭肩頂'}教學心法】：左肩 ${leftShoulder.date}（$${leftShoulder.price}）、頭部 ${head.date}（$${head.price}）、右肩 ${rightShoulder.date}（$${rightShoulder.price}），頸線約在 $${necklineAvg.toFixed(1)}，${broke ? `目前已${isBottom ? '突破' : '跌破'}頸線，型態確立。` : '目前尚未確認突破頸線，兩肩高度是否對稱請自行核對圖形。'}`
+      vectorPath: pivots.map(p => [p.date, p.price]),
+      explanation: isBottom
+        ? `【頭肩底教學心法】：左肩 ${left.date} $${left.price}、頭部最低點 ${head.date} $${head.price}、右肩 ${right.date} $${right.price}，右肩未再破底，若帶量突破頸線將確立底部。`
+        : `【頭肩頂教學心法】：左肩 ${left.date} $${left.price}、頭部衝最高 ${head.date} $${head.price}、右肩反彈無力於 ${right.date} $${right.price} 受阻，多頭動能耗盡。`
     };
   },
 
   buildVReversal(stockData) {
     const swings = this.zigzag(stockData, 0.03);
-    const lows = swings.filter(p => p.type === 'low');
-    if (lows.length < 1) return this.buildFlatFallback(stockData);
-    const bottom = lows[lows.length - 1];
+    const valleys = swings.filter(p => p.type === 'low');
+    if (!valleys.length) return this.buildFlatFallback(stockData);
+    const lowest = valleys.slice(-3).sort((a, b) => a.price - b.price)[0];
     const cur = this.lastPoint(stockData);
+    const risePct = (cur.price - lowest.price) / lowest.price;
 
-    let crossPoint = null;
-    if (stockData.ma20) {
-      for (let i = bottom.idx + 1; i < stockData.candles.length; i++) {
-        const c = stockData.candles[i][1], ma = stockData.ma20[i];
-        if (ma != null && c > ma) { crossPoint = { date: stockData.dates[i], price: c }; break; }
-      }
-    }
-
-    const pivots = [{ ...bottom, label: '波段最低點(破底)', tag: '破底' }];
-    if (crossPoint) pivots.push({ ...crossPoint, label: '站上月線(MA20)', tag: '攻克月線' });
-    pivots.push({ date: cur.date, price: cur.price, label: '目前收盤', tag: '現在' });
+    const pivots = [
+      { ...lowest, label: '急跌破底低點', tag: '轉折點' }
+    ];
 
     return {
-      name: '破底翻（V型反轉）',
-      badge: crossPoint ? '打底反彈已攻克月線' : '打底反彈進行中',
-      color: '#ef4444', // 台股：反轉向上紅
+      name: 'V型反轉 / 破底翻',
+      badge: risePct > 0.05 ? '急跌強彈確立' : '短線反彈觀察',
+      color: '#ef4444',
       pivots,
-      vectorPath: pivots.map(p => [p.date, p.price]),
-      explanation: `【破底翻教學心法】：${bottom.date} 出現波段最低點 $${bottom.price}，${crossPoint ? `${crossPoint.date} 帶量收復月線(MA20) $${crossPoint.price.toFixed(1)}，反彈格局確立。` : '目前反彈力道仍在驗證中，尚未站穩月線(MA20)。'}`
+      vectorPath: [[lowest.date, lowest.price], [cur.date, cur.price]],
+      explanation: `【V轉教學心法】：於 ${lowest.date} 打出 $${lowest.price} 急速反轉點，目前已自低點強彈 +${(risePct * 100).toFixed(1)}%，屬於籌碼快速洗盤後的強勢收復訊號。`
     };
   },
 
   buildBreakoutSpike(stockData) {
-    const total = stockData.dates.length;
-    const lookStart = Math.max(0, total - 10);
-    let bestIdx = lookStart, bestChangePct = -Infinity;
-    for (let i = lookStart; i < total; i++) {
-      const o = stockData.candles[i][0], c = stockData.candles[i][1];
-      const chg = o ? (c - o) / o : 0;
-      if (chg > bestChangePct) { bestChangePct = chg; bestIdx = i; }
-    }
     const cur = this.lastPoint(stockData);
-    const spike = { date: stockData.dates[bestIdx], price: stockData.candles[bestIdx][1] };
+    const candles = stockData.candles;
+    const prevClose = candles.length >= 2 ? candles[candles.length - 2][1] : cur.price;
+    const pct = ((cur.price - prevClose) / prevClose) * 100;
+    const baseIdx = Math.max(0, candles.length - 6);
+    const baseLow = Math.min(...candles.slice(baseIdx).map(c => c[2]));
+
+    const pivots = [
+      { date: stockData.dates[baseIdx], price: baseLow, label: '起漲平台區', tag: '起漲' }
+    ];
 
     return {
-      name: '強勢噴發',
-      badge: '單日噴出攻擊訊號',
-      color: '#f59e0b',
-      pivots: [
-        { ...spike, label: `噴出日 (單日漲幅${(bestChangePct * 100).toFixed(1)}%)`, tag: '噴發' },
-        { date: cur.date, price: cur.price, label: '目前收盤', tag: '現在' }
-      ],
-      vectorPath: [[spike.date, spike.price], [cur.date, cur.price]],
-      explanation: `【強勢噴發教學心法】：${spike.date} 單日開高走高，漲幅達 ${(bestChangePct * 100).toFixed(1)}%，屬於單日噴出的強攻訊號，後續走勢是否延續要觀察量能能否持續配合。`
+      name: '強勢長紅 / 漲停噴出',
+      badge: '強勢攻擊訊號',
+      color: '#ef4444',
+      pivots,
+      vectorPath: [[stockData.dates[baseIdx], baseLow], [cur.date, cur.price]],
+      explanation: `【長紅噴出教學心法】：最新收盤單日漲幅 ${pct.toFixed(2)}%，脫離近 5 日打底平台 $${baseLow}，主力攻擊意圖強烈。`
     };
+  },
+
+  pickTargetMa(stockData, text) {
+    return this.resolveMaFromText(text, stockData);
   },
 
   buildMaCross(stockData, text) {
-    const ref = this.resolveMaFromText(text, stockData);
-    const arr = stockData[ref.key];
     const cur = this.lastPoint(stockData);
-    let crossPoint = null;
-
-    if (arr) {
-      for (let i = 1; i < stockData.candles.length; i++) {
-        const prevC = stockData.candles[i - 1][1], prevMa = arr[i - 1];
-        const c = stockData.candles[i][1], ma = arr[i];
-        if (prevMa != null && ma != null && prevC <= prevMa && c > ma) {
-          crossPoint = { date: stockData.dates[i], price: c };
-        }
-      }
-    }
+    const targetMa = this.pickTargetMa(stockData, text);
+    const maValue = stockData[targetMa.key] ? stockData[targetMa.key][cur.idx] : null;
+    const diff = maValue != null ? cur.price - maValue : 0;
 
     const pivots = [];
-    if (crossPoint) pivots.push({ ...crossPoint, label: `站上${ref.label}`, tag: '突破' });
-    pivots.push({ date: cur.date, price: cur.price, label: '目前收盤', tag: '現在' });
+    if (maValue != null) pivots.push({ date: cur.date, price: Number(maValue.toFixed(1)), label: targetMa.label, tag: '均線' });
 
     return {
-      name: `站上${ref.label}`,
-      badge: crossPoint ? `攻克${ref.label}` : `對照${ref.label}`,
-      color: '#3b82f6',
+      name: `帶量攻克 ${targetMa.label}`,
+      badge: diff >= 0 ? '均線翻揚站上' : '挑戰均線中',
+      color: '#ef4444',
       pivots,
-      vectorPath: pivots.map(p => [p.date, p.price]),
-      resistanceLine: arr && arr[cur.idx] != null ? { price: arr[cur.idx], label: ref.label } : undefined,
-      explanation: crossPoint
-        ? `【均線攻克教學心法】：${crossPoint.date} 收盤 $${crossPoint.price} 帶量站上${ref.label}，代表短中期成本區易攻難守，該均線轉為支撐。`
-        : `目前收盤價與${ref.label}的相對位置如圖所示，近期沒有找到明確的站上瞬間，僅標示目前對照位置。`
+      resistanceLine: maValue != null ? { price: maValue, label: `${targetMa.label} 支撐線 $${maValue.toFixed(1)}` } : undefined,
+      explanation: `【站上均線教學心法】：最新收盤價 $${cur.price} ${diff >= 0 ? '已穩居' : '正逼近'} ${targetMa.label}（$${maValue != null ? maValue.toFixed(1) : '—'}）之上，${diff >= 0 ? '均線由壓力轉為下檔防守支撐。' : '正在挑戰上方均線反壓。'}`
     };
   },
 
-  buildPullback(stockData) {
-    const swings = this.zigzag(stockData, 0.02);
-    const highs = swings.filter(p => p.type === 'high');
-    const recentHigh = highs.length ? highs[highs.length - 1] : null;
+  buildPullback(stockData, text) {
     const cur = this.lastPoint(stockData);
-    const nearest = this.nearestMaLabel(stockData, cur.idx);
+    const targetMa = this.pickTargetMa(stockData, text);
+    const maValue = stockData[targetMa.key] ? stockData[targetMa.key][cur.idx] : null;
+    const swings = this.zigzag(stockData, 0.03);
+    const recentHigh = swings.filter(p => p.type === 'high').slice(-1)[0];
 
     const pivots = [];
-    if (recentHigh) pivots.push({ ...recentHigh, label: '近期高點', tag: '高點' });
-    pivots.push({ date: cur.date, price: cur.price, label: nearest ? `回測${nearest.label}` : '目前收盤', tag: '拉回' });
+    if (recentHigh) pivots.push({ ...recentHigh, label: '前波衝高阻力', tag: '前高' });
+    if (maValue != null) pivots.push({ date: cur.date, price: Number(maValue.toFixed(1)), label: targetMa.label, tag: '均線' });
 
     return {
-      name: '拉回測試支撐',
-      badge: '短線攻擊受阻整理',
+      name: `回測 ${targetMa.label} / 縮腳整理`,
+      badge: '強勢回檔整理',
       color: '#f59e0b',
       pivots,
-      vectorPath: pivots.map(p => [p.date, p.price]),
-      resistanceLine: nearest ? { price: nearest.value, label: `拉回測試 ${nearest.label}` } : undefined,
-      explanation: `${recentHigh ? `近期高點出現在 ${recentHigh.date}（$${recentHigh.price}），目前` : '目前'}股價拉回，${nearest ? `最貼近${nearest.label}（$${nearest.value.toFixed(1)}），為短線防守關鍵。` : '正在整理中。'}`
+      resistanceLine: recentHigh ? { price: recentHigh.price, label: `前波高點阻力 $${recentHigh.price}` } : undefined,
+      explanation: `${recentHigh ? `衝高出現在 ${recentHigh.date}（$${recentHigh.price}），目前` : '目前'}股價拉回，${maValue != null ? `正回測 ${targetMa.label}（$${maValue.toFixed(1)}）尋求支撐，量縮守穩為健康換手。` : '正在進行整理。'}`
     };
   },
 
@@ -454,82 +415,6 @@ window.PatternEngine = {
     const candles = stockData.candles || [];
     const dates = stockData.dates || [];
     const n = candles.length;
-    if (n < 35) return this.buildFlatFallback(stockData);
-
-    // 1. Find Left Rim (左杯口): highest high in the first part (大結構搜尋 40~100 天)
-    const startSearch = Math.max(0, n - 100);
-    const midSearch = Math.max(startSearch + 10, n - 25);
-    let p1Idx = startSearch, p1Price = -Infinity;
-    for (let i = startSearch; i < midSearch; i++) {
-      if (candles[i][3] > p1Price) {
-        p1Price = candles[i][3];
-        p1Idx = i;
-      }
-    }
-
-    // 2. Find Cup Bottom (杯底低點): lowest low after p1Idx (必須在中間)
-    let p2Idx = p1Idx, p2Price = Infinity;
-    const bottomEnd = Math.max(p1Idx + 5, n - 10);
-    for (let i = p1Idx; i < bottomEnd; i++) {
-      if (candles[i][2] < p2Price) {
-        p2Price = candles[i][2];
-        p2Idx = i;
-      }
-    }
-
-    // 3. Find Right Rim (右杯口 / 杯柄起點): rally peak after cup bottom
-    let p3Idx = p2Idx, p3Price = -Infinity;
-    const rightRimEnd = Math.max(p2Idx + 3, n - 2);
-    for (let i = p2Idx; i < rightRimEnd; i++) {
-      if (candles[i][3] > p3Price) {
-        p3Price = candles[i][3];
-        p3Idx = i;
-      }
-    }
-    if (p3Price === -Infinity || p3Idx === p2Idx) {
-      p3Idx = Math.min(n - 2, p2Idx + Math.max(1, Math.floor((n - 1 - p2Idx) / 2)));
-      p3Price = candles[p3Idx][3];
-    }
-
-    // 4. Find Handle Low (杯柄拉回低點): shallow pullback between p3 and current
-    let p4Idx = p3Idx, p4Price = Infinity;
-    for (let i = p3Idx; i < n; i++) {
-      if (candles[i][2] < p4Price) {
-        p4Price = candles[i][2];
-        p4Idx = i;
-      }
-    }
-    if (p4Idx === p3Idx && p3Idx < n - 1) {
-      p4Idx = n - 1;
-      p4Price = candles[p4Idx][2];
-    }
-
-    const cur = this.lastPoint(stockData);
-    const necklinePrice = Math.max(p1Price, p3Price);
-    const isBreakout = cur.price >= necklinePrice * 0.98;
-
-    const p1 = { date: dates[p1Idx], price: p1Price, label: 'P1 左杯口高點', tag: '左杯口' };
-    const p2 = { date: dates[p2Idx], price: p2Price, label: 'P2 杯底洗盤支撐', tag: '杯底' };
-    const p3 = { date: dates[p3Idx], price: p3Price, label: 'P3 右杯口/杯柄起點', tag: '右杯口' };
-    const p4 = { date: dates[p4Idx], price: p4Price, label: 'P4 杯柄回測守穩', tag: '杯柄' };
-    const p5 = { date: cur.date, price: cur.price, label: isBreakout ? 'P5 帶量突破頸線' : 'P5 杯柄右側推進', tag: isBreakout ? '突破' : '進行中' };
-
-    const pivots = [p1, p2, p3, p4, p5];
-
-    // Generate smooth U-curve between P1 -> P2 -> P3, and Handle P3 -> P4 -> P5
-    const vectorPath = [];
-    vectorPath.push([p1.date, p1.price]);
-    if (p2Idx - p1Idx > 3) {
-      const mid1Idx = Math.floor((p1Idx + p2Idx) / 2);
-      vectorPath.push([dates[mid1Idx], candles[mid1Idx][1]]);
-    }
-    vectorPath.push([p2.date, p2.price]);
-    if (p3Idx - p2Idx > 3) {
-      const mid2Idx = Math.floor((p2Idx + p3Idx) / 2);
-      vectorPath.push([dates[mid2Idx], candles[mid2Idx][1]]);
-    }
-    vectorPath.push([p3.date, p3.price]);
-    if (p4.date !== p3.date) vectorPath.push([p4.date, p4.price]);
     if (p5.date !== p4.date) vectorPath.push([p5.date, p5.price]);
 
     const cupDepthPct = ((p1Price - p2Price) / p1Price * 100).toFixed(1);
@@ -543,10 +428,10 @@ window.PatternEngine = {
       vectorPath,
       resistanceLine: { price: necklinePrice, label: `杯柄頸線關鍵壓力位 $${necklinePrice.toFixed(1)}` },
       explanation: `【杯柄型態（Cup & Handle）教學心法】：
-1. **左杯口 (P1)**：${p1.date} 於 $${p1.price.toFixed(1)} 形成前波波段高點。
-2. **圓弧杯底 (P2)**：經歷 U 型洗盤打底於 ${p2.date} $${p2.price.toFixed(1)}（杯深約 ${cupDepthPct}%，符合經典 12~35% 範圍），籌碼充分沉澱。
-3. **右杯口 (P3)**：回升至 ${p3.date} $${p3.price.toFixed(1)} 逼近頸線。
-4. **杯柄洗盤 (P4)**：在杯口高檔展開淺幅回測 $${p4.price.toFixed(1)}（幅度僅 ${handleDepthPct}%，屬於強勢量縮淺柄）。
+1. **左杯口**：${p1.date} 於 $${p1.price.toFixed(1)} 形成前波波段高點。
+2. **圓弧杯底**：經歷 U 型洗盤打底於 ${p2.date} $${p2.price.toFixed(1)}（杯深約 ${cupDepthPct}%，符合經典 12~35% 範圍），籌碼充分沉澱。
+3. **右杯口**：回升至 ${p3.date} $${p3.price.toFixed(1)} 逼近頸線。
+4. **杯柄洗盤**：在杯口高檔展開淺幅回測 $${p4.price.toFixed(1)}（幅度僅 ${handleDepthPct}%，屬於強勢量縮淺柄）。
 5. **操作建議**：${isBreakout ? '最新價格已挑戰/突破頸線壓力，為經典威廉·歐尼爾（William O\'Neil）右側突破進場黃金買點！' : '目前在杯柄右側醞釀，等待帶量突破頸線後進場。'}`
     };
   },
@@ -557,12 +442,10 @@ window.PatternEngine = {
     const lows = swings.filter(p => p.type === 'low').slice(-3);
     if (highs.length < 2 || lows.length < 2) return this.buildTriangle(stockData);
 
-    const cur = this.lastPoint(stockData);
     const maxHigh = Math.max(...highs.map(h => h.price));
     const pivots = [];
-    highs.forEach((h, i) => pivots.push({ ...h, label: `T${i + 1} 波動收縮高點`, tag: `T${i + 1}H` }));
-    lows.forEach((l, i) => pivots.push({ ...l, label: `T${i + 1} 波動收縮低點`, tag: `T${i + 1}L` }));
-    pivots.push({ date: cur.date, price: cur.price, label: '目前收盤', tag: '現在' });
+    highs.forEach((h, i) => pivots.push({ ...h, label: `收縮高點 ${i + 1}`, tag: `高點` }));
+    lows.forEach((l, i) => pivots.push({ ...l, label: `收縮低點 ${i + 1}`, tag: `低點` }));
 
     return {
       name: 'VCP 波動收縮整理 (Minervini VCP)',

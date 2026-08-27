@@ -70,57 +70,7 @@ window.ChartEngine = {
     const markLines = [];
 
     if (overlayData) {
-      // 1. Pivot points P1, P2, P3, P4 badges
-      // Pivots that land on the same date (or very close together) get their pin graphics stacked
-      // right on top of each other. Instead of moving the pin itself off its real coordinate, keep
-      // the pin exact and stagger the LABEL — alternating above/below with growing distance — so
-      // overlapping callouts stay readable instead of mashing into unreadable text.
-      if (overlayData.pivots) {
-        const dateGroups = {};
-        overlayData.pivots.forEach(p => { (dateGroups[p.date] = dateGroups[p.date] || []).push(p); });
-
-        overlayData.pivots.forEach(pivot => {
-          const group = dateGroups[pivot.date];
-          const posInGroup = group.indexOf(pivot);
-          const clustered = group.length > 1;
-          const position = clustered ? (posInGroup % 2 === 0 ? 'top' : 'bottom') : 'top';
-          const distance = clustered ? 20 + Math.floor(posInGroup / 2) * 26 : 12;
-          // Staggering the label alone doesn't stop the pin HEADS from stacking on top of each
-          // other when several pivots share the same date — the marker itself still sits on the
-          // exact same pixel. Fan the pins out sideways (in px) around their real x position so
-          // the heads separate; the tip stays visually anchored near the candle, just nudged.
-          const xOffset = clustered ? (posInGroup - (group.length - 1) / 2) * 24 : 0;
-
-          markPoints.push({
-            name: pivot.label,
-            coord: [pivot.date, pivot.price],
-            value: pivot.tag,
-            symbol: 'pin',
-            // Narrow + tall (instead of a fat 40x40 square) so the pin's point stretches further
-            // away from the candle before the round head appears — keeps wicks unobstructed and
-            // reduces head-to-head overlap when several pivots land on the same date.
-            symbolSize: [22, 52],
-            symbolOffset: [xOffset, 0],
-            itemStyle: {
-              color: overlayData.color || '#f59e0b',
-              shadowColor: overlayData.color || '#f59e0b',
-              shadowBlur: 10
-            },
-            label: {
-              show: true,
-              formatter: `${pivot.tag}\n$${pivot.price}`,
-              position,
-              distance,
-              fontSize: 10,
-              fontWeight: 'bold',
-              color: '#ffffff',
-              backgroundColor: 'rgba(15, 17, 23, 0.85)',
-              padding: [2, 5],
-              borderRadius: 3
-            }
-          });
-        });
-      }
+      // 1. MarkPoints (P1, P2, P3, P4, 現在) 已依使用者指示全面移除，保持 K 線乾淨不被氣泡圖釘遮擋。
 
       // 2. Pattern Vector Trendline Segments (P1 -> P2 -> P3 -> P4)
       if (overlayData.vectorPath && overlayData.vectorPath.length > 1) {
