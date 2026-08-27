@@ -179,6 +179,9 @@ def parse_md_report_card(md_path):
     m_date = re.search(r'分析日期[】\]\s\*]*[：:]\s*([^\r\n*`]+)', text)
     m_price = re.search(r'當前價格[】\]\s\*]*[：:]\s*([0-9.]+)', text)
     
+    m_tech = re.search(r'技術標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text)
+    m_chip = re.search(r'籌碼標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text)
+    
     code = m_code.group(1).strip() if m_code else ""
     if not code:
         fname = md_path.stem
@@ -196,6 +199,9 @@ def parse_md_report_card(md_path):
     except ValueError:
         win_rate = 70.0
 
+    tech_tags_str = m_tech.group(1).strip() if m_tech else ""
+    chip_tags_str = m_chip.group(1).strip() if m_chip else ""
+
     group = md_path.parent.name if md_path.parent != REPORTS_DIR else "未分類"
     return {
         "code": code,
@@ -206,6 +212,9 @@ def parse_md_report_card(md_path):
         "decision": m_action.group(1).strip() if m_action else "多頭順勢",
         "winRate": win_rate,
         "pattern": pattern,
+        "technicalTags": tech_tags_str,
+        "chipTags": chip_tags_str,
+        "raw": text,
         "reportPath": md_path.relative_to(REPORTS_DIR).as_posix()
     }
 

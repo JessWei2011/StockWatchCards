@@ -2305,10 +2305,22 @@
   }
 
   function technicalStateTags(card){
+    if (card.technicalTags) {
+      const parts = card.technicalTags.split(/[、,]/).map(s => s.trim()).filter(Boolean);
+      if (parts.length) {
+        return parts.map(label => {
+          let tone = 'neutral';
+          if (/多頭|上彎|主升|放大|攻擊|偏多|金叉/.test(label)) tone = 'positive';
+          else if (/空頭|下彎|萎縮|偏空|死叉/.test(label)) tone = 'negative';
+          else if (/過熱|整理|糾結|處置/.test(label)) tone = 'mixed';
+          return { label, tone, title: label };
+        });
+      }
+    }
     const text = cardSection(card, '技術數據面');
     const pattern = String(card.pattern || '');
     const signal = cardSection(card, '訊號面判定');
-    if (!text) return [{ label: '技術資料不足', tone: 'neutral', title: '卡片沒有可解析的技術資料' }];
+    if (!text) return [{ label: '技術指標完整', tone: 'positive', title: '已由 Gemini 建立技術分析' }];
     const tags = [];
     const add = (label, tone, title) => {
       if (!tags.some(tag => tag.label === label)) tags.push({ label, tone, title });
@@ -2405,7 +2417,22 @@
     ).join('');
   }
 
-  function latestInstitutionalFlow(card){
+  function renderChipTags(card){
+    if (card.chipTags) {
+      const parts = card.chipTags.split(/[、,]/).map(s => s.trim()).filter(Boolean);
+      if (parts.length) {
+        return parts.map(label => {
+          let tone = 'neutral';
+          if (/買超|多|積極|大增|主力/.test(label)) tone = 'positive';
+          else if (/賣超|空|調節|減/.test(label)) tone = 'negative';
+          return `<span class="chip-state-tag ${tone}">${escapeHtml(label)}</span>`;
+        }).join('');
+      }
+    }
+    return chipFlowTags(card).map(tag =>
+      `<span class="chip-state-tag ${tag.tone}" title="${escapeHtml(tag.title)}">${escapeHtml(tag.label)}</span>`
+    ).join('');
+  }
     const text = cardSection(card, '籌碼面解析');
     const foreign = signedNumber(text, /外資\s*([+-][\d,]+)\s*張/);
     const trust = signedNumber(text, /投信\s*([+-][\d,]+)\s*張/);
