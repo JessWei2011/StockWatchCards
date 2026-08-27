@@ -156,13 +156,13 @@ window.PatternEngine = {
     pivots.push({ date: cur.date, price: cur.price, label: broke ? 'P4 衝破頸線' : 'P4 尚在整理', tag: broke ? '突破' : '整理中' });
 
     return {
-      name: 'W底（雙重底）',
-      badge: broke ? '底部型態已確立' : '底部型態醞釀中',
+      name: 'W底（雙重底）反轉型態',
+      badge: broke ? 'W底突破確立' : 'W底雙腳成型（蓄勢突破）',
       color: '#ef4444', // 台股：偏多紅
       pivots,
       vectorPath: pivots.map(p => [p.date, p.price]),
       resistanceLine: p2 ? { price: p2.price, label: 'P2 雙底頸線壓力' } : undefined,
-      explanation: `【W底教學心法】：第一次打底於 ${p1.date}（$${p1.price}）${p2 ? `，拉回測試 P2 頸線 $${p2.price} 後` : ''}二次測試 ${p3.date}（$${p3.price}），${broke ? '目前已收復頸線，底型確立。' : '目前仍在頸線附近整理，尚未確認突破。'}`
+      explanation: `【W底教學心法】：第一次打底於 ${p1.date}（$${p1.price}）${p2 ? `，拉回測試 P2 頸線 $${p2.price} 後` : ''}二次測試 ${p3.date}（$${p3.price}）完成 W 雙腳打底，${broke ? '最新收盤價已強勢衝破頸線，W 底反轉型態正式確立！' : '目前價格正在頸線附近蓄勢整理，若帶量突破頸線則底部翻揚。'}`
     };
   },
 
