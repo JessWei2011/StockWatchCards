@@ -332,9 +332,9 @@ window.ChartEngine = {
             return {
               value: v,
               itemStyle: {
-                color: isUp ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)',
-                borderColor: isUp ? '#ef4444' : '#10b981',
-                borderWidth: 1.5
+                color: 'transparent',                       // 中空透明
+                borderColor: isUp ? '#ef4444' : '#10b981', // 亮紅 / 翠綠外框
+                borderWidth: 2                              // 粗外框 (2px)
               }
             };
           })
