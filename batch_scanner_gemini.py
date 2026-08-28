@@ -557,6 +557,43 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
     rsi_tags = detect_rsi_tags(close_s)
     vol_tags = detect_volume_tags(df)
 
+    # ==========================================
+    # VOL 量能核心指標評分調整 (加扣分標準)
+    # ==========================================
+    for vtag in vol_tags:
+        if "🔥 帶量長紅突破" in vtag:
+            momo_score += 15
+            momo_reasons.append("帶量長紅實質突破(主力進駐)")
+            def_score += 10
+            def_reasons.append("帶量突破確認底部")
+        elif "🚀 滾量攻擊" in vtag:
+            momo_score += 15
+            momo_reasons.append("連續價漲量增(滾量主升段)")
+            def_score += 8
+        elif "✨ 量能黃金交叉" in vtag:
+            momo_score += 10
+            momo_reasons.append("5日均量金叉20日均量(人氣增溫)")
+            def_score += 8
+            def_reasons.append("量能金叉轉強")
+        elif "💎 窒息量" in vtag:
+            if not any("窒息量" in r for r in momo_reasons):
+                momo_score += 15
+                momo_reasons.append(f"窒息量籌碼沉澱(量比{vol_ratio:.2f}x)")
+        elif "🚨 高檔爆天量滯漲" in vtag:
+            momo_score -= 25
+            momo_reasons.append("⚠️警示:高檔爆天量滯漲(主力倒貨疑慮)")
+            def_score -= 25
+            def_reasons.append("⚠️警示:高檔爆天量滯漲")
+        elif "⚠️ 量價頂背離" in vtag:
+            momo_score -= 20
+            momo_reasons.append("⚠️警示:量價頂背離(無量虛漲)")
+            def_score -= 20
+            def_reasons.append("⚠️警示:量價頂背離")
+        elif "⚡ 量能死亡交叉" in vtag:
+            momo_score -= 10
+            momo_reasons.append("量能退潮死叉")
+            def_score -= 10
+
     return {
         'code': stock_info['code'],
         'name': stock_info['name'],
@@ -659,7 +696,7 @@ def save_stage4_report(r):
     lines.append(f"  - **成交量**：{r['vol']:,} 股（相對 20日均量 {r['vol_ratio']} 倍）\n")
     lines.append("### 【標籤摘要】")
     lines.append(f"- **RSI 標籤**：{'、'.join(rsi_tags)}")
-    lines.append(f"- **量能標籤**：{'、'.join(vol_tags)}")
+    lines.append(f"- **VOL 標籤**：{'、'.join(vol_tags)}")
     lines.append(f"- **技術標籤**：{'、'.join(technical_tags)}")
     lines.append(f"- **籌碼標籤**：{'、'.join(chip_tags)}")
     lines.append(f"- **型態標籤**：{'、'.join(pattern_tags)}\n")
