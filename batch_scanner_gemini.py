@@ -417,25 +417,28 @@ def detect_macd_tags(close_s: pd.Series) -> list:
         tags.append("❄️ MACD 柱狀體翻綠 (動能減弱)")
 
     # 3. 零軸上強勢多頭
+    # 3. 頂背離 (價格創20日新高，但指標峰值衰退且動能轉折向下)
+    if len(close_s) >= 25:
+        sub_c = close_s.iloc[-20:]
+        if sub_c.iloc[-1] >= sub_c.max() * 0.995:
+            prev_peak_dif = dif.iloc[-25:-4].max()
+            if prev_peak_dif > 0 and cur_dif < prev_peak_dif * 0.8:
+                if cur_dif < prev_dif or cur_hist < prev_hist:
+                    tags.append("⚠️ MACD 頂背離 (高檔動能背離)")
+
+    # 4. 底背離 (價格創20日新低，但指標未破前低且動能轉折向上)
+    if len(close_s) >= 25:
+        sub_c = close_s.iloc[-20:]
+        if sub_c.iloc[-1] <= sub_c.min() * 1.005:
+            prev_trough_dif = dif.iloc[-25:-4].min()
+            if prev_trough_dif < 0 and cur_dif > prev_trough_dif + 1.0:
+                if cur_dif > prev_dif or cur_hist > prev_hist or cur_hist > 0:
+                    tags.append("💎 MACD 底背離 (低檔背離起漲)")
+
+    # 5. 零軸上強勢多頭
     if cur_dif > 0 and cur_sig > 0 and cur_hist > 0:
-        if not any("金叉" in t or "翻紅" in t for t in tags):
+        if not any("金叉" in t or "翻紅" in t or "背離" in t for t in tags):
             tags.append("🚀 MACD 零軸上強勢多頭")
-
-    # 4. 頂背離 (價格創20日新高，但 DIF 或 Hist 衰退)
-    if len(close_s) >= 25:
-        sub_c = close_s.iloc[-20:]
-        if sub_c.iloc[-1] >= sub_c.max():
-            prev_peak_dif = dif.iloc[-25:-3].max()
-            if prev_peak_dif > 0 and cur_dif < prev_peak_dif * 0.75:
-                tags.append("⚠️ MACD 頂背離 (高檔動能背離)")
-
-    # 5. 底背離 (價格創20日新低，但 DIF 或 Hist 翻揚)
-    if len(close_s) >= 25:
-        sub_c = close_s.iloc[-20:]
-        if sub_c.iloc[-1] <= sub_c.min():
-            prev_trough_dif = dif.iloc[-25:-3].min()
-            if prev_trough_dif < 0 and cur_dif > prev_trough_dif * 0.75:
-                tags.append("💎 MACD 底背離 (低檔背離起漲)")
 
     # 預設常態
     if not tags:
