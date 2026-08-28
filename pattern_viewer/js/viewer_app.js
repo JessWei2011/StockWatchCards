@@ -426,6 +426,38 @@
           statMacdTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">MACD 數據正常</span>`;
         }
       }
+
+      // 渲染「⚡ KD 指標狀態」
+      const statKdTags = this.q('#statKdTags') || document.getElementById('statKdTags');
+      if (statKdTags) {
+        const cleanCode = String(this.currentCode || '').split('.')[0].trim();
+        const allCards = (window.cardsByCode || (window.parent && window.parent.cardsByCode) || (typeof cardsByCode !== 'undefined' ? cardsByCode : {})) || {};
+        const card = allCards[cleanCode] || allCards[this.currentCode] || null;
+        let kdTagsStr = card ? (card.kdTags || card.kd_tags || '') : '';
+        if (!kdTagsStr && card && card.raw) {
+          const m = String(card.raw).match(/KD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
+          if (m) kdTagsStr = m[1].trim();
+        }
+
+        if (kdTagsStr) {
+          const parts = kdTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
+          statKdTags.innerHTML = parts.map(t => {
+            let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
+            if (/死亡交叉|死叉|頂背離|超買|轉弱/.test(t)) {
+              style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
+            } else if (/金叉|黃金交叉|超賣|底背離|買點|轉強/.test(t)) {
+              style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
+            } else if (/鈍化|軋空/.test(t)) {
+              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
+            } else if (/多方|推進/.test(t)) {
+              style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
+            }
+            return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
+          }).join('');
+        } else {
+          statKdTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">KD 數據正常</span>`;
+        }
+      }
       if (this.currentStockData && this.currentStockData.dates && this.currentStockData.dates.length) {
         window.updateFocusHUD(this.currentStockData.dates.length - 1, this.currentStockData);
       }
