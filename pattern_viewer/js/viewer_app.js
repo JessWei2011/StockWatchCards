@@ -350,9 +350,9 @@
             if (/過熱|超買|頂背離|死亡交叉|死叉/.test(t)) {
               style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
             } else if (/超跌|底背離|黃金交叉|金叉/.test(t)) {
-              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
-            } else if (/鈍化/.test(t)) {
               style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
+            } else if (/鈍化/.test(t)) {
+              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
             } else if (/多方|推進/.test(t)) {
               style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
             }
@@ -382,9 +382,9 @@
             if (/天量|倒貨|頂背離|死亡交叉|死叉|退潮/.test(t)) {
               style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
             } else if (/突破|黃金交叉|金叉|窒息量|洗淨/.test(t)) {
-              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
-            } else if (/滾量|量價齊揚|主升/.test(t)) {
               style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
+            } else if (/滾量|量價齊揚|主升/.test(t)) {
+              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
             } else if (/溫和|增量/.test(t)) {
               style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
             }
@@ -414,9 +414,9 @@
             if (/死亡交叉|死叉|翻綠|頂背離|轉弱/.test(t)) {
               style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
             } else if (/金叉|黃金交叉|翻紅|底背離|反彈|起漲/.test(t)) {
-              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
-            } else if (/零軸上強勢多頭|多頭發散|強勢攻擊/.test(t)) {
               style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
+            } else if (/零軸上強勢多頭|多頭發散|強勢攻擊/.test(t)) {
+              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
             } else if (/多方|波段/.test(t)) {
               style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
             }
