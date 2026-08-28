@@ -518,26 +518,29 @@
     grid-template-columns:1fr;
     gap:12px; margin:9px 0 1px 32px;
   }
-  .rank-tech-tags, .rank-chip-tags, .rank-pattern-tags{
+  .rank-rsi-tags, .rank-vol-tags, .rank-tech-tags, .rank-chip-tags, .rank-pattern-tags{
     display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px;
   }
   .rank-detail-label{
     color:var(--text-dim); font-size:11px; font-weight:700; margin-right:2px;
   }
-  .tech-state-tag, .chip-state-tag, .pattern-state-tag, .rsi-state-tag{
+  .tech-state-tag, .chip-state-tag, .pattern-state-tag, .rsi-state-tag, .vol-state-tag{
     display:inline-flex; align-items:center; gap:4px; min-height:24px; padding:3px 8px;
     border:1px solid var(--border); border-radius:6px; background:rgba(255,255,255,.035);
     color:var(--text-dim); font-size:11.5px; white-space:nowrap;
   }
-  .tech-state-tag, .chip-state-tag, .pattern-state-tag, .rsi-state-tag{ font-weight:750; }
-  .tech-state-tag.positive, .chip-state-tag.positive, .pattern-state-tag.positive, .rsi-state-tag.positive{ color:#fca5a5; border-color:rgba(248,113,113,.48); background:rgba(239,68,68,.10); }
-  .tech-state-tag.negative, .chip-state-tag.negative, .pattern-state-tag.negative, .rsi-state-tag.negative{ color:#86efac; border-color:rgba(74,222,128,.45); background:rgba(34,197,94,.09); }
-  .tech-state-tag.mixed, .chip-state-tag.mixed, .pattern-state-tag.mixed, .rsi-state-tag.mixed{ color:#fde68a; border-color:rgba(250,204,21,.45); background:rgba(234,179,8,.09); }
-  .tech-state-tag.neutral, .chip-state-tag.neutral, .pattern-state-tag.neutral, .rsi-state-tag.neutral{
+  .tech-state-tag, .chip-state-tag, .pattern-state-tag, .rsi-state-tag, .vol-state-tag{ font-weight:750; }
+  .tech-state-tag.positive, .chip-state-tag.positive, .pattern-state-tag.positive, .rsi-state-tag.positive, .vol-state-tag.positive{ color:#fca5a5; border-color:rgba(248,113,113,.48); background:rgba(239,68,68,.10); }
+  .tech-state-tag.negative, .chip-state-tag.negative, .pattern-state-tag.negative, .rsi-state-tag.negative, .vol-state-tag.negative{ color:#86efac; border-color:rgba(74,222,128,.45); background:rgba(34,197,94,.09); }
+  .tech-state-tag.mixed, .chip-state-tag.mixed, .pattern-state-tag.mixed, .rsi-state-tag.mixed, .vol-state-tag.mixed{ color:#fde68a; border-color:rgba(250,204,21,.45); background:rgba(234,179,8,.09); }
+  .tech-state-tag.neutral, .chip-state-tag.neutral, .pattern-state-tag.neutral, .rsi-state-tag.neutral, .vol-state-tag.neutral{
     color:#93c5fd; border-color:rgba(96,165,250,.58); background:rgba(37,99,235,.16);
   }
   .rsi-state-tag.cyan{
     color:#38bdf8; border-color:rgba(56,189,248,.45); background:rgba(14,165,233,.12);
+  }
+  .vol-state-tag.amber{
+    color:#fde047; border-color:rgba(234,179,8,.45); background:rgba(234,179,8,.12);
   }
   .inst-mini-chart{
     grid-column:1 / -1; min-width:0; padding:8px 10px 7px;
@@ -1596,6 +1599,7 @@
 
     // Tags (模組化獨立指標解析)
     let rsiTags = [];
+    let volTags = [];
     let macdTags = [];
     let kdTags = [];
     let techTags = [];
@@ -1604,6 +1608,8 @@
     
     const rsiM = mdText.match(/RSI\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
     if (rsiM) rsiTags = rsiM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
+    const volM = mdText.match(/VOL\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i) || mdText.match(/量能標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
+    if (volM) volTags = volM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
     const macdM = mdText.match(/MACD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
     if (macdM) macdTags = macdM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
     const kdM = mdText.match(/KD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
@@ -1681,8 +1687,8 @@
       </div>
     `;
 
-    // Tags Group (模組化分組顯示：支援 RSI、MACD、KD 等獨立指標群組)
-    if (rsiTags.length || macdTags.length || kdTags.length || techTags.length || chipTags.length || patternTags.length) {
+    // Tags Group (模組化分組顯示：支援 RSI、VOL、MACD、KD 等獨立指標群組)
+    if (rsiTags.length || volTags.length || macdTags.length || kdTags.length || techTags.length || chipTags.length || patternTags.length) {
       html += `<div class="analysis-tag-group">`;
       
       // 1. 📊 RSI 指標群組
@@ -1695,6 +1701,21 @@
             style = 'background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.35); font-weight:750;';
           } else if (t.includes('鈍化')) {
             style = 'background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.35); font-weight:750;';
+          }
+          return `<span class="tag-pill" style="${style}">${escapeHtml(t)}</span>`;
+        }).join('')}</div></div>`;
+      }
+
+      // 2. 📊 VOL 指標群組
+      if (volTags.length) {
+        html += `<div class="analysis-tag-row"><span class="tag-label" style="background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.35);">📊 VOL 指標</span><div class="analysis-tag-pills">${volTags.map(t => {
+          let style = 'background:rgba(234,179,8,0.12); color:#fef08a; border:1px solid rgba(234,179,8,0.25);';
+          if (t.includes('天量') || t.includes('頂背離') || t.includes('死亡交叉')) {
+            style = 'background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.35); font-weight:750;';
+          } else if (t.includes('突破') || t.includes('黃金交叉') || t.includes('窒息量')) {
+            style = 'background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.35); font-weight:750;';
+          } else if (t.includes('滾量') || t.includes('量價齊揚')) {
+            style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.45); font-weight:750;';
           }
           return `<span class="tag-pill" style="${style}">${escapeHtml(t)}</span>`;
         }).join('')}</div></div>`;
@@ -3054,6 +3075,56 @@
     ).join('');
   }
 
+  function volStateTags(card){
+    let volTagsStr = String(card.volTags || card.vol_tags || '').trim();
+    if (!volTagsStr && card.raw) {
+      const m = String(card.raw).match(/VOL\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i) || String(card.raw).match(/量能標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
+      if (m) volTagsStr = m[1].trim();
+    }
+    if (volTagsStr) {
+      const parts = volTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
+      if (parts.length) {
+        return parts.map(label => {
+          let tone = 'neutral';
+          if (/天量|頂背離|死亡交叉|死叉|退潮/.test(label)) tone = 'positive';
+          else if (/突破|黃金交叉|金叉|窒息量|洗淨/.test(label)) tone = 'negative';
+          else if (/滾量|量價齊揚|主升/.test(label)) tone = 'mixed';
+          else if (/溫和/.test(label)) tone = 'neutral';
+          return { label, tone, title: `VOL 標籤：${label}` };
+        });
+      }
+    }
+
+    const stat = (window.winrateMapByCode && window.winrateMapByCode[card.code]) || {};
+    const text = [card.summary || '', card.technicalTags || '', stat.metric || '', stat.feature || ''].join(' ');
+    const tags = [];
+    const add = (label, tone, title = '') => {
+      if (!tags.some(tag => tag.label === label)) tags.push({ label, tone, title });
+    };
+
+    if (/天量|爆天量/.test(text)) add('🚨 高檔爆天量滯漲', 'positive', '高檔爆出大量籌碼換手');
+    if (/量價頂背離|無量空漲/.test(text)) add('⚠️ 量價頂背離', 'positive', '股價創新高但量能萎縮');
+    if (/帶量長紅|帶量突破/.test(text)) add('🔥 帶量長紅突破', 'negative', '主力出量表態突破');
+    if (/滾量攻擊|量價齊揚/.test(text)) add('🚀 滾量攻擊 (量價齊揚)', 'mixed', '價量齊揚強勢推升');
+    if (/窒息量|凹洞量/.test(text)) add('💎 窒息量 (籌碼洗淨)', 'negative', '量縮至極致籌碼沉澱');
+    if (/量能黃金交叉|量金叉/.test(text)) add('✨ 量能黃金交叉', 'negative', '5日均量突破20日均量');
+    if (/量能死亡交叉|量死叉|量能退潮/.test(text)) add('⚡ 量能死亡交叉', 'positive', '5日均量跌破20日均量');
+
+    if (!tags.length) {
+      if (/爆量攻擊/.test(text)) add('🔥 爆量攻擊', 'negative', '成交量顯著放大');
+      else if (/溫和放量/.test(text)) add('📈 溫和放量', 'neutral', '成交量溫和增加');
+      else if (/量能萎縮|縮量/.test(text)) add('📉 縮量整理', 'neutral', '量能萎縮整理');
+      else tags.push({ label: '常態量能換手', tone: 'neutral', title: '暫無特殊量能異動' });
+    }
+    return tags;
+  }
+
+  function renderVolTags(card){
+    return volStateTags(card).map(tag =>
+      `<span class="vol-state-tag ${tag.tone}" title="${escapeHtml(tag.title)}">${escapeHtml(tag.label)}</span>`
+    ).join('');
+  }
+
   function renderTechnicalTags(card){
     return technicalStateTags(card).map(tag =>
       `<span class="tech-state-tag ${tag.tone}" title="${escapeHtml(tag.title)}">${escapeHtml(tag.label)}</span>`
@@ -3337,6 +3408,10 @@
           <div class="rank-rsi-tags">
             <span class="rank-detail-label">RSI 標籤</span>
             ${renderRsiTags(c)}
+          </div>
+          <div class="rank-vol-tags">
+            <span class="rank-detail-label">VOL 標籤</span>
+            ${renderVolTags(c)}
           </div>
           <div class="rank-tech-tags">
             <span class="rank-detail-label">均線量價</span>
