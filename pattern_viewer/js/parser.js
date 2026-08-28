@@ -210,6 +210,39 @@ window.PatternParser = {
       }
     }
 
+    // Calculate MACD: DIF (EMA12 - EMA26), MACD Signal (EMA9 of DIF), OSC Hist ((DIF - Signal) * 2)
+    function calculateEma(values, period) {
+      if (!values || !values.length) return [];
+      const k = 2 / (period + 1);
+      const emaArray = [];
+      let prevEma = values[0];
+      emaArray.push(parseFloat(prevEma.toFixed(2)));
+      for (let i = 1; i < values.length; i++) {
+        const curEma = values[i] * k + prevEma * (1 - k);
+        emaArray.push(parseFloat(curEma.toFixed(2)));
+        prevEma = curEma;
+      }
+      return emaArray;
+    }
+
+    function calculateMacd(prices) {
+      if (!prices || prices.length === 0) return { dif: [], macdSignal: [], macdHist: [] };
+      const ema12 = calculateEma(prices, 12);
+      const ema26 = calculateEma(prices, 26);
+      const dif = [];
+      for (let i = 0; i < prices.length; i++) {
+        dif.push(parseFloat((ema12[i] - ema26[i]).toFixed(2)));
+      }
+      const macdSignal = calculateEma(dif, 9);
+      const calculatedHist = [];
+      for (let i = 0; i < prices.length; i++) {
+        calculatedHist.push(parseFloat(((dif[i] - macdSignal[i]) * 2).toFixed(2)));
+      }
+      return { dif, macdSignal, calculatedHist };
+    }
+
+    const { dif, macdSignal, calculatedHist } = calculateMacd(closePrices);
+
     return {
       title: titleText,
       dates,
@@ -225,7 +258,9 @@ window.PatternParser = {
       rsi: (rsi && rsi.some(v => v !== null && !isNaN(v))) ? rsi : rsi6,
       rsi6,
       rsi12,
-      macdHist,
+      dif,
+      macdSignal,
+      macdHist: (macdHist && macdHist.some(v => v !== null && !isNaN(v))) ? macdHist : calculatedHist,
       kList,
       dList,
       bollUpper,

@@ -65,6 +65,8 @@ window.ChartEngine = {
       rsi,
       rsi6,
       rsi12,
+      dif,
+      macdSignal,
       macdHist,
       kList,
       dList,
@@ -168,7 +170,7 @@ window.ChartEngine = {
         label: { backgroundColor: '#3b82f6' }
       },
       legend: {
-        data: ['K線', 'MA5', 'MA10', 'MA20', 'MA60', 'MA120', 'BOLL上軌', 'BOLL下軌', '成交量', 'MV5', 'MV20', 'RSI(6)', 'RSI(12)', 'MACD', 'K值', 'D值'],
+        data: ['K線', 'MA5', 'MA10', 'MA20', 'MA60', 'MA120', 'BOLL上軌', 'BOLL下軌', '成交量', 'MV5', 'MV20', 'RSI(6)', 'RSI(12)', 'MACD柱體', 'DIF快線', 'MACD慢線', 'K值', 'D值'],
         top: 4,
         textStyle: { color: '#94a3b8', fontSize: 11 },
         selected: {
@@ -185,7 +187,9 @@ window.ChartEngine = {
           'MV20': true,
           'RSI(6)': true,
           'RSI(12)': true,
-          'MACD': true,
+          'MACD柱體': true,
+          'DIF快線': true,
+          'MACD慢線': true,
           'K值': true,
           'D值': true
         }
@@ -400,13 +404,13 @@ window.ChartEngine = {
           }
         },
 
-        // 7. Pane 3: MACD (Grid 3) - 空心粗外框風格
+        // 7. Pane 3: MACD (Grid 3) - 柱體 (中空粗框) + DIF快線 + MACD慢線
         {
-          name: 'MACD',
+          name: 'MACD柱體',
           type: 'bar',
           xAxisIndex: 3,
           yAxisIndex: 3,
-          data: macdHist.map(m => {
+          data: (macdHist || []).map(m => {
             const isUp = m >= 0;
             return {
               value: m,
@@ -417,6 +421,32 @@ window.ChartEngine = {
               }
             };
           })
+        },
+        {
+          name: 'DIF快線',
+          type: 'line',
+          xAxisIndex: 3,
+          yAxisIndex: 3,
+          data: dif || [],
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#38bdf8', width: 2 }
+        },
+        {
+          name: 'MACD慢線',
+          type: 'line',
+          xAxisIndex: 3,
+          yAxisIndex: 3,
+          data: macdSignal || [],
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#fb923c', width: 2 },
+          markLine: {
+            symbol: 'none',
+            data: [
+              { yAxis: 0, lineStyle: { color: 'rgba(255,255,255,0.22)', type: 'dashed', width: 1 } }
+            ]
+          }
         },
 
         // 8. Pane 4: KD (Grid 4) - 雙色加粗流線

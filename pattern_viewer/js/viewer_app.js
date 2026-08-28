@@ -578,6 +578,8 @@
     setVal('hudRsi12', r12, '#38bdf8');
 
     // MACD
+    setVal('hudMacdDif', stockData.dif && stockData.dif[idx], '#bae6fd');
+    setVal('hudMacdSignal', stockData.macdSignal && stockData.macdSignal[idx], '#fed7aa');
     const macd = stockData.macdHist && stockData.macdHist[idx];
     const macdEl = document.getElementById('hudMacdHist');
     if (macdEl) {
