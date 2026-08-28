@@ -222,10 +222,11 @@ window.ChartEngine = {
           yAxisIndex: 0,
           data: candles,
           itemStyle: {
-            color: '#ef4444',        // 紅漲
-            color0: '#10b981',       // 綠跌
-            borderColor: '#ef4444',
-            borderColor0: '#10b981'
+            color: 'transparent',        // 紅漲：空心
+            color0: 'transparent',       // 綠跌：空心
+            borderColor: '#ef4444',      // 亮紅粗外框
+            borderColor0: '#10b981',     // 翠綠粗外框
+            borderWidth: 2               // 現代感粗外框 (2px)
           },
           markPoint: {
             data: markPoints
@@ -313,61 +314,79 @@ window.ChartEngine = {
           lineStyle: { color: '#a855f7', width: 1, type: 'dashed' }
         },
 
-        // 5. Pane 1: Volume (Grid 1)
+        // 5. Pane 1: Volume (Grid 1) - 空心粗外框風格
         {
           name: '成交量',
           type: 'bar',
           xAxisIndex: 1,
           yAxisIndex: 1,
-          data: volumes.map((v, i) => ({
-            value: v,
-            itemStyle: {
-              color: candles[i][1] >= candles[i][0] ? '#ef4444' : '#10b981'
-            }
-          }))
+          data: volumes.map((v, i) => {
+            const isUp = candles[i][1] >= candles[i][0];
+            return {
+              value: v,
+              itemStyle: {
+                color: 'transparent',
+                borderColor: isUp ? '#ef4444' : '#10b981',
+                borderWidth: 2
+              }
+            };
+          })
         },
 
-        // 6. Pane 2: RSI (Grid 2)
+        // 6. Pane 2: RSI (Grid 2) - 科技流線 + 微發光漸層
         {
           name: 'RSI',
           type: 'line',
           xAxisIndex: 2,
           yAxisIndex: 2,
           data: rsi,
+          smooth: true,
           showSymbol: false,
-          lineStyle: { color: '#06b6d4', width: 1.5 },
+          lineStyle: { color: '#38bdf8', width: 2 },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(56, 189, 248, 0.22)' },
+              { offset: 1, color: 'rgba(56, 189, 248, 0.0)' }
+            ])
+          },
           markLine: {
             symbol: 'none',
             data: [
-              { yAxis: 70, lineStyle: { color: '#ef4444', type: 'dotted' } },
-              { yAxis: 30, lineStyle: { color: '#10b981', type: 'dotted' } }
+              { yAxis: 70, lineStyle: { color: '#ef4444', type: 'dotted', width: 1.2 } },
+              { yAxis: 30, lineStyle: { color: '#10b981', type: 'dotted', width: 1.2 } }
             ]
           }
         },
 
-        // 7. Pane 3: MACD (Grid 3)
+        // 7. Pane 3: MACD (Grid 3) - 空心粗外框風格
         {
           name: 'MACD',
           type: 'bar',
           xAxisIndex: 3,
           yAxisIndex: 3,
-          data: macdHist.map(m => ({
-            value: m,
-            itemStyle: {
-              color: m >= 0 ? '#ef4444' : '#10b981'
-            }
-          }))
+          data: macdHist.map(m => {
+            const isUp = m >= 0;
+            return {
+              value: m,
+              itemStyle: {
+                color: 'transparent',
+                borderColor: isUp ? '#ef4444' : '#10b981',
+                borderWidth: 2
+              }
+            };
+          })
         },
 
-        // 8. Pane 4: KD (Grid 4)
+        // 8. Pane 4: KD (Grid 4) - 雙色加粗流線
         {
           name: 'K值',
           type: 'line',
           xAxisIndex: 4,
           yAxisIndex: 4,
           data: kList,
+          smooth: true,
           showSymbol: false,
-          lineStyle: { color: '#f59e0b', width: 1.5 }
+          lineStyle: { color: '#f59e0b', width: 2 }
         },
         {
           name: 'D值',
@@ -375,13 +394,14 @@ window.ChartEngine = {
           xAxisIndex: 4,
           yAxisIndex: 4,
           data: dList,
+          smooth: true,
           showSymbol: false,
-          lineStyle: { color: '#3b82f6', width: 1.5 },
+          lineStyle: { color: '#38bdf8', width: 2 },
           markLine: {
             symbol: 'none',
             data: [
-              { yAxis: 80, lineStyle: { color: '#ef4444', type: 'dotted' } },
-              { yAxis: 20, lineStyle: { color: '#10b981', type: 'dotted' } }
+              { yAxis: 80, lineStyle: { color: '#ef4444', type: 'dotted', width: 1.2 } },
+              { yAxis: 20, lineStyle: { color: '#10b981', type: 'dotted', width: 1.2 } }
             ]
           }
         }
