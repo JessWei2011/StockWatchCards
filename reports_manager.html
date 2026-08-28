@@ -131,6 +131,15 @@
   .tree-stat-pills{
     display:inline-flex; align-items:center; justify-content:flex-end; gap:4px; flex-shrink:0; margin-left:auto;
   }
+  .tree-quick-actions{ display:inline-flex; align-items:center; gap:3px; flex-shrink:0; }
+  .tree-quick-btn{
+    width:19px; height:19px; padding:0; border-radius:5px; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.04); border:1px solid var(--border); font-size:10.5px;
+  }
+  .tree-quick-btn.pattern{ border-color:rgba(56,189,248,.45); }
+  .tree-quick-btn.report{ border-color:rgba(196,181,253,.45); }
+  .tree-quick-btn:hover{ transform:scale(1.1); background:rgba(255,255,255,.12); }
   .tree-stat-pill{
     display:inline-flex; align-items:center; justify-content:center;
     box-sizing:border-box; height:19px; border-radius:5px;
@@ -140,7 +149,9 @@
   }
   .tree-stat-pill.winrate{ width:40px; color:#fca5a5; border:1px solid rgba(239,68,68,.4); background:rgba(239,68,68,.14); }
   .tree-stat-pill.winrate.high{ color:#f87171; border:1px solid rgba(239,68,68,.65); background:rgba(239,68,68,.25); }
-  .tree-stat-pill.rr{ width:36px; color:#93c5fd; border:1px solid rgba(59,130,246,.4); background:rgba(59,130,246,.14); }
+  .tree-stat-pill.rr{ width:42px; color:#93c5fd; border:1px solid rgba(59,130,246,.4); background:rgba(59,130,246,.14); }
+  .tree-stat-pill.pe{ width:56px; color:#c4b5fd; border:1px solid rgba(168,85,247,.4); background:rgba(168,85,247,.14); }
+  .tree-stat-pill.missing.pe-missing{ width:56px; }
   .tree-stat-pill.missing{ width:28px; color:var(--text-dim); border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); }
   .tree-actions button{
     background:none; border:none; color:inherit; opacity:0.7; cursor:pointer; font-size:12px; padding:2px 4px;
@@ -1805,9 +1816,16 @@
     item.draggable = true;
 
     const code = String(r.code || '').trim();
+    const card = cardsByCode[code] || {};
     const stat = (window.winrateMapByCode && window.winrateMapByCode[code]) ? window.winrateMapByCode[code] : {};
-    let winRateVal = stat.winRate ? stat.winRate.replace(/[%`*]/g, '') : null;
-    let rrVal = stat.rr ? stat.rr.replace(/[`*]/g, '') : null;
+    // 左側個股樹狀清單以各檔 Markdown 報告為準，而非排行榜資料。
+    // 排行榜未載入或不含該股時，仍能穩定顯示勝率與 R/R。
+    const hasNumber = value => value !== null && value !== '' && Number.isFinite(Number(value));
+    let winRateVal = hasNumber(card.winRate) ? String(card.winRate) : null;
+    let rrVal = hasNumber(card.rr) ? String(card.rr) : null;
+    let peVal = hasNumber(card.pe) ? String(card.pe) : null;
+    if (!winRateVal && stat.winRate) winRateVal = stat.winRate.replace(/[%`*]/g, '');
+    if (!rrVal && stat.rr) rrVal = stat.rr.replace(/[`*]/g, '');
 
     if (winRateVal && !isNaN(parseFloat(winRateVal))) {
       winRateVal = parseFloat(winRateVal).toFixed(1);
@@ -1815,9 +1833,13 @@
     if (rrVal && !isNaN(parseFloat(rrVal))) {
       rrVal = parseFloat(rrVal).toFixed(2);
     }
+    if (peVal && !isNaN(parseFloat(peVal))) {
+      peVal = parseFloat(peVal).toFixed(3);
+    }
 
     const winRateTitle = winRateVal ? `預期勝率：${winRateVal}%` : `尚未進行勝率掃描`;
     const rrTitle = rrVal ? `風險報酬比 (R/R)：${rrVal}` : `尚未計算風報比`;
+    const peTitle = peVal ? `本益比 (PE)：${peVal} 倍` : `尚無本益比資料`;
 
     const winPill = winRateVal
       ? `<span class="tree-stat-pill winrate ${parseFloat(winRateVal)>=60 ? 'high' : ''}" title="${escapeHtml(winRateTitle)}">${escapeHtml(winRateVal)}</span>`
@@ -1827,8 +1849,27 @@
       ? `<span class="tree-stat-pill rr" title="${escapeHtml(rrTitle)}">${escapeHtml(rrVal)}</span>`
       : `<span class="tree-stat-pill missing" title="${escapeHtml(rrTitle)}">—</span>`;
 
-    item.innerHTML = `<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(r.name || r.base)}">${escapeHtml(r.name || r.base)}</span><span class="tree-stat-pills">${winPill}${rrPill}</span>`;
+    const pePill = peVal
+      ? `<span class="tree-stat-pill pe" title="${escapeHtml(peTitle)}">${escapeHtml(peVal)}</span>`
+      : `<span class="tree-stat-pill missing pe-missing" title="${escapeHtml(peTitle)}">—</span>`;
+
+    const quickActions = code ? `
+      <span class="tree-quick-actions">
+        <button type="button" class="tree-quick-btn pattern" data-action="pattern" title="開啟 ${escapeHtml(r.name || code)} 的專業看盤">📈</button>
+        <button type="button" class="tree-quick-btn report" data-action="report" title="開啟 ${escapeHtml(r.name || code)} 的分析報告">📑</button>
+      </span>` : '';
+
+    item.innerHTML = `<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(r.name || r.base)}">${escapeHtml(r.name || r.base)}</span><span class="tree-stat-pills">${quickActions}${winPill}${rrPill}${pePill}</span>`;
     item.addEventListener('click', () => focusAiResult(r.code));
+    item.querySelectorAll('.tree-quick-btn').forEach(button => {
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        if (button.dataset.action === 'pattern') openPatternForStock(code);
+        else switchToStockAnalysis(code);
+      });
+      button.addEventListener('mousedown', event => event.stopPropagation());
+      button.addEventListener('dragstart', event => event.preventDefault());
+    });
     item.addEventListener('dragstart', (e) => {
       item.classList.add('dragging');
       e.dataTransfer.setData('text/plain', r.base);

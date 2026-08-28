@@ -175,9 +175,12 @@ def parse_md_report_card(md_path):
     m_name = re.search(r'#\s*📈\s*(.*?)\s*\(', text)
     m_pat = re.search(r'型態標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text)
     m_win = re.search(r'預期勝率[】\]\s\*]*[：:]\s*[\*`\s]*([0-9.]+%?)', text)
+    m_rr = re.search(r'(?:風險報酬比|風報比|R/R)[】\]\s\*]*[：:]\s*[\*`\s]*([0-9.]+)', text, re.I)
     m_action = re.search(r'建議評級[】\]\s\*]*[：:]\s*[\*`\s]*([^\r\n*`]+)', text)
     m_date = re.search(r'分析日期[】\]\s\*]*[：:]\s*([^\r\n*`]+)', text)
     m_price = re.search(r'當前價格[】\]\s\*]*[：:]\s*([0-9.]+)', text)
+    m_stop = re.search(r'【停損位】\s*[：:]\s*[^0-9]*([0-9.]+)', text)
+    m_target = re.search(r'【目標價】\s*[：:]\s*[^0-9]*([0-9.]+)', text)
     
     m_tech = re.search(r'技術標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text)
     m_chip = re.search(r'籌碼標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text)
@@ -199,6 +202,23 @@ def parse_md_report_card(md_path):
     except ValueError:
         win_rate = 70.0
 
+    # 優先採用報告已明列的 R/R；舊版報告沒有該欄時，以交易計畫的
+    # 現價、停損與目標價計算：(目標價 - 現價) / (現價 - 停損)。
+    rr_ratio = None
+    try:
+        if m_rr:
+            rr_ratio = float(m_rr.group(1))
+        elif m_price and m_stop and m_target:
+            current_price = float(m_price.group(1))
+            stop_price = float(m_stop.group(1))
+            target_price = float(m_target.group(1))
+            risk = current_price - stop_price
+            reward = target_price - current_price
+            if risk > 0 and reward >= 0:
+                rr_ratio = round(reward / risk, 2)
+    except ValueError:
+        rr_ratio = None
+
     tech_tags_str = m_tech.group(1).strip() if m_tech else ""
     chip_tags_str = m_chip.group(1).strip() if m_chip else ""
 
@@ -211,6 +231,7 @@ def parse_md_report_card(md_path):
         "current": m_price.group(1).strip() if m_price else "",
         "decision": m_action.group(1).strip() if m_action else "多頭順勢",
         "winRate": win_rate,
+        "rr": rr_ratio,
         "pattern": pattern,
         "technicalTags": tech_tags_str,
         "chipTags": chip_tags_str,
@@ -456,21 +477,33 @@ def _report_close_prices(report_text):
     return prices
 
 
+def _report_pe(report_text):
+    """擷取個股 HTML 報表基本面區的 trailing PE。"""
+    match = re.search(r'<b>\s*PE\s*[：:]\s*</b>\s*([0-9]+(?:\.[0-9]+)?)', report_text, re.I)
+    try:
+        return float(match.group(1)) if match else None
+    except ValueError:
+        return None
+
+
 def attach_report_flows(cards_by_code):
-    """將最新報表內的法人與融資券日資料附加到卡片 API，供首頁標籤及迷你圖使用。"""
+    """將最新報表的基本面、法人與融資券資料附加到卡片 API。"""
     reports_by_code = {item["code"]: item for item in build_reports_index()}
     for code, card in cards_by_code.items():
         report = reports_by_code.get(code)
         if not report:
+            card["pe"] = None
             card["institutionalFlow"] = []
             card["marginFlow"] = []
             continue
         try:
             report_text = (REPORTS_DIR / report["path"]).read_text(encoding="utf-8")
         except (OSError, UnicodeError):
+            card["pe"] = None
             card["institutionalFlow"] = []
             card["marginFlow"] = []
             continue
+        card["pe"] = _report_pe(report_text)
         institutional = _report_table_rows(
             report_text, "三大法人", ("foreign", "trust", "dealer", "total")
         )[:15]
