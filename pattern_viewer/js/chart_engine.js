@@ -469,6 +469,46 @@ window.ChartEngine = {
     }
 
     this.chartInstance.setOption(option, true);
+
+    // 同步十字游標焦點至右側「🎯 游標焦點即時數據看板」
+    if (this._axisPointerHandler) {
+      this.chartInstance.off('updateAxisPointer', this._axisPointerHandler);
+    }
+    this._axisPointerHandler = (event) => {
+      if (event.axesInfo && event.axesInfo.length) {
+        const axisInfo = event.axesInfo[0];
+        if (axisInfo && axisInfo.value != null) {
+          const dataIndex = typeof axisInfo.value === 'number' ? axisInfo.value : dates.indexOf(axisInfo.value);
+          if (dataIndex >= 0 && dataIndex < dates.length) {
+            if (window.updateFocusHUD) window.updateFocusHUD(dataIndex, stockData);
+            if (window.parent && window.parent.updateFocusHUD) window.parent.updateFocusHUD(dataIndex, stockData);
+          }
+        }
+      }
+    };
+    this.chartInstance.on('updateAxisPointer', this._axisPointerHandler);
+
+    // 預設呈現最新收盤日數據
+    if (dates && dates.length) {
+      const lastIdx = dates.length - 1;
+      if (window.updateFocusHUD) window.updateFocusHUD(lastIdx, stockData);
+      if (window.parent && window.parent.updateFocusHUD) window.parent.updateFocusHUD(lastIdx, stockData);
+    }
+
+    if (!this._hudMouseLeaveBound) {
+      this._hudMouseLeaveBound = true;
+      const chartDom = document.getElementById('echart-main');
+      if (chartDom) {
+        chartDom.addEventListener('mouseleave', () => {
+          if (this.currentStockData && this.currentStockData.dates && this.currentStockData.dates.length) {
+            const lastIdx = this.currentStockData.dates.length - 1;
+            if (window.updateFocusHUD) window.updateFocusHUD(lastIdx, this.currentStockData);
+            if (window.parent && window.parent.updateFocusHUD) window.parent.updateFocusHUD(lastIdx, this.currentStockData);
+          }
+        });
+      }
+    }
+    this.currentStockData = stockData;
   },
 
   _attachZoomFix(dom) {

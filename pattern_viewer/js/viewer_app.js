@@ -403,6 +403,9 @@
           }
         }
       }
+      if (this.currentStockData && this.currentStockData.dates && this.currentStockData.dates.length) {
+        window.updateFocusHUD(this.currentStockData.dates.length - 1, this.currentStockData);
+      }
       requestAnimationFrame(() => this.resize());
     }
 
@@ -462,6 +465,139 @@
       ChartEngine.destroy();
     }
   }
+
+  window.updateFocusHUD = function(idx, stockData) {
+    if (!stockData || !stockData.dates || idx < 0 || idx >= stockData.dates.length) return;
+    
+    const date = stockData.dates[idx];
+    const isLatest = (idx === stockData.dates.length - 1);
+    const dateEl = document.getElementById('hudFocusDate');
+    if (dateEl) {
+      dateEl.textContent = isLatest ? `${date} (最新收盤)` : `📅 ${date}`;
+      dateEl.style.color = isLatest ? '#38bdf8' : '#fbbf24';
+      dateEl.style.borderColor = isLatest ? 'rgba(56,189,248,0.35)' : 'rgba(251,191,36,0.4)';
+    }
+
+    const candle = stockData.candles && stockData.candles[idx]; // [open, close, lowest, highest]
+    if (candle) {
+      const open = candle[0];
+      const close = candle[1];
+      const low = candle[2];
+      const high = candle[3];
+      const prevClose = idx > 0 && stockData.candles[idx - 1] ? stockData.candles[idx - 1][1] : open;
+      const diff = close - prevClose;
+      const pct = prevClose ? (diff / prevClose * 100) : 0;
+      const isUp = diff >= 0;
+      const color = isUp ? '#ef4444' : '#10b981';
+
+      const ocEl = document.getElementById('hudOpenClose');
+      if (ocEl) {
+        const oColor = open >= prevClose ? '#ef4444' : '#10b981';
+        ocEl.innerHTML = `<span style="color:${oColor}">${open.toFixed(2)}</span> ／ <span style="color:${color}; font-weight:800;">${close.toFixed(2)}</span>`;
+      }
+
+      const hlEl = document.getElementById('hudHighLow');
+      if (hlEl) {
+        hlEl.innerHTML = `<span style="color:#ef4444">${high.toFixed(2)}</span> ／ <span style="color:#10b981">${low.toFixed(2)}</span>`;
+      }
+
+      const chgEl = document.getElementById('hudChange');
+      if (chgEl) {
+        chgEl.style.color = color;
+        chgEl.textContent = `${isUp ? '+' : ''}${diff.toFixed(2)} (${isUp ? '+' : ''}${pct.toFixed(2)}%)`;
+      }
+    }
+
+    // Volume
+    const vol = stockData.volumes && stockData.volumes[idx];
+    const volEl = document.getElementById('hudVolume');
+    if (volEl) {
+      if (vol != null && !isNaN(vol)) {
+        volEl.textContent = `${Number(vol).toLocaleString()} 張`;
+      } else {
+        volEl.textContent = '—';
+      }
+    }
+
+    // Helper
+    const setVal = (id, val, color) => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (val != null && !isNaN(val)) {
+          el.textContent = Number(val).toFixed(2);
+          if (color) el.style.color = color;
+        } else {
+          el.textContent = '—';
+        }
+      }
+    };
+
+    // MAs
+    setVal('hudMa5', stockData.ma5 && stockData.ma5[idx], '#f59e0b');
+    setVal('hudMa10', stockData.ma10 && stockData.ma10[idx], '#38bdf8');
+    setVal('hudMa20', stockData.ma20 && stockData.ma20[idx], '#ec4899');
+    setVal('hudMa60', stockData.ma60 && stockData.ma60[idx], '#8b5cf6');
+
+    // RSI
+    const r6 = stockData.rsi6 && stockData.rsi6[idx];
+    const r12 = stockData.rsi12 && stockData.rsi12[idx];
+    const rsiVal = r6 != null ? r6 : (stockData.rsi && stockData.rsi[idx]);
+    setVal('hudRsi6', r6, '#fbbf24');
+    setVal('hudRsi12', r12, '#38bdf8');
+
+    const badgeEl = document.getElementById('hudRsiStateBadge');
+    if (badgeEl) {
+      if (rsiVal != null && !isNaN(rsiVal)) {
+        if (rsiVal >= 80) {
+          badgeEl.textContent = `🔥 極度過熱 (${rsiVal.toFixed(1)})`;
+          badgeEl.style.cssText = 'font-size:10.5px; padding:1px 6px; border-radius:4px; font-weight:750; background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.4);';
+        } else if (rsiVal >= 70) {
+          badgeEl.textContent = `⚠️ 進入過熱區 (${rsiVal.toFixed(1)})`;
+          badgeEl.style.cssText = 'font-size:10.5px; padding:1px 6px; border-radius:4px; font-weight:750; background:rgba(249,115,22,0.2); color:#fdba74; border:1px solid rgba(249,115,22,0.4);';
+        } else if (rsiVal <= 20) {
+          badgeEl.textContent = `💎 極度超跌 (${rsiVal.toFixed(1)})`;
+          badgeEl.style.cssText = 'font-size:10.5px; padding:1px 6px; border-radius:4px; font-weight:750; background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.4);';
+        } else if (rsiVal <= 30) {
+          badgeEl.textContent = `👀 進入超跌區 (${rsiVal.toFixed(1)})`;
+          badgeEl.style.cssText = 'font-size:10.5px; padding:1px 6px; border-radius:4px; font-weight:750; background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.3);';
+        } else if (rsiVal >= 55) {
+          badgeEl.textContent = `📈 多方推進 (${rsiVal.toFixed(1)})`;
+          badgeEl.style.cssText = 'font-size:10.5px; padding:1px 6px; border-radius:4px; font-weight:750; background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
+        } else if (rsiVal <= 45) {
+          badgeEl.textContent = `📉 弱勢整理 (${rsiVal.toFixed(1)})`;
+          badgeEl.style.cssText = 'font-size:10.5px; padding:1px 6px; border-radius:4px; font-weight:750; background:rgba(100,116,139,0.2); color:#cbd5e1; border:1px solid rgba(100,116,139,0.3);';
+        } else {
+          badgeEl.textContent = `⚪ 多空平衡 (${rsiVal.toFixed(1)})`;
+          badgeEl.style.cssText = 'font-size:10.5px; padding:1px 6px; border-radius:4px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);';
+        }
+      } else {
+        badgeEl.textContent = '—';
+        badgeEl.style.cssText = '';
+      }
+    }
+
+    // MACD
+    const macd = stockData.macdHist && stockData.macdHist[idx];
+    const macdEl = document.getElementById('hudMacdHist');
+    if (macdEl) {
+      if (macd != null && !isNaN(macd)) {
+        macdEl.textContent = `${macd > 0 ? '+' : ''}${macd.toFixed(2)}`;
+        macdEl.style.color = macd >= 0 ? '#ef4444' : '#10b981';
+      } else {
+        macdEl.textContent = '—';
+        macdEl.style.color = '#cbd5e1';
+      }
+    }
+
+    // KD
+    setVal('hudK', stockData.kList && stockData.kList[idx], '#f1f5f9');
+    setVal('hudD', stockData.dList && stockData.dList[idx], '#f1f5f9');
+
+    // BOLL
+    setVal('hudBollUp', stockData.bollUpper && stockData.bollUpper[idx], '#f472b6');
+    setVal('hudBollMid', stockData.bollMid && stockData.bollMid[idx], '#e2e8f0');
+    setVal('hudBollLow', stockData.bollLower && stockData.bollLower[idx], '#34d399');
+  };
 
   let activeInstance = null;
   window.PatternViewer = {

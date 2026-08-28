@@ -48,13 +48,79 @@
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-title"><span>🎓</span> 視覺化來源</div>
-          <div class="pattern-buttons" id="viewToggleContainer">
-            <button class="btn-pattern active" data-view="card">🎯 卡片型態視覺化</button>
-            <button class="btn-pattern" data-view="data">💡 指標數據解構</button>
+        <!-- 即時十字游標數據看板 -->
+        <div class="card focus-hud-card" style="margin-top:10px; background:#141721; border:1px solid rgba(59,130,246,0.3); border-radius:8px; padding:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:8px;">
+            <span style="font-weight:800; color:#60a5fa; font-size:12.5px;">🎯 游標焦點即時數據</span>
+            <span id="hudFocusDate" style="font-size:11px; color:#38bdf8; font-weight:750; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.25); padding:1px 6px; border-radius:4px;">最新收盤</span>
           </div>
-          <div id="sourceTextNote" class="source-note"></div>
+
+          <div style="display:flex; flex-direction:column; gap:6px; font-size:11.5px;">
+            <!-- 1. 價格與量能 -->
+            <div style="background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
+              <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                <span style="color:#94a3b8;">開盤／收盤</span>
+                <span id="hudOpenClose" style="font-weight:750; color:#f8fafc;">— / —</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                <span style="color:#94a3b8;">最高／最低</span>
+                <span id="hudHighLow" style="font-weight:750; color:#f8fafc;">— / —</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                <span style="color:#94a3b8;">當日漲跌</span>
+                <span id="hudChange" style="font-weight:750;">—</span>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <span style="color:#94a3b8;">成交量</span>
+                <span id="hudVolume" style="font-weight:750; color:#38bdf8;">—</span>
+              </div>
+            </div>
+
+            <!-- 2. 均線數據 -->
+            <div style="background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
+              <div style="font-weight:700; color:#fde047; margin-bottom:3px; font-size:11px;">📈 均線 (MA)</div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px 6px; font-size:11px;">
+                <div><span style="color:#94a3b8;">MA5:</span> <span id="hudMa5" style="font-weight:700; color:#f59e0b;">—</span></div>
+                <div><span style="color:#94a3b8;">MA10:</span> <span id="hudMa10" style="font-weight:700; color:#38bdf8;">—</span></div>
+                <div><span style="color:#94a3b8;">MA20:</span> <span id="hudMa20" style="font-weight:700; color:#ec4899;">—</span></div>
+                <div><span style="color:#94a3b8;">MA60:</span> <span id="hudMa60" style="font-weight:700; color:#8b5cf6;">—</span></div>
+              </div>
+            </div>
+
+            <!-- 3. RSI 雙線 -->
+            <div style="background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+                <span style="font-weight:700; color:#38bdf8; font-size:11px;">📊 RSI 雙軌</span>
+                <span id="hudRsiStateBadge" style="font-size:10.5px; padding:1px 5px; border-radius:4px; font-weight:700;">—</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:11px;">
+                <div><span style="color:#fbbf24;">RSI(6):</span> <span id="hudRsi6" style="font-weight:750; color:#fef08a;">—</span></div>
+                <div><span style="color:#38bdf8;">RSI(12):</span> <span id="hudRsi12" style="font-weight:750; color:#bae6fd;">—</span></div>
+              </div>
+            </div>
+
+            <!-- 4. MACD & KD -->
+            <div style="background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
+              <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px;">
+                <span style="color:#c084fc; font-weight:700;">🌊 MACD Hist:</span>
+                <span id="hudMacdHist" style="font-weight:750;">—</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:11px;">
+                <div><span style="color:#94a3b8;">K值:</span> <span id="hudK" style="font-weight:700; color:#cbd5e1;">—</span></div>
+                <div><span style="color:#94a3b8;">D值:</span> <span id="hudD" style="font-weight:700; color:#cbd5e1;">—</span></div>
+              </div>
+            </div>
+
+            <!-- 5. 布林通道 -->
+            <div style="background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
+              <div style="font-weight:700; color:#a78bfa; margin-bottom:3px; font-size:11px;">🌐 布林通道 (BOLL)</div>
+              <div style="display:flex; justify-content:space-between; font-size:11px;">
+                <div><span style="color:#94a3b8;">上:</span> <span id="hudBollUp" style="font-weight:700; color:#f472b6;">—</span></div>
+                <div><span style="color:#94a3b8;">中:</span> <span id="hudBollMid" style="font-weight:700; color:#e2e8f0;">—</span></div>
+                <div><span style="color:#94a3b8;">下:</span> <span id="hudBollLow" style="font-weight:700; color:#34d399;">—</span></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="card teaching-card">
