@@ -719,30 +719,38 @@
   .analysis-alert.danger{ border-left-color:#ef4444; background:rgba(239,68,68,0.08); color:#fca5a5; }
   .analysis-alert.success{ border-left-color:#22c55e; background:rgba(34,197,94,0.08); color:#86efac; }
 
-  /* 專業看盤全螢幕覆蓋樣式 */
+  /* 專業看盤原生全螢幕 (:fullscreen) 與備援樣式 */
+  .pattern-viewer .chart-viewport:fullscreen,
+  .pattern-viewer .chart-viewport:-webkit-full-screen,
   .pattern-viewer .chart-viewport.fullscreen {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    min-height: 100vh !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    min-height: 100% !important;
     z-index: 999999 !important;
     border-radius: 0 !important;
     border: none !important;
     margin: 0 !important;
-    padding: 12px 18px !important;
+    padding: 14px 20px !important;
     background: #0f121a !important;
     box-shadow: none !important;
     display: flex !important;
     flex-direction: column !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
   }
+  .pattern-viewer .chart-viewport:fullscreen #echart-main,
+  .pattern-viewer .chart-viewport:-webkit-full-screen #echart-main,
   .pattern-viewer .chart-viewport.fullscreen #echart-main {
     flex: 1 1 auto !important;
-    height: calc(100vh - 65px) !important;
-    min-height: calc(100vh - 65px) !important;
+    height: calc(100% - 60px) !important;
+    min-height: calc(100% - 60px) !important;
     width: 100% !important;
   }
   .pattern-viewer .btn-fullscreen-toggle {
@@ -768,7 +776,7 @@
     box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
   }
 </style>
-<link rel="stylesheet" href="pattern_viewer/css/viewer.css?v=60">
+<link rel="stylesheet" href="pattern_viewer/css/viewer.css?v=61">
 </head>
 <body>
   <header>
@@ -962,50 +970,87 @@
   </div>
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-<script src="pattern_viewer/js/parser.js?v=60"></script>
-<script src="pattern_viewer/js/pattern_engine.js?v=60"></script>
-<script src="pattern_viewer/js/chart_engine.js?v=60"></script>
-<script src="pattern_viewer/js/viewer_app.js?v=60"></script>
+<script src="pattern_viewer/js/parser.js?v=61"></script>
+<script src="pattern_viewer/js/pattern_engine.js?v=61"></script>
+<script src="pattern_viewer/js/chart_engine.js?v=61"></script>
+<script src="pattern_viewer/js/viewer_app.js?v=61"></script>
 <script src="render-shared.js?v=54"></script>
 <script>
   const DISPLAY_SCALE_KEY = 'stock-analysis-display-scale';
 
-  window.toggleChartFullscreen = function(forceState) {
+  window.toggleChartFullscreen = async function(forceState) {
     const viewport = document.querySelector('#pattern-workspace .chart-viewport') || document.querySelector('.chart-viewport');
     const btn = document.getElementById('toggleFullscreenChart');
     if (!viewport) return;
-    const isFullscreen = viewport.classList.contains('fullscreen');
-    const shouldBe = typeof forceState === 'boolean' ? forceState : !isFullscreen;
-    if (shouldBe) {
-      viewport.classList.add('fullscreen');
-      if (btn) {
-        btn.innerHTML = '🗗 還原視窗';
-        btn.title = '退出全螢幕 (Esc)';
+
+    const isNative = document.fullscreenElement === viewport || document.webkitFullscreenElement === viewport;
+    const isCss = viewport.classList.contains('fullscreen');
+    const isCurrentlyFullscreen = isNative || isCss;
+    const shouldBeFullscreen = typeof forceState === 'boolean' ? forceState : !isCurrentlyFullscreen;
+
+    const updateBtn = (active) => {
+      if (!btn) return;
+      btn.innerHTML = active ? '🗗 還原視窗' : '⛶ 全螢幕看盤';
+      btn.title = active ? '退出全螢幕 (Esc)' : '全螢幕放大看盤';
+    };
+
+    if (shouldBeFullscreen) {
+      try {
+        if (viewport.requestFullscreen) {
+          await viewport.requestFullscreen();
+        } else if (viewport.webkitRequestFullscreen) {
+          await viewport.webkitRequestFullscreen();
+        } else {
+          viewport.classList.add('fullscreen');
+        }
+      } catch (err) {
+        viewport.classList.add('fullscreen');
       }
+      updateBtn(true);
     } else {
+      try {
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+          if (document.exitFullscreen) await document.exitFullscreen();
+          else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
+        }
+      } catch (err) {}
       viewport.classList.remove('fullscreen');
-      if (btn) {
-        btn.innerHTML = '⛶ 全螢幕看盤';
-        btn.title = '全螢幕放大看盤';
-      }
+      updateBtn(false);
     }
-    if (window.ChartEngine && typeof window.ChartEngine.resize === 'function') {
-      window.ChartEngine.resize();
-    }
-    if (window.PatternViewer && typeof window.PatternViewer.resize === 'function') {
-      window.PatternViewer.resize();
-    }
-    window.dispatchEvent(new Event('resize'));
-    requestAnimationFrame(() => {
-      if (window.ChartEngine && typeof window.ChartEngine.resize === 'function') {
-        window.ChartEngine.resize();
-      }
-      if (window.PatternViewer && typeof window.PatternViewer.resize === 'function') {
-        window.PatternViewer.resize();
-      }
+
+    const triggerResize = () => {
+      if (window.ChartEngine && typeof window.ChartEngine.resize === 'function') window.ChartEngine.resize();
+      if (window.PatternViewer && typeof window.PatternViewer.resize === 'function') window.PatternViewer.resize();
       window.dispatchEvent(new Event('resize'));
-    });
+    };
+    triggerResize();
+    setTimeout(triggerResize, 50);
+    setTimeout(triggerResize, 200);
   };
+
+  const handleFullscreenSync = () => {
+    const viewport = document.querySelector('#pattern-workspace .chart-viewport') || document.querySelector('.chart-viewport');
+    const btn = document.getElementById('toggleFullscreenChart');
+    const isFs = document.fullscreenElement === viewport || document.webkitFullscreenElement === viewport;
+    if (!isFs && viewport) {
+      viewport.classList.remove('fullscreen');
+    }
+    if (btn) {
+      btn.innerHTML = isFs ? '🗗 還原視窗' : '⛶ 全螢幕看盤';
+      btn.title = isFs ? '退出全螢幕 (Esc)' : '全螢幕放大看盤';
+    }
+    const triggerResize = () => {
+      if (window.ChartEngine && typeof window.ChartEngine.resize === 'function') window.ChartEngine.resize();
+      if (window.PatternViewer && typeof window.PatternViewer.resize === 'function') window.PatternViewer.resize();
+      window.dispatchEvent(new Event('resize'));
+    };
+    triggerResize();
+    setTimeout(triggerResize, 50);
+    setTimeout(triggerResize, 200);
+  };
+
+  document.addEventListener('fullscreenchange', handleFullscreenSync);
+  document.addEventListener('webkitfullscreenchange', handleFullscreenSync);
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {

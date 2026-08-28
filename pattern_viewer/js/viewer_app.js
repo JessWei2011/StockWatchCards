@@ -363,29 +363,10 @@
       this.q('#toggleMa').addEventListener('change', () => this.updateUI(), { signal });
 
       const fullscreenBtn = this.q('#toggleFullscreenChart');
-      const viewport = this.q('.chart-viewport');
-      if (fullscreenBtn && viewport) {
-        const toggleFullscreen = (forceState) => {
-          const isCurrentlyFullscreen = viewport.classList.contains('fullscreen');
-          const shouldBeFullscreen = typeof forceState === 'boolean' ? forceState : !isCurrentlyFullscreen;
-          if (shouldBeFullscreen) {
-            viewport.classList.add('fullscreen');
-            fullscreenBtn.innerHTML = '🗗 還原視窗';
-            fullscreenBtn.title = '退出全螢幕 (Esc)';
-          } else {
-            viewport.classList.remove('fullscreen');
-            fullscreenBtn.innerHTML = '⛶ 全螢幕看盤';
-            fullscreenBtn.title = '全螢幕放大看盤';
-          }
-          requestAnimationFrame(() => {
-            ChartEngine.resize();
-          });
-        };
-
-        fullscreenBtn.addEventListener('click', () => toggleFullscreen(), { signal });
-        window.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape' && viewport.classList.contains('fullscreen')) {
-            toggleFullscreen(false);
+      if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', () => {
+          if (typeof window.toggleChartFullscreen === 'function') {
+            window.toggleChartFullscreen();
           }
         }, { signal });
       }

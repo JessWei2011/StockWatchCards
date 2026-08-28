@@ -91,11 +91,92 @@
   </div>
 
   <script src="../data.js"></script>
-  <script src="js/parser.js?v=60"></script>
-  <script src="js/pattern_engine.js?v=60"></script>
-  <script src="js/chart_engine.js?v=60"></script>
-  <script src="js/viewer_app.js?v=60"></script>
+  <script src="js/parser.js?v=61"></script>
+  <script src="js/pattern_engine.js?v=61"></script>
+  <script src="js/chart_engine.js?v=61"></script>
+  <script src="js/viewer_app.js?v=61"></script>
   <script>
+    window.toggleChartFullscreen = async function(forceState) {
+      const viewport = document.querySelector('.chart-viewport');
+      const btn = document.getElementById('toggleFullscreenChart');
+      if (!viewport) return;
+
+      const isNative = document.fullscreenElement === viewport || document.webkitFullscreenElement === viewport;
+      const isCss = viewport.classList.contains('fullscreen');
+      const isCurrentlyFullscreen = isNative || isCss;
+      const shouldBeFullscreen = typeof forceState === 'boolean' ? forceState : !isCurrentlyFullscreen;
+
+      const updateBtn = (active) => {
+        if (!btn) return;
+        btn.innerHTML = active ? '🗗 還原視窗' : '⛶ 全螢幕看盤';
+        btn.title = active ? '退出全螢幕 (Esc)' : '全螢幕放大看盤';
+      };
+
+      if (shouldBeFullscreen) {
+        try {
+          if (viewport.requestFullscreen) {
+            await viewport.requestFullscreen();
+          } else if (viewport.webkitRequestFullscreen) {
+            await viewport.webkitRequestFullscreen();
+          } else {
+            viewport.classList.add('fullscreen');
+          }
+        } catch (err) {
+          viewport.classList.add('fullscreen');
+        }
+        updateBtn(true);
+      } else {
+        try {
+          if (document.fullscreenElement || document.webkitFullscreenElement) {
+            if (document.exitFullscreen) await document.exitFullscreen();
+            else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
+          }
+        } catch (err) {}
+        viewport.classList.remove('fullscreen');
+        updateBtn(false);
+      }
+
+      const triggerResize = () => {
+        if (window.ChartEngine && typeof window.ChartEngine.resize === 'function') window.ChartEngine.resize();
+        if (window.PatternViewer && typeof window.PatternViewer.resize === 'function') window.PatternViewer.resize();
+        window.dispatchEvent(new Event('resize'));
+      };
+      triggerResize();
+      setTimeout(triggerResize, 50);
+      setTimeout(triggerResize, 200);
+    };
+
+    const handleFullscreenSync = () => {
+      const viewport = document.querySelector('.chart-viewport');
+      const btn = document.getElementById('toggleFullscreenChart');
+      const isFs = document.fullscreenElement === viewport || document.webkitFullscreenElement === viewport;
+      if (!isFs && viewport) {
+        viewport.classList.remove('fullscreen');
+      }
+      if (btn) {
+        btn.innerHTML = isFs ? '🗗 還原視窗' : '⛶ 全螢幕看盤';
+        btn.title = isFs ? '退出全螢幕 (Esc)' : '全螢幕放大看盤';
+      }
+      const triggerResize = () => {
+        if (window.ChartEngine && typeof window.ChartEngine.resize === 'function') window.ChartEngine.resize();
+        if (window.PatternViewer && typeof window.PatternViewer.resize === 'function') window.PatternViewer.resize();
+        window.dispatchEvent(new Event('resize'));
+      };
+      triggerResize();
+      setTimeout(triggerResize, 50);
+      setTimeout(triggerResize, 200);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenSync);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenSync);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const viewport = document.querySelector('.chart-viewport.fullscreen');
+        if (viewport) window.toggleChartFullscreen(false);
+      }
+    });
+
     document.addEventListener('DOMContentLoaded', () => {
       PatternViewer.init(document.querySelector('.pattern-viewer'));
     });
