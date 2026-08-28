@@ -355,13 +355,13 @@ def detect_volume_tags(df: pd.DataFrame) -> list:
     if cur_v20 is not None and cur_vol <= cur_v20 * 0.45:
         tags.append("💎 窒息量 (籌碼洗淨)")
 
-    # 5. 高檔爆天量滯漲
+    # 5. 高檔爆大量倒貨
     if len(df) >= 30 and cur_v20 is not None:
         past30_max_vol = vol_s.iloc[-31:-1].max()
         candle_range = df['high'].iloc[-1] - df['low'].iloc[-1] or 1.0
         body_ratio = abs(close_s.iloc[-1] - df['open'].iloc[-1]) / candle_range
         if cur_vol >= past30_max_vol and cur_vol >= cur_v20 * 2.0 and (body_ratio < 0.35 or not is_up):
-            tags.append("🚨 高檔爆天量滯漲")
+            tags.append("🚨 高檔爆大量倒貨")
 
     # 6. 量價頂背離
     if len(df) >= 20:
@@ -579,11 +579,11 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
             if not any("窒息量" in r for r in momo_reasons):
                 momo_score += 15
                 momo_reasons.append(f"窒息量籌碼沉澱(量比{vol_ratio:.2f}x)")
-        elif "🚨 高檔爆天量滯漲" in vtag:
+        elif "🚨 高檔爆大量倒貨" in vtag:
             momo_score -= 25
-            momo_reasons.append("⚠️警示:高檔爆天量滯漲(主力倒貨疑慮)")
+            momo_reasons.append("⚠️警示:高檔爆大量倒貨(主力出貨疑慮)")
             def_score -= 25
-            def_reasons.append("⚠️警示:高檔爆天量滯漲")
+            def_reasons.append("⚠️警示:高檔爆大量倒貨")
         elif "⚠️ 量價頂背離" in vtag:
             momo_score -= 20
             momo_reasons.append("⚠️警示:量價頂背離(無量虛漲)")
