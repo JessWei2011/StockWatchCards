@@ -402,6 +402,93 @@
             statRsiTags.textContent = '—';
           }
         }
+
+        // 渲染「📊 量能指標狀態 (VOL)」
+        const statVolTags = this.q('#statVolTags') || document.getElementById('statVolTags');
+        if (statVolTags) {
+          const volumes = this.currentStockData.volumes || [];
+          const candles = this.currentStockData.candles || [];
+          const vma5 = this.currentStockData.vma5 || [];
+          const vma20 = this.currentStockData.vma20 || [];
+          const volTags = [];
+
+          if (volumes.length >= 5 && candles.length >= 5) {
+            const len = volumes.length;
+            const lastIdx = len - 1;
+            const currVol = volumes[lastIdx];
+            const prevVol = volumes[lastIdx - 1];
+            const currV5 = vma5[lastIdx];
+            const prevV5 = vma5[lastIdx - 1];
+            const currV20 = vma20[lastIdx];
+            const prevV20 = vma20[lastIdx - 1];
+            const currClose = candles[lastIdx][1];
+            const prevClose = candles[lastIdx - 1][1];
+            const isUp = currClose >= prevClose;
+
+            // 1. 量均線交叉 (MV5 vs MV20)
+            if (currV5 != null && prevV5 != null && currV20 != null && prevV20 != null) {
+              if (prevV5 <= prevV20 && currV5 > currV20) {
+                volTags.push({ label: `✨ 量能黃金交叉 (攻擊量)`, style: 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.4);' });
+              } else if (prevV5 >= prevV20 && currV5 < currV20) {
+                volTags.push({ label: `⚡ 量能死亡交叉 (退潮)`, style: 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.4);' });
+              }
+            }
+
+            // 2. 帶量突破 (Breakout Volume)
+            const past20High = Math.max(...candles.slice(Math.max(0, len - 21), len - 1).map(c => c[3]));
+            if (currClose >= past20High && currV20 && currVol >= currV20 * 1.5 && isUp) {
+              volTags.push({ label: `🔥 帶量長紅突破`, style: 'background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);' });
+            }
+
+            // 3. 量價齊揚 / 滾量上攻
+            if (len >= 3) {
+              const c2 = candles[len - 2][1];
+              const c3 = candles[len - 3][1];
+              const v2 = volumes[len - 2];
+              const v3 = volumes[len - 3];
+              if (currClose > c2 && c2 > c3 && currVol > v2 && v2 > v3 && currV5 && currVol >= currV5) {
+                volTags.push({ label: `🚀 滾量攻擊 (量價齊揚)`, style: 'background:rgba(234,179,8,0.2); color:#fde047; border:1px solid rgba(234,179,8,0.45);' });
+              }
+            }
+
+            // 4. 窒息量 / 凹洞量
+            if (currV20 && currVol <= currV20 * 0.45) {
+              volTags.push({ label: `💎 窒息量 (籌碼洗淨)`, style: 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.4);' });
+            }
+
+            // 5. 高檔爆天量滯漲
+            const past30MaxVol = Math.max(...volumes.slice(Math.max(0, len - 31), len - 1));
+            const candleRange = candles[lastIdx][3] - candles[lastIdx][2] || 1;
+            const bodyRatio = Math.abs(currClose - candles[lastIdx][0]) / candleRange;
+            if (currVol >= past30MaxVol && currV20 && currVol >= currV20 * 2.0 && (bodyRatio < 0.35 || !isUp)) {
+              volTags.push({ label: `🚨 高檔爆天量滯漲`, style: 'background:rgba(239,68,68,0.22); color:#fca5a5; border:1px solid rgba(239,68,68,0.5);' });
+            }
+
+            // 6. 量價頂背離
+            const highestPriceIdx = candles.slice(Math.max(0, len - 20)).reduce((maxI, c, i, arr) => c[3] > arr[maxI][3] ? i : maxI, 0) + Math.max(0, len - 20);
+            if (highestPriceIdx === lastIdx && len >= 15) {
+              const prevPeakVol = Math.max(...volumes.slice(Math.max(0, len - 20), len - 3));
+              if (prevPeakVol > 0 && currVol < prevPeakVol * 0.65) {
+                volTags.push({ label: `⚠️ 量價頂背離 (無量空漲)`, style: 'background:rgba(249,115,22,0.2); color:#fdba74; border:1px solid rgba(249,115,22,0.45);' });
+              }
+            }
+
+            // 預設常態
+            if (volTags.length === 0) {
+              if (currV20 && currVol >= currV20 * 1.2) {
+                volTags.push({ label: `📈 買盤溫和增量`, style: 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.35);' });
+              } else if (currV20 && currVol < currV20 * 0.8) {
+                volTags.push({ label: `📉 縮量沉澱整理`, style: 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);' });
+              } else {
+                volTags.push({ label: `⚪ 常態量能換手`, style: 'background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);' });
+              }
+            }
+
+            statVolTags.innerHTML = volTags.map(t => `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${t.style}">${t.label}</span>`).join('');
+          } else {
+            statVolTags.textContent = '—';
+          }
+        }
       }
       if (this.currentStockData && this.currentStockData.dates && this.currentStockData.dates.length) {
         window.updateFocusHUD(this.currentStockData.dates.length - 1, this.currentStockData);
@@ -508,7 +595,7 @@
       }
     }
 
-    // Volume
+    // Volume & Volume Moving Averages
     const vol = stockData.volumes && stockData.volumes[idx];
     const volEl = document.getElementById('hudVolume');
     if (volEl) {
@@ -517,6 +604,15 @@
       } else {
         volEl.textContent = '—';
       }
+    }
+
+    const v5 = stockData.vma5 && stockData.vma5[idx];
+    const v20 = stockData.vma20 && stockData.vma20[idx];
+    const volMaEl = document.getElementById('hudVolMa');
+    if (volMaEl) {
+      const s5 = (v5 != null && !isNaN(v5)) ? `${Number(v5).toLocaleString()}` : '—';
+      const s20 = (v20 != null && !isNaN(v20)) ? `${Number(v20).toLocaleString()}` : '—';
+      volMaEl.innerHTML = `<span style="color:#fbbf24;">MV5:</span> <span style="font-weight:800; color:#fef08a;">${s5}</span> ／ <span style="color:#a78bfa;">MV20:</span> <span style="font-weight:800; color:#ddd6fe;">${s20}</span>`;
     }
 
     // Helper

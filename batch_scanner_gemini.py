@@ -317,6 +317,73 @@ def detect_rsi_tags(close_series: pd.Series) -> list:
     return tags
 
 
+def detect_volume_tags(df: pd.DataFrame) -> list:
+    if len(df) < 5:
+        return []
+    tags = []
+    vol_s = df['volume']
+    close_s = df['close']
+    vma5 = vol_s.rolling(5).mean()
+    vma20 = vol_s.rolling(20).mean()
+    
+    cur_vol = float(vol_s.iloc[-1])
+    cur_v5 = float(vma5.iloc[-1]) if pd.notna(vma5.iloc[-1]) else None
+    cur_v20 = float(vma20.iloc[-1]) if pd.notna(vma20.iloc[-1]) else None
+    prev_v5 = float(vma5.iloc[-2]) if len(vma5) >= 2 and pd.notna(vma5.iloc[-2]) else None
+    prev_v20 = float(vma20.iloc[-2]) if len(vma20) >= 2 and pd.notna(vma20.iloc[-2]) else None
+    is_up = close_s.iloc[-1] >= close_s.iloc[-2] if len(close_s) >= 2 else True
+
+    # 1. 量均線黃金/死亡交叉
+    if cur_v5 is not None and cur_v20 is not None and prev_v5 is not None and prev_v20 is not None:
+        if prev_v5 <= prev_v20 and cur_v5 > cur_v20:
+            tags.append("✨ 量能黃金交叉 (攻擊量)")
+        elif prev_v5 >= prev_v20 and cur_v5 < cur_v20:
+            tags.append("⚡ 量能死亡交叉 (退潮)")
+
+    # 2. 帶量突破
+    if len(df) >= 20 and cur_v20 is not None:
+        past20_high = df['high'].iloc[-21:-1].max()
+        if close_s.iloc[-1] >= past20_high and cur_vol >= cur_v20 * 1.5 and is_up:
+            tags.append("🔥 帶量長紅突破")
+
+    # 3. 滾量攻擊
+    if len(df) >= 3 and cur_v5 is not None:
+        if (close_s.iloc[-1] > close_s.iloc[-2] > close_s.iloc[-3]) and (vol_s.iloc[-1] > vol_s.iloc[-2] > vol_s.iloc[-3]) and cur_vol >= cur_v5:
+            tags.append("🚀 滾量攻擊 (量價齊揚)")
+
+    # 4. 窒息量
+    if cur_v20 is not None and cur_vol <= cur_v20 * 0.45:
+        tags.append("💎 窒息量 (籌碼洗淨)")
+
+    # 5. 高檔爆天量滯漲
+    if len(df) >= 30 and cur_v20 is not None:
+        past30_max_vol = vol_s.iloc[-31:-1].max()
+        candle_range = df['high'].iloc[-1] - df['low'].iloc[-1] or 1.0
+        body_ratio = abs(close_s.iloc[-1] - df['open'].iloc[-1]) / candle_range
+        if cur_vol >= past30_max_vol and cur_vol >= cur_v20 * 2.0 and (body_ratio < 0.35 or not is_up):
+            tags.append("🚨 高檔爆天量滯漲")
+
+    # 6. 量價頂背離
+    if len(df) >= 20:
+        sub_c = close_s.iloc[-20:]
+        sub_v = vol_s.iloc[-20:]
+        if sub_c.iloc[-1] >= sub_c.max():
+            prev_peak_v = sub_v.iloc[:-2].max() if len(sub_v) > 2 else 0
+            if prev_peak_v > 0 and cur_vol < prev_peak_v * 0.65:
+                tags.append("⚠️ 量價頂背離 (無量空漲)")
+
+    # 常態
+    if not tags:
+        if cur_v20 is not None and cur_vol >= cur_v20 * 1.2:
+            tags.append("📈 買盤溫和增量")
+        elif cur_v20 is not None and cur_vol < cur_v20 * 0.8:
+            tags.append("📉 縮量沉澱整理")
+        else:
+            tags.append("⚪ 常態量能換手")
+
+    return tags
+
+
 def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
     """
     雙軌進化版選股引擎 (Gemini 專屬)
@@ -488,6 +555,7 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
         def_score -= 8
 
     rsi_tags = detect_rsi_tags(close_s)
+    vol_tags = detect_volume_tags(df)
 
     return {
         'code': stock_info['code'],
@@ -505,6 +573,7 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
         'bias_5': round(bias_5, 2),
         'rsi14': round(rsi14, 1),
         'rsi_tags': rsi_tags,
+        'vol_tags': vol_tags,
         'vol_ratio': round(vol_ratio, 2),
         'close_loc': round(close_location, 2),
         'is_new_high': is_new_high,
@@ -561,6 +630,10 @@ def save_stage4_report(r):
     if not rsi_tags:
         rsi_tags = [f"RSI(14): {r['rsi14']} （{'超買強勢' if r['rsi14'] > 75 else '多頭推進區' if r['rsi14'] > 50 else '弱勢整理'}）"]
 
+    vol_tags = r.get('vol_tags') or []
+    if not vol_tags:
+        vol_tags = ["爆量攻擊" if r['vol_ratio'] >= 1.5 else ("溫和放量" if r['vol_ratio'] >= 1.0 else "量能萎縮")]
+
     technical_tags = []
     if r['s5'] > 0 and r['s10'] > 0 and r['s20'] > 0:
         technical_tags.append("均線多頭排列")
@@ -586,6 +659,7 @@ def save_stage4_report(r):
     lines.append(f"  - **成交量**：{r['vol']:,} 股（相對 20日均量 {r['vol_ratio']} 倍）\n")
     lines.append("### 【標籤摘要】")
     lines.append(f"- **RSI 標籤**：{'、'.join(rsi_tags)}")
+    lines.append(f"- **量能標籤**：{'、'.join(vol_tags)}")
     lines.append(f"- **技術標籤**：{'、'.join(technical_tags)}")
     lines.append(f"- **籌碼標籤**：{'、'.join(chip_tags)}")
     lines.append(f"- **型態標籤**：{'、'.join(pattern_tags)}\n")

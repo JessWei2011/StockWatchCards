@@ -59,6 +59,8 @@ window.ChartEngine = {
       dates,
       candles,
       volumes,
+      vma5,
+      vma20,
       ma5,
       rsi,
       rsi6,
@@ -166,7 +168,7 @@ window.ChartEngine = {
         label: { backgroundColor: '#3b82f6' }
       },
       legend: {
-        data: ['K線', 'MA5', 'MA10', 'MA20', 'MA60', 'MA120', 'BOLL上軌', 'BOLL下軌', '成交量', 'RSI(6)', 'RSI(12)', 'MACD', 'K值', 'D值'],
+        data: ['K線', 'MA5', 'MA10', 'MA20', 'MA60', 'MA120', 'BOLL上軌', 'BOLL下軌', '成交量', 'MV5', 'MV20', 'RSI(6)', 'RSI(12)', 'MACD', 'K值', 'D值'],
         top: 4,
         textStyle: { color: '#94a3b8', fontSize: 11 },
         selected: {
@@ -179,6 +181,8 @@ window.ChartEngine = {
           'BOLL上軌': displayToggles.showBoll !== false,
           'BOLL下軌': displayToggles.showBoll !== false,
           '成交量': true,
+          'MV5': true,
+          'MV20': true,
           'RSI(6)': true,
           'RSI(12)': true,
           'MACD': true,
@@ -317,7 +321,7 @@ window.ChartEngine = {
           lineStyle: { color: '#a855f7', width: 1, type: 'dashed' }
         },
 
-        // 5. Pane 1: Volume (Grid 1) - 空心粗外框風格
+        // 5. Pane 1: Volume (Grid 1)
         {
           name: '成交量',
           type: 'bar',
@@ -328,12 +332,34 @@ window.ChartEngine = {
             return {
               value: v,
               itemStyle: {
-                color: 'transparent',
+                color: isUp ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)',
                 borderColor: isUp ? '#ef4444' : '#10b981',
-                borderWidth: 2
+                borderWidth: 1.5
               }
             };
           })
+        },
+        // 5.1 MV5 (5日均量線 - 琥珀金黃)
+        {
+          name: 'MV5',
+          type: 'line',
+          xAxisIndex: 1,
+          yAxisIndex: 1,
+          data: vma5,
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#fbbf24', width: 1.5 }
+        },
+        // 5.2 MV20 (20日均量線 - 靛紫藍)
+        {
+          name: 'MV20',
+          type: 'line',
+          xAxisIndex: 1,
+          yAxisIndex: 1,
+          data: vma20,
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#a78bfa', width: 1.5 }
         },
 
         // 6. Pane 2: RSI 雙線 (Grid 2) - RSI(6) 短線琥珀黃 + RSI(12) 長線科技藍

@@ -184,11 +184,34 @@ window.PatternParser = {
     const rsi6 = calculateWilderRsi(closePrices, 6);
     const rsi12 = calculateWilderRsi(closePrices, 12);
 
+    // Calculate Volume Moving Averages: VMA5 and VMA20
+    const vma5 = [];
+    const vma20 = [];
+    for (let i = 0; i < volumes.length; i++) {
+      if (i >= 4) {
+        let sum = 0;
+        for (let j = i - 4; j <= i; j++) sum += (volumes[j] || 0);
+        vma5.push(parseFloat((sum / 5).toFixed(1)));
+      } else {
+        vma5.push(null);
+      }
+
+      if (i >= 19) {
+        let sum = 0;
+        for (let j = i - 19; j <= i; j++) sum += (volumes[j] || 0);
+        vma20.push(parseFloat((sum / 20).toFixed(1)));
+      } else {
+        vma20.push(null);
+      }
+    }
+
     return {
       title: titleText,
       dates,
       candles,
       volumes,
+      vma5,
+      vma20,
       ma5,
       ma10,
       ma20,
