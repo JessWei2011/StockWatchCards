@@ -1,12 +1,15 @@
 """統一控制台：低負載的系統匣服務管理器。"""
 import ctypes
+import json
 import socket
 import subprocess
 import sys
 import threading
 import time
 import urllib.request
+import uuid
 import webbrowser
+from datetime import datetime
 from pathlib import Path
 
 import pystray
@@ -35,6 +38,7 @@ SERVERS = {
 }
 UPDATE_SCRIPT = MACRO_DIR / "update_macro_data.py"
 UPDATE_LOG = MACRO_DIR / "macro_update.log"
+UPDATE_STATUS_FILE = MACRO_DIR / "macro_update_status.json"
 
 stop_event = threading.Event()
 update_lock = threading.Lock()
@@ -100,11 +104,49 @@ def append_update_log(message: str) -> None:
         pass
 
 
-def run_macro_update() -> bool:
+def now_iso() -> str:
+    return datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+def write_update_status(state: str, run_id: str, **details) -> None:
+    """控制台處理啟動/逾時等更新程式本身來不及回報的狀態。"""
+    payload = {
+        "state": state,
+        "runId": run_id,
+        "updatedAt": now_iso(),
+        **details,
+    }
+    try:
+        temp_file = UPDATE_STATUS_FILE.with_suffix(UPDATE_STATUS_FILE.suffix + ".tmp")
+        temp_file.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        temp_file.replace(UPDATE_STATUS_FILE)
+    except OSError as error:
+        append_update_log(f"無法寫入更新狀態：{error}")
+
+
+def read_update_status() -> dict:
+    try:
+        data = json.loads(UPDATE_STATUS_FILE.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def run_macro_update(open_page: bool = False) -> str:
     """更新永不重疊，避免同時抓取資料與 Git 寫入造成資源和鎖定問題。"""
     if not update_lock.acquire(blocking=False):
-        return False
+        if open_page:
+            open_workspace("macro")
+        return "updating"
+    run_id = uuid.uuid4().hex
+    started_at = now_iso()
     try:
+        write_update_status(
+            "updating", run_id, startedAt=started_at, phase="starting",
+            message="正在啟動總經資料更新…", updatedFields=[], failedFields=[],
+        )
+        if open_page:
+            open_workspace("macro")
         result = subprocess.run(
             [str(PYTHONW), str(UPDATE_SCRIPT)],
             cwd=MACRO_DIR,
@@ -118,13 +160,33 @@ def run_macro_update() -> bool:
         )
         output = (result.stdout + result.stderr).strip() or "沒有輸出"
         append_update_log(f"結束碼：{result.returncode}\n{output}")
-        return result.returncode == 0
+        status = read_update_status()
+        if status.get("runId") == run_id and status.get("state") in {"success", "partial", "failed"}:
+            return status["state"]
+
+        error = f"更新程式異常結束（結束碼 {result.returncode}），沒有產生完整結果。"
+        write_update_status(
+            "failed", run_id, startedAt=started_at, finishedAt=now_iso(), phase="failed",
+            message="更新失敗，未載入舊資料。", error=error,
+            updatedFields=[], failedFields=[],
+        )
+        return "failed"
     except subprocess.TimeoutExpired:
         append_update_log("更新逾時（20 分鐘），已停止等待。")
-        return False
+        write_update_status(
+            "failed", run_id, startedAt=started_at, finishedAt=now_iso(), phase="failed",
+            message="更新逾時，未載入舊資料。", error="更新超過 20 分鐘。",
+            updatedFields=[], failedFields=[],
+        )
+        return "failed"
     except OSError as error:
         append_update_log(f"無法執行更新：{error}")
-        return False
+        write_update_status(
+            "failed", run_id, startedAt=started_at, finishedAt=now_iso(), phase="failed",
+            message="無法啟動更新程式，未載入舊資料。", error=str(error),
+            updatedFields=[], failedFields=[],
+        )
+        return "failed"
     finally:
         update_lock.release()
 
@@ -132,6 +194,9 @@ def run_macro_update() -> bool:
 def open_workspace(server_key: str) -> None:
     server = SERVERS[server_key]
     start_server(server)
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline and not is_port_open(server["port"]):
+        time.sleep(0.05)
     webbrowser.open(server["url"])
 
 
@@ -152,9 +217,8 @@ def show_stock(_icon=None, _item=None) -> None:
 
 
 def refresh_macro_and_open() -> None:
-    """依使用者開啟總經頁面的時機更新，避免背景定時工作打擾桌面。"""
-    run_macro_update()
-    open_workspace("macro")
+    """先開狀態頁顯示進度；資料只有在更新成功或部分成功後才會載入。"""
+    run_macro_update(open_page=True)
 
 
 def show_macro(_icon=None, _item=None) -> None:
