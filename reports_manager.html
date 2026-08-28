@@ -1621,6 +1621,37 @@
     const patM = mdText.match(/型態標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/);
     if (patM) patternTags = patM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
 
+    // 智能容錯：若歷史報告中尚未包含專屬 VOL / RSI 標籤行，自動由卡片或報告內文即時推導
+    if (!volTags.length) {
+      if (typeof volStateTags === 'function' && card) {
+        const derivedVol = volStateTags(card);
+        if (derivedVol && derivedVol.length) {
+          volTags = derivedVol.map(d => d.label);
+        }
+      }
+      if (!volTags.length) {
+        const volRatioM = mdText.match(/相對\s*20日均量\s*([0-9.]+)\s*倍/i) || mdText.match(/均量\s*([0-9.]+)\s*倍/i);
+        if (volRatioM) {
+          const ratio = parseFloat(volRatioM[1]);
+          if (ratio >= 2.0) volTags.push(`🚨 爆量長紅 (${ratio.toFixed(2)}x)`);
+          else if (ratio >= 1.5) volTags.push(`🔥 帶量攻擊 (${ratio.toFixed(2)}x)`);
+          else if (ratio >= 1.0) volTags.push(`📈 買盤溫和增量 (${ratio.toFixed(2)}x)`);
+          else if (ratio <= 0.45) volTags.push(`💎 窒息量洗盤 (${ratio.toFixed(2)}x)`);
+          else volTags.push(`📉 縮量沉澱整理 (${ratio.toFixed(2)}x)`);
+        }
+        if (/量能萎縮/.test(mdText) && !volTags.length) volTags.push('📉 量能萎縮整理');
+        if (/爆量攻擊/.test(mdText) && !volTags.length) volTags.push('🔥 爆量攻擊');
+        if (/溫和放量/.test(mdText) && !volTags.length) volTags.push('📈 溫和放量');
+      }
+    }
+
+    if (!rsiTags.length && typeof rsiStateTags === 'function' && card) {
+      const derivedRsi = rsiStateTags(card);
+      if (derivedRsi && derivedRsi.length) {
+        rsiTags = derivedRsi.map(d => d.label);
+      }
+    }
+
     // Top Navigation & Quick Switcher
     const sortedCards = Object.values(cardsByCode || {}).sort((a, b) => {
       const wa = parseFloat(window.winrateMapByCode?.[a.code]?.winRate) || 0;
