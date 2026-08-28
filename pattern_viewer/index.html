@@ -163,119 +163,119 @@
 
   <!-- RSI 標籤顏色與實戰速查表彈出視窗 -->
   <div id="rsiCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
-    <div style="background:#161922; border:1px solid rgba(56,189,248,0.35); border-radius:12px; width:100%; max-width:860px; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
+    <div style="background:#161922; border:1px solid rgba(56,189,248,0.35); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
       <!-- Header -->
-      <div style="padding:16px 20px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <span style="font-size:22px;">🎨</span>
+      <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:24px;">🎨</span>
           <div>
-            <h3 style="margin:0; font-size:16px; font-weight:800; color:#f8fafc;">RSI 標籤顏色與實戰速查表</h3>
-            <p style="margin:2px 0 0; font-size:12px; color:#94a3b8;">台股量化動能分析・視覺色彩與操盤應對指南</p>
+            <h3 style="margin:0; font-size:18px; font-weight:800; color:#f8fafc;">RSI 標籤顏色與實戰速查表</h3>
+            <p style="margin:2px 0 0; font-size:13.5px; color:#94a3b8;">台股量化動能分析・視覺色彩與操盤應對指南</p>
           </div>
         </div>
-        <button type="button" onclick="closeRsiCheatSheetModal()" style="background:none; border:none; color:#94a3b8; font-size:26px; cursor:pointer; padding:4px 8px; line-height:1;" title="關閉 (Esc)">&times;</button>
+        <button type="button" onclick="closeRsiCheatSheetModal()" style="background:none; border:none; color:#94a3b8; font-size:28px; cursor:pointer; padding:4px 8px; line-height:1;" title="關閉 (Esc)">&times;</button>
       </div>
 
       <!-- Content Table -->
-      <div style="padding:20px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:16px;">
+      <div style="padding:22px 24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:18px;">
         <div style="overflow-x:auto;">
-          <table style="width:100%; border-collapse:collapse; font-size:13.5px; text-align:left;">
+          <table style="width:100%; border-collapse:collapse; font-size:16px; text-align:left;">
             <thead>
-              <tr style="background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.1); color:#cbd5e1;">
-                <th style="padding:10px 12px; width:18%;">標籤顏色</th>
-                <th style="padding:10px 12px; width:28%;">代表含意與心理狀態</th>
-                <th style="padding:10px 12px; width:27%;">具體標籤範例</th>
-                <th style="padding:10px 12px; width:27%;">操盤應對心法</th>
+              <tr style="background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.12); color:#cbd5e1;">
+                <th style="padding:12px 14px; width:19%; font-size:16px; font-weight:800;">標籤顏色</th>
+                <th style="padding:12px 14px; width:28%; font-size:16px; font-weight:800;">代表含意與心理狀態</th>
+                <th style="padding:12px 14px; width:26%; font-size:16px; font-weight:800;">具體標籤範例</th>
+                <th style="padding:12px 14px; width:27%; font-size:16px; font-weight:800;">操盤應對心法</th>
               </tr>
             </thead>
             <tbody>
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-                <td style="padding:12px;">
-                  <span style="display:inline-block; padding:4px 8px; border-radius:4px; font-weight:800; background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.4);">🔴 紅色／橘紅系</span>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);">🔴 紅色／橘紅系</span>
                 </td>
-                <td style="padding:12px; color:#f8fafc; font-weight:600;">
-                  【高檔過熱／警示訊號】<br><span style="font-size:12px; color:#94a3b8;">短線漲太兇、動能衰退或短線翻空</span>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【高檔過熱／警示訊號】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">短線漲太兇、動能衰退或短線翻空</span>
                 </td>
-                <td style="padding:12px;">
-                  <div style="display:flex; flex-direction:column; gap:4px;">
-                    <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:12px; font-weight:750; background:rgba(239,68,68,0.15); color:#fca5a5;">🔥 極度過熱</span>
-                    <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:12px; font-weight:750; background:rgba(249,115,22,0.15); color:#fdba74;">⚠️ 進入過熱區</span>
-                    <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:12px; font-weight:750; background:rgba(239,68,68,0.15); color:#fca5a5;">⚠️ 頂背離警戒</span>
-                    <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:12px; font-weight:750; background:rgba(239,68,68,0.15); color:#fca5a5;">⚡ 短線死亡交叉</span>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">🔥 極度過熱</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(249,115,22,0.18); color:#fdba74;">⚠️ 進入過熱區</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">⚠️ 頂背離警戒</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">⚡ 短線死亡交叉</span>
                   </div>
                 </td>
-                <td style="padding:12px; color:#fca5a5; font-size:13px; line-height:1.5;">
+                <td style="padding:14px; color:#fca5a5; font-size:15.5px; line-height:1.6;">
                   <strong>⚠️ 提高警覺！</strong><br>切忌追高，持股者宜調緊移動停損（如 5MA）或分批停利。
                 </td>
               </tr>
 
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-                <td style="padding:12px;">
-                  <span style="display:inline-block; padding:4px 8px; border-radius:4px; font-weight:800; background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.4);">🟢 綠色／翠綠系</span>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.45);">🟢 綠色／翠綠系</span>
                 </td>
-                <td style="padding:12px; color:#f8fafc; font-weight:600;">
-                  【低檔轉折／轉強訊號】<br><span style="font-size:12px; color:#94a3b8;">跌深超賣、落底買盤或金叉翻多</span>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【低檔轉折／轉強訊號】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">跌深超賣、落底買盤或金叉翻多</span>
                 </td>
-                <td style="padding:12px;">
-                  <div style="display:flex; flex-direction:column; gap:4px;">
-                    <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:12px; font-weight:750; background:rgba(34,197,94,0.15); color:#86efac;">💎 極度超跌</span>
-                    <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:12px; font-weight:750; background:rgba(34,197,94,0.15); color:#86efac;">👀 進入超跌區</span>
-                    <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:12px; font-weight:750; background:rgba(34,197,94,0.15); color:#86efac;">💡 底背離落底</span>
-                    <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:12px; font-weight:750; background:rgba(34,197,94,0.15); color:#86efac;">✨ 短線黃金交叉</span>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">💎 極度超跌</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">👀 進入超跌區</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">💡 底背離落底</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">✨ 短線黃金交叉</span>
                   </div>
                 </td>
-                <td style="padding:12px; color:#86efac; font-size:13px; line-height:1.5;">
+                <td style="padding:14px; color:#86efac; font-size:15.5px; line-height:1.6;">
                   <strong>💡 留意轉折！</strong><br>空方殺盤接近竭盡，短線容易迎來技術性反彈或買點契機。
                 </td>
               </tr>
 
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-                <td style="padding:12px;">
-                  <span style="display:inline-block; padding:4px 8px; border-radius:4px; font-weight:800; background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.4);">🟡 亮金／琥珀黃</span>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(234,179,8,0.2); color:#fde047; border:1px solid rgba(234,179,8,0.45);">🟡 亮金／琥珀黃</span>
                 </td>
-                <td style="padding:12px; color:#f8fafc; font-weight:600;">
-                  【指標鈍化／極端趨勢】<br><span style="font-size:12px; color:#94a3b8;">飆股狂噴不回頭，或極端連續破底</span>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【指標鈍化／極端趨勢】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">飆股狂噴不回頭，或極端連續破底</span>
                 </td>
-                <td style="padding:12px;">
-                  <div style="display:flex; flex-direction:column; gap:4px;">
-                    <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:12px; font-weight:750; background:rgba(234,179,8,0.15); color:#fde047;">🚀 高檔強勢鈍化</span>
-                    <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:12px; font-weight:750; background:rgba(59,130,246,0.15); color:#93c5fd;">❄️ 低檔弱勢鈍化</span>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">🚀 高檔強勢鈍化</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(59,130,246,0.18); color:#93c5fd;">❄️ 低檔弱勢鈍化</span>
                   </div>
                 </td>
-                <td style="padding:12px; color:#fde047; font-size:13px; line-height:1.5;">
+                <td style="padding:14px; color:#fde047; font-size:15.5px; line-height:1.6;">
                   <strong>🚀 飆股特徵！</strong><br>主力鎖碼極強，切忌猜頂放空，順勢抱牢（高檔鈍化）；低檔鈍化勿盲目抄底。
                 </td>
               </tr>
 
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-                <td style="padding:12px;">
-                  <span style="display:inline-block; padding:4px 8px; border-radius:4px; font-weight:800; background:rgba(56,189,248,0.18); color:#7dd3fc; border:1px solid rgba(56,189,248,0.4);">🔵 天藍／青藍系</span>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(56,189,248,0.2); color:#7dd3fc; border:1px solid rgba(56,189,248,0.45);">🔵 天藍／青藍系</span>
                 </td>
-                <td style="padding:12px; color:#f8fafc; font-weight:600;">
-                  【健康多方推進】<br><span style="font-size:12px; color:#94a3b8;">動能維持在 55~70 攻擊波段</span>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【健康多方推進】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">動能維持在 55~70 攻擊波段</span>
                 </td>
-                <td style="padding:12px;">
-                  <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:12px; font-weight:750; background:rgba(56,189,248,0.15); color:#7dd3fc;">📈 多方推進</span>
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(56,189,248,0.18); color:#7dd3fc;">📈 多方推進</span>
                 </td>
-                <td style="padding:12px; color:#7dd3fc; font-size:13px; line-height:1.5;">
+                <td style="padding:14px; color:#7dd3fc; font-size:15.5px; line-height:1.6;">
                   <strong>📈 正常推升！</strong><br>多方穩健控盤，量價結構保持健康。
                 </td>
               </tr>
 
               <tr>
-                <td style="padding:12px;">
-                  <span style="display:inline-block; padding:4px 8px; border-radius:4px; font-weight:800; background:rgba(148,163,184,0.18); color:#cbd5e1; border:1px solid rgba(148,163,184,0.4);">⚪ 灰白／藍灰系</span>
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(148,163,184,0.2); color:#cbd5e1; border:1px solid rgba(148,163,184,0.45);">⚪ 灰白／藍灰系</span>
                 </td>
-                <td style="padding:12px; color:#f8fafc; font-weight:600;">
-                  【中性平衡／整理無方向】<br><span style="font-size:12px; color:#94a3b8;">多空力量均等（RSI 約 50 附近）</span>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【中性平衡／整理無方向】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">多空力量均等（RSI 約 50 附近）</span>
                 </td>
-                <td style="padding:12px;">
-                  <div style="display:flex; flex-direction:column; gap:4px;">
-                    <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:12px; font-weight:750; background:rgba(148,163,184,0.15); color:#cbd5e1;">⚪ 多空平衡</span>
-                    <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:12px; font-weight:750; background:rgba(100,116,139,0.15); color:#94a3b8;">📉 弱勢整理</span>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(148,163,184,0.18); color:#cbd5e1;">⚪ 多空平衡</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(100,116,139,0.18); color:#94a3b8;">📉 弱勢整理</span>
                   </div>
                 </td>
-                <td style="padding:12px; color:#cbd5e1; font-size:13px; line-height:1.5;">
+                <td style="padding:14px; color:#cbd5e1; font-size:15.5px; line-height:1.6;">
                   <strong>⚪ 觀望等待！</strong><br>區間震盪整理，等待下一次表態突破。
                 </td>
               </tr>
@@ -284,8 +284,8 @@
         </div>
 
         <!-- 實戰口訣三金律 -->
-        <div style="background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.25); border-radius:8px; padding:12px 16px; font-size:13px; color:#cbd5e1; line-height:1.6;">
-          <div style="font-weight:800; color:#93c5fd; margin-bottom:4px; font-size:13.5px;">💡 RSI 實戰操盤三大金律：</div>
+        <div style="background:rgba(59,130,246,0.09); border:1px solid rgba(59,130,246,0.3); border-radius:8px; padding:14px 18px; font-size:15px; color:#cbd5e1; line-height:1.7;">
+          <div style="font-weight:800; color:#93c5fd; margin-bottom:6px; font-size:16px;">💡 RSI 實戰操盤三大金律：</div>
           <div>1. <strong>盤整看位階</strong>：70 過熱警戒勿追高、30 超賣恐慌候反彈。</div>
           <div>2. <strong>趨勢看鈍化</strong>：80 高檔鈍化（🚀）是飆股主升段，順勢抱牢；20 低檔鈍化（❄️）切莫接刀。</div>
           <div>3. <strong>背離抓轉折</strong>：股價創高但 RSI 走跌為「頂背離（⚠️）」，主力拉高出貨提早結帳！</div>
@@ -293,8 +293,8 @@
       </div>
 
       <!-- Footer -->
-      <div style="padding:12px 20px; background:#1e2330; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:flex-end;">
-        <button type="button" onclick="closeRsiCheatSheetModal()" style="padding:8px 22px; border-radius:6px; background:#3b82f6; color:#fff; font-weight:750; font-size:13.5px; border:none; cursor:pointer;">關閉速查表</button>
+      <div style="padding:14px 24px; background:#1e2330; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:flex-end;">
+        <button type="button" onclick="closeRsiCheatSheetModal()" style="padding:9px 26px; border-radius:6px; background:#3b82f6; color:#fff; font-weight:750; font-size:15px; border:none; cursor:pointer;">關閉速查表</button>
       </div>
     </div>
   </div>
