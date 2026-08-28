@@ -71,13 +71,18 @@ window.PatternParser = {
       const low = parseFloat(cols[3]);
       const close = parseFloat(cols[4]);
       
-      // Parse volume like "25.1M" or "5000"
-      let volStr = cols[5];
-      let vol = parseFloat(volStr);
-      if (volStr.endsWith('M')) {
-        vol = parseFloat(volStr.replace('M', '')) * 1000;
-      } else if (volStr.endsWith('K')) {
-        vol = parseFloat(volStr.replace('K', ''));
+      // Parse volume like "25.1M", "4012K", "4012張", "4,012", "4012"
+      let volStr = (cols[5] || '').replace(/,/g, '').trim();
+      let vol = 0;
+      if (volStr.endsWith('M') || volStr.endsWith('m')) {
+        vol = Math.round(parseFloat(volStr.slice(0, -1)) * 1000);
+      } else if (volStr.endsWith('K') || volStr.endsWith('k')) {
+        vol = Math.round(parseFloat(volStr.slice(0, -1)));
+      } else if (volStr.endsWith('張')) {
+        vol = Math.round(parseFloat(volStr.replace('張', '')));
+      } else {
+        let rawNum = parseFloat(volStr);
+        vol = isNaN(rawNum) ? 0 : rawNum;
       }
 
       const m5 = parseFloat(cols[6]);

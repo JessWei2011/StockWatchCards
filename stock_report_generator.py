@@ -538,7 +538,7 @@ def build_html(sid, name, dispo, info, df, ma5, ma10, ma20, ma60, ri, mc, ms, mh
             idx = -(n_tail - i)
             rows.append(
                 f"<tr><td>{dt.strftime('%m/%d')}</td><td>{row.Open:.1f}</td><td>{row.High:.1f}</td>"
-                f"<td>{row.Low:.1f}</td><td>{row.Close:.1f}</td><td>{row.Volume/1e6:.1f}M</td>"
+                f"<td>{row.Low:.1f}</td><td>{row.Close:.1f}</td><td>{int(round(row.Volume/1000.0))}張</td>"
                 f"<td>{ma5.iloc[idx]:.1f}</td><td>{ri.iloc[idx]}</td><td>{mh.iloc[idx]}</td>"
                 f"<td>{K.iloc[idx]}</td><td>{D.iloc[idx]}</td>"
                 f"<td>{bu.iloc[idx]:.1f}</td><td>{bm.iloc[idx]:.1f}</td><td>{bl.iloc[idx]:.1f}</td></tr>"
@@ -1151,7 +1151,7 @@ def run(ticker_input):
             add(
                 f" {dt.strftime('%m/%d')} "
                 f"{row.Open:.1f} {row.High:.1f} {row.Low:.1f} {row.Close:.1f} "
-                f"{row.Volume/1e6:.1f}M "
+                f"{int(round(row.Volume/1000.0))}張 "
                 f"{ma5.iloc[idx]:.1f} {ri.iloc[idx]} {mh.iloc[idx]} "
                 f"{K.iloc[idx]} {D.iloc[idx]} "
                 f"{bu.iloc[idx]:.1f} {bm.iloc[idx]:.1f} {bl.iloc[idx]:.1f}"
