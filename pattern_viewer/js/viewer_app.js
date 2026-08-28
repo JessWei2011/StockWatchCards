@@ -390,6 +390,36 @@
           statVolTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">常態量能換手</span>`;
         }
       }
+
+      // 渲染「🌊 MACD 指標狀態」
+      const statMacdTags = this.q('#statMacdTags') || document.getElementById('statMacdTags');
+      if (statMacdTags) {
+        const cleanCode = String(this.currentCode || '').split('.')[0].trim();
+        const allCards = (window.cardsByCode || (window.parent && window.parent.cardsByCode) || (typeof cardsByCode !== 'undefined' ? cardsByCode : {})) || {};
+        const card = allCards[cleanCode] || allCards[this.currentCode] || null;
+        let macdTagsStr = card ? (card.macdTags || card.macd_tags || '') : '';
+        if (!macdTagsStr && card && card.raw) {
+          const m = String(card.raw).match(/MACD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
+          if (m) macdTagsStr = m[1].trim();
+        }
+
+        if (macdTagsStr) {
+          const parts = macdTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
+          statMacdTags.innerHTML = parts.map(t => {
+            let style = 'background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.35);';
+            if (/死亡交叉|死叉|翻綠|頂背離/.test(t)) {
+              style = 'background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);';
+            } else if (/金叉|黃金交叉|翻紅|底背離/.test(t)) {
+              style = 'background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.45);';
+            } else if (/零軸上強勢多頭|多頭發散/.test(t)) {
+              style = 'background:rgba(168,85,247,0.22); color:#d8b4fe; border:1px solid rgba(168,85,247,0.48);';
+            }
+            return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
+          }).join('');
+        } else {
+          statMacdTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">MACD 數據正常</span>`;
+        }
+      }
       if (this.currentStockData && this.currentStockData.dates && this.currentStockData.dates.length) {
         window.updateFocusHUD(this.currentStockData.dates.length - 1, this.currentStockData);
       }

@@ -49,6 +49,10 @@
               <div class="stat-label" style="color:#fde047; font-size:11px; font-weight:700;">📊 VOL 指標狀態</div>
               <div id="statVolTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
             </div>
+            <div class="stat-box full" id="statMacdBox" style="margin-top:6px; padding:6px 10px; background:rgba(168,85,247,0.06); border:1px solid rgba(168,85,247,0.2); border-radius:6px;">
+              <div class="stat-label" style="color:#c084fc; font-size:11px; font-weight:700;">🌊 MACD 指標狀態</div>
+              <div id="statMacdTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
+            </div>
           </div>
         </div>
 
@@ -131,8 +135,12 @@
           <span>🎨</span> RSI 標籤顏色含意速查表
         </button>
 
-        <button type="button" class="btn" onclick="openVolCheatSheetModal()" style="margin-top:8px; margin-bottom:10px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(234,179,8,0.12); color:#fde047; border:1px solid rgba(234,179,8,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
+        <button type="button" class="btn" onclick="openVolCheatSheetModal()" style="margin-top:8px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(234,179,8,0.12); color:#fde047; border:1px solid rgba(234,179,8,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
           <span>📊</span> VOL 量能指標與型態速查表
+        </button>
+
+        <button type="button" class="btn" onclick="openMacdCheatSheetModal()" style="margin-top:8px; margin-bottom:10px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(168,85,247,0.12); color:#c084fc; border:1px solid rgba(168,85,247,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
+          <span>🌊</span> MACD 指標與型態速查表
         </button>
 
         <div class="card teaching-card">
@@ -443,6 +451,143 @@
     </div>
   </div>
 
+  <!-- MACD 指標標籤顏色含意速查表 Modal (1020px 大視窗 / 16px 大字體) -->
+  <div id="macdCheatSheetModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.78); z-index:99999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+    <div style="background:#161922; border:1px solid rgba(168,85,247,0.4); border-radius:12px; width:94%; max-width:1020px; max-height:92vh; overflow-y:auto; box-shadow:0 24px 50px rgba(0,0,0,0.85); display:flex; flex-direction:column;">
+      
+      <!-- Header -->
+      <div style="padding:18px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:24px;">🌊</span>
+          <div>
+            <h3 style="margin:0; font-size:20px; font-weight:800; color:#f8fafc;">MACD 指標標籤顏色含意與實戰速查表</h3>
+            <div style="font-size:13.5px; color:#c084fc; margin-top:2px;">雙線交叉（DIF / MACD）與柱狀體（Hist）多空動能速查指引</div>
+          </div>
+        </div>
+        <button type="button" onclick="closeMacdCheatSheetModal()" style="background:none; border:none; color:#94a3b8; font-size:24px; cursor:pointer; padding:4px 8px; line-height:1;">✕</button>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:22px 24px; color:#e2e8f0; font-size:15.5px; line-height:1.6; display:flex; flex-direction:column; gap:18px;">
+        
+        <!-- Table -->
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; text-align:left; background:rgba(0,0,0,0.25); border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+            <thead>
+              <tr style="background:#1e2330; border-bottom:2px solid rgba(255,255,255,0.12);">
+                <th style="padding:12px 14px; color:#94a3b8; font-size:14px; width:17%;">顏色色系</th>
+                <th style="padding:12px 14px; color:#94a3b8; font-size:14px; width:22%;">型態分類</th>
+                <th style="padding:12px 14px; color:#94a3b8; font-size:14px; width:33%;">對應智能標籤</th>
+                <th style="padding:12px 14px; color:#94a3b8; font-size:14px; width:28%;">操盤實戰含意與決策</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);">🔴 紅色／警示系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【空方轉折／動能衰退】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">高檔死叉、頂背離或柱體翻綠</span>
+                </td>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">⚡ MACD 死亡交叉 (動能轉弱)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(249,115,22,0.18); color:#fdba74;">⚠️ MACD 頂背離 (高檔動能背離)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">❄️ MACD 柱狀體翻綠 (動能減弱)</span>
+                  </div>
+                </td>
+                <td style="padding:14px; color:#fca5a5; font-size:15.5px; line-height:1.6;">
+                  <strong>🚨 動能衰退提防拉回！</strong><br>高檔死叉或頂背離代表漲勢動能耗盡，宜分批減碼獲利了結。
+                </td>
+              </tr>
+
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.45);">🟢 綠色／翠綠系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【多方起漲／金叉發動】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">零軸金叉、低檔底背離或柱體翻紅</span>
+                </td>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">✨ MACD 零軸上金叉 (強勢攻擊)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">💡 MACD 零軸下金叉 (落底反彈)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">💎 MACD 底背離 (低檔背離起漲)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">🌊 MACD 柱狀體翻紅 (動能增強)</span>
+                  </div>
+                </td>
+                <td style="padding:14px; color:#86efac; font-size:15.5px; line-height:1.6;">
+                  <strong>💡 關鍵波段買點！</strong><br>零軸上金叉為強勢多頭加速；零軸下金叉與底背離為左側落底築底買點。
+                </td>
+              </tr>
+
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid rgba(168,85,247,0.45);">🟣 紫色／紫羅蘭</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【主升多頭／強勢波段】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">雙線於零軸上方多頭發散</span>
+                </td>
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(168,85,247,0.18); color:#c084fc;">🚀 MACD 零軸上強勢多頭</span>
+                </td>
+                <td style="padding:14px; color:#c084fc; font-size:15.5px; line-height:1.6;">
+                  <strong>🚀 享受主升段利潤！</strong><br>DIF 與 MACD 雙線維持在零軸上方發散，代表大格局強多波段，續抱不輕易被洗出場。
+                </td>
+              </tr>
+
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(56,189,248,0.2); color:#7dd3fc; border:1px solid rgba(56,189,248,0.45);">🔵 天藍／青藍系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【溫和推進】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">多方波段健康運行</span>
+                </td>
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(56,189,248,0.18); color:#7dd3fc;">📈 MACD 多方波段整理</span>
+                </td>
+                <td style="padding:14px; color:#7dd3fc; font-size:15.5px; line-height:1.6;">
+                  <strong>📈 多方掌控節奏！</strong><br>處於多方常態運行。
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(148,163,184,0.2); color:#cbd5e1; border:1px solid rgba(148,163,184,0.45);">⚪ 灰白／藍灰系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【常態整理】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">雙線黏合或多空平衡整理</span>
+                </td>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(148,163,184,0.18); color:#cbd5e1;">📉 MACD 空方弱勢整理</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(148,163,184,0.18); color:#94a3b8;">⚪ MACD 多空平衡整理</span>
+                  </div>
+                </td>
+                <td style="padding:14px; color:#cbd5e1; font-size:15.5px; line-height:1.6;">
+                  <strong>⚪ 沉澱等待！</strong><br>等待雙線金叉或柱狀體翻紅轉強。
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 實戰口訣三金律 -->
+        <div style="background:rgba(168,85,247,0.09); border:1px solid rgba(168,85,247,0.3); border-radius:8px; padding:14px 18px; font-size:15px; color:#cbd5e1; line-height:1.7;">
+          <div style="font-weight:800; color:#c084fc; margin-bottom:6px; font-size:16px;">💡 MACD 操盤三大金律：</div>
+          <div>1. <strong>零軸以上金叉最強</strong>：雙線在零軸上方的金叉（✨），是主升段再度加速的強力買點！</div>
+          <div>2. <strong>柱狀體翻紅先表態</strong>：柱狀體由負翻正（🌊）通常領先雙線金叉 1~2 天表態，是極佳的提前佈局訊號！</div>
+          <div>3. <strong>背離預告大轉折</strong>：高檔頂背離（⚠️）預告主力動能耗盡，低檔底背離（💎）則是法人潛伏黃金買點！</div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding:14px 24px; background:#1e2330; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:flex-end;">
+        <button type="button" onclick="closeMacdCheatSheetModal()" style="padding:9px 26px; border-radius:6px; background:#a855f7; color:#fff; font-weight:800; font-size:15px; border:none; cursor:pointer;">關閉速查表</button>
+      </div>
+    </div>
+  </div>
+
   <script src="../data.js"></script>
   <script src="js/parser.js?v=67"></script>
   <script src="js/pattern_engine.js?v=67"></script>
@@ -467,11 +612,21 @@
       if (modal) modal.style.display = 'none';
     };
 
+    window.openMacdCheatSheetModal = function() {
+      const modal = document.getElementById('macdCheatSheetModal');
+      if (modal) modal.style.display = 'flex';
+    };
+    window.closeMacdCheatSheetModal = function() {
+      const modal = document.getElementById('macdCheatSheetModal');
+      if (modal) modal.style.display = 'none';
+    };
+
     // 點擊背景或按 Esc 關閉
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         window.closeRsiCheatSheetModal();
         window.closeVolCheatSheetModal();
+        window.closeMacdCheatSheetModal();
       }
     });
     document.addEventListener('click', function(e) {
@@ -482,6 +637,10 @@
       const volModal = document.getElementById('volCheatSheetModal');
       if (volModal && e.target === volModal) {
         window.closeVolCheatSheetModal();
+      }
+      const macdModal = document.getElementById('macdCheatSheetModal');
+      if (macdModal && e.target === macdModal) {
+        window.closeMacdCheatSheetModal();
       }
     });
 

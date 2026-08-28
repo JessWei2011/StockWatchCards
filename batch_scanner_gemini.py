@@ -384,6 +384,71 @@ def detect_volume_tags(df: pd.DataFrame) -> list:
     return tags
 
 
+def detect_macd_tags(close_s: pd.Series) -> list:
+    if len(close_s) < 26:
+        return ["⚪ MACD 資料累積中"]
+    tags = []
+    e12 = close_s.ewm(span=12, adjust=False).mean()
+    e26 = close_s.ewm(span=26, adjust=False).mean()
+    dif = e12 - e26
+    signal = dif.ewm(span=9, adjust=False).mean()
+    hist = dif - signal
+    
+    cur_dif = float(dif.iloc[-1])
+    cur_sig = float(signal.iloc[-1])
+    cur_hist = float(hist.iloc[-1])
+    prev_dif = float(dif.iloc[-2]) if len(dif) >= 2 else cur_dif
+    prev_sig = float(signal.iloc[-2]) if len(signal) >= 2 else cur_sig
+    prev_hist = float(hist.iloc[-2]) if len(hist) >= 2 else cur_hist
+
+    # 1. 零軸上/下黃金交叉
+    if prev_dif <= prev_sig and cur_dif > cur_sig:
+        if cur_dif >= 0:
+            tags.append("✨ MACD 零軸上金叉 (強勢攻擊)")
+        else:
+            tags.append("💡 MACD 零軸下金叉 (落底反彈)")
+    elif prev_dif >= prev_sig and cur_dif < cur_sig:
+        tags.append("⚡ MACD 死亡交叉 (動能轉弱)")
+
+    # 2. 柱狀體翻紅/翻綠
+    if prev_hist <= 0 and cur_hist > 0:
+        tags.append("🌊 MACD 柱狀體翻紅 (動能增強)")
+    elif prev_hist >= 0 and cur_hist < 0:
+        tags.append("❄️ MACD 柱狀體翻綠 (動能減弱)")
+
+    # 3. 零軸上強勢多頭
+    if cur_dif > 0 and cur_sig > 0 and cur_hist > 0:
+        if not any("金叉" in t or "翻紅" in t for t in tags):
+            tags.append("🚀 MACD 零軸上強勢多頭")
+
+    # 4. 頂背離 (價格創20日新高，但 DIF 或 Hist 衰退)
+    if len(close_s) >= 25:
+        sub_c = close_s.iloc[-20:]
+        if sub_c.iloc[-1] >= sub_c.max():
+            prev_peak_dif = dif.iloc[-25:-3].max()
+            if prev_peak_dif > 0 and cur_dif < prev_peak_dif * 0.75:
+                tags.append("⚠️ MACD 頂背離 (高檔動能背離)")
+
+    # 5. 底背離 (價格創20日新低，但 DIF 或 Hist 翻揚)
+    if len(close_s) >= 25:
+        sub_c = close_s.iloc[-20:]
+        if sub_c.iloc[-1] <= sub_c.min():
+            prev_trough_dif = dif.iloc[-25:-3].min()
+            if prev_trough_dif < 0 and cur_dif > prev_trough_dif * 0.75:
+                tags.append("💎 MACD 底背離 (低檔背離起漲)")
+
+    # 預設常態
+    if not tags:
+        if cur_dif >= 0 and cur_hist >= 0:
+            tags.append("📈 MACD 多方波段整理")
+        elif cur_dif < 0 and cur_hist < 0:
+            tags.append("📉 MACD 空方弱勢整理")
+        else:
+            tags.append("⚪ MACD 多空平衡整理")
+
+    return tags
+
+
 def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
     """
     雙軌進化版選股引擎 (Gemini 專屬)
@@ -594,6 +659,50 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
             momo_reasons.append("量能退潮死叉")
             def_score -= 10
 
+    macd_tags = detect_macd_tags(close_s)
+
+    # ==========================================
+    # 3. 🌊 MACD 核心指標評分調整 (加扣分標準)
+    # ==========================================
+    for mtag in macd_tags:
+        if "✨ MACD 零軸上金叉" in mtag:
+            momo_score += 15
+            momo_reasons.append("MACD零軸上金叉(強勢攻擊)")
+            def_score += 10
+            def_reasons.append("MACD零軸上金叉")
+        elif "💡 MACD 零軸下金叉" in mtag:
+            momo_score += 10
+            momo_reasons.append("MACD低檔金叉反彈")
+            def_score += 12
+            def_reasons.append("MACD低檔金叉築底")
+        elif "🌊 MACD 柱狀體翻紅" in mtag:
+            momo_score += 10
+            momo_reasons.append("MACD柱體翻紅轉強")
+            def_score += 8
+        elif "🚀 MACD 零軸上強勢多頭" in mtag:
+            momo_score += 12
+            momo_reasons.append("MACD雙線在零軸上多頭發散")
+            def_score += 8
+        elif "💎 MACD 底背離" in mtag:
+            momo_score += 15
+            momo_reasons.append("MACD低檔底背離(波段買點)")
+            def_score += 15
+            def_reasons.append("MACD底背離確認落底")
+        elif "⚠️ MACD 頂背離" in mtag:
+            momo_score -= 20
+            momo_reasons.append("⚠️警示:MACD頂背離(高檔動能衰退)")
+            def_score -= 20
+            def_reasons.append("⚠️警示:MACD頂背離")
+        elif "⚡ MACD 死亡交叉" in mtag:
+            momo_score -= 15
+            momo_reasons.append("MACD高檔死叉轉弱")
+            def_score -= 15
+            def_reasons.append("MACD死叉")
+        elif "❄️ MACD 柱狀體翻綠" in mtag:
+            momo_score -= 10
+            momo_reasons.append("MACD柱體翻綠修正")
+            def_score -= 10
+
     return {
         'code': stock_info['code'],
         'name': stock_info['name'],
@@ -611,6 +720,7 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
         'rsi14': round(rsi14, 1),
         'rsi_tags': rsi_tags,
         'vol_tags': vol_tags,
+        'macd_tags': macd_tags,
         'vol_ratio': round(vol_ratio, 2),
         'close_loc': round(close_location, 2),
         'is_new_high': is_new_high,
@@ -671,6 +781,10 @@ def save_stage4_report(r):
     if not vol_tags:
         vol_tags = ["爆量攻擊" if r['vol_ratio'] >= 1.5 else ("溫和放量" if r['vol_ratio'] >= 1.0 else "量能萎縮")]
 
+    macd_tags = r.get('macd_tags') or []
+    if not macd_tags:
+        macd_tags = ["MACD 數據正常"]
+
     technical_tags = []
     if r['s5'] > 0 and r['s10'] > 0 and r['s20'] > 0:
         technical_tags.append("均線多頭排列")
@@ -695,9 +809,10 @@ def save_stage4_report(r):
     lines.append(f"  - **RSI(14)**：{r['rsi14']} （{'超買強勢' if r['rsi14'] > 75 else '多頭推進區' if r['rsi14'] > 50 else '弱勢整理'}）")
     lines.append(f"  - **成交量**：{r['vol']:,} 股（相對 20日均量 {r['vol_ratio']} 倍）\n")
     lines.append("### 【標籤摘要】")
-    lines.append(f"- **RSI 標籤**：{'、'.join(rsi_tags)}")
-    lines.append(f"- **VOL 標籤**：{'、'.join(vol_tags)}")
     lines.append(f"- **技術標籤**：{'、'.join(technical_tags)}")
+    lines.append(f"- **VOL 標籤**：{'、'.join(vol_tags)}")
+    lines.append(f"- **RSI 標籤**：{'、'.join(rsi_tags)}")
+    lines.append(f"- **MACD 標籤**：{'、'.join(macd_tags)}")
     lines.append(f"- **籌碼標籤**：{'、'.join(chip_tags)}")
     lines.append(f"- **型態標籤**：{'、'.join(pattern_tags)}\n")
     lines.append("---")
