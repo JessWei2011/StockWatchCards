@@ -244,15 +244,12 @@ def recognize_pattern(df):
 
 
 def calculate_rsi_series(series: pd.Series, period: int = 14) -> pd.Series:
-    """計算標準 Wilder's RSI 數列"""
+    """計算標準 Wilder's RSI 數列 (與 stock_report_generator 一致)"""
     delta = series.diff()
-    gain = delta.where(delta > 0, 0.0)
-    loss = -delta.where(delta < 0, 0.0)
-    avg_gain = gain.ewm(alpha=1.0/period, adjust=False).mean()
-    avg_loss = loss.ewm(alpha=1.0/period, adjust=False).mean()
-    rs = avg_gain / avg_loss.replace(0, np.nan)
-    rsi = 100.0 - (100.0 / (1.0 + rs))
-    return rsi.fillna(50.0)
+    gain = delta.clip(lower=0).ewm(com=period-1, min_periods=period).mean()
+    loss = (-delta.clip(upper=0)).ewm(com=period-1, min_periods=period).mean()
+    rsi = 100.0 - (100.0 / (1.0 + (gain / loss.replace(0, np.nan))))
+    return rsi.fillna(50.0).round(1)
 
 
 def detect_rsi_tags(close_series: pd.Series) -> list:
@@ -302,17 +299,31 @@ def detect_rsi_tags(close_series: pd.Series) -> list:
         elif (rsi6.iloc[-3:] <= 20).all():
             tags.append("❄️ 低檔弱勢鈍化")
             
-    # 4. 背離型態 (過去 20 個交易日內之高低點背離)
-    if len(close_series) >= 20:
-        sub_close = close_series.iloc[-20:]
-        sub_rsi14 = rsi14.iloc[-20:]
+    # 4. 嚴謹頂/底背離型態 (尋找同波段明確雙峰與轉折)
+    if len(close_series) >= 25:
+        sub_c = close_series.iloc[-25:]
+        sub_r = rsi14.iloc[-25:]
+        cur_c = sub_c.iloc[-1]
         
-        # 頂背離：收盤價創 20 日新高，但 RSI14 較 20 日內最高點低 3.0 以上
-        if sub_close.iloc[-1] >= sub_close.max() and cur_rsi14 < (sub_rsi14.max() - 3.0):
-            tags.append("⚠️ 頂背離警戒")
-        # 底背離：收盤價創 20 日新低，但 RSI14 較 20 日內最低點高 3.0 以上
-        elif sub_close.iloc[-1] <= sub_close.min() and cur_rsi14 > (sub_rsi14.min() + 3.0):
-            tags.append("💡 底背離落底")
+        # 頂背離：當前價格創 25 日新高，但 RSI 前峰更高，且當前 RSI 開始下彎鈍化衰退
+        if cur_c >= sub_c.max() * 0.995:
+            # 尋找前一個波峰 (間隔 5~20 天)
+            peak_r_idx = sub_r.iloc[:-5].argmax()
+            prev_peak_r = sub_r.iloc[peak_r_idx]
+            prev_peak_c = sub_c.iloc[peak_r_idx]
+            # 必須前峰價格較低但 RSI 較高，且當前 RSI 明顯低於前峰 5 以上，且 RSI 非加速上揚中
+            if cur_c > prev_peak_c * 1.02 and prev_peak_r >= 75 and cur_rsi14 <= (prev_peak_r - 6.0):
+                if len(rsi14) >= 2 and rsi14.iloc[-1] < rsi14.iloc[-2]:
+                    tags.append("⚠️ RSI 頂背離警戒")
+                    
+        # 底背離：當前價格創 25 日新低，但 RSI 前低更低，且當前 RSI 已打底上勾
+        elif cur_c <= sub_c.min() * 1.005:
+            trough_r_idx = sub_r.iloc[:-5].argmin()
+            prev_trough_r = sub_r.iloc[trough_r_idx]
+            prev_trough_c = sub_c.iloc[trough_r_idx]
+            if cur_c < prev_trough_c * 0.98 and prev_trough_r <= 30 and cur_rsi14 >= (prev_trough_r + 6.0):
+                if len(rsi14) >= 2 and rsi14.iloc[-1] > rsi14.iloc[-2]:
+                    tags.append("💡 RSI 底背離落底")
             
     return tags
 
@@ -363,13 +374,11 @@ def detect_volume_tags(df: pd.DataFrame) -> list:
         if cur_vol >= past30_max_vol and cur_vol >= cur_v20 * 2.0 and (body_ratio < 0.35 or not is_up):
             tags.append("🚨 高檔爆大量倒貨")
 
-    # 6. 量價頂背離
-    if len(df) >= 20:
-        sub_c = close_s.iloc[-20:]
-        sub_v = vol_s.iloc[-20:]
-        if sub_c.iloc[-1] >= sub_c.max():
-            prev_peak_v = sub_v.iloc[:-2].max() if len(sub_v) > 2 else 0
-            if prev_peak_v > 0 and cur_vol < prev_peak_v * 0.65:
+    # 6. 量價頂背離 (嚴格標準：創波段新高、成交量萎縮低於20日均量0.6倍且收黑或長上影線)
+    if len(df) >= 20 and cur_v20 is not None:
+        past20_high = df['high'].iloc[-21:-1].max()
+        if close_s.iloc[-1] >= past20_high:
+            if cur_vol < cur_v20 * 0.60 and not is_up:
                 tags.append("⚠️ 量價頂背離 (無量空漲)")
 
     # 常態
@@ -385,6 +394,7 @@ def detect_volume_tags(df: pd.DataFrame) -> list:
 
 
 def detect_macd_tags(close_s: pd.Series) -> list:
+    """精準計算與判讀 MACD 訊號 (排除跨週期時空錯置與假背離)"""
     if len(close_s) < 26:
         return ["⚪ MACD 資料累積中"]
     tags = []
@@ -416,29 +426,50 @@ def detect_macd_tags(close_s: pd.Series) -> list:
     elif prev_hist >= 0 and cur_hist < 0:
         tags.append("❄️ MACD 柱狀體翻綠 (動能減弱)")
 
-    # 3. 零軸上強勢多頭
-    # 3. 頂背離 (價格創20日新高，但指標峰值衰退且動能轉折向下)
-    if len(close_s) >= 25:
-        sub_c = close_s.iloc[-20:]
-        if sub_c.iloc[-1] >= sub_c.max() * 0.995:
-            prev_peak_dif = dif.iloc[-25:-4].max()
-            if prev_peak_dif > 0 and cur_dif < prev_peak_dif * 0.8:
-                if cur_dif < prev_dif or cur_hist < prev_hist:
+    # 3. 嚴謹頂背離判定 (波峰識別 + 紅柱縮短確認，嚴禁在紅柱創高時觸發)
+    if len(close_s) >= 30:
+        sub_c = close_s.iloc[-25:]
+        sub_dif = dif.iloc[-25:]
+        cur_c = sub_c.iloc[-1]
+        
+        # 價格創近25日新高
+        if cur_c >= sub_c.max() * 0.995:
+            # 尋找前一個同波段 DIF 波峰 (必須間隔 5~20 天)
+            peak_idx = sub_dif.iloc[:-5].argmax()
+            prev_peak_dif = float(sub_dif.iloc[peak_idx])
+            prev_peak_c = float(sub_c.iloc[peak_idx])
+            
+            # 條件：當前股價高於前波高點，但 DIF 峰值明顯衰退 (>20% 差距)
+            # 且關鍵條件：當前紅柱 Hist 必須連續兩日縮短 (動能實質收斂) 或已翻綠，絕不可在紅柱放大創高時觸發！
+            if cur_c > prev_peak_c * 1.02 and prev_peak_dif > 0 and cur_dif < prev_peak_dif * 0.75:
+                if cur_hist < prev_hist and (len(hist) < 3 or hist.iloc[-2] < hist.iloc[-3] or cur_hist < 0):
                     tags.append("⚠️ MACD 頂背離 (高檔動能背離)")
 
-    # 4. 底背離 (價格創20日新低，但指標未破前低且動能轉折向上)
-    if len(close_s) >= 25:
-        sub_c = close_s.iloc[-20:]
-        if sub_c.iloc[-1] <= sub_c.min() * 1.005:
-            prev_trough_dif = dif.iloc[-25:-4].min()
-            if prev_trough_dif < 0 and cur_dif > prev_trough_dif + 1.0:
-                if cur_dif > prev_dif or cur_hist > prev_hist or cur_hist > 0:
+    # 4. 嚴謹底背離判定 (波谷識別 + 綠柱縮短或翻紅確認)
+    if len(close_s) >= 30:
+        sub_c = close_s.iloc[-25:]
+        sub_dif = dif.iloc[-25:]
+        cur_c = sub_c.iloc[-1]
+        
+        # 價格創近25日新低
+        if cur_c <= sub_c.min() * 1.005:
+            trough_idx = sub_dif.iloc[:-5].argmin()
+            prev_trough_dif = float(sub_dif.iloc[trough_idx])
+            prev_trough_c = float(sub_c.iloc[trough_idx])
+            
+            # 條件：當前股價破底，但 DIF 明顯未破底且柱狀體縮短或翻紅轉強
+            if cur_c < prev_trough_c * 0.98 and prev_trough_dif < 0 and cur_dif > prev_trough_dif + 1.0:
+                if cur_hist > prev_hist or cur_hist > 0:
                     tags.append("💎 MACD 底背離 (低檔背離起漲)")
 
-    # 5. 零軸上強勢多頭
-    if cur_dif > 0 and cur_sig > 0 and cur_hist > 0:
-        if not any("金叉" in t or "翻紅" in t or "背離" in t for t in tags):
-            tags.append("🚀 MACD 零軸上強勢多頭")
+    # 5. 零軸上強勢多頭發散 (雙線在零軸上、Hist持續擴大)
+    if cur_dif > 0 and cur_sig > 0:
+        if cur_hist >= prev_hist and cur_hist > 0:
+            if not any("金叉" in t or "翻紅" in t or "背離" in t for t in tags):
+                tags.append("🚀 MACD 零軸上強勢多頭 (動能加速)")
+        elif not any("背離" in t for t in tags):
+            if not any("金叉" in t or "翻紅" in t or "死叉" in t or "翻綠" in t for t in tags):
+                tags.append("📈 MACD 多方波段整理")
 
     # 預設常態
     if not tags:
@@ -484,14 +515,9 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
     s10 = _pct_change(ma10.iloc[-1], ma10.iloc[-2]) if len(ma10) >= 2 else 0.0
     s20 = _pct_change(ma20.iloc[-1], ma20.iloc[-2]) if len(ma20) >= 2 else 0.0
     
-    # RSI(14)
-    delta = np.diff(close)
-    gain = np.where(delta > 0, delta, 0)
-    loss = np.where(delta < 0, -delta, 0)
-    avg_gain = np.mean(gain[-14:]) if len(gain) >= 14 else 1e-5
-    avg_loss = np.mean(loss[-14:]) if len(loss) >= 14 else 1e-5
-    rs = avg_gain / (avg_loss + 1e-5)
-    rsi14 = 100 - (100 / (1 + rs))
+    # 統一使用標準 Wilder's RSI(14)
+    rsi14_series = calculate_rsi_series(close_s, 14)
+    rsi14 = float(rsi14_series.iloc[-1])
     
     prior_vol20 = float(np.mean(volume[-21:-1])) if n >= 21 else float(np.mean(volume))
     vol_ratio = volume[-1] / (prior_vol20 + 1e-5)
