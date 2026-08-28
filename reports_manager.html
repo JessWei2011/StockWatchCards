@@ -3066,38 +3066,7 @@
         });
       }
     }
-
-    const stat = (window.winrateMapByCode && window.winrateMapByCode[card.code]) || {};
-    const text = [card.summary || '', card.technicalTags || '', stat.metric || '', stat.feature || ''].join(' ');
-    const tags = [];
-    const add = (label, tone, title = '') => {
-      if (!tags.some(tag => tag.label === label)) tags.push({ label, tone, title });
-    };
-
-    const rsiMatch = text.match(/RSI(?:\(14\))?[：:\s]*([\d.]+)/i);
-    const rsiValue = rsiMatch ? Number(rsiMatch[1]) : (stat.metric && !isNaN(stat.metric) ? Number(stat.metric) : null);
-    
-    if (rsiValue !== null && Number.isFinite(rsiValue)) {
-      if (rsiValue >= 80) add(`RSI: ${rsiValue.toFixed(1)} 極度過熱`, 'negative', `RSI(14)=${rsiValue} 進入嚴重超買警戒`);
-      else if (rsiValue >= 70) add(`RSI: ${rsiValue.toFixed(1)} 進入過熱區`, 'mixed', `RSI(14)=${rsiValue} 短線超買`);
-      else if (rsiValue <= 20) add(`RSI: ${rsiValue.toFixed(1)} 極度超跌`, 'positive', `RSI(14)=${rsiValue} 進入嚴重超賣反彈契機`);
-      else if (rsiValue <= 30) add(`RSI: ${rsiValue.toFixed(1)} 進入超跌區`, 'positive', `RSI(14)=${rsiValue} 短線超賣`);
-      else if (rsiValue >= 55) add(`RSI: ${rsiValue.toFixed(1)} 多方推進`, 'positive', `RSI(14)=${rsiValue} 處於多頭攻擊推進區`);
-      else if (rsiValue <= 45) add(`RSI: ${rsiValue.toFixed(1)} 弱勢整理`, 'negative', `RSI(14)=${rsiValue} 處於空方整理區`);
-      else add(`RSI: ${rsiValue.toFixed(1)} 多空平衡`, 'neutral', `RSI(14)=${rsiValue} 中性區間`);
-    }
-
-    if (/頂背離/.test(text)) add('⚠️ 頂背離警戒', 'negative', '股價創新高但 RSI 動能衰退');
-    if (/底背離/.test(text)) add('💡 底背離落底', 'positive', '股價破底但 RSI 低檔翻揚');
-    if (/高檔強勢鈍化|高檔鈍化/.test(text)) add('🚀 高檔強勢鈍化', 'mixed', '強勢飆股連日高檔鈍化');
-    if (/低檔弱勢鈍化|低檔鈍化/.test(text)) add('❄️ 低檔弱勢鈍化', 'negative', '弱勢破底連日低檔鈍化');
-    if (/黃金交叉|金叉/.test(text) && /RSI/.test(text)) add('✨ RSI 黃金交叉', 'positive', '短天期 RSI 向上突破長天期 RSI');
-    if (/死亡交叉|死叉/.test(text) && /RSI/.test(text)) add('⚡ RSI 死亡交叉', 'negative', '短天期 RSI 向下跌破長天期 RSI');
-
-    if (!tags.length) {
-      tags.push({ label: 'RSI 數據正常', tone: 'neutral', title: '暫無特殊 RSI 警示訊號' });
-    }
-    return tags;
+    return [{ label: 'RSI 數據正常', tone: 'neutral', title: '暫無特殊 RSI 警示訊號' }];
   }
 
   function renderRsiTags(card){
@@ -3125,29 +3094,7 @@
         });
       }
     }
-
-    const stat = (window.winrateMapByCode && window.winrateMapByCode[card.code]) || {};
-    const text = [card.summary || '', card.technicalTags || '', stat.metric || '', stat.feature || ''].join(' ');
-    const tags = [];
-    const add = (label, tone, title = '') => {
-      if (!tags.some(tag => tag.label === label)) tags.push({ label, tone, title });
-    };
-
-    if (/天量|爆天量/.test(text)) add('🚨 高檔爆天量滯漲', 'positive', '高檔爆出大量籌碼換手');
-    if (/量價頂背離|無量空漲/.test(text)) add('⚠️ 量價頂背離', 'positive', '股價創新高但量能萎縮');
-    if (/帶量長紅|帶量突破/.test(text)) add('🔥 帶量長紅突破', 'negative', '主力出量表態突破');
-    if (/滾量攻擊|量價齊揚/.test(text)) add('🚀 滾量攻擊 (量價齊揚)', 'mixed', '價量齊揚強勢推升');
-    if (/窒息量|凹洞量/.test(text)) add('💎 窒息量 (籌碼洗淨)', 'negative', '量縮至極致籌碼沉澱');
-    if (/量能黃金交叉|量金叉/.test(text)) add('✨ 量能黃金交叉', 'negative', '5日均量突破20日均量');
-    if (/量能死亡交叉|量死叉|量能退潮/.test(text)) add('⚡ 量能死亡交叉', 'positive', '5日均量跌破20日均量');
-
-    if (!tags.length) {
-      if (/爆量攻擊/.test(text)) add('🔥 爆量攻擊', 'negative', '成交量顯著放大');
-      else if (/溫和放量/.test(text)) add('📈 溫和放量', 'neutral', '成交量溫和增加');
-      else if (/量能萎縮|縮量/.test(text)) add('📉 縮量整理', 'neutral', '量能萎縮整理');
-      else tags.push({ label: '常態量能換手', tone: 'neutral', title: '暫無特殊量能異動' });
-    }
-    return tags;
+    return [{ label: '常態量能換手', tone: 'neutral', title: '暫無特殊量能異動' }];
   }
 
   function renderVolTags(card){

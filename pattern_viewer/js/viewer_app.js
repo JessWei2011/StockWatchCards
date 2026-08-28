@@ -347,11 +347,9 @@
           const parts = rsiTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
           statRsiTags.innerHTML = parts.map(t => {
             let style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
-            if (/過熱|超買/.test(t)) {
+            if (/過熱|超買|頂背離|死亡交叉|死叉|弱勢|空方/.test(t)) {
               style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
-            } else if (/頂背離|死亡交叉|死叉/.test(t)) {
-              style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
-            } else if (/超跌|底背離|黃金交叉|金叉/.test(t)) {
+            } else if (/超跌|底背離|黃金交叉|金叉|多方|推進/.test(t)) {
               style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
             } else if (/鈍化/.test(t)) {
               style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
@@ -359,135 +357,37 @@
             return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
           }).join('');
         } else {
-          const rsiList = this.currentStockData.rsi || (this.currentStockData.indicators && this.currentStockData.indicators.rsi) || [];
-          const validRsi = rsiList.filter(v => v !== null && !isNaN(v));
-          if (validRsi.length) {
-            const curRsi = validRsi[validRsi.length - 1];
-            const tags = [];
-            if (curRsi >= 80) tags.push({ label: `🔥 極度過熱 (${curRsi.toFixed(1)})`, style: 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);' });
-            else if (curRsi >= 70) tags.push({ label: `⚠️ 進入過熱區 (${curRsi.toFixed(1)})`, style: 'background:rgba(249,115,22,0.18); color:#fdba74; border:1px solid rgba(249,115,22,0.38);' });
-            else if (curRsi <= 20) tags.push({ label: `💎 極度超跌 (${curRsi.toFixed(1)})`, style: 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);' });
-            else if (curRsi <= 30) tags.push({ label: `👀 進入超跌區 (${curRsi.toFixed(1)})`, style: 'background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.3);' });
-            else if (curRsi >= 55) tags.push({ label: `📈 多方推進 (${curRsi.toFixed(1)})`, style: 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);' });
-            else if (curRsi <= 45) tags.push({ label: `📉 弱勢整理 (${curRsi.toFixed(1)})`, style: 'background:rgba(100,116,139,0.2); color:#cbd5e1; border:1px solid rgba(100,116,139,0.3);' });
-            else tags.push({ label: `⚪ 多空平衡 (${curRsi.toFixed(1)})`, style: 'background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);' });
+          statRsiTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">RSI 數據正常</span>`;
+        }
+      }
 
-            // 鈍化型態
-            if (validRsi.length >= 3) {
-              const last3 = validRsi.slice(-3);
-              if (last3.every(v => v >= 80)) {
-                tags.push({ label: `🚀 高檔強勢鈍化`, style: 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);' });
-              } else if (last3.every(v => v <= 20)) {
-                tags.push({ label: `❄️ 低檔弱勢鈍化`, style: 'background:rgba(59,130,246,0.18); color:#93c5fd; border:1px solid rgba(59,130,246,0.38);' });
-              }
-            }
-
-            // 雙線交叉型態 (RSI 6 vs RSI 12)
-            const rsi6List = (this.currentStockData.rsi6 || []).filter(v => v !== null && !isNaN(v));
-            const rsi12List = (this.currentStockData.rsi12 || []).filter(v => v !== null && !isNaN(v));
-            if (rsi6List.length >= 2 && rsi12List.length >= 2) {
-              const r6_curr = rsi6List[rsi6List.length - 1];
-              const r6_prev = rsi6List[rsi6List.length - 2];
-              const r12_curr = rsi12List[rsi12List.length - 1];
-              const r12_prev = rsi12List[rsi12List.length - 2];
-              if (r6_prev <= r12_prev && r6_curr > r12_curr) {
-                tags.push({ label: `✨ RSI 黃金交叉`, style: 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);' });
-              } else if (r6_prev >= r12_prev && r6_curr < r12_curr) {
-                tags.push({ label: `⚡ RSI 死亡交叉`, style: 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);' });
-              }
-            }
-            
-            statRsiTags.innerHTML = tags.map(t => `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${t.style}">${t.label}</span>`).join('');
-          } else {
-            statRsiTags.textContent = '—';
-          }
+      // 渲染「📊 VOL 指標狀態」
+      const statVolTags = this.q('#statVolTags') || document.getElementById('statVolTags');
+      if (statVolTags) {
+        const cleanCode = String(this.currentCode || '').split('.')[0].trim();
+        const allCards = (window.cardsByCode || (window.parent && window.parent.cardsByCode) || (typeof cardsByCode !== 'undefined' ? cardsByCode : {})) || {};
+        const card = allCards[cleanCode] || allCards[this.currentCode] || null;
+        let volTagsStr = card ? (card.volTags || card.vol_tags || '') : '';
+        if (!volTagsStr && card && card.raw) {
+          const m = String(card.raw).match(/VOL\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i) || String(card.raw).match(/量能標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
+          if (m) volTagsStr = m[1].trim();
         }
 
-        // 渲染「📊 量能指標狀態 (VOL)」
-        const statVolTags = this.q('#statVolTags') || document.getElementById('statVolTags');
-        if (statVolTags) {
-          const volumes = this.currentStockData.volumes || [];
-          const candles = this.currentStockData.candles || [];
-          const vma5 = this.currentStockData.vma5 || [];
-          const vma20 = this.currentStockData.vma20 || [];
-          const volTags = [];
-
-          if (volumes.length >= 5 && candles.length >= 5) {
-            const len = volumes.length;
-            const lastIdx = len - 1;
-            const currVol = volumes[lastIdx];
-            const prevVol = volumes[lastIdx - 1];
-            const currV5 = vma5[lastIdx];
-            const prevV5 = vma5[lastIdx - 1];
-            const currV20 = vma20[lastIdx];
-            const prevV20 = vma20[lastIdx - 1];
-            const currClose = candles[lastIdx][1];
-            const prevClose = candles[lastIdx - 1][1];
-            const isUp = currClose >= prevClose;
-
-            // 1. 量均線交叉 (MV5 vs MV20)
-            if (currV5 != null && prevV5 != null && currV20 != null && prevV20 != null) {
-              if (prevV5 <= prevV20 && currV5 > currV20) {
-                volTags.push({ label: `✨ 量能黃金交叉 (攻擊量)`, style: 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.4);' });
-              } else if (prevV5 >= prevV20 && currV5 < currV20) {
-                volTags.push({ label: `⚡ 量能死亡交叉 (退潮)`, style: 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.4);' });
-              }
+        if (volTagsStr) {
+          const parts = volTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
+          statVolTags.innerHTML = parts.map(t => {
+            let style = 'background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.35);';
+            if (/天量|頂背離|死亡交叉|死叉|退潮/.test(t)) {
+              style = 'background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);';
+            } else if (/突破|黃金交叉|金叉|窒息量|洗淨/.test(t)) {
+              style = 'background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.45);';
+            } else if (/滾量|量價齊揚|主升/.test(t)) {
+              style = 'background:rgba(234,179,8,0.22); color:#fde047; border:1px solid rgba(234,179,8,0.48);';
             }
-
-            // 2. 帶量突破 (Breakout Volume)
-            const past20High = Math.max(...candles.slice(Math.max(0, len - 21), len - 1).map(c => c[3]));
-            if (currClose >= past20High && currV20 && currVol >= currV20 * 1.5 && isUp) {
-              volTags.push({ label: `🔥 帶量長紅突破`, style: 'background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);' });
-            }
-
-            // 3. 量價齊揚 / 滾量上攻
-            if (len >= 3) {
-              const c2 = candles[len - 2][1];
-              const c3 = candles[len - 3][1];
-              const v2 = volumes[len - 2];
-              const v3 = volumes[len - 3];
-              if (currClose > c2 && c2 > c3 && currVol > v2 && v2 > v3 && currV5 && currVol >= currV5) {
-                volTags.push({ label: `🚀 滾量攻擊 (量價齊揚)`, style: 'background:rgba(234,179,8,0.2); color:#fde047; border:1px solid rgba(234,179,8,0.45);' });
-              }
-            }
-
-            // 4. 窒息量 / 凹洞量
-            if (currV20 && currVol <= currV20 * 0.45) {
-              volTags.push({ label: `💎 窒息量 (籌碼洗淨)`, style: 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.4);' });
-            }
-
-            // 5. 高檔爆天量滯漲
-            const past30MaxVol = Math.max(...volumes.slice(Math.max(0, len - 31), len - 1));
-            const candleRange = candles[lastIdx][3] - candles[lastIdx][2] || 1;
-            const bodyRatio = Math.abs(currClose - candles[lastIdx][0]) / candleRange;
-            if (currVol >= past30MaxVol && currV20 && currVol >= currV20 * 2.0 && (bodyRatio < 0.35 || !isUp)) {
-              volTags.push({ label: `🚨 高檔爆天量滯漲`, style: 'background:rgba(239,68,68,0.22); color:#fca5a5; border:1px solid rgba(239,68,68,0.5);' });
-            }
-
-            // 6. 量價頂背離
-            const highestPriceIdx = candles.slice(Math.max(0, len - 20)).reduce((maxI, c, i, arr) => c[3] > arr[maxI][3] ? i : maxI, 0) + Math.max(0, len - 20);
-            if (highestPriceIdx === lastIdx && len >= 15) {
-              const prevPeakVol = Math.max(...volumes.slice(Math.max(0, len - 20), len - 3));
-              if (prevPeakVol > 0 && currVol < prevPeakVol * 0.65) {
-                volTags.push({ label: `⚠️ 量價頂背離 (無量空漲)`, style: 'background:rgba(249,115,22,0.2); color:#fdba74; border:1px solid rgba(249,115,22,0.45);' });
-              }
-            }
-
-            // 預設常態
-            if (volTags.length === 0) {
-              if (currV20 && currVol >= currV20 * 1.2) {
-                volTags.push({ label: `📈 買盤溫和增量`, style: 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.35);' });
-              } else if (currV20 && currVol < currV20 * 0.8) {
-                volTags.push({ label: `📉 縮量沉澱整理`, style: 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);' });
-              } else {
-                volTags.push({ label: `⚪ 常態量能換手`, style: 'background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);' });
-              }
-            }
-
-            statVolTags.innerHTML = volTags.map(t => `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${t.style}">${t.label}</span>`).join('');
-          } else {
-            statVolTags.textContent = '—';
-          }
+            return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
+          }).join('');
+        } else {
+          statVolTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">常態量能換手</span>`;
         }
       }
       if (this.currentStockData && this.currentStockData.dates && this.currentStockData.dates.length) {
