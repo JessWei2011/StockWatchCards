@@ -346,13 +346,15 @@
         if (rsiTagsStr) {
           const parts = rsiTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
           statRsiTags.innerHTML = parts.map(t => {
-            let style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
-            if (/過熱|超買|頂背離|死亡交叉|死叉|弱勢|空方/.test(t)) {
+            let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
+            if (/過熱|超買|頂背離|死亡交叉|死叉/.test(t)) {
               style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
-            } else if (/超跌|底背離|黃金交叉|金叉|多方|推進/.test(t)) {
+            } else if (/超跌|底背離|黃金交叉|金叉/.test(t)) {
               style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
             } else if (/鈍化/.test(t)) {
               style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
+            } else if (/多方|推進/.test(t)) {
+              style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
             }
             return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
           }).join('');
@@ -376,13 +378,15 @@
         if (volTagsStr) {
           const parts = volTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
           statVolTags.innerHTML = parts.map(t => {
-            let style = 'background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.35);';
-            if (/天量|頂背離|死亡交叉|死叉|退潮/.test(t)) {
-              style = 'background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);';
+            let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
+            if (/天量|倒貨|頂背離|死亡交叉|死叉|退潮/.test(t)) {
+              style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
             } else if (/突破|黃金交叉|金叉|窒息量|洗淨/.test(t)) {
-              style = 'background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.45);';
+              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
             } else if (/滾量|量價齊揚|主升/.test(t)) {
-              style = 'background:rgba(234,179,8,0.22); color:#fde047; border:1px solid rgba(234,179,8,0.48);';
+              style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
+            } else if (/溫和|增量/.test(t)) {
+              style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
             }
             return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
           }).join('');
@@ -406,13 +410,15 @@
         if (macdTagsStr) {
           const parts = macdTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
           statMacdTags.innerHTML = parts.map(t => {
-            let style = 'background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.35);';
-            if (/死亡交叉|死叉|翻綠|頂背離/.test(t)) {
-              style = 'background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);';
-            } else if (/金叉|黃金交叉|翻紅|底背離/.test(t)) {
-              style = 'background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.45);';
-            } else if (/零軸上強勢多頭|多頭發散/.test(t)) {
-              style = 'background:rgba(168,85,247,0.22); color:#d8b4fe; border:1px solid rgba(168,85,247,0.48);';
+            let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
+            if (/死亡交叉|死叉|翻綠|頂背離|轉弱/.test(t)) {
+              style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
+            } else if (/金叉|黃金交叉|翻紅|底背離|反彈|起漲/.test(t)) {
+              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
+            } else if (/零軸上強勢多頭|多頭發散|強勢攻擊/.test(t)) {
+              style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
+            } else if (/多方|波段/.test(t)) {
+              style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
             }
             return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
           }).join('');

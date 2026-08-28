@@ -536,21 +536,11 @@
     color:var(--text-dim); font-size:11.5px; white-space:nowrap;
   }
   .tech-state-tag, .chip-state-tag, .pattern-state-tag, .rsi-state-tag, .vol-state-tag, .macd-state-tag{ font-weight:750; }
-  .tech-state-tag.positive, .chip-state-tag.positive, .pattern-state-tag.positive, .rsi-state-tag.positive, .vol-state-tag.positive, .macd-state-tag.positive{ color:#fca5a5; border-color:rgba(248,113,113,.48); background:rgba(239,68,68,.10); }
-  .tech-state-tag.negative, .chip-state-tag.negative, .pattern-state-tag.negative, .rsi-state-tag.negative, .vol-state-tag.negative, .macd-state-tag.negative{ color:#86efac; border-color:rgba(74,222,128,.45); background:rgba(34,197,94,.09); }
-  .tech-state-tag.mixed, .chip-state-tag.mixed, .pattern-state-tag.mixed, .rsi-state-tag.mixed, .vol-state-tag.mixed, .macd-state-tag.mixed{ color:#fde68a; border-color:rgba(250,204,21,.45); background:rgba(234,179,8,.09); }
-  .tech-state-tag.neutral, .chip-state-tag.neutral, .pattern-state-tag.neutral, .rsi-state-tag.neutral, .vol-state-tag.neutral, .macd-state-tag.neutral{
-    color:#93c5fd; border-color:rgba(96,165,250,.58); background:rgba(37,99,235,.16);
-  }
-  .rsi-state-tag.cyan{
-    color:#38bdf8; border-color:rgba(56,189,248,.45); background:rgba(14,165,233,.12);
-  }
-  .vol-state-tag.amber{
-    color:#fde047; border-color:rgba(234,179,8,.45); background:rgba(234,179,8,.12);
-  }
-  .macd-state-tag.purple{
-    color:#c084fc; border-color:rgba(168,85,247,.45); background:rgba(168,85,247,.12);
-  }
+  .tech-state-tag.positive, .chip-state-tag.positive, .pattern-state-tag.positive, .rsi-state-tag.positive, .vol-state-tag.positive, .macd-state-tag.positive{ color:#fca5a5; border-color:rgba(248,113,113,.48); background:rgba(239,68,68,.12); }
+  .tech-state-tag.negative, .chip-state-tag.negative, .pattern-state-tag.negative, .rsi-state-tag.negative, .vol-state-tag.negative, .macd-state-tag.negative{ color:#86efac; border-color:rgba(74,222,128,.45); background:rgba(34,197,94,.12); }
+  .tech-state-tag.mixed, .chip-state-tag.mixed, .pattern-state-tag.mixed, .rsi-state-tag.mixed, .vol-state-tag.mixed, .macd-state-tag.mixed{ color:#fde047; border-color:rgba(250,204,21,.48); background:rgba(234,179,8,.12); }
+  .tech-state-tag.cyan, .chip-state-tag.cyan, .pattern-state-tag.cyan, .rsi-state-tag.cyan, .vol-state-tag.cyan, .macd-state-tag.cyan{ color:#7dd3fc; border-color:rgba(56,189,248,.45); background:rgba(14,165,233,.12); }
+  .tech-state-tag.neutral, .chip-state-tag.neutral, .pattern-state-tag.neutral, .rsi-state-tag.neutral, .vol-state-tag.neutral, .macd-state-tag.neutral{ color:#cbd5e1; border-color:rgba(148,163,184,.35); background:rgba(148,163,184,.10); }
   .inst-mini-chart{
     grid-column:1 / -1; min-width:0; padding:8px 10px 7px;
     border:1px solid rgba(71,85,105,.55); border-radius:8px; background:#11161c;
@@ -1417,15 +1407,15 @@
 
               <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
                 <td style="padding:14px;">
-                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid rgba(168,85,247,0.45);">🟣 紫色／紫羅蘭</span>
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(234,179,8,0.2); color:#fde047; border:1px solid rgba(234,179,8,0.45);">🟡 亮金／琥珀黃</span>
                 </td>
                 <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
                   【主升多頭／強勢波段】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">雙線於零軸上方多頭發散</span>
                 </td>
                 <td style="padding:14px;">
-                  <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(168,85,247,0.18); color:#c084fc;">🚀 MACD 零軸上強勢多頭</span>
+                  <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">🚀 MACD 零軸上強勢多頭</span>
                 </td>
-                <td style="padding:14px; color:#c084fc; font-size:15.5px; line-height:1.6;">
+                <td style="padding:14px; color:#fde047; font-size:15.5px; line-height:1.6;">
                   <strong>🚀 享受主升段利潤！</strong><br>DIF 與 MACD 雙線維持在零軸上方發散，代表大格局強多波段，續抱不輕易被洗出場。
                 </td>
               </tr>
@@ -1893,13 +1883,15 @@
       // 1. 📊 RSI 指標群組
       if (rsiTags.length) {
         html += `<div class="analysis-tag-row"><span class="tag-label" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.35);">📊 RSI 指標</span><div class="analysis-tag-pills">${rsiTags.map(t => {
-          let style = 'background:rgba(56,189,248,0.12); color:#7dd3fc; border:1px solid rgba(56,189,248,0.25);';
-          if (t.includes('過熱') || t.includes('頂背離') || t.includes('死亡交叉')) {
-            style = 'background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.35); font-weight:750;';
+          let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
+          if (t.includes('過熱') || t.includes('超買') || t.includes('頂背離') || t.includes('死亡交叉')) {
+            style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38); font-weight:750;';
           } else if (t.includes('超跌') || t.includes('底背離') || t.includes('黃金交叉')) {
-            style = 'background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.35); font-weight:750;';
+            style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38); font-weight:750;';
           } else if (t.includes('鈍化')) {
-            style = 'background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.35); font-weight:750;';
+            style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38); font-weight:750;';
+          } else if (t.includes('多方') || t.includes('推進')) {
+            style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3); font-weight:750;';
           }
           return `<span class="tag-pill" style="${style}">${escapeHtml(t)}</span>`;
         }).join('')}</div></div>`;
@@ -1908,26 +1900,32 @@
       // 2. 📊 VOL 指標群組
       if (volTags.length) {
         html += `<div class="analysis-tag-row"><span class="tag-label" style="background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.35);">📊 VOL 指標</span><div class="analysis-tag-pills">${volTags.map(t => {
-          let style = 'background:rgba(234,179,8,0.12); color:#fef08a; border:1px solid rgba(234,179,8,0.25);';
-          if (t.includes('天量') || t.includes('頂背離') || t.includes('死亡交叉')) {
-            style = 'background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.35); font-weight:750;';
-          } else if (t.includes('突破') || t.includes('黃金交叉') || t.includes('窒息量')) {
-            style = 'background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.35); font-weight:750;';
-          } else if (t.includes('滾量') || t.includes('量價齊揚')) {
-            style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.45); font-weight:750;';
+          let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
+          if (t.includes('天量') || t.includes('倒貨') || t.includes('頂背離') || t.includes('死亡交叉') || t.includes('退潮')) {
+            style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38); font-weight:750;';
+          } else if (t.includes('突破') || t.includes('黃金交叉') || t.includes('窒息量') || t.includes('洗淨')) {
+            style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38); font-weight:750;';
+          } else if (t.includes('滾量') || t.includes('量價齊揚') || t.includes('主升')) {
+            style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38); font-weight:750;';
+          } else if (t.includes('溫和') || t.includes('增量')) {
+            style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3); font-weight:750;';
           }
           return `<span class="tag-pill" style="${style}">${escapeHtml(t)}</span>`;
         }).join('')}</div></div>`;
       }
 
-      // 2. 🌊 MACD 指標群組 (預留擴充)
+      // 3. 🌊 MACD 指標群組
       if (macdTags.length) {
-        html += `<div class="analysis-tag-row"><span class="tag-label" style="background:rgba(147,51,234,0.15); color:#c084fc; border:1px solid rgba(147,51,234,0.35);">🌊 MACD 指標</span><div class="analysis-tag-pills">${macdTags.map(t => {
-          let style = 'background:rgba(147,51,234,0.12); color:#d8b4fe; border:1px solid rgba(147,51,234,0.25);';
-          if (t.includes('柱狀體翻紅') || t.includes('黃金交叉') || t.includes('零軸上') || t.includes('底背離')) {
-            style = 'background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.35); font-weight:750;';
-          } else if (t.includes('柱狀體翻綠') || t.includes('死亡交叉') || t.includes('零軸下') || t.includes('頂背離')) {
-            style = 'background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.35); font-weight:750;';
+        html += `<div class="analysis-tag-row"><span class="tag-label" style="background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.35);">🌊 MACD 指標</span><div class="analysis-tag-pills">${macdTags.map(t => {
+          let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
+          if (t.includes('死亡交叉') || t.includes('死叉') || t.includes('翻綠') || t.includes('頂背離') || t.includes('轉弱')) {
+            style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38); font-weight:750;';
+          } else if (t.includes('金叉') || t.includes('黃金交叉') || t.includes('翻紅') || t.includes('底背離') || t.includes('反彈') || t.includes('起漲')) {
+            style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38); font-weight:750;';
+          } else if (t.includes('零軸上強勢多頭') || t.includes('多頭發散') || t.includes('強勢攻擊')) {
+            style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38); font-weight:750;';
+          } else if (t.includes('多方') || t.includes('波段')) {
+            style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3); font-weight:750;';
           }
           return `<span class="tag-pill" style="${style}">${escapeHtml(t)}</span>`;
         }).join('')}</div></div>`;
@@ -3234,10 +3232,10 @@
       if (parts.length) {
         return parts.map(label => {
           let tone = 'neutral';
-          if (/頂背離|死亡交叉|死叉|弱勢|空方/.test(label)) tone = 'negative';
-          else if (/過熱|超買|多方|推進/.test(label)) tone = 'positive';
-          else if (/超跌|底背離|黃金交叉|金叉/.test(label)) tone = 'positive';
+          if (/過熱|超買|頂背離|死亡交叉|死叉/.test(label)) tone = 'positive';
+          else if (/超跌|底背離|黃金交叉|金叉/.test(label)) tone = 'negative';
           else if (/鈍化/.test(label)) tone = 'mixed';
+          else if (/多方|推進/.test(label)) tone = 'cyan';
           return { label, tone, title: `RSI 標籤：${label}` };
         });
       }
@@ -3262,10 +3260,10 @@
       if (parts.length) {
         return parts.map(label => {
           let tone = 'neutral';
-          if (/天量|頂背離|死亡交叉|死叉|退潮/.test(label)) tone = 'positive';
+          if (/天量|倒貨|頂背離|死亡交叉|死叉|退潮/.test(label)) tone = 'positive';
           else if (/突破|黃金交叉|金叉|窒息量|洗淨/.test(label)) tone = 'negative';
           else if (/滾量|量價齊揚|主升/.test(label)) tone = 'mixed';
-          else if (/溫和/.test(label)) tone = 'neutral';
+          else if (/溫和|增量/.test(label)) tone = 'cyan';
           return { label, tone, title: `VOL 標籤：${label}` };
         });
       }
@@ -3290,10 +3288,10 @@
       if (parts.length) {
         return parts.map(label => {
           let tone = 'neutral';
-          if (/死亡交叉|死叉|翻綠|頂背離/.test(label)) tone = 'positive';
-          else if (/金叉|黃金交叉|翻紅|底背離/.test(label)) tone = 'negative';
-          else if (/零軸上強勢多頭|多頭發散/.test(label)) tone = 'purple';
-          else if (/多方|波段/.test(label)) tone = 'neutral';
+          if (/死亡交叉|死叉|翻綠|頂背離|轉弱/.test(label)) tone = 'positive';
+          else if (/金叉|黃金交叉|翻紅|底背離|反彈|起漲/.test(label)) tone = 'negative';
+          else if (/零軸上強勢多頭|多頭發散|強勢攻擊/.test(label)) tone = 'mixed';
+          else if (/多方|波段/.test(label)) tone = 'cyan';
           return { label, tone, title: `MACD 標籤：${label}` };
         });
       }
