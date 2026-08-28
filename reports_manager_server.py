@@ -997,6 +997,14 @@ class Handler(SimpleHTTPRequestHandler):
                 shutil.move(str(src_html), str(dest_dir / html_name))
                 if src_chart.exists():
                     shutil.move(str(src_chart), str(dest_dir / chart_name))
+                m = TRACKED_FILENAME_RE.match(html_name)
+                if m:
+                    code = m.group(1)
+                    for md_file in src_dir.glob(f"{code}_*.md"):
+                        try:
+                            shutil.move(str(md_file), str(dest_dir / md_file.name))
+                        except Exception:
+                            pass
                 self._json(200, {"ok": True})
                 return
 
@@ -1007,15 +1015,16 @@ class Handler(SimpleHTTPRequestHandler):
                     return
                 # 用代號遞迴找整個 reports/ (含所有子資料夾)，不用先知道報表放在哪個分類，
                 # 排行榜上的股票不一定跟目前選取的資料夾在同一層。只刪報表檔本身
-                # (html+png)，不會動到 data.js 裡的 AI 分析卡片資料。
+                # (html+md，若有殘留 png 也一併清理)，不會動到 data.js 裡的 AI 分析卡片資料。
                 matches = (
-                    glob.glob(os.path.join(REPORTS_DIR, "**", f"{code}_*.html"), recursive=True)
-                    + glob.glob(os.path.join(REPORTS_DIR, "**", f"{code}_*_chart.png"), recursive=True)
+                    list(REPORTS_DIR.rglob(f"{code}_*.html"))
+                    + list(REPORTS_DIR.rglob(f"{code}_*.md"))
+                    + list(REPORTS_DIR.rglob(f"{code}_*_chart.png"))
                 )
                 deleted = 0
-                for path_str in matches:
+                for path_obj in matches:
                     try:
-                        os.remove(path_str)
+                        path_obj.unlink(missing_ok=True)
                         deleted += 1
                     except OSError:
                         pass
