@@ -1007,6 +1007,10 @@
           <button type="button" class="btn" onclick="openMacdCheatSheetModal()" style="margin-top:8px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(168,85,247,0.12); color:#c084fc; border:1px solid rgba(168,85,247,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
             <span>🌊</span> MACD 指標與型態速查表
           </button>
+
+          <button type="button" class="btn" onclick="openKdCheatSheetModal()" style="margin-top:8px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(245,158,11,0.12); color:#fbbf24; border:1px solid rgba(245,158,11,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
+            <span>⚡</span> KD 指標與型態速查表
+          </button>
         </aside>
 
         <main class="chart-viewport">
@@ -1482,6 +1486,141 @@
     </div>
   </div>
 
+  <!-- KD 指標標籤顏色含意速查表 Modal (1020px 大視窗 / 16px 大字體) -->
+  <div id="kdCheatSheetModal" class="modal" style="display:none; position:fixed; z-index:99999; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#131722; border:1px solid #334155; border-radius:12px; max-width:1020px; width:95%; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,0.85);">
+      <!-- Header -->
+      <div style="padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:space-between; background:#181e2e;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:26px;">⚡</span>
+          <div>
+            <h3 style="margin:0; font-size:20px; font-weight:800; color:#f8fafc;">KD 指標標籤顏色含意與實戰速查表</h3>
+            <div style="font-size:13.5px; color:#fbbf24; margin-top:2px;">台股標準 KD (9,3,3) 雙軌交叉、高低檔鈍化與頂底背離速查指引</div>
+          </div>
+        </div>
+        <button type="button" onclick="closeKdCheatSheetModal()" style="background:none; border:none; color:#94a3b8; font-size:24px; cursor:pointer; padding:4px 8px; line-height:1;">✕</button>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:22px 24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:18px;">
+        <div style="border:1px solid rgba(255,255,255,0.08); border-radius:8px; overflow:hidden; background:rgba(0,0,0,0.25);">
+          <table style="width:100%; border-collapse:collapse; text-align:left; font-size:15px;">
+            <thead>
+              <tr style="background:#1e2538; color:#94a3b8; font-size:14px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                <th style="padding:12px 14px; width:130px;">標籤色系</th>
+                <th style="padding:12px 14px; width:180px;">核心含意</th>
+                <th style="padding:12px 14px;">代表性標籤</th>
+                <th style="padding:12px 14px; width:340px;">實戰操盤指引</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);">🔴 玫瑰紅／亮紅</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【高檔警示／動能轉弱】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">超買區死叉或頂背離</span>
+                </td>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">⚡ KD 高檔超買死亡交叉 (短線轉弱)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">⚡ KD 死亡交叉 (短線修正)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(249,115,22,0.18); color:#fdba74;">⚠️ KD 頂背離警戒 (高檔動能衰竭)</span>
+                  </div>
+                </td>
+                <td style="padding:14px; color:#fca5a5; font-size:15.5px; line-height:1.6;">
+                  <strong>⚠️ 嚴禁盲目追高！</strong><br>高檔 KD 死叉或頂背離代表短線衝刺動能耗盡，應收緊移動停利，等待拉回支撐。
+                </td>
+              </tr>
+
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(234,179,8,0.2); color:#fde047; border:1px solid rgba(234,179,8,0.45);">🟡 亮金／琥珀黃</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【轉折起漲／金叉發動】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">超賣金叉、高檔再金叉或底背離</span>
+                </td>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">✨ KD 低檔超賣黃金交叉 (強烈買點)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">✨ KD 高檔再金叉 (強勢軋空)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">✨ KD 黃金交叉 (短線轉強)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">💎 KD 底背離落底 (波段反彈買點)</span>
+                  </div>
+                </td>
+                <td style="padding:14px; color:#fde047; font-size:15.5px; line-height:1.6;">
+                  <strong>💡 極佳進場扳機！</strong><br>低檔超賣區金叉是性價比最高的反彈進場點；高檔 70~80 以上再金叉則是主力強勢軋空再攻訊號。
+                </td>
+              </tr>
+
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.45);">🟢 綠色／翠綠系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【強勢鈍化／飆股軋空】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">K值連續3天高於80高檔鈍化</span>
+                </td>
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">🚀 KD 高檔強勢鈍化 (軋空主升段)</span>
+                </td>
+                <td style="padding:14px; color:#86efac; font-size:15.5px; line-height:1.6;">
+                  <strong>🚀 強者恆強別被洗出場！</strong><br>高檔鈍化不是超買賣點，而是飆股主升段常態。只要未跌破 5MA 或 K 值跌破 80 前續抱享受波段利潤。
+                </td>
+              </tr>
+
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(56,189,248,0.2); color:#7dd3fc; border:1px solid rgba(56,189,248,0.45);">🔵 天藍／青藍系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【多方推進】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">K > D 且位於 50 以上多方區</span>
+                </td>
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(56,189,248,0.18); color:#7dd3fc;">📈 KD 多方強勢推進</span>
+                </td>
+                <td style="padding:14px; color:#7dd3fc; font-size:15.5px; line-height:1.6;">
+                  <strong>📈 多方控盤！</strong><br>多方順勢推升中，持股續抱。
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(148,163,184,0.2); color:#cbd5e1; border:1px solid rgba(148,163,184,0.45);">⚪ 灰白／藍灰系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【常態整理／空方回檔】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">中性震盪或低檔弱勢沉陷</span>
+                </td>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(148,163,184,0.18); color:#cbd5e1;">📉 KD 空方弱勢回檔</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(148,163,184,0.18); color:#94a3b8;">⚪ KD 多空中性震盪</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(148,163,184,0.18); color:#94a3b8;">❄️ KD 低檔弱勢鈍化 (空方沉陷)</span>
+                  </div>
+                </td>
+                <td style="padding:14px; color:#cbd5e1; font-size:15.5px; line-height:1.6;">
+                  <strong>⚪ 耐心等待！</strong><br>低檔弱勢鈍化切忌盲目接刀，靜待低檔出現實質黃金交叉再行動。
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 實戰口訣三金律 -->
+        <div style="background:rgba(245,158,11,0.09); border:1px solid rgba(245,158,11,0.3); border-radius:8px; padding:14px 18px; font-size:15px; color:#cbd5e1; line-height:1.7;">
+          <div style="font-weight:800; color:#fbbf24; margin-bottom:6px; font-size:16px;">💡 KD 操盤三大實戰金律：</div>
+          <div>1. <strong>20 以下金叉買、80 以上死叉賣</strong>：常態區間震盪時，20/80 超買超賣法勝率極高！</div>
+          <div>2. <strong>強勢主升看「高檔鈍化」</strong>：真正飆股在突破後 KD 會連續卡在 80 以上鈍化，此時切勿因超買提早下車！</div>
+          <div>3. <strong>KD 與 MACD 雙劍合璧</strong>：用 MACD 零軸確立大格局方向，用 KD 低檔金叉抓最精確的波段起漲點！</div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding:14px 24px; background:#1e2330; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:flex-end;">
+        <button type="button" onclick="closeKdCheatSheetModal()" style="padding:9px 26px; border-radius:6px; background:#f59e0b; color:#fff; font-weight:800; font-size:15px; border:none; cursor:pointer;">關閉速查表</button>
+      </div>
+    </div>
+  </div>
+
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 <script src="pattern_viewer/js/parser.js?v=67"></script>
 <script src="pattern_viewer/js/pattern_engine.js?v=67"></script>
@@ -1506,6 +1645,24 @@
   };
   window.closeVolCheatSheetModal = function() {
     const modal = document.getElementById('volCheatSheetModal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.openMacdCheatSheetModal = function() {
+    const modal = document.getElementById('macdCheatSheetModal');
+    if (modal) modal.style.display = 'flex';
+  };
+  window.closeMacdCheatSheetModal = function() {
+    const modal = document.getElementById('macdCheatSheetModal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.openKdCheatSheetModal = function() {
+    const modal = document.getElementById('kdCheatSheetModal');
+    if (modal) modal.style.display = 'flex';
+  };
+  window.closeKdCheatSheetModal = function() {
+    const modal = document.getElementById('kdCheatSheetModal');
     if (modal) modal.style.display = 'none';
   };
 
@@ -1941,16 +2098,18 @@
         }).join('')}</div></div>`;
       }
 
-      // 3. ⚡ KD 指標群組 (預留擴充)
+      // 4. ⚡ KD 指標群組
       if (kdTags.length) {
         html += `<div class="analysis-tag-row"><span class="tag-label" style="background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.35);">⚡ KD 指標</span><div class="analysis-tag-pills">${kdTags.map(t => {
-          let style = 'background:rgba(245,158,11,0.12); color:#fde68a; border:1px solid rgba(245,158,11,0.25);';
-          if (t.includes('黃金交叉') || t.includes('超賣') || t.includes('低檔反彈')) {
-            style = 'background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.35); font-weight:750;';
-          } else if (t.includes('死亡交叉') || t.includes('超買') || t.includes('高檔拉回')) {
-            style = 'background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.35); font-weight:750;';
-          } else if (t.includes('鈍化')) {
-            style = 'background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.35); font-weight:750;';
+          let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
+          if (t.includes('死亡交叉') || t.includes('死叉') || t.includes('頂背離') || t.includes('超買') || t.includes('轉弱')) {
+            style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38); font-weight:750;';
+          } else if (t.includes('金叉') || t.includes('黃金交叉') || t.includes('超賣') || t.includes('底背離') || t.includes('買點') || t.includes('轉強')) {
+            style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38); font-weight:750;';
+          } else if (t.includes('鈍化') || t.includes('軋空')) {
+            style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38); font-weight:750;';
+          } else if (t.includes('多方') || t.includes('推進')) {
+            style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3); font-weight:750;';
           }
           return `<span class="tag-pill" style="${style}">${escapeHtml(t)}</span>`;
         }).join('')}</div></div>`;
@@ -3315,6 +3474,34 @@
     ).join('');
   }
 
+  function kdStateTags(card){
+    let kdTagsStr = String(card.kdTags || card.kd_tags || '').trim();
+    if (!kdTagsStr && card.raw) {
+      const m = String(card.raw).match(/KD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
+      if (m) kdTagsStr = m[1].trim();
+    }
+    if (kdTagsStr) {
+      const parts = kdTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
+      if (parts.length) {
+        return parts.map(label => {
+          let tone = 'neutral';
+          if (/死亡交叉|死叉|頂背離|超買|轉弱/.test(label)) tone = 'positive';
+          else if (/金叉|黃金交叉|超賣|底背離|買點|轉強/.test(label)) tone = 'mixed';
+          else if (/鈍化|軋空/.test(label)) tone = 'negative';
+          else if (/多方|推進/.test(label)) tone = 'cyan';
+          return { label, tone, title: `KD 標籤：${label}` };
+        });
+      }
+    }
+    return [{ label: 'KD 數據正常', tone: 'neutral', title: '暫無特殊 KD 轉折訊號' }];
+  }
+
+  function renderKdTags(card){
+    return kdStateTags(card).map(tag =>
+      `<span class="kd-state-tag ${tag.tone}" title="${escapeHtml(tag.title)}">${escapeHtml(tag.label)}</span>`
+    ).join('');
+  }
+
   function renderTechnicalTags(card){
     return technicalStateTags(card).map(tag =>
       `<span class="tech-state-tag ${tag.tone}" title="${escapeHtml(tag.title)}">${escapeHtml(tag.label)}</span>`
@@ -3610,6 +3797,10 @@
           <div class="rank-macd-tags">
             <span class="rank-detail-label">MACD 指標</span>
             ${renderMacdTags(c)}
+          </div>
+          <div class="rank-kd-tags">
+            <span class="rank-detail-label">KD 指標</span>
+            ${renderKdTags(c)}
           </div>
           <div class="rank-chip-tags">
             <span class="rank-detail-label">籌碼指標</span>
