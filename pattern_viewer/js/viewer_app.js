@@ -331,6 +331,78 @@
         const lowest = Math.min(...candles.map(item => item[2]));
         statHighLow.textContent = `${highest} / ${lowest}`;
       }
+
+      const statRsiTags = this.q('#statRsiTags');
+      if (statRsiTags) {
+        const cleanCode = String(this.currentCode || '').split('.')[0].trim();
+        const allCards = (window.cardsByCode || (window.parent && window.parent.cardsByCode) || (typeof cardsByCode !== 'undefined' ? cardsByCode : {})) || {};
+        const card = allCards[cleanCode] || allCards[this.currentCode] || null;
+        let rsiTagsStr = card ? (card.rsiTags || '') : '';
+        if (!rsiTagsStr && card && card.raw) {
+          const m = String(card.raw).match(/RSI\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
+          if (m) rsiTagsStr = m[1].trim();
+        }
+        
+        if (rsiTagsStr) {
+          const parts = rsiTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
+          statRsiTags.innerHTML = parts.map(t => {
+            let style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
+            if (/過熱|超買/.test(t)) {
+              style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
+            } else if (/頂背離|死亡交叉|死叉/.test(t)) {
+              style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
+            } else if (/超跌|底背離|黃金交叉|金叉/.test(t)) {
+              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
+            } else if (/鈍化/.test(t)) {
+              style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
+            }
+            return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
+          }).join('');
+        } else {
+          const rsiList = this.currentStockData.rsi || (this.currentStockData.indicators && this.currentStockData.indicators.rsi) || [];
+          const validRsi = rsiList.filter(v => v !== null && !isNaN(v));
+          if (validRsi.length) {
+            const curRsi = validRsi[validRsi.length - 1];
+            const tags = [];
+            if (curRsi >= 80) tags.push({ label: `🔥 極度過熱 (${curRsi.toFixed(1)})`, style: 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);' });
+            else if (curRsi >= 70) tags.push({ label: `⚠️ 進入過熱區 (${curRsi.toFixed(1)})`, style: 'background:rgba(249,115,22,0.18); color:#fdba74; border:1px solid rgba(249,115,22,0.38);' });
+            else if (curRsi <= 20) tags.push({ label: `💎 極度超跌 (${curRsi.toFixed(1)})`, style: 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);' });
+            else if (curRsi <= 30) tags.push({ label: `👀 進入超跌區 (${curRsi.toFixed(1)})`, style: 'background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.3);' });
+            else if (curRsi >= 55) tags.push({ label: `📈 多方推進 (${curRsi.toFixed(1)})`, style: 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);' });
+            else if (curRsi <= 45) tags.push({ label: `📉 弱勢整理 (${curRsi.toFixed(1)})`, style: 'background:rgba(100,116,139,0.2); color:#cbd5e1; border:1px solid rgba(100,116,139,0.3);' });
+            else tags.push({ label: `⚪ 多空平衡 (${curRsi.toFixed(1)})`, style: 'background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);' });
+
+            // 鈍化型態
+            if (validRsi.length >= 3) {
+              const last3 = validRsi.slice(-3);
+              if (last3.every(v => v >= 80)) {
+                tags.push({ label: `🚀 高檔強勢鈍化`, style: 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);' });
+              } else if (last3.every(v => v <= 20)) {
+                tags.push({ label: `❄️ 低檔弱勢鈍化`, style: 'background:rgba(59,130,246,0.18); color:#93c5fd; border:1px solid rgba(59,130,246,0.38);' });
+              }
+            }
+
+            // 雙線交叉型態 (RSI 6 vs RSI 12)
+            const rsi6List = (this.currentStockData.rsi6 || []).filter(v => v !== null && !isNaN(v));
+            const rsi12List = (this.currentStockData.rsi12 || []).filter(v => v !== null && !isNaN(v));
+            if (rsi6List.length >= 2 && rsi12List.length >= 2) {
+              const r6_curr = rsi6List[rsi6List.length - 1];
+              const r6_prev = rsi6List[rsi6List.length - 2];
+              const r12_curr = rsi12List[rsi12List.length - 1];
+              const r12_prev = rsi12List[rsi12List.length - 2];
+              if (r6_prev <= r12_prev && r6_curr > r12_curr) {
+                tags.push({ label: `✨ RSI 黃金交叉`, style: 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);' });
+              } else if (r6_prev >= r12_prev && r6_curr < r12_curr) {
+                tags.push({ label: `⚡ RSI 死亡交叉`, style: 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);' });
+              }
+            }
+            
+            statRsiTags.innerHTML = tags.map(t => `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${t.style}">${t.label}</span>`).join('');
+          } else {
+            statRsiTags.textContent = '—';
+          }
+        }
+      }
       requestAnimationFrame(() => this.resize());
     }
 

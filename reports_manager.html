@@ -524,17 +524,20 @@
   .rank-detail-label{
     color:var(--text-dim); font-size:11px; font-weight:700; margin-right:2px;
   }
-  .tech-state-tag, .chip-state-tag, .pattern-state-tag{
+  .tech-state-tag, .chip-state-tag, .pattern-state-tag, .rsi-state-tag{
     display:inline-flex; align-items:center; gap:4px; min-height:24px; padding:3px 8px;
     border:1px solid var(--border); border-radius:6px; background:rgba(255,255,255,.035);
     color:var(--text-dim); font-size:11.5px; white-space:nowrap;
   }
-  .tech-state-tag, .chip-state-tag, .pattern-state-tag{ font-weight:750; }
-  .tech-state-tag.positive, .chip-state-tag.positive, .pattern-state-tag.positive{ color:#fca5a5; border-color:rgba(248,113,113,.48); background:rgba(239,68,68,.10); }
-  .tech-state-tag.negative, .chip-state-tag.negative, .pattern-state-tag.negative{ color:#86efac; border-color:rgba(74,222,128,.45); background:rgba(34,197,94,.09); }
-  .tech-state-tag.mixed, .chip-state-tag.mixed, .pattern-state-tag.mixed{ color:#fde68a; border-color:rgba(250,204,21,.45); background:rgba(234,179,8,.09); }
-  .tech-state-tag.neutral, .chip-state-tag.neutral, .pattern-state-tag.neutral{
+  .tech-state-tag, .chip-state-tag, .pattern-state-tag, .rsi-state-tag{ font-weight:750; }
+  .tech-state-tag.positive, .chip-state-tag.positive, .pattern-state-tag.positive, .rsi-state-tag.positive{ color:#fca5a5; border-color:rgba(248,113,113,.48); background:rgba(239,68,68,.10); }
+  .tech-state-tag.negative, .chip-state-tag.negative, .pattern-state-tag.negative, .rsi-state-tag.negative{ color:#86efac; border-color:rgba(74,222,128,.45); background:rgba(34,197,94,.09); }
+  .tech-state-tag.mixed, .chip-state-tag.mixed, .pattern-state-tag.mixed, .rsi-state-tag.mixed{ color:#fde68a; border-color:rgba(250,204,21,.45); background:rgba(234,179,8,.09); }
+  .tech-state-tag.neutral, .chip-state-tag.neutral, .pattern-state-tag.neutral, .rsi-state-tag.neutral{
     color:#93c5fd; border-color:rgba(96,165,250,.58); background:rgba(37,99,235,.16);
+  }
+  .rsi-state-tag.cyan{
+    color:#38bdf8; border-color:rgba(56,189,248,.45); background:rgba(14,165,233,.12);
   }
   .inst-mini-chart{
     grid-column:1 / -1; min-width:0; padding:8px 10px 7px;
@@ -892,6 +895,10 @@
                 <div id="statHighLow" class="stat-value stat-value-compact">—</div>
               </div>
             </div>
+            <div class="stat-box full" id="statRsiBox" style="margin-top:8px; padding:6px 10px; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.2); border-radius:6px;">
+              <div class="stat-label" style="color:#7dd3fc; font-size:11px; font-weight:700;">📊 RSI 指標狀態</div>
+              <div id="statRsiTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
+            </div>
           </div>
 
           <div class="card" style="margin-top:12px;">
@@ -1202,10 +1209,20 @@
     const dateM = mdText.match(/分析日期[】\]\s\*]*[：:]\s*([^\r\n*`]+)/);
     if (dateM) date = dateM[1].trim();
 
-    // Tags
+    // Tags (模組化獨立指標解析)
+    let rsiTags = [];
+    let macdTags = [];
+    let kdTags = [];
     let techTags = [];
     let chipTags = [];
     let patternTags = [];
+    
+    const rsiM = mdText.match(/RSI\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
+    if (rsiM) rsiTags = rsiM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
+    const macdM = mdText.match(/MACD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
+    if (macdM) macdTags = macdM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
+    const kdM = mdText.match(/KD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
+    if (kdM) kdTags = kdM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
     const techM = mdText.match(/技術標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/);
     if (techM) techTags = techM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
     const chipM = mdText.match(/籌碼標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/);
@@ -1279,18 +1296,68 @@
       </div>
     `;
 
-    // Tags Group
-    if (techTags.length || chipTags.length || patternTags.length) {
+    // Tags Group (模組化分組顯示：支援 RSI、MACD、KD 等獨立指標群組)
+    if (rsiTags.length || macdTags.length || kdTags.length || techTags.length || chipTags.length || patternTags.length) {
       html += `<div class="analysis-tag-group">`;
-      if (techTags.length) {
-        html += `<div class="analysis-tag-row"><span class="tag-label">技術特徵</span><div class="analysis-tag-pills">${techTags.map(t => `<span class="tag-pill">${escapeHtml(t)}</span>`).join('')}</div></div>`;
+      
+      // 1. 📊 RSI 指標群組
+      if (rsiTags.length) {
+        html += `<div class="analysis-tag-row"><span class="tag-label" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.35);">📊 RSI 指標</span><div class="analysis-tag-pills">${rsiTags.map(t => {
+          let style = 'background:rgba(56,189,248,0.12); color:#7dd3fc; border:1px solid rgba(56,189,248,0.25);';
+          if (t.includes('過熱') || t.includes('頂背離') || t.includes('死亡交叉')) {
+            style = 'background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.35); font-weight:750;';
+          } else if (t.includes('超跌') || t.includes('底背離') || t.includes('黃金交叉')) {
+            style = 'background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.35); font-weight:750;';
+          } else if (t.includes('鈍化')) {
+            style = 'background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.35); font-weight:750;';
+          }
+          return `<span class="tag-pill" style="${style}">${escapeHtml(t)}</span>`;
+        }).join('')}</div></div>`;
       }
+
+      // 2. 🌊 MACD 指標群組 (預留擴充)
+      if (macdTags.length) {
+        html += `<div class="analysis-tag-row"><span class="tag-label" style="background:rgba(147,51,234,0.15); color:#c084fc; border:1px solid rgba(147,51,234,0.35);">🌊 MACD 指標</span><div class="analysis-tag-pills">${macdTags.map(t => {
+          let style = 'background:rgba(147,51,234,0.12); color:#d8b4fe; border:1px solid rgba(147,51,234,0.25);';
+          if (t.includes('柱狀體翻紅') || t.includes('黃金交叉') || t.includes('零軸上') || t.includes('底背離')) {
+            style = 'background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.35); font-weight:750;';
+          } else if (t.includes('柱狀體翻綠') || t.includes('死亡交叉') || t.includes('零軸下') || t.includes('頂背離')) {
+            style = 'background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.35); font-weight:750;';
+          }
+          return `<span class="tag-pill" style="${style}">${escapeHtml(t)}</span>`;
+        }).join('')}</div></div>`;
+      }
+
+      // 3. ⚡ KD 指標群組 (預留擴充)
+      if (kdTags.length) {
+        html += `<div class="analysis-tag-row"><span class="tag-label" style="background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.35);">⚡ KD 指標</span><div class="analysis-tag-pills">${kdTags.map(t => {
+          let style = 'background:rgba(245,158,11,0.12); color:#fde68a; border:1px solid rgba(245,158,11,0.25);';
+          if (t.includes('黃金交叉') || t.includes('超賣') || t.includes('低檔反彈')) {
+            style = 'background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.35); font-weight:750;';
+          } else if (t.includes('死亡交叉') || t.includes('超買') || t.includes('高檔拉回')) {
+            style = 'background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.35); font-weight:750;';
+          } else if (t.includes('鈍化')) {
+            style = 'background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.35); font-weight:750;';
+          }
+          return `<span class="tag-pill" style="${style}">${escapeHtml(t)}</span>`;
+        }).join('')}</div></div>`;
+      }
+
+      // 4. 📈 均線與量價特徵
+      if (techTags.length) {
+        html += `<div class="analysis-tag-row"><span class="tag-label">均線量價</span><div class="analysis-tag-pills">${techTags.map(t => `<span class="tag-pill">${escapeHtml(t)}</span>`).join('')}</div></div>`;
+      }
+
+      // 5. 🏛️ 籌碼指標
       if (chipTags.length) {
         html += `<div class="analysis-tag-row"><span class="tag-label">籌碼指標</span><div class="analysis-tag-pills">${chipTags.map(t => `<span class="tag-pill" style="background:rgba(249,115,22,0.12); color:#fdba74; border-color:rgba(249,115,22,0.25);">${escapeHtml(t)}</span>`).join('')}</div></div>`;
       }
+
+      // 6. 🎯 識別型態
       if (patternTags.length) {
         html += `<div class="analysis-tag-row"><span class="tag-label">識別型態</span><div class="analysis-tag-pills">${patternTags.map(t => `<span class="tag-pill" style="background:rgba(168,85,247,0.12); color:#d8b4fe; border-color:rgba(168,85,247,0.25);">${escapeHtml(t)}</span>`).join('')}</div></div>`;
       }
+
       html += `</div>`;
     }
 
@@ -2436,7 +2503,10 @@
   async function loadCards(){
     try {
       const { ok, data } = await api('GET', '/api/cards');
-      if (ok) cardsByCode = data.cards || {};
+      if (ok) {
+        cardsByCode = data.cards || {};
+        window.cardsByCode = cardsByCode;
+      }
     } catch (e) {}
     if (tree) renderTree();
     renderRankPanel();
@@ -2538,6 +2608,65 @@
     if (card.isDisposition) add('處置期間', 'mixed', card.dispositionDate || '目前為處置股票');
     if (hasDefenseSignal(pattern, signal)) add('防禦訊號', 'negative', '型態或訊號摘要出現防禦牆、推升失敗或爆量警示');
     return tags.slice(0, 9);
+  }
+
+  function rsiStateTags(card){
+    let rsiTagsStr = String(card.rsiTags || '').trim();
+    if (!rsiTagsStr && card.raw) {
+      const m = String(card.raw).match(/RSI\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
+      if (m) rsiTagsStr = m[1].trim();
+    }
+    if (rsiTagsStr) {
+      const parts = rsiTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
+      if (parts.length) {
+        return parts.map(label => {
+          let tone = 'neutral';
+          if (/頂背離|死亡交叉|死叉|弱勢|空方/.test(label)) tone = 'negative';
+          else if (/過熱|超買|多方|推進/.test(label)) tone = 'positive';
+          else if (/超跌|底背離|黃金交叉|金叉/.test(label)) tone = 'positive';
+          else if (/鈍化/.test(label)) tone = 'mixed';
+          return { label, tone, title: `RSI 標籤：${label}` };
+        });
+      }
+    }
+
+    const stat = (window.winrateMapByCode && window.winrateMapByCode[card.code]) || {};
+    const text = [card.summary || '', card.technicalTags || '', stat.metric || '', stat.feature || ''].join(' ');
+    const tags = [];
+    const add = (label, tone, title = '') => {
+      if (!tags.some(tag => tag.label === label)) tags.push({ label, tone, title });
+    };
+
+    const rsiMatch = text.match(/RSI(?:\(14\))?[：:\s]*([\d.]+)/i);
+    const rsiValue = rsiMatch ? Number(rsiMatch[1]) : (stat.metric && !isNaN(stat.metric) ? Number(stat.metric) : null);
+    
+    if (rsiValue !== null && Number.isFinite(rsiValue)) {
+      if (rsiValue >= 80) add(`RSI: ${rsiValue.toFixed(1)} 極度過熱`, 'negative', `RSI(14)=${rsiValue} 進入嚴重超買警戒`);
+      else if (rsiValue >= 70) add(`RSI: ${rsiValue.toFixed(1)} 進入過熱區`, 'mixed', `RSI(14)=${rsiValue} 短線超買`);
+      else if (rsiValue <= 20) add(`RSI: ${rsiValue.toFixed(1)} 極度超跌`, 'positive', `RSI(14)=${rsiValue} 進入嚴重超賣反彈契機`);
+      else if (rsiValue <= 30) add(`RSI: ${rsiValue.toFixed(1)} 進入超跌區`, 'positive', `RSI(14)=${rsiValue} 短線超賣`);
+      else if (rsiValue >= 55) add(`RSI: ${rsiValue.toFixed(1)} 多方推進`, 'positive', `RSI(14)=${rsiValue} 處於多頭攻擊推進區`);
+      else if (rsiValue <= 45) add(`RSI: ${rsiValue.toFixed(1)} 弱勢整理`, 'negative', `RSI(14)=${rsiValue} 處於空方整理區`);
+      else add(`RSI: ${rsiValue.toFixed(1)} 多空平衡`, 'neutral', `RSI(14)=${rsiValue} 中性區間`);
+    }
+
+    if (/頂背離/.test(text)) add('⚠️ 頂背離警戒', 'negative', '股價創新高但 RSI 動能衰退');
+    if (/底背離/.test(text)) add('💡 底背離落底', 'positive', '股價破底但 RSI 低檔翻揚');
+    if (/高檔強勢鈍化|高檔鈍化/.test(text)) add('🚀 高檔強勢鈍化', 'mixed', '強勢飆股連日高檔鈍化');
+    if (/低檔弱勢鈍化|低檔鈍化/.test(text)) add('❄️ 低檔弱勢鈍化', 'negative', '弱勢破底連日低檔鈍化');
+    if (/黃金交叉|金叉/.test(text) && /RSI/.test(text)) add('✨ RSI 黃金交叉', 'positive', '短天期 RSI 向上突破長天期 RSI');
+    if (/死亡交叉|死叉/.test(text) && /RSI/.test(text)) add('⚡ RSI 死亡交叉', 'negative', '短天期 RSI 向下跌破長天期 RSI');
+
+    if (!tags.length) {
+      tags.push({ label: 'RSI 數據正常', tone: 'neutral', title: '暫無特殊 RSI 警示訊號' });
+    }
+    return tags;
+  }
+
+  function renderRsiTags(card){
+    return rsiStateTags(card).map(tag =>
+      `<span class="rsi-state-tag ${tag.tone}" title="${escapeHtml(tag.title)}">${escapeHtml(tag.label)}</span>`
+    ).join('');
   }
 
   function renderTechnicalTags(card){
@@ -2820,8 +2949,12 @@
           </span>
         </div>
         <div class="rank-details">
+          <div class="rank-rsi-tags">
+            <span class="rank-detail-label">RSI 標籤</span>
+            ${renderRsiTags(c)}
+          </div>
           <div class="rank-tech-tags">
-            <span class="rank-detail-label">技術標籤</span>
+            <span class="rank-detail-label">均線量價</span>
             ${renderTechnicalTags(c)}
           </div>
           <div class="rank-chip-tags">

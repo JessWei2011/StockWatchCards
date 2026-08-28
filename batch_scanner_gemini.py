@@ -243,6 +243,80 @@ def recognize_pattern(df):
     return "高檔盤整/區間震盪", 5.0
 
 
+def calculate_rsi_series(series: pd.Series, period: int = 14) -> pd.Series:
+    """計算標準 Wilder's RSI 數列"""
+    delta = series.diff()
+    gain = delta.where(delta > 0, 0.0)
+    loss = -delta.where(delta < 0, 0.0)
+    avg_gain = gain.ewm(alpha=1.0/period, adjust=False).mean()
+    avg_loss = loss.ewm(alpha=1.0/period, adjust=False).mean()
+    rs = avg_gain / avg_loss.replace(0, np.nan)
+    rsi = 100.0 - (100.0 / (1.0 + rs))
+    return rsi.fillna(50.0)
+
+
+def detect_rsi_tags(close_series: pd.Series) -> list:
+    """自動解析 RSI 狀態標籤 (位階、金叉/死叉、鈍化、頂底背離)"""
+    if len(close_series) < 14:
+        return []
+    
+    rsi6 = calculate_rsi_series(close_series, 6)
+    rsi14 = calculate_rsi_series(close_series, 14)
+    
+    val14 = rsi14.iloc[-1]
+    val6 = rsi6.iloc[-1]
+    cur_rsi14 = float(val14.item() if hasattr(val14, 'item') else val14)
+    cur_rsi6 = float(val6.item() if hasattr(val6, 'item') else val6)
+    
+    tags = []
+    
+    # 1. 位階標籤 (以 RSI 14 為主基準)
+    if cur_rsi14 >= 80:
+        tags.append(f"RSI(14): {cur_rsi14:.1f} 極度過熱")
+    elif cur_rsi14 >= 70:
+        tags.append(f"RSI(14): {cur_rsi14:.1f} 進入過熱區")
+    elif cur_rsi14 <= 20:
+        tags.append(f"RSI(14): {cur_rsi14:.1f} 極度超跌")
+    elif cur_rsi14 <= 30:
+        tags.append(f"RSI(14): {cur_rsi14:.1f} 進入超跌區")
+    elif cur_rsi14 >= 55:
+        tags.append(f"RSI(14): {cur_rsi14:.1f} 多方推進")
+    elif cur_rsi14 <= 45:
+        tags.append(f"RSI(14): {cur_rsi14:.1f} 弱勢整理")
+    else:
+        tags.append(f"RSI(14): {cur_rsi14:.1f} 多空平衡")
+        
+    # 2. 雙線交叉 (RSI 6 與 RSI 14)
+    if len(rsi6) >= 2:
+        prev_rsi6 = float(rsi6.iloc[-2])
+        prev_rsi14 = float(rsi14.iloc[-2])
+        if prev_rsi6 <= prev_rsi14 and cur_rsi6 > cur_rsi14:
+            tags.append("✨ 短線黃金交叉")
+        elif prev_rsi6 >= prev_rsi14 and cur_rsi6 < cur_rsi14:
+            tags.append("⚡ 短線死亡交叉")
+            
+    # 3. 鈍化型態 (近 3 日 RSI 6 持續極端)
+    if len(rsi6) >= 3:
+        if (rsi6.iloc[-3:] >= 80).all():
+            tags.append("🚀 高檔強勢鈍化")
+        elif (rsi6.iloc[-3:] <= 20).all():
+            tags.append("❄️ 低檔弱勢鈍化")
+            
+    # 4. 背離型態 (過去 20 個交易日內之高低點背離)
+    if len(close_series) >= 20:
+        sub_close = close_series.iloc[-20:]
+        sub_rsi14 = rsi14.iloc[-20:]
+        
+        # 頂背離：收盤價創 20 日新高，但 RSI14 較 20 日內最高點低 3.0 以上
+        if sub_close.iloc[-1] >= sub_close.max() and cur_rsi14 < (sub_rsi14.max() - 3.0):
+            tags.append("⚠️ 頂背離警戒")
+        # 底背離：收盤價創 20 日新低，但 RSI14 較 20 日內最低點高 3.0 以上
+        elif sub_close.iloc[-1] <= sub_close.min() and cur_rsi14 > (sub_rsi14.min() + 3.0):
+            tags.append("💡 底背離落底")
+            
+    return tags
+
+
 def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
     """
     雙軌進化版選股引擎 (Gemini 專屬)
@@ -413,6 +487,8 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
     elif rsi14 > 80:
         def_score -= 8
 
+    rsi_tags = detect_rsi_tags(close_s)
+
     return {
         'code': stock_info['code'],
         'name': stock_info['name'],
@@ -428,6 +504,7 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
         'bias_20': round(bias_20, 2),
         'bias_5': round(bias_5, 2),
         'rsi14': round(rsi14, 1),
+        'rsi_tags': rsi_tags,
         'vol_ratio': round(vol_ratio, 2),
         'close_loc': round(close_location, 2),
         'is_new_high': is_new_high,
@@ -480,11 +557,14 @@ def save_stage4_report(r):
             return f"下彎 {value:+.2f}%"
         return f"走平 {value:+.2f}%"
 
+    rsi_tags = r.get('rsi_tags') or []
+    if not rsi_tags:
+        rsi_tags = [f"RSI(14): {r['rsi14']} （{'超買強勢' if r['rsi14'] > 75 else '多頭推進區' if r['rsi14'] > 50 else '弱勢整理'}）"]
+
     technical_tags = []
     if r['s5'] > 0 and r['s10'] > 0 and r['s20'] > 0:
         technical_tags.append("均線多頭排列")
     technical_tags.append(f"5MA仰角 {r['s5']:+.2f}%")
-    technical_tags.append("RSI 強勢主升" if r['rsi14'] >= 75 else ("RSI 多頭推進" if r['rsi14'] >= 50 else "RSI 弱勢整理"))
     technical_tags.append("爆量攻擊" if r['vol_ratio'] >= 1.5 else ("溫和放量" if r['vol_ratio'] >= 1.0 else "量能萎縮"))
 
     buy_days = int(r.get('inst_buy_days', 0))
@@ -505,6 +585,7 @@ def save_stage4_report(r):
     lines.append(f"  - **RSI(14)**：{r['rsi14']} （{'超買強勢' if r['rsi14'] > 75 else '多頭推進區' if r['rsi14'] > 50 else '弱勢整理'}）")
     lines.append(f"  - **成交量**：{r['vol']:,} 股（相對 20日均量 {r['vol_ratio']} 倍）\n")
     lines.append("### 【標籤摘要】")
+    lines.append(f"- **RSI 標籤**：{'、'.join(rsi_tags)}")
     lines.append(f"- **技術標籤**：{'、'.join(technical_tags)}")
     lines.append(f"- **籌碼標籤**：{'、'.join(chip_tags)}")
     lines.append(f"- **型態標籤**：{'、'.join(pattern_tags)}\n")

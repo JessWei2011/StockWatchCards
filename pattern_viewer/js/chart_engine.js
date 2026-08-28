@@ -61,6 +61,8 @@ window.ChartEngine = {
       volumes,
       ma5,
       rsi,
+      rsi6,
+      rsi12,
       macdHist,
       kList,
       dList,
@@ -164,7 +166,7 @@ window.ChartEngine = {
         label: { backgroundColor: '#3b82f6' }
       },
       legend: {
-        data: ['K線', 'MA5', 'MA10', 'MA20', 'MA60', 'MA120', 'BOLL上軌', 'BOLL下軌', '成交量', 'RSI', 'MACD', 'K值', 'D值'],
+        data: ['K線', 'MA5', 'MA10', 'MA20', 'MA60', 'MA120', 'BOLL上軌', 'BOLL下軌', '成交量', 'RSI(6)', 'RSI(12)', 'MACD', 'K值', 'D值'],
         top: 4,
         textStyle: { color: '#94a3b8', fontSize: 11 },
         selected: {
@@ -177,7 +179,8 @@ window.ChartEngine = {
           'BOLL上軌': displayToggles.showBoll !== false,
           'BOLL下軌': displayToggles.showBoll !== false,
           '成交量': true,
-          'RSI': true,
+          'RSI(6)': true,
+          'RSI(12)': true,
           'MACD': true,
           'K值': true,
           'D值': true
@@ -333,27 +336,40 @@ window.ChartEngine = {
           })
         },
 
-        // 6. Pane 2: RSI (Grid 2) - 科技流線 + 微發光漸層
+        // 6. Pane 2: RSI 雙線 (Grid 2) - RSI(6) 短線琥珀黃 + RSI(12) 長線科技藍
         {
-          name: 'RSI',
+          name: 'RSI(6)',
           type: 'line',
           xAxisIndex: 2,
           yAxisIndex: 2,
-          data: rsi,
+          data: (rsi6 && rsi6.length) ? rsi6 : rsi,
           smooth: true,
           showSymbol: false,
-          lineStyle: { color: '#38bdf8', width: 2 },
+          lineStyle: { color: '#fbbf24', width: 1.8 }, // 琥珀亮黃
+        },
+        {
+          name: 'RSI(12)',
+          type: 'line',
+          xAxisIndex: 2,
+          yAxisIndex: 2,
+          data: (rsi12 && rsi12.length) ? rsi12 : rsi,
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#38bdf8', width: 2 }, // 科技天藍
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(56, 189, 248, 0.22)' },
+              { offset: 0, color: 'rgba(56, 189, 248, 0.12)' },
               { offset: 1, color: 'rgba(56, 189, 248, 0.0)' }
             ])
           },
           markLine: {
             symbol: 'none',
             data: [
-              { yAxis: 70, lineStyle: { color: '#ef4444', type: 'dotted', width: 1.2 } },
-              { yAxis: 30, lineStyle: { color: '#10b981', type: 'dotted', width: 1.2 } }
+              { yAxis: 80, lineStyle: { color: '#ef4444', type: 'dashed', width: 1 }, label: { show: true, position: 'insideEndTop', formatter: '80 極度過熱' } },
+              { yAxis: 70, lineStyle: { color: 'rgba(239, 68, 68, 0.5)', type: 'dotted', width: 1 }, label: { show: false } },
+              { yAxis: 50, lineStyle: { color: 'rgba(148, 163, 184, 0.35)', type: 'dashed', width: 1 }, label: { show: false } },
+              { yAxis: 30, lineStyle: { color: 'rgba(16, 185, 129, 0.5)', type: 'dotted', width: 1 }, label: { show: false } },
+              { yAxis: 20, lineStyle: { color: '#10b981', type: 'dashed', width: 1 }, label: { show: true, position: 'insideEndBottom', formatter: '20 極度超跌' } }
             ]
           }
         },

@@ -143,6 +143,47 @@ window.PatternParser = {
       }
     }
 
+    // Calculate Dual RSI: RSI(6) and RSI(12)
+    function calculateWilderRsi(closePrices, period) {
+      const result = [];
+      let avgGain = 0;
+      let avgLoss = 0;
+      for (let i = 0; i < closePrices.length; i++) {
+        if (i === 0) {
+          result.push(null);
+          continue;
+        }
+        const change = closePrices[i] - closePrices[i - 1];
+        const gain = change > 0 ? change : 0;
+        const loss = change < 0 ? -change : 0;
+        
+        if (i <= period) {
+          avgGain += gain;
+          avgLoss += loss;
+          if (i === period) {
+            avgGain /= period;
+            avgLoss /= period;
+            const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+            const val = 100 - (100 / (1 + rs));
+            result.push(parseFloat(val.toFixed(2)));
+          } else {
+            result.push(null);
+          }
+        } else {
+          avgGain = (avgGain * (period - 1) + gain) / period;
+          avgLoss = (avgLoss * (period - 1) + loss) / period;
+          const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+          const val = 100 - (100 / (1 + rs));
+          result.push(parseFloat(val.toFixed(2)));
+        }
+      }
+      return result;
+    }
+
+    const closePrices = candles.map(c => c[1]);
+    const rsi6 = calculateWilderRsi(closePrices, 6);
+    const rsi12 = calculateWilderRsi(closePrices, 12);
+
     return {
       title: titleText,
       dates,
@@ -153,7 +194,9 @@ window.PatternParser = {
       ma20,
       ma60,
       ma120,
-      rsi,
+      rsi: (rsi && rsi.some(v => v !== null && !isNaN(v))) ? rsi : rsi6,
+      rsi6,
+      rsi12,
       macdHist,
       kList,
       dList,

@@ -184,6 +184,9 @@ def parse_md_report_card(md_path):
     
     m_tech = re.search(r'技術標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text)
     m_chip = re.search(r'籌碼標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text)
+    m_rsi = re.search(r'RSI\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text, re.I)
+    m_macd = re.search(r'MACD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text, re.I)
+    m_kd = re.search(r'KD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text, re.I)
     
     code = m_code.group(1).strip() if m_code else ""
     if not code:
@@ -221,6 +224,9 @@ def parse_md_report_card(md_path):
 
     tech_tags_str = m_tech.group(1).strip() if m_tech else ""
     chip_tags_str = m_chip.group(1).strip() if m_chip else ""
+    rsi_tags_str = m_rsi.group(1).strip() if m_rsi else ""
+    macd_tags_str = m_macd.group(1).strip() if m_macd else ""
+    kd_tags_str = m_kd.group(1).strip() if m_kd else ""
 
     group = md_path.parent.name if md_path.parent != REPORTS_DIR else "未分類"
     return {
@@ -233,6 +239,9 @@ def parse_md_report_card(md_path):
         "winRate": win_rate,
         "rr": rr_ratio,
         "pattern": pattern,
+        "rsiTags": rsi_tags_str,
+        "macdTags": macd_tags_str,
+        "kdTags": kd_tags_str,
         "technicalTags": tech_tags_str,
         "chipTags": chip_tags_str,
         "raw": text,
