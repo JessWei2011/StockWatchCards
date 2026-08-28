@@ -608,36 +608,36 @@
   </div>
 
   <!-- KD 指標標籤顏色含意速查表 Modal (1020px 大視窗 / 16px 大字體) -->
-  <div id="kdCheatSheetModal" class="modal" style="display:none; position:fixed; z-index:99999; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); align-items:center; justify-content:center; padding:20px;">
-    <div style="background:#131722; border:1px solid #334155; border-radius:12px; max-width:1020px; width:95%; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,0.85);">
+  <div id="kdCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:#161922; border:1px solid rgba(245,158,11,0.35); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
       <!-- Header -->
-      <div style="padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:space-between; background:#181e2e;">
+      <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:center; gap:12px;">
-          <span style="font-size:26px;">⚡</span>
+          <span style="font-size:24px;">⚡</span>
           <div>
-            <h3 style="margin:0; font-size:20px; font-weight:800; color:#f8fafc;">KD 指標標籤顏色含意與實戰速查表</h3>
-            <div style="font-size:13.5px; color:#fbbf24; margin-top:2px;">台股標準 KD (9,3,3) 雙軌交叉、高低檔鈍化與頂底背離速查指引</div>
+            <h3 style="margin:0; font-size:18px; font-weight:800; color:#f8fafc;">KD 指標標籤顏色含意與實戰速查表</h3>
+            <p style="margin:2px 0 0; font-size:13.5px; color:#94a3b8;">台股標準 KD (9,3,3) 雙軌交叉、高低檔鈍化與頂底背離速查指引</p>
           </div>
         </div>
-        <button type="button" onclick="closeKdCheatSheetModal()" style="background:none; border:none; color:#94a3b8; font-size:24px; cursor:pointer; padding:4px 8px; line-height:1;">✕</button>
+        <button type="button" onclick="closeKdCheatSheetModal()" style="background:none; border:none; color:#94a3b8; font-size:28px; cursor:pointer; padding:4px 8px; line-height:1;" title="關閉 (Esc)">&times;</button>
       </div>
 
-      <!-- Body -->
+      <!-- Content Table -->
       <div style="padding:22px 24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:18px;">
-        <div style="border:1px solid rgba(255,255,255,0.08); border-radius:8px; overflow:hidden; background:rgba(0,0,0,0.25);">
-          <table style="width:100%; border-collapse:collapse; text-align:left; font-size:15px;">
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:16px; text-align:left;">
             <thead>
-              <tr style="background:#1e2538; color:#94a3b8; font-size:14px; border-bottom:1px solid rgba(255,255,255,0.1);">
-                <th style="padding:12px 14px; width:130px;">標籤色系</th>
-                <th style="padding:12px 14px; width:180px;">核心含意</th>
-                <th style="padding:12px 14px;">代表性標籤</th>
-                <th style="padding:12px 14px; width:340px;">實戰操盤指引</th>
+              <tr style="background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.12); color:#cbd5e1;">
+                <th style="padding:12px 14px; width:19%; font-size:16px; font-weight:800;">標籤顏色</th>
+                <th style="padding:12px 14px; width:28%; font-size:16px; font-weight:800;">代表含意與市場意圖</th>
+                <th style="padding:12px 14px; width:26%; font-size:16px; font-weight:800;">具體標籤範例</th>
+                <th style="padding:12px 14px; width:27%; font-size:16px; font-weight:800;">操盤應對心法</th>
               </tr>
             </thead>
             <tbody>
               <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
                 <td style="padding:14px;">
-                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);">🔴 玫瑰紅／亮紅</span>
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);">🔴 紅色／橘紅系</span>
                 </td>
                 <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
                   【高檔警示／動能轉弱】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">超買區死叉或頂背離</span>
@@ -737,7 +737,7 @@
 
       <!-- Footer -->
       <div style="padding:14px 24px; background:#1e2330; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:flex-end;">
-        <button type="button" onclick="closeKdCheatSheetModal()" style="padding:9px 26px; border-radius:6px; background:#f59e0b; color:#fff; font-weight:800; font-size:15px; border:none; cursor:pointer;">關閉速查表</button>
+        <button type="button" onclick="closeKdCheatSheetModal()" style="padding:9px 26px; border-radius:6px; background:#f59e0b; color:#000; font-weight:800; font-size:15px; border:none; cursor:pointer;">關閉速查表</button>
       </div>
     </div>
   </div>
