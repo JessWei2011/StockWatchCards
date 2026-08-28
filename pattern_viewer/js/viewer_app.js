@@ -545,37 +545,6 @@
     setVal('hudRsi6', r6, '#fbbf24');
     setVal('hudRsi12', r12, '#38bdf8');
 
-    const badgeEl = document.getElementById('hudRsiStateBadge');
-    if (badgeEl) {
-      if (rsiVal != null && !isNaN(rsiVal)) {
-        if (rsiVal >= 80) {
-          badgeEl.textContent = `🔥 極度過熱 (${rsiVal.toFixed(1)})`;
-          badgeEl.style.cssText = 'font-size:12.5px; padding:2px 8px; border-radius:4px; font-weight:750; background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.4);';
-        } else if (rsiVal >= 70) {
-          badgeEl.textContent = `⚠️ 進入過熱區 (${rsiVal.toFixed(1)})`;
-          badgeEl.style.cssText = 'font-size:12.5px; padding:2px 8px; border-radius:4px; font-weight:750; background:rgba(249,115,22,0.2); color:#fdba74; border:1px solid rgba(249,115,22,0.4);';
-        } else if (rsiVal <= 20) {
-          badgeEl.textContent = `💎 極度超跌 (${rsiVal.toFixed(1)})`;
-          badgeEl.style.cssText = 'font-size:12.5px; padding:2px 8px; border-radius:4px; font-weight:750; background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.4);';
-        } else if (rsiVal <= 30) {
-          badgeEl.textContent = `👀 進入超跌區 (${rsiVal.toFixed(1)})`;
-          badgeEl.style.cssText = 'font-size:12.5px; padding:2px 8px; border-radius:4px; font-weight:750; background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.3);';
-        } else if (rsiVal >= 55) {
-          badgeEl.textContent = `📈 多方推進 (${rsiVal.toFixed(1)})`;
-          badgeEl.style.cssText = 'font-size:12.5px; padding:2px 8px; border-radius:4px; font-weight:750; background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
-        } else if (rsiVal <= 45) {
-          badgeEl.textContent = `📉 弱勢整理 (${rsiVal.toFixed(1)})`;
-          badgeEl.style.cssText = 'font-size:12.5px; padding:2px 8px; border-radius:4px; font-weight:750; background:rgba(100,116,139,0.2); color:#cbd5e1; border:1px solid rgba(100,116,139,0.3);';
-        } else {
-          badgeEl.textContent = `⚪ 多空平衡 (${rsiVal.toFixed(1)})`;
-          badgeEl.style.cssText = 'font-size:12.5px; padding:2px 8px; border-radius:4px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);';
-        }
-      } else {
-        badgeEl.textContent = '—';
-        badgeEl.style.cssText = '';
-      }
-    }
-
     // MACD
     const macd = stockData.macdHist && stockData.macdHist[idx];
     const macdEl = document.getElementById('hudMacdHist');
