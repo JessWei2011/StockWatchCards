@@ -7,38 +7,22 @@ if (-not $controller) {
     throw 'No .pyw controller was found in the project folder.'
 }
 
-$pythonwCandidates = Get-ChildItem -Path (Join-Path $env:LOCALAPPDATA 'Programs\Python\Python*\pythonw.exe') -ErrorAction SilentlyContinue |
-    Sort-Object FullName -Descending
-
-if (-not $pythonwCandidates) {
-    throw 'pythonw.exe was not found. Install Python 3, then run the setup batch file again.'
+$pythonDir = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python311'
+$pythonw = Join-Path $pythonDir 'pythonw.exe'
+$python = Join-Path $pythonDir 'python.exe'
+if (-not (Test-Path -LiteralPath $pythonw) -or -not (Test-Path -LiteralPath $python)) {
+    throw "Python 3.11 was not found at $pythonDir. Install Python 3.11, then run this file again."
 }
 
-$pythonw = $null
-$python = $null
-foreach ($candidate in $pythonwCandidates) {
-    $candidatePython = $candidate.FullName -replace 'pythonw\.exe$', 'python.exe'
-    # A missing dependency is expected for some installed Python versions.
-    # Do not let its stderr stop the setup before the next candidate is tried.
-    $previousErrorActionPreference = $ErrorActionPreference
-    $ErrorActionPreference = 'Continue'
-    & $candidatePython -c 'import pystray, PIL' 2>$null
-    $ErrorActionPreference = $previousErrorActionPreference
-    if ($LASTEXITCODE -eq 0) {
-        $pythonw = $candidate.FullName
-        $python = $candidatePython
-        break
-    }
-}
-
-if (-not $python) {
-    # No installed Python has the dependencies yet. Use the newest one and install them.
-    $pythonw = $pythonwCandidates[0].FullName
-    $python = $pythonw -replace 'pythonw\.exe$', 'python.exe'
-    Write-Host 'Installing pystray and Pillow...'
+$previousErrorActionPreference = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $python -c 'import pystray, PIL' 2>$null
+$ErrorActionPreference = $previousErrorActionPreference
+if ($LASTEXITCODE -ne 0) {
+    Write-Host 'Installing pystray and Pillow for Python 3.11...'
     & $python -m pip install --user pystray pillow
     if ($LASTEXITCODE -ne 0) {
-        throw 'Package installation failed. Check the Internet connection and pip, then try again.'
+        throw 'Package installation failed. Check the Internet connection and pip, then run this file again.'
     }
 }
 

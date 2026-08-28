@@ -81,6 +81,15 @@ def stop_servers() -> None:
             pass
 
 
+def wait_for_servers_to_stop(timeout: float = 3.0) -> None:
+    """等待 shutdown API 真正釋放連接埠，再允許控制台自己結束。"""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if not any(is_port_open(server["port"]) for server in SERVERS.values()):
+            return
+        time.sleep(0.1)
+
+
 def append_update_log(message: str) -> None:
     try:
         if UPDATE_LOG.exists() and UPDATE_LOG.stat().st_size > 1_000_000:
@@ -159,6 +168,7 @@ def show_macro(_icon=None, _item=None) -> None:
 def quit_controller(icon, _item=None) -> None:
     stop_event.set()
     stop_servers()
+    wait_for_servers_to_stop()
     icon.stop()
 
 
@@ -177,19 +187,26 @@ def main() -> None:
     instance_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\Stock2UnifiedController")
     if not instance_mutex or ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
         return
-    ensure_servers()
-    menu = pystray.Menu(
-        pystray.MenuItem("開啟個股分析中心", show_stock, default=True),
-        pystray.MenuItem("開啟總經分析", show_macro),
-        pystray.Menu.SEPARATOR,
-        pystray.MenuItem("立即更新總經數據（手動）", update_now),
-        pystray.MenuItem("啟動所有服務", start_all),
-        pystray.MenuItem("停止所有服務", stop_all),
-        pystray.Menu.SEPARATOR,
-        pystray.MenuItem("結束統一控制台", quit_controller),
-    )
-    icon = pystray.Icon("stock2-control", make_icon_image(), "統一控制台", menu)
-    icon.run()
+    try:
+        ensure_servers()
+        menu = pystray.Menu(
+            pystray.MenuItem("開啟個股分析中心", show_stock, default=True),
+            pystray.MenuItem("開啟總經分析", show_macro),
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem("立即更新總經數據（手動）", update_now),
+            pystray.MenuItem("啟動所有服務", start_all),
+            pystray.MenuItem("停止所有服務", stop_all),
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem("結束統一控制台", quit_controller),
+        )
+        icon = pystray.Icon("stock2-control", make_icon_image(), "統一控制台", menu)
+        icon.run()
+    finally:
+        # 右鍵退出以外的結束路徑也不能留下服務或 mutex。
+        stop_servers()
+        wait_for_servers_to_stop()
+        if instance_mutex:
+            ctypes.windll.kernel32.CloseHandle(instance_mutex)
 
 
 if __name__ == "__main__":
