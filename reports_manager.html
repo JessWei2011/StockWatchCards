@@ -37,7 +37,7 @@
   .breadcrumb span:hover{ color:var(--accent); }
   .layout{ display:flex; flex:1; min-height:0; }
   .sidebar{
-    width:280px; padding:12px; overflow-y:auto; flex-shrink:0;
+    width:380px; padding:12px; overflow-y:auto; flex-shrink:0;
   }
   .main{ flex:1; min-width:0; padding:20px; overflow-y:auto; }
 
@@ -131,15 +131,16 @@
   .tree-stat-pills{
     display:inline-flex; align-items:center; justify-content:flex-end; gap:4px; flex-shrink:0; margin-left:auto;
   }
-  .tree-quick-actions{ display:inline-flex; align-items:center; gap:3px; flex-shrink:0; }
+  .tree-quick-actions{ display:inline-flex; align-items:center; gap:4px; flex-shrink:0; }
   .tree-quick-btn{
-    width:19px; height:19px; padding:0; border-radius:5px; cursor:pointer;
+    width:95px; height:19px; padding:0; border-radius:5px; cursor:pointer;
     display:inline-flex; align-items:center; justify-content:center;
-    background:rgba(255,255,255,.04); border:1px solid var(--border); font-size:10.5px;
+    background:rgba(255,255,255,.05); border:1px solid var(--border); font-size:11px;
+    transition: background 0.15s, border-color 0.15s;
   }
   .tree-quick-btn.pattern{ border-color:rgba(56,189,248,.45); }
   .tree-quick-btn.report{ border-color:rgba(196,181,253,.45); }
-  .tree-quick-btn:hover{ transform:scale(1.1); background:rgba(255,255,255,.12); }
+  .tree-quick-btn:hover{ background:rgba(255,255,255,.16); }
   .tree-stat-pill{
     display:inline-flex; align-items:center; justify-content:center;
     box-sizing:border-box; height:19px; border-radius:5px;
