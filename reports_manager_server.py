@@ -897,7 +897,7 @@ class Handler(SimpleHTTPRequestHandler):
                     self._json(409, {"ok": False, "error": "已經有報表產生任務在執行，請稍候"})
                     return
                 parts = [p for p in re.split(r"[,，、\s]+", raw) if p]
-                args = ["999" if p.upper() in ("ALL", "全部") else p for p in parts]
+                args = ["ALL" if p.upper() in ("ALL", "全部") else p for p in parts]
                 generate_job = _new_generate_job()
                 generate_job["running"] = True
             threading.Thread(target=_run_generate, args=(args,), daemon=True).start()

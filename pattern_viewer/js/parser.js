@@ -105,8 +105,10 @@ window.PatternParser = {
 
     const ma10 = [];
     const ma20 = [];
+    const ma60 = [];
+    const ma120 = [];
 
-    // Calculate MA10 and MA20
+    // Calculate MA10, MA20, MA60, MA120
     for (let i = 0; i < candles.length; i++) {
       if (i >= 9) {
         let sum = 0;
@@ -123,6 +125,22 @@ window.PatternParser = {
       } else {
         ma20.push(null);
       }
+
+      if (i >= 59) {
+        let sum = 0;
+        for (let j = i - 59; j <= i; j++) sum += candles[j][1];
+        ma60.push(parseFloat((sum / 60).toFixed(2)));
+      } else {
+        ma60.push(null);
+      }
+
+      if (i >= 119) {
+        let sum = 0;
+        for (let j = i - 119; j <= i; j++) sum += candles[j][1];
+        ma120.push(parseFloat((sum / 120).toFixed(2)));
+      } else {
+        ma120.push(null);
+      }
     }
 
     return {
@@ -133,6 +151,8 @@ window.PatternParser = {
       ma5,
       ma10,
       ma20,
+      ma60,
+      ma120,
       rsi,
       macdHist,
       kList,

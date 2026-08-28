@@ -4,6 +4,11 @@
 用法: python tw_analysis.py 6182
 """
 import sys, time, warnings, os, re, json, logging, glob, threading
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+except Exception:
+    pass
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 warnings.filterwarnings("ignore")
@@ -34,7 +39,7 @@ HEADERS = {
 }
 
 DAYS_LOOKBACK = 20  # 三大法人/融資融券回看交易日數（約1個月）
-KLINE_DISPLAY_DAYS = 50  # K線顯示天數（約10週，指標計算仍用完整6個月資料）
+KLINE_DISPLAY_DAYS = 180  # K線顯示天數（約36週，完整支援 MA5/10/20/60/120 繪製）
 
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cache")
 HOLDERS_MARKET_CACHE = os.path.join(CACHE_DIR, "holders_market.csv")
@@ -992,7 +997,7 @@ def run(ticker_input):
     try:
         symbol = sid + ".TW"
         stok = yf.Ticker(symbol)
-        df = stok.history(period="6mo", interval="1d", auto_adjust=True)
+        df = stok.history(period="1y", interval="1d", auto_adjust=True)
         if not df.empty and not info:
             info = stok.info or {}
     except Exception:
@@ -1002,7 +1007,7 @@ def run(ticker_input):
         try:
             symbol = sid + ".TWO"
             stok = yf.Ticker(symbol)
-            df = stok.history(period="6mo", interval="1d", auto_adjust=True)
+            df = stok.history(period="1y", interval="1d", auto_adjust=True)
             if not df.empty and not info:
                 info = stok.info or {}
         except Exception:
@@ -1316,41 +1321,39 @@ def force_refresh_holders_market():
 
 def print_tracked_list(tracked):
     today = datetime.now().strftime("%Y-%m-%d")
-    print("\n📌 追蹤中個股清單 (依分類資料夾列出，輸入前面的編號即可快速選取，例如輸入 1 就等於輸入代號；")
-    print(f"   輸入 {ALL_TRACKED_INPUT} 更新全部追蹤清單，今天已更新過的會自動跳過；")
-    print(f"   輸入 {FORCE_ALL_TRACKED_INPUT} 強制更新全部追蹤清單，含今天已更新過的；")
+    print("\n📌 追蹤中個股清單 (依分類資料夾列出；")
+    print(f"   輸入 {ALL_TRACKED_INPUT} 或 ALL 更新全部追蹤清單，今天已更新過的會自動跳過；")
+    print(f"   輸入 {FORCE_ALL_TRACKED_INPUT} 或 FORCE 強制更新全部追蹤清單，含今天已更新過的；")
     print(f"   輸入 {FORCE_HOLDERS_UPDATE_INPUT} 強制重新下載集保大戶資料，不受本週快取限制):")
     last_category = object()  # 保證第一筆一定會先印出分類標題
-    for i, (sid, name, path, category) in enumerate(tracked, 1):
+    for sid, name, path, category in tracked:
         if category != last_category:
             print(f" 🗂️ {category or '未分類'}")
             last_category = category
         d = file_date_str(path)
         mark = " (今天已更新)" if d == today else (f" (最後更新 {d})" if d else "")
-        print(f"  {i:>2}. {sid} {name}{mark}")
+        print(f"    • {sid} {name}{mark}")
     print()
 
 def resolve_tracked_indices(items, tracked):
-    """把 <100 的純數字輸入轉換成追蹤清單中對應位置的股票代號；
-    999 展開成全部追蹤清單(跳過今天已更新過的)；998 展開成全部追蹤清單(強制全部更新)"""
+    """999/ALL 展開成全部追蹤清單(跳過今天已更新過的)；998/FORCE 展開成全部追蹤清單(強制全部更新)"""
     today = datetime.now().strftime("%Y-%m-%d")
-    mapping = {str(i): sid for i, (sid, _, _, _) in enumerate(tracked, 1)}
     resolved = []
     for p in items:
-        if p == ALL_TRACKED_INPUT:
+        p_str = str(p).strip()
+        p_upper = p_str.upper()
+        if p_upper in ("FORCE", "FORCE_ALL", FORCE_ALL_TRACKED_INPUT, "998"):
+            resolved.extend(sid for sid, _, _, _ in tracked)
+        elif p_upper in ("ALL", "全部", ALL_TRACKED_INPUT, "999"):
             for sid, name, path, _category in tracked:
                 if file_date_str(path) == today:
                     print(f" ⏭ {sid} {name} 今天已更新過，跳過")
                     continue
                 resolved.append(sid)
-        elif p == FORCE_ALL_TRACKED_INPUT:
-            resolved.extend(sid for sid, _, _, _ in tracked)
-        elif p == FORCE_HOLDERS_UPDATE_INPUT:
+        elif p_str == FORCE_HOLDERS_UPDATE_INPUT:
             force_refresh_holders_market()
-        elif p.isdigit() and int(p) < 100 and p in mapping:
-            resolved.append(mapping[p])
         else:
-            resolved.append(p)
+            resolved.append(p_str)
     return resolved
 
 def run_batch(tickers):
@@ -1414,7 +1417,7 @@ if __name__ == "__main__":
             tracked = scan_tracked_stocks()
             if tracked:
                 print_tracked_list(tracked)
-            raw = input("台股代碼或名稱(可用逗號/空白分隔多支，也可輸入上方編號，輸入 Q 離開): ").strip()
+            raw = input("台股代碼或名稱(可用逗號/空白分隔多支，輸入 Q 離開): ").strip()
             if raw.upper() == "Q":
                 break
             if not raw:

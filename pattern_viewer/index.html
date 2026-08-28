@@ -73,8 +73,9 @@
             <div class="chart-sub-info">滑鼠移動十字光標可跨圖表同步連動觀察數值</div>
           </div>
           <div class="chart-toggles">
-            <label class="toggle-label"><input type="checkbox" id="toggleBoll" checked> 布林通道（BOLL）</label>
-            <label class="toggle-label"><input type="checkbox" id="toggleMa" checked> 均線（MA5）</label>
+            <label class="toggle-label"><input type="checkbox" id="toggleMa" checked> 均線（MA5 / 10 / 20 / 60 / 120）</label>
+            <label class="toggle-label"><input type="checkbox" id="toggleBoll" checked> 布林通道（BOLL 上/下軌）</label>
+            <button type="button" class="btn-fullscreen-toggle" id="toggleFullscreenChart" onclick="if(window.toggleChartFullscreen) window.toggleChartFullscreen();" title="全螢幕放大看盤">⛶ 全螢幕看盤</button>
           </div>
         </div>
         <div id="patternEmptyState" class="empty-state">
@@ -90,10 +91,10 @@
   </div>
 
   <script src="../data.js"></script>
-  <script src="js/parser.js?v=14"></script>
-  <script src="js/pattern_engine.js?v=16"></script>
-  <script src="js/chart_engine.js?v=16"></script>
-  <script src="js/viewer_app.js?v=1"></script>
+  <script src="js/parser.js?v=60"></script>
+  <script src="js/pattern_engine.js?v=60"></script>
+  <script src="js/chart_engine.js?v=60"></script>
+  <script src="js/viewer_app.js?v=60"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       PatternViewer.init(document.querySelector('.pattern-viewer'));

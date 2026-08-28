@@ -30,13 +30,15 @@ window.ChartEngine = {
 
     if (!this.chartInstance) {
       this.chartInstance = echarts.init(dom, 'dark');
+      this._attachZoomFix(dom);
       this._resizeHandler = () => this.resize();
       window.addEventListener('resize', this._resizeHandler);
     }
 
-    // Default to the most recent 10 trading days so candles aren't squished on a 50-day chart.
+    // Default to the most recent 20 trading days so candles are clear and not squished.
     // Only reset the zoom when the stock actually changes — re-renders for the same stock (toggling
-    // BOLL/MA, switching pattern view) keep whatever zoom range the user has manually set.
+    // BOLL/MA, etc.) keep whatever zoom range the user has manually set.
+    const DEFAULT_ZOOM_DAYS = 20;
     const total = stockData.dates.length;
     const stockKey = `${stockData.title}|${total}`;
     let zoomStart, zoomEnd;
@@ -46,8 +48,10 @@ window.ChartEngine = {
       if (prevZoom) { zoomStart = prevZoom.start; zoomEnd = prevZoom.end; }
     }
     if (zoomStart == null) {
-      zoomStart = 0;
       zoomEnd = 100;
+      zoomStart = total > DEFAULT_ZOOM_DAYS
+        ? Math.max(0, Math.round(((total - DEFAULT_ZOOM_DAYS) / total) * 100))
+        : 0;
     }
     this._lastStockKey = stockKey;
 
@@ -160,7 +164,7 @@ window.ChartEngine = {
         label: { backgroundColor: '#3b82f6' }
       },
       legend: {
-        data: ['K線', 'MA5', 'MA10', 'MA20', 'BOLL上軌', 'BOLL中軌', 'BOLL下軌', '成交量', 'RSI', 'MACD', 'K值', 'D值'],
+        data: ['K線', 'MA5', 'MA10', 'MA20', 'MA60', 'MA120', 'BOLL上軌', 'BOLL下軌', '成交量', 'RSI', 'MACD', 'K值', 'D值'],
         top: 4,
         textStyle: { color: '#94a3b8', fontSize: 11 },
         selected: {
@@ -168,8 +172,9 @@ window.ChartEngine = {
           'MA5': displayToggles.showMa !== false,
           'MA10': displayToggles.showMa !== false,
           'MA20': displayToggles.showMa !== false,
+          'MA60': displayToggles.showMa !== false,
+          'MA120': displayToggles.showMa !== false,
           'BOLL上軌': displayToggles.showBoll !== false,
-          'BOLL中軌': false, // 預設關閉中軌
           'BOLL下軌': displayToggles.showBoll !== false,
           '成交量': true,
           'RSI': true,
@@ -263,6 +268,28 @@ window.ChartEngine = {
           showSymbol: false,
           lineStyle: { color: '#ec4899', width: 1.5 }
         },
+        // 1.3 MA60 (Grid 0)
+        {
+          name: 'MA60',
+          type: 'line',
+          xAxisIndex: 0,
+          yAxisIndex: 0,
+          data: stockData.ma60 || [],
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#10b981', width: 1.5 }
+        },
+        // 1.4 MA120 (Grid 0)
+        {
+          name: 'MA120',
+          type: 'line',
+          xAxisIndex: 0,
+          yAxisIndex: 0,
+          data: stockData.ma120 || [],
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#8b5cf6', width: 1.5 }
+        },
         // 2. BOLL Upper (Grid 0)
         {
           name: 'BOLL上軌',
@@ -274,18 +301,7 @@ window.ChartEngine = {
           showSymbol: false,
           lineStyle: { color: '#a855f7', width: 1, type: 'dashed' }
         },
-        // 3. BOLL Mid (Grid 0)
-        {
-          name: 'BOLL中軌',
-          type: 'line',
-          xAxisIndex: 0,
-          yAxisIndex: 0,
-          data: bollMid,
-          smooth: true,
-          showSymbol: false,
-          lineStyle: { color: '#6366f1', width: 1 }
-        },
-        // 4. BOLL Lower (Grid 0)
+        // 3. BOLL Lower (Grid 0)
         {
           name: 'BOLL下軌',
           type: 'line',
@@ -419,6 +435,69 @@ window.ChartEngine = {
     this.chartInstance.setOption(option, true);
   },
 
+  _attachZoomFix(dom) {
+    if (this._zoomFixCleanup) {
+      this._zoomFixCleanup();
+      this._zoomFixCleanup = null;
+    }
+    if (!dom) return;
+
+    const events = [
+      'pointermove', 'pointerdown', 'pointerup',
+      'mousemove', 'mousedown', 'mouseup',
+      'click', 'dblclick', 'contextmenu',
+      'wheel', 'mousewheel',
+      'touchstart', 'touchmove'
+    ];
+
+    const correctCoords = (e) => {
+      const zoom = parseFloat(document.body.style.zoom) || 1;
+      if (Math.abs(zoom - 1) < 0.001) return;
+      const rect = dom.getBoundingClientRect();
+      const touch = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
+      const clientX = touch ? touch.clientX : e.clientX;
+      const clientY = touch ? touch.clientY : e.clientY;
+      if (clientX == null || clientY == null) return;
+      const zrX = (clientX - rect.left) / zoom;
+      const zrY = (clientY - rect.top) / zoom;
+      try {
+        Object.defineProperty(e, 'zrX', { value: zrX, configurable: true, writable: true });
+        Object.defineProperty(e, 'zrY', { value: zrY, configurable: true, writable: true });
+      } catch (_) {
+        e.zrX = zrX;
+        e.zrY = zrY;
+      }
+
+      // ECharts (ZRender) requires zrDelta on wheel events to trigger InsideZoom.
+      // When zrX is manually assigned, ZRender skips normalizeEvent, so we must also provide zrDelta.
+      if (e.type === 'wheel' || e.type === 'mousewheel' || e.type === 'DOMMouseScroll') {
+        let delta = 0;
+        if (e.wheelDelta != null && e.wheelDelta !== 0) {
+          delta = e.wheelDelta / 120;
+        } else if (e.deltaY != null && e.deltaY !== 0) {
+          delta = e.deltaY > 0 ? -1 : 1;
+        } else if (e.detail != null && e.detail !== 0) {
+          delta = -(e.detail / 3);
+        }
+        try {
+          Object.defineProperty(e, 'zrDelta', { value: delta, configurable: true, writable: true });
+        } catch (_) {
+          e.zrDelta = delta;
+        }
+      }
+    };
+
+    events.forEach(evtName => {
+      dom.addEventListener(evtName, correctCoords, { capture: true });
+    });
+
+    this._zoomFixCleanup = () => {
+      events.forEach(evtName => {
+        dom.removeEventListener(evtName, correctCoords, { capture: true });
+      });
+    };
+  },
+
   resize() {
     if (this.chartInstance && !this.chartInstance.isDisposed()) {
       this.chartInstance.resize();
@@ -426,6 +505,10 @@ window.ChartEngine = {
   },
 
   destroy() {
+    if (this._zoomFixCleanup) {
+      this._zoomFixCleanup();
+      this._zoomFixCleanup = null;
+    }
     if (this._resizeHandler) {
       window.removeEventListener('resize', this._resizeHandler);
       this._resizeHandler = null;
