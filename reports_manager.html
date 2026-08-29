@@ -1785,71 +1785,98 @@
           <table style="width:100%; border-collapse:collapse; font-size:16px; text-align:left;">
             <thead>
               <tr style="background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.12); color:#cbd5e1;">
-                <th style="padding:12px 14px; width:18%; font-size:16px; font-weight:800;">標籤顏色</th>
-                <th style="padding:12px 14px; width:28%; font-size:16px; font-weight:800;">代表含意與籌碼結構</th>
-                <th style="padding:12px 14px; width:27%; font-size:16px; font-weight:800;">具體標籤範例</th>
+                <th style="padding:12px 14px; width:19%; font-size:16px; font-weight:800;">標籤顏色</th>
+                <th style="padding:12px 14px; width:28%; font-size:16px; font-weight:800;">代表含意與市場意圖</th>
+                <th style="padding:12px 14px; width:26%; font-size:16px; font-weight:800;">具體標籤範例</th>
                 <th style="padding:12px 14px; width:27%; font-size:16px; font-weight:800;">操盤應對心法</th>
               </tr>
             </thead>
             <tbody>
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
-                <td style="padding:14px;">
-                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.45);">🟢 綠色／翠綠系</span>
-                </td>
-                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
-                  【強烈作多／主力總攻】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">土洋同盟大買、投信總攻、高強度鎖碼或資減法買</span>
-                </td>
-                <td style="padding:14px;">
-                  <div style="display:flex; flex-direction:column; gap:5px;">
-                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">🔥 土洋同步大買 (雙主力合力作多)</span>
-                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">🚀 投信爆量總攻擊 (主力共識急拉)</span>
-                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">💎 資減法買 (散戶退場主力吃飽)</span>
-                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">🔒 法人高強度鎖碼 (買超佔比>30%)</span>
-                  </div>
-                </td>
-                <td style="padding:14px; color:#86efac; font-size:15.5px; line-height:1.6;">
-                  <strong>🚀 主力狂拉主升段！</strong><br>籌碼高度乾淨集中，籌碼鎖死極易軋空噴出，順勢續抱！
-                </td>
-              </tr>
-
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
-                <td style="padding:14px;">
-                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(234,179,8,0.2); color:#fde047; border:1px solid rgba(234,179,8,0.45);">🟡 黃色／亮金系</span>
-                </td>
-                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
-                  【護盤防禦／土洋對作】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">回測支撐投信爆量護盤、外資月度防守或內資吃貨</span>
-                </td>
-                <td style="padding:14px;">
-                  <div style="display:flex; flex-direction:column; gap:5px;">
-                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">🛡️ 投信巨額爆量護盤 (關鍵支撐鎖碼)</span>
-                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">🛡️ 外資月度重倉防守 (近20日淨買)</span>
-                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">⚔️ 土洋對作 (投信接刀/外資倒貨)</span>
-                  </div>
-                </td>
-                <td style="padding:14px; color:#fde047; font-size:15.5px; line-height:1.6;">
-                  <strong>💡 下檔鐵板護盤買點！</strong><br>主力有防守成本壓力，拉回支撐有強大托底買盤，風報比極佳。
-                </td>
-              </tr>
-
+              <!-- 1. 🔴 紅色／警示系：出貨、倒貨、資增法賣、高檔結帳 -->
               <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
                 <td style="padding:14px;">
                   <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);">🔴 紅色／警示系</span>
                 </td>
                 <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
-                  【出貨結帳／籌碼凌亂】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">法人集體倒貨、投信季底結帳、資增法賣</span>
+                  【出貨結帳／籌碼沉陷】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">法人集體倒貨、主力出逃散戶接刀、投信結帳</span>
                 </td>
                 <td style="padding:14px;">
                   <div style="display:flex; flex-direction:column; gap:5px;">
                     <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">🚨 法人集體倒貨 (籌碼沉陷)</span>
                     <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">⚠️ 資增法賣 (主力倒貨散戶接刀)</span>
                     <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">⚠️ 投信高檔結帳 (連日調節賣超)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">📉 法人籌碼退潮 (連日調節)</span>
                   </div>
                 </td>
                 <td style="padding:14px; color:#fca5a5; font-size:15.5px; line-height:1.6;">
-                  <strong>⚠️ 嚴禁接刀避開浮額！</strong><br>散戶融資大增但主力出逃，易引發多殺多斷頭，果斷退場觀望。
+                  <strong>🚨 嚴禁盲目接刀！</strong><br>散戶融資大增但主力出逃，易引發多殺多斷頭，持股者逢高減碼。
                 </td>
               </tr>
 
+              <!-- 2. 🟡 亮金／琥珀黃：轉折發動、主力護盤、投信翻多、土洋對作吃貨 -->
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(234,179,8,0.2); color:#fde047; border:1px solid rgba(234,179,8,0.45);">🟡 亮金／琥珀黃</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【轉折點火／護盤發動】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">投信由賣轉買、關鍵支撐爆量護盤、土洋對作內資吃貨</span>
+                </td>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">✨ 投信由賣轉買 (首日翻多起漲)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">🛡️ 投信巨額爆量護盤 (關鍵支撐鎖碼)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">⚔️ 土洋對作 (投信接刀吃貨/外資倒貨)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">⚡ 自營避險爆量買超 (權證大戶點火)</span>
+                  </div>
+                </td>
+                <td style="padding:14px; color:#fde047; font-size:15.5px; line-height:1.6;">
+                  <strong>💡 掌握關鍵起漲轉折！</strong><br>內資主力在下檔托底吃貨，風報比極佳，為絕佳試單買點。
+                </td>
+              </tr>
+
+              <!-- 3. 🟢 綠色／翠綠系：連續認養、土洋同盟大買、爆量總攻擊、高強度鎖碼 -->
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.45);">🟢 綠色／翠綠系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【主升飆升／鎖碼狂軋】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">雙主力同步作多、投信爆量總攻、籌碼鎖死</span>
+                </td>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">🔥 土洋同步大買 (雙主力合力作多)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">🚀 投信爆量總攻擊 (主力共識急拉)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">🚀 投信連續認養 (近5日買超)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">🔒 法人高強度鎖碼 (單日買超>30%)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">💎 資減法買 (散戶退場主力吃飽)</span>
+                  </div>
+                </td>
+                <td style="padding:14px; color:#86efac; font-size:15.5px; line-height:1.6;">
+                  <strong>🚀 主力狂拉主升段！</strong><br>籌碼高度乾淨集中，極易軋空連拉，順勢沿短期均線抱牢！
+                </td>
+              </tr>
+
+              <!-- 4. 🔵 天藍／青藍系：月度重倉防守、密集建倉、穩健買超 -->
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(56,189,248,0.2); color:#7dd3fc; border:1px solid rgba(56,189,248,0.45);">🔵 天藍／青藍系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【穩健防守／月度重倉】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">近月累計淨買佔優、主力底倉堅實</span>
+                </td>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(56,189,248,0.18); color:#7dd3fc;">🛡️ 外資月度重倉防守 (近20日淨買)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(56,189,248,0.18); color:#7dd3fc;">🎯 投信近月密集建倉 (下檔護盤強)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(56,189,248,0.18); color:#7dd3fc;">📈 近5日法人積極集資</span>
+                  </div>
+                </td>
+                <td style="padding:14px; color:#7dd3fc; font-size:15.5px; line-height:1.6;">
+                  <strong>🛡️ 均線支撐具托底力！</strong><br>長線外資或內資持有大量底倉，拉回月季線常有強支撐。
+                </td>
+              </tr>
+
+              <!-- 5. ⚪ 灰白／藍灰系：常態換手、多空互見 -->
               <tr>
                 <td style="padding:14px;">
                   <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(148,163,184,0.2); color:#cbd5e1; border:1px solid rgba(148,163,184,0.45);">⚪ 灰白／藍灰系</span>
@@ -2564,12 +2591,14 @@
       if (chipTags.length) {
         html += `<div class="analysis-tag-row"><span class="tag-label" style="background:rgba(249,115,22,0.15); color:#fdba74; border:1px solid rgba(249,115,22,0.35);">🏛️ 籌碼指標</span><div class="analysis-tag-pills">${chipTags.map(t => {
           let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
-          if (/大買|總攻擊|認養|由賣轉買|鎖碼|避險|資減法買|防守|建倉|買超|積極/.test(t)) {
-            style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38); font-weight:750;';
-          } else if (/倒貨|結帳|資增法賣|退潮|賣超|沉陷/.test(t)) {
+          if (/倒貨|結帳|資增法賣|退潮|賣超|沉陷|警示/.test(t)) {
             style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38); font-weight:750;';
-          } else if (/護盤|對作|接刀|吃貨/.test(t)) {
+          } else if (/由賣轉買|護盤|對作|接刀|吃貨|避險|點火|起漲/.test(t)) {
             style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38); font-weight:750;';
+          } else if (/大買|總攻擊|認養|鎖碼|資減法買|主升|狂拉/.test(t)) {
+            style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38); font-weight:750;';
+          } else if (/防守|建倉|重倉|集資|買超|積極/.test(t)) {
+            style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3); font-weight:750;';
           }
           return `<span class="tag-pill" style="${style}">${escapeHtml(t)}</span>`;
         }).join('')}</div></div>`;
@@ -4103,9 +4132,10 @@
       if (parts.length) {
         return parts.map(label => {
           let tone = 'neutral';
-          if (/大買|總攻擊|認養|由賣轉買|鎖碼|避險|資減法買|防守|建倉|買超|積極/.test(label)) tone = 'negative'; // negative matches green in badgeStyle
-          else if (/倒貨|結帳|資增法賣|退潮|賣超|沉陷/.test(label)) tone = 'positive'; // positive matches red
-          else if (/護盤|對作|接刀|吃貨/.test(label)) tone = 'mixed'; // mixed matches yellow
+          if (/倒貨|結帳|資增法賣|退潮|賣超|沉陷|警示/.test(label)) tone = 'positive'; // 🔴 紅色系 (警示/出貨/死叉)
+          else if (/由賣轉買|護盤|對作|接刀|吃貨|避險|點火|起漲/.test(label)) tone = 'mixed'; // 🟡 亮金黃系 (轉強/起漲/發動)
+          else if (/大買|總攻擊|認養|鎖碼|資減法買|主升|狂拉/.test(label)) tone = 'negative'; // 🟢 翠綠系 (主升/鈍化/鎖碼)
+          else if (/防守|建倉|重倉|集資|買超|積極/.test(label)) tone = 'cyan'; // 🔵 天藍系 (多方推進/健康溫和)
           return `<span class="chip-state-tag ${tone}">${escapeHtml(label)}</span>`;
         }).join('');
       }

@@ -520,12 +520,14 @@
           const parts = chipTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
           statChipTags.innerHTML = parts.map(t => {
             let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
-            if (/大買|總攻擊|認養|由賣轉買|鎖碼|避險|資減法買|防守|建倉|買超|積極/.test(t)) {
-              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
-            } else if (/倒貨|結帳|資增法賣|退潮|賣超|沉陷/.test(t)) {
+            if (/倒貨|結帳|資增法賣|退潮|賣超|沉陷|警示/.test(t)) {
               style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
-            } else if (/護盤|對作|接刀|吃貨/.test(t)) {
+            } else if (/由賣轉買|護盤|對作|接刀|吃貨|避險|點火|起漲/.test(t)) {
               style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
+            } else if (/大買|總攻擊|認養|鎖碼|資減法買|主升|狂拉/.test(t)) {
+              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
+            } else if (/防守|建倉|重倉|集資|買超|積極/.test(t)) {
+              style = 'background:rgba(56,189,248,0.18); color:#7dd3fc; border:1px solid rgba(56,189,248,0.38);';
             }
             return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
           }).join('');
