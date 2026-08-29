@@ -75,12 +75,15 @@ def parse_html_report(file_path):
                 lo = float(cells[3].replace(',', ''))
                 cl = float(cells[4].replace(',', ''))
                 v_raw = cells[5].replace(',', '').strip()
-                if v_raw.endswith('M') or v_raw.endswith('m'):
+                if '張' in v_raw:
+                    vol = float(re.sub(r'[^\d.]', '', v_raw)) * 1000
+                elif v_raw.endswith('M') or v_raw.endswith('m'):
                     vol = float(v_raw[:-1]) * 1000000
                 elif v_raw.endswith('K') or v_raw.endswith('k'):
                     vol = float(v_raw[:-1]) * 1000
                 else:
-                    vol = float(re.sub(r'[^\d.]', '', v_raw)) if v_raw else 0.0
+                    num_v = float(re.sub(r'[^\d.]', '', v_raw)) if v_raw else 0.0
+                    vol = num_v * 1000 if num_v < 100000 else num_v
                 kline_data.append({
                     'date': date_str, 'open': op, 'high': hi, 'low': lo, 'close': cl, 'volume': vol
                 })
