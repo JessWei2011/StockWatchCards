@@ -3960,54 +3960,54 @@
     const actions = ['入場', '出場', '加碼', '強勢入場/續抱', '觀望'];
 
     return `
-      <!-- 【MARK: 卡片操盤決策 CHECKLIST 表格】 -->
-      <div class="stock-decision-matrix" style="margin-top:8px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; overflow:hidden; background:rgba(0,0,0,0.32); font-size:12.5px;">
+      <!-- 【MARK: 卡片操盤決策 CHECKLIST 表格 (寬版置中防換行優化)】 -->
+      <div class="stock-decision-matrix" style="max-width:920px; margin:4px auto; width:100%; border:1px solid rgba(255,255,255,0.12); border-radius:8px; overflow:hidden; background:rgba(0,0,0,0.36); font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.35);">
         
         <!-- 頂部操盤決策勾選列 -->
-        <div style="display:grid; grid-template-columns: 80px repeat(5, 1fr); background:#1a2233; border-bottom:1px solid rgba(255,255,255,0.1); text-align:center; font-weight:800;">
-          <div style="padding:7px 4px; background:rgba(0,0,0,0.2); color:#94a3b8; border-right:1px solid rgba(255,255,255,0.08);">操盤決策</div>
-          ${actions.map(act => `<div style="padding:7px 2px; color:${act === data.actionState ? '#fde047' : '#94a3b8'}; border-right:1px solid rgba(255,255,255,0.06);">${act}</div>`).join('')}
+        <div style="display:grid; grid-template-columns: 88px repeat(5, 1fr); background:#1a2233; border-bottom:1px solid rgba(255,255,255,0.1); text-align:center; font-weight:800;">
+          <div style="padding:6px 4px; background:rgba(0,0,0,0.25); color:#94a3b8; border-right:1px solid rgba(255,255,255,0.08); font-size:12.5px;">操盤決策</div>
+          ${actions.map(act => `<div style="padding:6px 4px; color:${act === data.actionState ? '#fde047' : '#94a3b8'}; border-right:1px solid rgba(255,255,255,0.06); font-size:12.5px; white-space:nowrap;">${act}</div>`).join('')}
         </div>
-        <div style="display:grid; grid-template-columns: 80px repeat(5, 1fr); background:rgba(0,0,0,0.2); border-bottom:1px solid rgba(255,255,255,0.08); text-align:center; font-size:15px; font-weight:900;">
-          <div style="padding:6px 4px; font-size:12px; color:#cbd5e1; border-right:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center;">執行動作</div>
-          ${actions.map(act => `<div style="padding:6px 2px; border-right:1px solid rgba(255,255,255,0.06); color:${act === data.actionState ? '#4ade80' : 'transparent'};">${act === data.actionState ? '✔️' : '—'}</div>`).join('')}
+        <div style="display:grid; grid-template-columns: 88px repeat(5, 1fr); background:rgba(0,0,0,0.22); border-bottom:1px solid rgba(255,255,255,0.08); text-align:center; font-size:15px; font-weight:900;">
+          <div style="padding:5px 4px; font-size:12px; color:#cbd5e1; border-right:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center;">執行動作</div>
+          ${actions.map(act => `<div style="padding:5px 4px; border-right:1px solid rgba(255,255,255,0.06); color:${act === data.actionState ? '#4ade80' : 'transparent'};">${act === data.actionState ? '✔️' : '—'}</div>`).join('')}
         </div>
 
-        <!-- 指標檢核表格本體 -->
-        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:12px;">
+        <!-- 指標檢核表格本體 (加大寬度、緊湊邊距、防止中文字不當換行) -->
+        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:12.5px; table-layout:auto;">
           <tbody>
             <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-              <td style="padding:6px 10px; width:75px; font-weight:800; color:#fbbf24; background:rgba(255,255,255,0.02);">💡 核心評語</td>
-              <td style="padding:6px 10px; color:#f8fafc; font-weight:600;" colspan="2">${escapeHtml(data.summaryText)}</td>
+              <td style="padding:5px 10px; width:88px; font-weight:800; color:#fbbf24; background:rgba(255,255,255,0.02); white-space:nowrap;">💡 核心評語</td>
+              <td style="padding:5px 12px; color:#f8fafc; font-weight:600; line-height:1.5;" colspan="2">${escapeHtml(data.summaryText)}</td>
             </tr>
             <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-              <td style="padding:6px 10px; font-weight:800; color:#93c5fd; background:rgba(255,255,255,0.02);">📈 均線趨勢</td>
-              <td style="padding:6px 10px; color:#cbd5e1;">${escapeHtml(data.maText)}</td>
-              <td style="padding:6px 8px; width:95px; text-align:right;"><span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:750; ${badgeStyle(data.maTone)}">${toneName(data.maTone)}</span></td>
+              <td style="padding:5px 10px; font-weight:800; color:#93c5fd; background:rgba(255,255,255,0.02); white-space:nowrap;">📈 均線趨勢</td>
+              <td style="padding:5px 12px; color:#cbd5e1; line-height:1.5;">${escapeHtml(data.maText)}</td>
+              <td style="padding:5px 10px; width:105px; text-align:right; white-space:nowrap;"><span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${badgeStyle(data.maTone)}">${toneName(data.maTone)}</span></td>
             </tr>
             <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-              <td style="padding:6px 10px; font-weight:800; color:#c084fc; background:rgba(255,255,255,0.02);">🌊 MACD</td>
-              <td style="padding:6px 10px; color:#cbd5e1;">${escapeHtml(data.macdText)}</td>
-              <td style="padding:6px 8px; width:95px; text-align:right;"><span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:750; ${badgeStyle(data.macdTone)}">${toneName(data.macdTone)}</span></td>
+              <td style="padding:5px 10px; font-weight:800; color:#c084fc; background:rgba(255,255,255,0.02); white-space:nowrap;">🌊 MACD</td>
+              <td style="padding:5px 12px; color:#cbd5e1; line-height:1.5;">${escapeHtml(data.macdText)}</td>
+              <td style="padding:5px 10px; width:105px; text-align:right; white-space:nowrap;"><span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${badgeStyle(data.macdTone)}">${toneName(data.macdTone)}</span></td>
             </tr>
             <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-              <td style="padding:6px 10px; font-weight:800; color:#fde047; background:rgba(255,255,255,0.02);">📊 VOL 量能</td>
-              <td style="padding:6px 10px; color:#cbd5e1;">${escapeHtml(data.volText)}</td>
-              <td style="padding:6px 8px; width:95px; text-align:right;"><span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:750; ${badgeStyle(data.volTone)}">${toneName(data.volTone)}</span></td>
+              <td style="padding:5px 10px; font-weight:800; color:#fde047; background:rgba(255,255,255,0.02); white-space:nowrap;">📊 VOL 量能</td>
+              <td style="padding:5px 12px; color:#cbd5e1; line-height:1.5;">${escapeHtml(data.volText)}</td>
+              <td style="padding:5px 10px; width:105px; text-align:right; white-space:nowrap;"><span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${badgeStyle(data.volTone)}">${toneName(data.volTone)}</span></td>
             </tr>
             <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-              <td style="padding:6px 10px; font-weight:800; color:#38bdf8; background:rgba(255,255,255,0.02);">📊 RSI 指標</td>
-              <td style="padding:6px 10px; color:#cbd5e1;">${escapeHtml(data.rsiText)}</td>
-              <td style="padding:6px 8px; width:95px; text-align:right;"><span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:750; ${badgeStyle(data.rsiTone)}">${toneName(data.rsiTone)}</span></td>
+              <td style="padding:5px 10px; font-weight:800; color:#38bdf8; background:rgba(255,255,255,0.02); white-space:nowrap;">📊 RSI 指標</td>
+              <td style="padding:5px 12px; color:#cbd5e1; line-height:1.5;">${escapeHtml(data.rsiText)}</td>
+              <td style="padding:5px 10px; width:105px; text-align:right; white-space:nowrap;"><span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${badgeStyle(data.rsiTone)}">${toneName(data.rsiTone)}</span></td>
             </tr>
             <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-              <td style="padding:6px 10px; font-weight:800; color:#fbbf24; background:rgba(255,255,255,0.02);">⚡ KD 指標</td>
-              <td style="padding:6px 10px; color:#cbd5e1;">${escapeHtml(data.kdText)}</td>
-              <td style="padding:6px 8px; width:95px; text-align:right;"><span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:750; ${badgeStyle(data.kdTone)}">${toneName(data.kdTone)}</span></td>
+              <td style="padding:5px 10px; font-weight:800; color:#fbbf24; background:rgba(255,255,255,0.02); white-space:nowrap;">⚡ KD 指標</td>
+              <td style="padding:5px 12px; color:#cbd5e1; line-height:1.5;">${escapeHtml(data.kdText)}</td>
+              <td style="padding:5px 10px; width:105px; text-align:right; white-space:nowrap;"><span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${badgeStyle(data.kdTone)}">${toneName(data.kdTone)}</span></td>
             </tr>
             <tr>
-              <td style="padding:6px 10px; font-weight:800; color:#4ade80; background:rgba(255,255,255,0.02);">🎯 操盤執行</td>
-              <td style="padding:6px 10px; color:#86efac; font-weight:700;" colspan="2">${escapeHtml(data.actionPlan)}</td>
+              <td style="padding:5px 10px; font-weight:800; color:#4ade80; background:rgba(255,255,255,0.02); white-space:nowrap;">🎯 操盤執行</td>
+              <td style="padding:5px 12px; color:#86efac; font-weight:700; line-height:1.5;" colspan="2">${escapeHtml(data.actionPlan)}</td>
             </tr>
           </tbody>
         </table>
