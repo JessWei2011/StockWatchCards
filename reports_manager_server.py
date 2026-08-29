@@ -42,6 +42,13 @@ REPORTS_DIR.mkdir(exist_ok=True)
 TRACKED_FILENAME_RE = re.compile(r'^([0-9A-Za-z]{2,6})_(.+?)\((TW|TWO)\)')
 FORBIDDEN_NAME_CHARS = set('\\/:*?"<>|')
 STOCK_CARDS_RE = re.compile(r"const\s+STOCK_CARDS\s*=\s*(\[.*\])\s*;?\s*$", re.S)
+STOCK_NAME_DICT_PATH = ROOT_DIR / "stock_name_dict.json"
+STOCK_NAME_DICT = {}
+if STOCK_NAME_DICT_PATH.exists():
+    try:
+        STOCK_NAME_DICT = json.loads(STOCK_NAME_DICT_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        pass
 
 
 def read_ai_rankings():
@@ -358,10 +365,12 @@ def list_folder(path):
             seen_bases.add(base)
             chart_name = base + "_chart.png"
             m = TRACKED_FILENAME_RE.match(entry)
+            code = m.group(1) if m else None
+            name = STOCK_NAME_DICT.get(code, m.group(2)) if (m and code) else (m.group(2) if m else None)
             reports.append({
                 "base": base,
-                "code": m.group(1) if m else None,
-                "name": m.group(2) if m else None,
+                "code": code,
+                "name": name,
                 "html": entry,
                 "chart": chart_name if (path / chart_name).exists() else None,
                 "mtime": full.stat().st_mtime,
@@ -385,7 +394,9 @@ def list_reports_recursive(path):
             seen_bases.add(base)
             m = TRACKED_FILENAME_RE.match(fn)
             if m:
-                reports.append({"base": base, "code": m.group(1), "name": m.group(2)})
+                code = m.group(1)
+                name = STOCK_NAME_DICT.get(code, m.group(2))
+                reports.append({"base": base, "code": code, "name": name})
     return reports
 
 
@@ -412,7 +423,8 @@ def build_reports_index():
             if not match:
                 continue
 
-            code, name, market = match.groups()
+            code, raw_name, market = match.groups()
+            name = STOCK_NAME_DICT.get(code, raw_name)
             html_path = directory / filename
             relative_path = html_path.relative_to(REPORTS_DIR).as_posix()
             chart_path = html_path.with_name(html_path.stem + "_chart.png")

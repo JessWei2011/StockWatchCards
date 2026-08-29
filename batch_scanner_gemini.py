@@ -43,6 +43,15 @@ def _pct_change(now, before):
     return (now / before - 1) * 100 if before else 0.0
 
 
+STOCK_NAME_DICT_PATH = ROOT / "stock_name_dict.json"
+STOCK_NAME_DICT = {}
+if STOCK_NAME_DICT_PATH.exists():
+    try:
+        STOCK_NAME_DICT = json.loads(STOCK_NAME_DICT_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+
+
 def parse_html_report(file_path):
     """解析單一 HTML 報告中的指標、籌碼與歷史 K 線數據"""
     text = file_path.read_text(encoding="utf-8", errors="ignore")
@@ -55,6 +64,8 @@ def parse_html_report(file_path):
         return None
     
     code, name, mkt = m.groups()
+    if code in STOCK_NAME_DICT:
+        name = STOCK_NAME_DICT[code]
     symbol = f"{code}.{mkt}"
     category = file_path.parent.name
     
@@ -1426,7 +1437,7 @@ def main():
         print(f"❌ 錯誤：找不到 {REPORTS_DIR} 目錄！")
         return
         
-    html_files = list(REPORTS_DIR.glob("**/*.html"))
+    html_files = sorted(REPORTS_DIR.glob("**/*.html"), key=lambda p: p.stat().st_mtime, reverse=True)
     print(f"📂 於 reports/ 目錄下搜尋到 {len(html_files)} 個 HTML 檔案")
     
     infos_by_code = {}
