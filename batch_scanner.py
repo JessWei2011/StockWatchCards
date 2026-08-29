@@ -81,8 +81,16 @@ def parse_html_report(file_path):
                 hi = float(cells[2].replace(',', ''))
                 lo = float(cells[3].replace(',', ''))
                 cl = float(cells[4].replace(',', ''))
-                vol_str = cells[5].replace(',', '').replace('M', '000000').replace('K', '000')
-                vol = float(re.sub(r'[^\d.]', '', vol_str)) if vol_str else 0.0
+                v_raw = cells[5].replace(',', '').strip()
+                if '張' in v_raw:
+                    vol = float(re.sub(r'[^\d.]', '', v_raw)) * 1000
+                elif v_raw.endswith('M') or v_raw.endswith('m'):
+                    vol = float(v_raw[:-1]) * 1000000
+                elif v_raw.endswith('K') or v_raw.endswith('k'):
+                    vol = float(v_raw[:-1]) * 1000
+                else:
+                    num_v = float(re.sub(r'[^\d.]', '', v_raw)) if v_raw else 0.0
+                    vol = num_v * 1000 if num_v < 100000 else num_v
                 kline_data.append({
                     'date': date_str, 'open': op, 'high': hi, 'low': lo, 'close': cl, 'volume': vol
                 })
@@ -866,15 +874,578 @@ def rank_observed_stock(stock_info, as_of=None):
             'score': round(score, 1), 'reasons': reasons, 'risks': risks}
 
 
+def detect_kline_tags(df: pd.DataFrame) -> list:
+    """
+    自動解析 K線與均線指標標籤 (均線開花多頭發散、突破整理箱頂、回測月線有守、糾纏向上噴出、假突破長上影線、破線轉空)
+    """
+    if len(df) < 20:
+        return ["⚪ K線資料累積中"]
+
+    close_s = pd.to_numeric(df['close'], errors='coerce')
+    high_s = pd.to_numeric(df['high'], errors='coerce')
+    low_s = pd.to_numeric(df['low'], errors='coerce')
+    open_s = pd.to_numeric(df['open'], errors='coerce')
+
+    ma5 = close_s.rolling(5).mean()
+    ma10 = close_s.rolling(10).mean()
+    ma20 = close_s.rolling(20).mean()
+    ma60 = close_s.rolling(60).mean() if len(df) >= 60 else None
+
+    # 當前與前一日收盤價及各天期均線
+    cur_c = float(close_s.iloc[-1])
+    prev_c = float(close_s.iloc[-2])
+    cur_o = float(open_s.iloc[-1])
+    cur_h = float(high_s.iloc[-1])
+    cur_l = float(low_s.iloc[-1])
+
+    cur_ma5 = float(ma5.iloc[-1])
+    prev_ma5 = float(ma5.iloc[-2])
+    prev2_ma5 = float(ma5.iloc[-3]) if len(ma5) >= 3 else prev_ma5
+
+    cur_ma10 = float(ma10.iloc[-1])
+    prev_ma10 = float(ma10.iloc[-2])
+    prev2_ma10 = float(ma10.iloc[-3]) if len(ma10) >= 3 else prev_ma10
+
+    cur_ma20 = float(ma20.iloc[-1])
+    prev_ma20 = float(ma20.iloc[-2])
+
+    # 計算斜率
+    s5_cur = ((cur_ma5 - prev_ma5) / prev_ma5) * 100.0 if prev_ma5 > 0 else 0.0
+    s5_prev = ((prev_ma5 - prev2_ma5) / prev2_ma5) * 100.0 if prev2_ma5 > 0 else 0.0
+
+    s10_cur = ((cur_ma10 - prev_ma10) / prev_ma10) * 100.0 if prev_ma10 > 0 else 0.0
+    s10_prev = ((prev_ma10 - prev2_ma10) / prev2_ma10) * 100.0 if prev2_ma10 > 0 else 0.0
+
+    s20_cur = ((cur_ma20 - prev_ma20) / prev_ma20) * 100.0 if prev_ma20 > 0 else 0.0
+
+    tags = []
+
+    # 1. 均線開花多頭發散 (5MA > 10MA > 20MA 且皆向上加速發散)
+    if cur_ma5 > cur_ma10 > cur_ma20 and s5_cur > 1.0 and s10_cur > 0.4 and s20_cur > 0.2:
+        if ma60 is None or cur_ma20 > float(ma60.iloc[-1]):
+            tags.append("🚀 均線開花多頭發散 (主升段連鎖加速)")
+
+    # 2. 突破波段整理箱頂 (實質長紅突破近20日高點)
+    if len(df) >= 21:
+        past20_box_high = float(high_s.iloc[-21:-1].max())
+        if cur_c > past20_box_high and cur_c >= cur_o * 1.02:
+            tags.append("🔥 突破波段整理箱頂 (實質表態)")
+
+    # 3. 回測上升月線有守 (回檔第一買點)
+    if len(df) >= 20 and s20_cur > 0.25:
+        # 當日最低點回測 20MA 附近 (0.985 ~ 1.015)，收盤拉升站穩 20MA 之上
+        if (cur_l <= cur_ma20 * 1.015) and (cur_c >= cur_ma20 * 0.995) and (cur_c >= cur_l + (cur_h - cur_l) * 0.4):
+            tags.append("💡 回測上升月線有守 (回檔第一買點)")
+
+    # 4. 假突破長上影線 (主力誘多出貨)
+    if len(df) >= 21:
+        past20_h = float(high_s.iloc[-21:-1].max())
+        upper_shadow = cur_h - max(cur_c, cur_o)
+        body = abs(cur_c - cur_o)
+        if cur_h > past20_h and cur_c < past20_h and upper_shadow >= body * 1.8:
+            tags.append("🚨 假突破收長上影線 (主力誘多出貨)")
+
+    # 5. 破線轉空 (一舉跌破 5MA 與 10MA)
+    if prev_c >= prev_ma5 and cur_c < cur_ma5 and cur_c < cur_ma10 and s5_cur < 0:
+        tags.append("⚠️ 破線轉空 (失守雙均線)")
+
+    # 6. 5MA 與 10MA 金叉 / 死叉 (最精確之短線多空轉折)
+    if prev_ma5 <= prev_ma10 and cur_ma5 > cur_ma10:
+        tags.append("✨ 5MA金叉10MA (短線轉強)")
+    elif prev_ma5 >= prev_ma10 and cur_ma5 < cur_ma10:
+        tags.append("⚡ 5MA死叉10MA (短線轉弱)")
+
+    # 7. 均線斜率轉折與加速度
+    if s5_prev <= 0 and s5_cur > 0.2:
+        tags.append("💡 5MA轉仰角 (翻揚轉強)")
+    elif s5_prev >= 0 and s5_cur < -0.2:
+        tags.append("⚠️ 5MA轉俯角 (下彎轉弱)")
+    elif s5_cur > 1.5 and s5_cur > s5_prev + 0.3:
+        if not any("均線開花" in t for t in tags):
+            tags.append("🚀 5MA加大仰角 (加速噴出)")
+    elif s5_cur < -1.5 and s5_cur < s5_prev - 0.3:
+        tags.append("❄️ 5MA加大俯角 (加速探底)")
+
+    # 8. 均線糾纏 (壓縮蓄勢)
+    ma_min = min(cur_ma5, cur_ma10, cur_ma20)
+    ma_max = max(cur_ma5, cur_ma10, cur_ma20)
+    spread_pct = ((ma_max - ma_min) / cur_c) * 100.0 if cur_c > 0 else 99.0
+    if spread_pct <= 1.8 and abs(s5_cur) < 0.6 and abs(s10_cur) < 0.6:
+        tags.append("💎 短中期均線糾纏 (壓縮蓄勢)")
+
+    # 常態
+    if not tags:
+        if cur_ma5 > cur_ma10 > cur_ma20:
+            tags.append("🚀 均線多頭排列 (強勢多方)")
+        elif cur_ma5 < cur_ma10 < cur_ma20:
+            tags.append("📉 均線空頭排列 (空方沉陷)")
+        elif cur_c > cur_ma20 and s20_cur > 0:
+            tags.append("📈 站穩上升月線 (穩健多方)")
+        else:
+            tags.append("⚪ 均線多空中性整理")
+
+    return tags
+
+
+def calculate_rsi_series(series: pd.Series, period: int = 14) -> pd.Series:
+    """計算標準 Wilder's RSI 數列 (與 stock_report_generator 一致)"""
+    delta = series.diff()
+    gain = delta.clip(lower=0).ewm(com=period-1, min_periods=period).mean()
+    loss = (-delta.clip(upper=0)).ewm(com=period-1, min_periods=period).mean()
+    rsi = 100.0 - (100.0 / (1.0 + (gain / loss.replace(0, np.nan))))
+    return rsi.fillna(50.0).round(1)
+
+
+def detect_rsi_tags(close_series: pd.Series) -> list:
+    """自動解析 RSI 狀態標籤 (位階、金叉/死叉、鈍化、頂底背離)"""
+    if len(close_series) < 14:
+        return []
+    
+    rsi6 = calculate_rsi_series(close_series, 6)
+    rsi14 = calculate_rsi_series(close_series, 14)
+    
+    val14 = rsi14.iloc[-1]
+    val6 = rsi6.iloc[-1]
+    cur_rsi14 = float(val14.item() if hasattr(val14, 'item') else val14)
+    cur_rsi6 = float(val6.item() if hasattr(val6, 'item') else val6)
+    
+    tags = []
+    
+    # 1. 鈍化型態 (近 3 日 RSI 6 持續極端)
+    if len(rsi6) >= 3:
+        if (rsi6.iloc[-3:] >= 80).all():
+            tags.append("🚀 RSI(6) 連續高檔鈍化 (強勢主升波)")
+        elif (rsi6.iloc[-3:] <= 20).all():
+            tags.append("❄️ RSI(6) 連續低檔鈍化 (空方沉陷)")
+
+    # 2. 雙線交叉 (RSI 6 與 RSI 14)
+    if len(rsi6) >= 2:
+        prev_rsi6 = float(rsi6.iloc[-2])
+        prev_rsi14 = float(rsi14.iloc[-2])
+        if prev_rsi6 <= prev_rsi14 and cur_rsi6 > cur_rsi14:
+            if cur_rsi14 <= 30:
+                tags.append("💡 RSI(14) 超跌區黃金交叉 (恐慌殺盤竭盡)")
+            else:
+                tags.append("✨ RSI 短線黃金交叉")
+        elif prev_rsi6 >= prev_rsi14 and cur_rsi6 < cur_rsi14:
+            if cur_rsi14 >= 75:
+                tags.append("⚡ RSI 高檔死叉 (獲利回吐)")
+            else:
+                tags.append("⚡ RSI 短線死亡交叉")
+
+    # 3. 嚴謹頂/底背離型態 (尋找同波段明確雙峰與轉折)
+    if len(close_series) >= 25:
+        sub_c = close_series.iloc[-25:]
+        sub_r = rsi14.iloc[-25:]
+        cur_c = sub_c.iloc[-1]
+        
+        # 頂背離：當前價格創 25 日新高，但 RSI 前峰更高，且當前 RSI 開始下彎鈍化衰退
+        if cur_c >= sub_c.max() * 0.995:
+            peak_r_idx = sub_r.iloc[:-5].argmax()
+            prev_peak_r = sub_r.iloc[peak_r_idx]
+            prev_peak_c = sub_c.iloc[peak_r_idx]
+            if cur_c > prev_peak_c * 1.02 and prev_peak_r >= 75 and cur_rsi14 <= (prev_peak_r - 6.0):
+                if len(rsi14) >= 2 and rsi14.iloc[-1] < rsi14.iloc[-2]:
+                    tags.append("⚠️ RSI 頂背離警戒 (動能無力創高)")
+                    
+        # 底背離：當前價格創 25 日新低，但 RSI 前低更低，且當前 RSI 已打底上勾
+        elif cur_c <= sub_c.min() * 1.005:
+            trough_r_idx = sub_r.iloc[:-5].argmin()
+            prev_trough_r = sub_r.iloc[trough_r_idx]
+            prev_trough_c = sub_c.iloc[trough_r_idx]
+            if cur_c < prev_trough_c * 0.98 and prev_trough_r <= 30 and cur_rsi14 >= (prev_trough_r + 6.0):
+                if len(rsi14) >= 2 and rsi14.iloc[-1] > rsi14.iloc[-2]:
+                    tags.append("💎 RSI 底背離落底 (雙底翻多)")
+
+    # 4. 位階標籤
+    if not tags:
+        if cur_rsi14 >= 80:
+            tags.append(f"RSI(14): {cur_rsi14:.1f} 極度過熱")
+        elif cur_rsi14 >= 70:
+            tags.append(f"RSI(14): {cur_rsi14:.1f} 進入過熱區")
+        elif cur_rsi14 <= 20:
+            tags.append(f"RSI(14): {cur_rsi14:.1f} 極度超跌")
+        elif cur_rsi14 <= 30:
+            tags.append(f"RSI(14): {cur_rsi14:.1f} 進入超跌區")
+        elif cur_rsi14 >= 55:
+            tags.append(f"RSI(14): {cur_rsi14:.1f} 多方推進")
+        elif cur_rsi14 <= 45:
+            tags.append(f"RSI(14): {cur_rsi14:.1f} 弱勢整理")
+        else:
+            tags.append(f"RSI(14): {cur_rsi14:.1f} 多空平衡")
+            
+    return tags
+
+
+def detect_volume_tags(df: pd.DataFrame) -> list:
+    if len(df) < 5:
+        return []
+    tags = []
+    vol_s = df['volume']
+    close_s = df['close']
+    vma5 = vol_s.rolling(5).mean()
+    vma20 = vol_s.rolling(20).mean()
+    
+    cur_vol = float(vol_s.iloc[-1])
+    cur_v5 = float(vma5.iloc[-1]) if pd.notna(vma5.iloc[-1]) else None
+    cur_v20 = float(vma20.iloc[-1]) if pd.notna(vma20.iloc[-1]) else None
+    prev_v5 = float(vma5.iloc[-2]) if len(vma5) >= 2 and pd.notna(vma5.iloc[-2]) else None
+    prev_v20 = float(vma20.iloc[-2]) if len(vma20) >= 2 and pd.notna(vma20.iloc[-2]) else None
+    is_up = close_s.iloc[-1] >= close_s.iloc[-2] if len(close_s) >= 2 else True
+
+    # 1. 滾量攻擊 (主升段量價齊揚)
+    if len(df) >= 3 and cur_v5 is not None:
+        if (close_s.iloc[-1] > close_s.iloc[-2] > close_s.iloc[-3]) and (vol_s.iloc[-1] > vol_s.iloc[-2] > vol_s.iloc[-3]) and cur_vol >= cur_v5:
+            tags.append("🚀 滾量換手攻擊 (量價齊揚主升段)")
+
+    # 2. 帶量長紅突破
+    if len(df) >= 20 and cur_v20 is not None:
+        past20_high = df['high'].iloc[-21:-1].max()
+        if close_s.iloc[-1] >= past20_high and cur_vol >= cur_v20 * 1.8 and is_up:
+            tags.append("🔥 帶量長紅突破 (實質攻擊量)")
+
+    # 3. 價跌量急縮窒息量
+    if cur_v20 is not None and cur_vol <= cur_v20 * 0.45:
+        tags.append("💎 價跌量急縮窒息量 (主力洗盤完畢)")
+
+    # 4. 高檔爆大量倒貨
+    if len(df) >= 30 and cur_v20 is not None:
+        past30_max_vol = vol_s.iloc[-31:-1].max()
+        candle_range = df['high'].iloc[-1] - df['low'].iloc[-1] or 1.0
+        body_ratio = abs(close_s.iloc[-1] - df['open'].iloc[-1]) / candle_range
+        if cur_vol >= past30_max_vol and cur_vol >= cur_v20 * 2.0 and (body_ratio < 0.35 or not is_up):
+            tags.append("🚨 高檔爆歷史天量收黑 (主力出貨倒貨)")
+
+    # 5. 量價頂背離 (股價創高但量能萎縮低於均量 0.65x 且收黑)
+    if len(df) >= 20 and cur_v20 is not None:
+        past20_high = df['high'].iloc[-21:-1].max()
+        if close_s.iloc[-1] >= past20_high:
+            if cur_vol < cur_v20 * 0.65 and not is_up:
+                tags.append("⚠️ 量價頂背離 (無量虛漲拉高出貨)")
+
+    # 6. 量均線黃金/死亡交叉
+    if cur_v5 is not None and cur_v20 is not None and prev_v5 is not None and prev_v20 is not None:
+        if prev_v5 <= prev_v20 and cur_v5 > cur_v20:
+            tags.append("✨ 量能黃金交叉 (攻擊量增溫)")
+        elif prev_v5 >= prev_v20 and cur_v5 < cur_v20:
+            tags.append("⚡ 量能死亡交叉 (退潮警戒)")
+
+    # 常態
+    if not tags:
+        if cur_v20 is not None and cur_vol >= cur_v20 * 1.2:
+            tags.append("📈 買盤溫和增量")
+        elif cur_v20 is not None and cur_vol < cur_v20 * 0.8:
+            tags.append("📉 縮量沉澱整理")
+        else:
+            tags.append("⚪ 常態量能換手")
+
+    return tags
+
+
+def detect_macd_tags(close_s: pd.Series) -> list:
+    """精準計算與判讀 MACD 訊號 (空中加油二次金叉、零軸上/下金叉、柱狀體翻轉、頂底背離)"""
+    if len(close_s) < 26:
+        return ["⚪ MACD 資料累積中"]
+    tags = []
+    e12 = close_s.ewm(span=12, adjust=False).mean()
+    e26 = close_s.ewm(span=26, adjust=False).mean()
+    dif = e12 - e26
+    signal = dif.ewm(span=9, adjust=False).mean()
+    hist = dif - signal
+    
+    cur_dif = float(dif.iloc[-1])
+    cur_sig = float(signal.iloc[-1])
+    cur_hist = float(hist.iloc[-1])
+    prev_dif = float(dif.iloc[-2]) if len(dif) >= 2 else cur_dif
+    prev_sig = float(signal.iloc[-2]) if len(signal) >= 2 else cur_sig
+    prev_hist = float(hist.iloc[-2]) if len(hist) >= 2 else cur_hist
+
+    # 1. 零軸上二次金叉 (空中加油主升段)
+    if prev_dif <= prev_sig and cur_dif > cur_sig:
+        if cur_dif > 0:
+            sub_dif = dif.iloc[-20:-2]
+            sub_sig = signal.iloc[-20:-2]
+            prior_cross_above_zero = any((sub_dif.iloc[i-1] <= sub_sig.iloc[i-1] and sub_dif.iloc[i] > sub_sig.iloc[i] and sub_dif.iloc[i] > 0) for i in range(1, len(sub_dif)))
+            if prior_cross_above_zero:
+                tags.append("🚀 MACD 零軸上二次金叉 (空中加油主升段)")
+            else:
+                tags.append("✨ MACD 零軸上金叉 (強勢攻擊)")
+        else:
+            tags.append("✨ MACD 零軸下金叉 (低檔反彈轉折)")
+    elif prev_dif >= prev_sig and cur_dif < cur_sig:
+        if cur_dif > 0:
+            tags.append("⚡ MACD 零軸上死亡交叉 (波段獲利了結)")
+        else:
+            tags.append("⚡ MACD 死亡交叉 (動能轉弱)")
+
+    # 2. 柱狀體翻紅/翻綠
+    if prev_hist <= 0 and cur_hist > 0:
+        if not any("金叉" in t for t in tags):
+            tags.append("🌊 MACD 柱狀體翻紅 (動能增強)")
+    elif prev_hist >= 0 and cur_hist < 0:
+        if not any("死叉" in t for t in tags):
+            tags.append("❄️ MACD 柱狀體翻綠 (動能減弱)")
+
+    # 3. 嚴謹頂背離判定 (波峰識別 + 紅柱縮短確認)
+    if len(close_s) >= 30:
+        sub_c = close_s.iloc[-25:]
+        sub_dif = dif.iloc[-25:]
+        cur_c = sub_c.iloc[-1]
+        
+        if cur_c >= sub_c.max() * 0.995:
+            peak_idx = sub_dif.iloc[:-5].argmax()
+            prev_peak_dif = float(sub_dif.iloc[peak_idx])
+            prev_peak_c = float(sub_c.iloc[peak_idx])
+            
+            if cur_c > prev_peak_c * 1.02 and prev_peak_dif > 0 and cur_dif < prev_peak_dif * 0.75:
+                if cur_hist < prev_hist and (len(hist) < 3 or hist.iloc[-2] < hist.iloc[-3] or cur_hist < 0):
+                    tags.append("⚠️ MACD 頂背離警戒 (股價創高動能衰退)")
+
+    # 4. 嚴謹底背離判定 (波谷識別 + 綠柱縮短或翻紅確認)
+    if len(close_s) >= 30:
+        sub_c = close_s.iloc[-25:]
+        sub_dif = dif.iloc[-25:]
+        cur_c = sub_c.iloc[-1]
+        
+        if cur_c <= sub_c.min() * 1.005:
+            trough_idx = sub_dif.iloc[:-5].argmin()
+            prev_trough_dif = float(sub_dif.iloc[trough_idx])
+            prev_trough_c = float(sub_c.iloc[trough_idx])
+            
+            if cur_c < prev_trough_c * 0.98 and prev_trough_dif < 0 and cur_dif > prev_trough_dif + 1.0:
+                if cur_hist > prev_hist or cur_hist > 0:
+                    tags.append("💎 MACD 底背離起漲 (雙谷墊高破底翻)")
+
+    # 5. 零軸上強勢多頭發散
+    if cur_dif > 0 and cur_sig > 0:
+        if cur_hist >= prev_hist and cur_hist > 0:
+            if not any("金叉" in t or "翻紅" in t or "背離" in t for t in tags):
+                tags.append("🚀 MACD 零軸上強勢多頭 (柱狀體連續放大)")
+        elif not any("背離" in t for t in tags):
+            if not any("金叉" in t or "翻紅" in t or "死叉" in t or "翻綠" in t for t in tags):
+                tags.append("📈 MACD 多方波段整理")
+
+    # 常態
+    if not tags:
+        if cur_dif >= 0 and cur_hist >= 0:
+            tags.append("📈 MACD 多方波段整理")
+        elif cur_dif < 0 and cur_hist < 0:
+            tags.append("📉 MACD 空方弱勢整理")
+        else:
+            tags.append("⚪ MACD 多空平衡整理")
+
+    return tags
+
+
+def calculate_kdj_series(high_s: pd.Series, low_s: pd.Series, close_s: pd.Series, n: int = 9):
+    """計算標準台股 KD (9,3,3) 數列"""
+    lo = low_s.rolling(n).min()
+    hi = high_s.rolling(n).max()
+    rsv = (close_s - lo) / (hi - lo).replace(0, np.nan) * 100.0
+    rsv = rsv.fillna(50.0)
+    k = rsv.ewm(com=2, adjust=False).mean()
+    d = k.ewm(com=2, adjust=False).mean()
+    j = 3.0 * k - 2.0 * d
+    return k.round(1), d.round(1), j.round(1)
+
+
+def detect_kd_tags(high_s: pd.Series, low_s: pd.Series, close_s: pd.Series) -> list:
+    """自動解析 KD 狀態標籤 (位階超買超賣、黃金/死亡交叉、高低檔鈍化、頂底背離)"""
+    if len(close_s) < 9:
+        return []
+    
+    k_s, d_s, _ = calculate_kdj_series(high_s, low_s, close_s, n=9)
+    cur_k = float(k_s.iloc[-1])
+    cur_d = float(d_s.iloc[-1])
+    prev_k = float(k_s.iloc[-2]) if len(k_s) >= 2 else cur_k
+    prev_d = float(d_s.iloc[-2]) if len(d_s) >= 2 else cur_d
+    
+    tags = []
+    
+    # 1. 雙線交叉訊號 (金叉 / 死叉)
+    if prev_k <= prev_d and cur_k > cur_d:
+        if cur_k <= 25:
+            tags.append("✨ KD 20以下超賣黃金交叉 (落底反彈第一買點)")
+        elif cur_k >= 75:
+            tags.append("✨ KD 80以上再金叉 (強者恆強軋空)")
+        else:
+            tags.append("✨ KD 黃金交叉 (短線轉強)")
+    elif prev_k >= prev_d and cur_k < cur_d:
+        if cur_k >= 80:
+            tags.append("⚡ KD 80以上超買死亡交叉 (高檔轉弱見頂)")
+        else:
+            tags.append("⚡ KD 死亡交叉 (短線修正)")
+
+    # 2. 鈍化型態 (連續 3 日維持極值)
+    if len(k_s) >= 3:
+        if (k_s.iloc[-3:] >= 80).all():
+            tags.append("🚀 KD 高檔強勢鈍化 (K值連3日>80軋空)")
+        elif (k_s.iloc[-3:] <= 20).all():
+            tags.append("❄️ KD 低檔弱勢鈍化 (空方沉陷)")
+
+    # 3. 嚴謹頂/底背離判定 (25 日波峰波谷識別 + 交叉確認)
+    if len(close_s) >= 25:
+        sub_c = close_s.iloc[-25:]
+        sub_k = k_s.iloc[-25:]
+        cur_c = sub_c.iloc[-1]
+        
+        # 頂背離
+        if cur_c >= sub_c.max() * 0.995:
+            peak_idx = sub_k.iloc[:-5].argmax()
+            prev_peak_k = float(sub_k.iloc[peak_idx])
+            prev_peak_c = float(sub_c.iloc[peak_idx])
+            if cur_c > prev_peak_c * 1.02 and prev_peak_k >= 80 and cur_k <= (prev_peak_k - 10.0):
+                if cur_k < prev_k or cur_k < cur_d:
+                    tags.append("⚠️ KD 頂背離警戒 (高檔動能背離衰竭)")
+                    
+        # 底背離
+        elif cur_c <= sub_c.min() * 1.005:
+            trough_idx = sub_k.iloc[:-5].argmin()
+            prev_trough_k = float(sub_k.iloc[trough_idx])
+            prev_trough_c = float(sub_c.iloc[trough_idx])
+            if cur_c < prev_trough_c * 0.98 and prev_trough_k <= 25 and cur_k >= (prev_trough_k + 8.0):
+                if cur_k > prev_k or cur_k > cur_d:
+                    tags.append("💎 KD 底背離 (低檔雙底打底起漲)")
+
+    # 常態
+    if not tags:
+        if cur_k > cur_d and cur_k >= 50:
+            tags.append("📈 KD 多方強勢推進")
+        elif cur_k < cur_d and cur_k < 50:
+            tags.append("📉 KD 空方弱勢回檔")
+        else:
+            tags.append("⚪ KD 多空中性震盪")
+
+    return tags
+
+
+def detect_chip_tags(stock_info: dict, kline_df: pd.DataFrame = None) -> list:
+    """台股實戰專業籌碼指標判定大腦
+    嚴格規範：只看近 1~5 日即時攻防，並以近 20 日（月度）判斷護盤底倉
+    涵蓋：投信爆量總攻/護盤、土洋同步/對作、資減法買/資增法賣、法人高強度鎖碼、自營避險點火
+    """
+    tags = []
+    institutions = stock_info.get('institutions', [])
+    margin = stock_info.get('margin', [])
+    
+    if not institutions:
+        return ["⚪ 法人籌碼中性換手"]
+
+    inst_5 = institutions[:5]
+    inst_20 = institutions[:20]
+    
+    # 最新當日數據
+    latest_inst = inst_5[0]
+    f_0 = latest_inst.get('foreign', 0.0)
+    t_0 = latest_inst.get('trust', 0.0)
+    d_0 = latest_inst.get('dealer', 0.0)
+    tot_0 = latest_inst.get('total', 0.0)
+    
+    # 總成交量 (張數)
+    vol_col = 'volume' if 'volume' in kline_df.columns else ('Volume' if 'Volume' in kline_df.columns else None)
+    close_col = 'close' if 'close' in kline_df.columns else ('Close' if 'Close' in kline_df.columns else None)
+    
+    latest_vol_shares = kline_df[vol_col].iloc[-1] if (kline_df is not None and not kline_df.empty and vol_col) else 0
+    latest_vol_lots = (latest_vol_shares / 1000.0) if latest_vol_shares > 0 else 0
+    
+    # 股價與均線關係 (判斷護盤 vs 總攻)
+    price = kline_df[close_col].iloc[-1] if (kline_df is not None and not kline_df.empty and close_col) else 0
+    ma20_val = kline_df[close_col].rolling(20).mean().iloc[-1] if (kline_df is not None and close_col and len(kline_df) >= 20) else price
+    is_at_support = (price <= ma20_val * 1.02)
+
+    # ---------------------------------------------------------
+    # 1. 投信動態 (內資主力、爆量護盤、爆量總攻、連續認養)
+    # ---------------------------------------------------------
+    trust_5_buys = [x.get('trust', 0.0) for x in inst_5]
+    trust_buy_days = sum(1 for x in trust_5_buys if x > 0)
+    
+    trust_consecutive_buys = 0
+    for x in trust_5_buys:
+        if x > 0:
+            trust_consecutive_buys += 1
+        else:
+            break
+
+    past_trust_pos = [x for x in trust_5_buys[1:] if x > 0]
+    avg_past_trust = (sum(past_trust_pos) / len(past_trust_pos)) if past_trust_pos else 0
+    is_trust_surge = (t_0 >= 500 and (avg_past_trust == 0 or t_0 >= avg_past_trust * 2.5)) or (latest_vol_lots > 0 and (t_0 / latest_vol_lots) >= 0.12 and t_0 >= 200)
+
+    if trust_consecutive_buys >= 3 or (trust_buy_days >= 4 and t_0 > 0):
+        if is_trust_surge:
+            if is_at_support:
+                tags.append("🛡️ 投信巨額爆量護盤 (關鍵支撐鎖碼防禦)")
+            else:
+                tags.append("🚀 投信爆量總攻擊 (主力共識急拉主升段)")
+        else:
+            tags.append(f"🚀 投信連續認養 (近5日買超{trust_buy_days}天)")
+    elif t_0 > 0 and all(x <= 0 for x in trust_5_buys[1:3]) and (t_0 >= 200 or is_trust_surge):
+        tags.append("✨ 投信由賣轉買 (首日翻多起漲)")
+    elif all(x < 0 for x in trust_5_buys[:3]) and sum(trust_5_buys[:3]) <= -300:
+        tags.append("⚠️ 投信高檔結帳 (連日調節賣超)")
+
+    # ---------------------------------------------------------
+    # 2. 土洋同盟與對作 (外資 vs 投信)
+    # ---------------------------------------------------------
+    if f_0 > 0 and t_0 > 0 and (f_0 + t_0 >= 300 or (latest_vol_lots > 0 and (f_0 + t_0) / latest_vol_lots >= 0.10)):
+        tags.append("🔥 土洋同步大買 (雙主力合力作多)")
+    elif f_0 < 0 and t_0 > 0 and t_0 >= 150:
+        tags.append("⚔️ 土洋對作 (投信接刀吃貨/外資倒貨)")
+    elif f_0 > 0 and t_0 < 0 and f_0 >= 300:
+        tags.append("⚡ 土洋對作 (外資吃貨/投信調節)")
+    elif f_0 < 0 and t_0 < 0 and d_0 < 0 and tot_0 <= -500:
+        tags.append("🚨 法人集體倒貨 (籌碼沉陷)")
+
+    # ---------------------------------------------------------
+    # 3. 法人高強度鎖碼 & 自營商避險點火
+    # ---------------------------------------------------------
+    if latest_vol_lots > 0 and tot_0 > 0:
+        inst_pct = tot_0 / latest_vol_lots
+        if inst_pct >= 0.30 and tot_0 >= 300:
+            tags.append(f"🔒 法人高強度鎖碼 (單日買超佔比 {int(inst_pct*100)}%)")
+            
+    if latest_vol_lots > 0 and d_0 >= 300 and (d_0 / latest_vol_lots) >= 0.08:
+        tags.append("⚡ 自營避險爆量買超 (權證大戶點火)")
+
+    # ---------------------------------------------------------
+    # 4. 融資籌碼 (資減法買 vs 資增法賣)
+    # ---------------------------------------------------------
+    if margin and len(margin) >= 3:
+        margin_3_changes = [m.get('change', 0.0) for m in margin[:3]]
+        tot_inst_3 = sum(x.get('total', 0.0) for x in inst_5[:3])
+        
+        if all(c < 0 for c in margin_3_changes) and tot_inst_3 > 0:
+            tags.append("💎 資減法買 (散戶退場主力吃飽)")
+        elif all(c > 0 for c in margin_3_changes) and tot_inst_3 < -300:
+            tags.append("⚠️ 資增法賣 (主力倒貨散戶接刀)")
+
+    # ---------------------------------------------------------
+    # 5. 月度護盤底倉 (近20日累計買賣比)
+    # ---------------------------------------------------------
+    if len(inst_20) >= 15:
+        f_20_sum = sum(x.get('foreign', 0.0) for x in inst_20)
+        t_20_sum = sum(x.get('trust', 0.0) for x in inst_20)
+        
+        if f_20_sum >= 2000 and not any("外資" in t for t in tags):
+            tags.append("🛡️ 外資月度重倉防守 (近20日淨買佔優)")
+        elif t_20_sum >= 1500 and not any("投信" in t for t in tags):
+            tags.append("🎯 投信近月密集建倉 (下檔護盤強)")
+
+    # 預設常態
+    if not tags:
+        inst_buy_days_5 = sum(1 for x in inst_5 if x.get('total', 0.0) > 0)
+        if inst_buy_days_5 >= 3 and tot_0 > 0:
+            tags.append(f"📈 近5日法人積極集資 ({inst_buy_days_5}/5日買超)")
+        elif inst_buy_days_5 <= 1:
+            tags.append("📉 法人籌碼退潮 (連日調節)")
+        else:
+            tags.append("⚪ 法人中性換手 (多空互見)")
+
+    return tags[:3]
+
+
 def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
     """
-    進化版雙軌選股模型 (融合實戰分析師與多因子量化邏輯)：
-    1. 🚀 暴漲動能型 (Explosive Momentum)：
-       - 【模式 A】極致動能：歷史/波段新高突破 (Blue Sky)、RSI高檔強勢鈍化(>75)、5MA極速仰角(>2.5%)、處置股籌碼鎖定軋空、當日收盤在K棒上緣(>90%)。
-       - 【模式 B】洗盤表態點火：上升月線(20MA斜率>1%) + 窒息量回測月線(量比<0.6x，乖離<6%) + 族群共振點火。
-       - 【族群共振加權】：同題材族群（光學、CPO、被動元件、散熱）集體轉強時加權。
-    2. 🛡️ 穩健防守型 (Solid Defensive)：
-       - 均線穩健翻揚、剛脫離月線成本區 (乖離0.5%~6.5%)、法人連續買超、低風險報酬比。
+    雙軌進化版選股引擎 (ChatGPT 專屬升級版 - 與 Gemini 指標完全對齊)
     """
     df = pd.DataFrame(stock_info['kline'])
     if as_of:
@@ -926,24 +1497,19 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
                   if n >= 25 else recent_range)
     range_ratio = recent_range / (base_range + 1e-9)
     
-    # 處置股判斷
     is_disposal = ('處置' in stock_info['name']) or ('處置' in stock_info['path'])
     
-    # 乖離率
     bias_20 = ((price - ma20.iloc[-1]) / ma20.iloc[-1] * 100) if len(ma20) >= 20 and ma20.iloc[-1] > 0 else 0.0
     bias_5 = ((price - ma5.iloc[-1]) / ma5.iloc[-1] * 100) if len(ma5) >= 5 and ma5.iloc[-1] > 0 else 0.0
     
-    # K棒收盤位置 (0.0 = 最低, 1.0 = 收在最高點/漲停)
     bar_range = max(high[-1] - low[-1], 1e-9)
     close_location = (price - low[-1]) / bar_range
     
-    # 型態識別與歷史高點
     pattern_name, _ = recognize_pattern(pd.DataFrame({'Close': close, 'High': high, 'Low': low, 'Volume': volume}))
     prior_high = float(np.max(high[:-1])) if n >= 2 else float(high[0])
     is_new_high = (price >= prior_high * 0.99) or (high[-1] >= prior_high)
     dist_to_high = (price - prior_high) / prior_high * 100
     
-    # 法人籌碼
     inst = stock_info.get('institutions', [])[:5]
     inst_buy_days = sum(x['total'] > 0 for x in inst) if inst else stock_info.get('inst_buy_days', 0)
     inst_total = sum(x['total'] for x in inst)
@@ -962,7 +1528,6 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
     momo_reasons = []
     attack_modes = []
     
-    # 【模式 A 因子：歷史/波段新高突破 Blue Sky】
     if is_new_high:
         momo_score += 30
         momo_reasons.append("創歷史/波段新高無套牢壓(Blue Sky)")
@@ -970,7 +1535,6 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
         momo_score += 15
         momo_reasons.append(f"逼近歷史前高(距高{abs(dist_to_high):.1f}%)")
         
-    # 【收在當日最高/漲停確認】
     if close_location >= 0.95:
         momo_score += 20
         momo_reasons.append("當日強勢收在最高點/亮燈")
@@ -978,7 +1542,6 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
         momo_score += 10
         momo_reasons.append("收盤位居高檔強勢區")
         
-    # 【5MA 極速仰角】
     if s5 >= 4.0:
         momo_score += min(s5 * 4, 25)
         momo_reasons.append(f"5MA極速仰角+{s5:.2f}%")
@@ -986,7 +1549,6 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
         momo_score += 12
         momo_reasons.append(f"5MA加速上揚+{s5:.2f}%")
         
-    # 【RSI 高檔強勢鈍化】
     if rsi14 >= 75:
         momo_score += 15
         momo_reasons.append(f"RSI強勢主升鈍化({rsi14:.1f})")
@@ -994,26 +1556,20 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
         momo_score += 8
         momo_reasons.append(f"RSI多頭攻擊({rsi14:.1f})")
         
-    # 【處置股籌碼鎖定軋空】
     if is_disposal:
         momo_score += 15
         momo_reasons.append("處置分盤籌碼高度鎖定(軋空)")
         
-    # 【模式 B 因子：上升月線 + 窒息量洗盤點火】(如禾伸堂/信昌電)
     if s20 >= 1.0 and 0 <= bias_20 <= 7.0 and vol_ratio <= 0.65:
         momo_score += 25
         momo_reasons.append(f"上升月線+窒息量洗盤完畢(量比{vol_ratio:.2f}x)")
 
-    # 分析師案例校準後，攻擊型不能只認「已創新高」；至少有三條不同路徑。
-    # A. 強勢續攻：前一日已大漲且收在高檔，隔日可能延續，而非一律視為漲多。
     continuation = ret3 >= 8.0 and close_location >= 0.72 and s20_3d >= 2.0
     if continuation:
         momo_score += 18
         momo_reasons.append(f"3日強勢+{ret3:.1f}%且收盤靠近高點")
         attack_modes.append('強勢續攻')
 
-    # B. 洗盤後點火：中期成本線仍明顯上升，但短線回落到月線附近。
-    # 這能涵蓋「禾伸堂／信昌電」類型，不會只追已經噴出的股票。
     reset_ignition = (s20_3d >= 2.0 and -15.0 <= ret5 <= 5.0 and
                       0.0 <= bias_20 <= 8.0 and 48.0 <= rsi14 <= 66.0 and
                       (ret1 < 0 or range_ratio <= 0.80))
@@ -1022,7 +1578,6 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
         momo_reasons.append(f"上升月線洗盤待點火(5日{ret5:+.1f}%)")
         attack_modes.append('洗盤點火')
 
-    # C. 估值＋籌碼推升：低本益比只在趨勢與籌碼同時支持時加分。
     value_chip = (trailing_pe is not None and 0 < trailing_pe <= 25 and s20_3d >= 2.0 and
                   (trust_buy_days >= 3 or inst_total > 0) and margin_5 <= 0)
     if value_chip:
@@ -1038,8 +1593,6 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
 
     if not attack_modes:
         attack_modes.append('一般動能')
-
-    # 類群檔數不是族群強弱；舊版用「同分類股票多」加分會造成假訊號，已取消。
 
     # ==========================================
     # 2. 🛡️ 穩健防守型評分 (Solid Defensive)
@@ -1087,7 +1640,6 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
     elif rsi14 > 80:
         def_score -= 8
 
-    # 穩健榜重視估值與回撤控制；PE 只占一部分，避免把弱勢便宜股排前面。
     if trailing_pe is not None and 0 < trailing_pe <= 25:
         def_score += 12
         def_reasons.append(f"本益比相對收斂({trailing_pe:.1f})")
@@ -1102,6 +1654,255 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
         def_score += 5
     elif margin_5 > 0 and margin_5 / max(volume[-1], 1) > 0.08:
         def_score -= 6
+
+    # ==========================================
+    # 3. 🎯 六大專業指標精確加扣分體系
+    # ==========================================
+    kline_tags = detect_kline_tags(df)
+    rsi_tags = detect_rsi_tags(close_s)
+    vol_tags = detect_volume_tags(df)
+    macd_tags = detect_macd_tags(close_s)
+    kd_tags = detect_kd_tags(pd.Series(high), pd.Series(low), close_s)
+
+    # 1. K線指標
+    for ktag in kline_tags:
+        if "🚀 均線開花多頭發散" in ktag:
+            momo_score += 18
+            momo_reasons.append("均線開花多頭發散(主升加速)")
+            def_score += 12
+            def_reasons.append("多頭均線開花保護")
+        elif "🔥 突破波段整理箱頂" in ktag:
+            momo_score += 15
+            momo_reasons.append("實質突破整理箱頂(破繭而出)")
+            def_score += 10
+            def_reasons.append("帶量站上箱頂轉為支撐")
+        elif "💡 回測上升月線有守" in ktag:
+            def_score += 18
+            def_reasons.append("回測上升月線有守(最佳風報比買點)")
+            momo_score += 10
+            momo_reasons.append("回測月線有守起漲")
+        elif "💎 短中期均線糾纏" in ktag:
+            def_score += 12
+            def_reasons.append("均線糾纏壓縮蓄勢(變盤在即)")
+            momo_score += 8
+        elif "🚨 假突破收長上影線" in ktag:
+            momo_score -= 25
+            momo_reasons.append("⚠️警示:假突破長上影線(主力誘多出貨)")
+            def_score -= 25
+            def_reasons.append("⚠️警示:假突破誘多")
+        elif "⚠️ 破線轉空" in ktag:
+            momo_score -= 20
+            momo_reasons.append("⚠️破線轉空(失守5MA/10MA)")
+            def_score -= 20
+            def_reasons.append("⚠️失守短均線")
+        elif "🚨 跌破20MA月線" in ktag:
+            momo_score -= 25
+            momo_reasons.append("🚨失守20MA生命線")
+            def_score -= 30
+            def_reasons.append("🚨失守20MA生命線")
+
+    # 2. VOL量能
+    for vtag in vol_tags:
+        if "🔥 帶量長紅突破" in vtag:
+            momo_score += 16
+            momo_reasons.append("帶量長紅實質突破(主力進駐)")
+            def_score += 10
+            def_reasons.append("帶量突破確認底部")
+        elif "🚀 滾量換手攻擊" in vtag:
+            momo_score += 16
+            momo_reasons.append("滾量換手攻擊(量價齊揚主升段)")
+            def_score += 8
+        elif "✨ 量能黃金交叉" in vtag:
+            momo_score += 10
+            momo_reasons.append("量能黃金交叉(人氣增溫)")
+            def_score += 8
+            def_reasons.append("量能金叉轉強")
+        elif "💎 價跌量急縮窒息量" in vtag:
+            if not any("窒息量" in r for r in momo_reasons):
+                momo_score += 15
+                momo_reasons.append(f"窒息量籌碼沉澱(量比{vol_ratio:.2f}x)")
+            def_score += 15
+            def_reasons.append("窒息量浮額洗淨")
+        elif "🚨 高檔爆歷史天量收黑" in vtag:
+            momo_score -= 30
+            momo_reasons.append("🚨警示:高檔爆天量收黑(主力出貨倒貨)")
+            def_score -= 30
+            def_reasons.append("🚨警示:高檔天量倒貨")
+        elif "⚠️ 量價頂背離" in vtag:
+            momo_score -= 20
+            momo_reasons.append("⚠️警示:量價頂背離(無量虛漲)")
+            def_score -= 20
+            def_reasons.append("⚠️警示:量價頂背離")
+        elif "⚡ 量能死亡交叉" in vtag:
+            momo_score -= 10
+            momo_reasons.append("量能退潮死叉")
+            def_score -= 10
+
+    # 3. MACD指標
+    for mtag in macd_tags:
+        if "🚀 MACD 零軸上二次金叉" in mtag:
+            momo_score += 22
+            momo_reasons.append("MACD零軸上二次金叉(空中加油主升段)")
+            def_score += 15
+            def_reasons.append("MACD空中加油確認強多")
+        elif "✨ MACD 零軸上金叉" in mtag:
+            momo_score += 15
+            momo_reasons.append("MACD零軸上金叉(強勢攻擊)")
+            def_score += 10
+            def_reasons.append("MACD零軸上金叉")
+        elif "✨ MACD 零軸下金叉" in mtag:
+            momo_score += 10
+            momo_reasons.append("MACD低檔金叉反彈")
+            def_score += 12
+            def_reasons.append("MACD低檔金叉築底")
+        elif "🌊 MACD 柱狀體翻紅" in mtag:
+            momo_score += 10
+            momo_reasons.append("MACD柱體翻紅轉強")
+            def_score += 8
+        elif "🚀 MACD 零軸上強勢多頭" in mtag:
+            momo_score += 14
+            momo_reasons.append("MACD零軸上強勢多頭(紅柱擴大)")
+            def_score += 8
+        elif "💎 MACD 底背離起漲" in mtag:
+            momo_score += 18
+            momo_reasons.append("MACD底背離破底翻(波段買點)")
+            def_score += 18
+            def_reasons.append("MACD底背離確認落底")
+        elif "⚠️ MACD 頂背離警戒" in mtag:
+            momo_score -= 22
+            momo_reasons.append("⚠️警示:MACD頂背離(動能衰退)")
+            def_score -= 22
+            def_reasons.append("⚠️警示:MACD頂背離")
+        elif "⚡ MACD 零軸上死亡交叉" in mtag:
+            momo_score -= 18
+            momo_reasons.append("MACD零軸上死叉(波段獲利了結)")
+            def_score -= 15
+        elif "⚡ MACD 死亡交叉" in mtag:
+            momo_score -= 15
+            momo_reasons.append("MACD死叉轉弱")
+            def_score -= 15
+            def_reasons.append("MACD死叉")
+        elif "❄️ MACD 柱狀體翻綠" in mtag:
+            momo_score -= 10
+            momo_reasons.append("MACD柱體翻綠修正")
+            def_score -= 10
+
+    # 4. KD指標
+    for kd_tag in kd_tags:
+        if "✨ KD 20以下超賣黃金交叉" in kd_tag:
+            momo_score += 15
+            momo_reasons.append("KD低檔超賣金叉(第一買點)")
+            def_score += 15
+            def_reasons.append("KD超賣區金叉落底")
+        elif "✨ KD 80以上再金叉" in kd_tag:
+            momo_score += 16
+            momo_reasons.append("KD 80以上再金叉(強者恆強軋空)")
+            def_score += 8
+        elif "🚀 KD 高檔強勢鈍化" in kd_tag:
+            momo_score += 16
+            momo_reasons.append("KD高檔鈍化(軋空主升段)")
+        elif "💎 KD 底背離" in kd_tag:
+            momo_score += 16
+            momo_reasons.append("KD底背離(雙底打底起漲)")
+            def_score += 16
+            def_reasons.append("KD底背離確認落底")
+        elif "⚠️ KD 頂背離警戒" in kd_tag:
+            momo_score -= 18
+            momo_reasons.append("⚠️警示:KD頂背離(動能衰竭)")
+            def_score -= 18
+            def_reasons.append("⚠️警示:KD頂背離")
+        elif "⚡ KD 80以上超買死亡交叉" in kd_tag:
+            momo_score -= 15
+            momo_reasons.append("KD超買高檔死叉轉弱")
+            def_score -= 15
+            def_reasons.append("KD高檔死叉見頂")
+        elif "⚡ KD 死亡交叉" in kd_tag:
+            momo_score -= 10
+            momo_reasons.append("KD死叉修正")
+            def_score -= 10
+
+    # 5. RSI指標
+    for rtag in rsi_tags:
+        if "🚀 RSI(6) 連續高檔鈍化" in rtag:
+            momo_score += 15
+            momo_reasons.append("RSI高檔強勢鈍化(飆股主升)")
+        elif "💡 RSI(14) 超跌區黃金交叉" in rtag:
+            momo_score += 14
+            momo_reasons.append("RSI超跌金叉(殺盤竭盡反彈)")
+            def_score += 14
+            def_reasons.append("RSI超跌落底")
+        elif "💎 RSI 底背離落底" in rtag:
+            momo_score += 16
+            momo_reasons.append("RSI底背離(雙底翻多)")
+            def_score += 16
+            def_reasons.append("RSI底背離築底")
+        elif "⚠️ RSI 頂背離警戒" in rtag:
+            momo_score -= 18
+            momo_reasons.append("⚠️警示:RSI頂背離(動能無力創高)")
+            def_score -= 18
+            def_reasons.append("⚠️警示:RSI頂背離")
+        elif "⚡ RSI 高檔死叉" in rtag:
+            momo_score -= 15
+            momo_reasons.append("RSI高檔死叉(獲利回吐)")
+            def_score -= 12
+
+    # 6. 籌碼指標
+    chip_tags = detect_chip_tags(stock_info, df)
+    for ctag in chip_tags:
+        if "🔥 土洋同步大買" in ctag:
+            momo_score += 16
+            momo_reasons.append("土洋同步大買(雙主力合力)")
+            def_score += 16
+            def_reasons.append("土洋同步大買")
+        elif "🚀 投信爆量總攻擊" in ctag:
+            momo_score += 22
+            momo_reasons.append("投信爆量總攻擊(主升段點火)")
+            def_score += 16
+            def_reasons.append("投信爆量總攻")
+        elif "🛡️ 投信巨額爆量護盤" in ctag:
+            def_score += 22
+            def_reasons.append("投信巨額爆量護盤(鎖碼防禦)")
+            momo_score += 12
+        elif "🚀 投信連續認養" in ctag:
+            momo_score += 14
+            momo_reasons.append("投信連續認養")
+            def_score += 14
+        elif "✨ 投信由賣轉買" in ctag:
+            momo_score += 12
+            momo_reasons.append("投信由賣轉買(起漲點)")
+            def_score += 12
+        elif "💎 資減法買" in ctag:
+            momo_score += 15
+            momo_reasons.append("資減法買(籌碼極度乾淨)")
+            def_score += 15
+            def_reasons.append("資減法買籌碼純淨")
+        elif "🔒 法人高強度鎖碼" in ctag:
+            momo_score += 16
+            momo_reasons.append("法人高強度鎖碼")
+            def_score += 12
+        elif "⚡ 自營避險爆量買超" in ctag:
+            momo_score += 12
+            momo_reasons.append("自營避險爆買(短多點火)")
+        elif "🛡️ 外資月度重倉防守" in ctag or "🎯 投信近月密集建倉" in ctag:
+            def_score += 16
+            def_reasons.append("月度主力重倉護盤")
+        elif "🚨 法人集體倒貨" in ctag:
+            momo_score -= 30
+            momo_reasons.append("🚨警示:三大法人集體倒貨")
+            def_score -= 30
+            def_reasons.append("🚨警示:法人集體倒貨")
+        elif "⚠️ 資增法賣" in ctag:
+            momo_score -= 22
+            momo_reasons.append("⚠️警示:資增法賣(散戶接刀)")
+            def_score -= 22
+            def_reasons.append("⚠️警示:主力倒貨散戶接刀")
+        elif "⚠️ 投信高檔結帳" in ctag:
+            momo_score -= 20
+            momo_reasons.append("⚠️警示:投信高檔結帳賣超")
+            def_score -= 20
+            def_reasons.append("⚠️警示:投信結帳")
+
+    k_s, d_s, j_s = calculate_kdj_series(pd.Series(high), pd.Series(low), close_s, n=9)
 
     return {
         'code': stock_info['code'],
@@ -1123,6 +1924,15 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
         'bias_20': round(bias_20, 2),
         'bias_5': round(bias_5, 2),
         'rsi14': round(rsi14, 1),
+        'k': float(k_s.iloc[-1]),
+        'd': float(d_s.iloc[-1]),
+        'j': float(j_s.iloc[-1]),
+        'kline_tags': kline_tags,
+        'rsi_tags': rsi_tags,
+        'vol_tags': vol_tags,
+        'macd_tags': macd_tags,
+        'kd_tags': kd_tags,
+        'chip_tags': chip_tags,
         'vol_ratio': round(vol_ratio, 2),
         'vol5_ratio': round(vol5_ratio, 2),
         'range_ratio': round(range_ratio, 2),
