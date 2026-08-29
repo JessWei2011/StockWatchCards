@@ -997,15 +997,53 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
     kd_tags = detect_kd_tags(pd.Series(high), pd.Series(low), close_s)
 
     # ==========================================
-    # VOL 量能核心指標評分調整 (加扣分標準)
+    # 1. 📈 K線與均線指標評分調整 (加扣分標準)
+    # ==========================================
+    for ktag in kline_tags:
+        if "🚀 均線開花多頭發散" in ktag:
+            momo_score += 18
+            momo_reasons.append("均線開花多頭發散(主升加速)")
+            def_score += 12
+            def_reasons.append("多頭均線開花保護")
+        elif "🔥 突破波段整理箱頂" in ktag:
+            momo_score += 15
+            momo_reasons.append("實質突破整理箱頂(破繭而出)")
+            def_score += 10
+            def_reasons.append("帶量站上箱頂轉為支撐")
+        elif "💡 回測上升月線有守" in ktag:
+            def_score += 18
+            def_reasons.append("回測上升月線有守(最佳風報比買點)")
+            momo_score += 10
+            momo_reasons.append("回測月線有守起漲")
+        elif "💎 短中期均線糾纏" in ktag:
+            def_score += 12
+            def_reasons.append("均線糾纏壓縮蓄勢(變盤在即)")
+            momo_score += 8
+        elif "🚨 假突破收長上影線" in ktag:
+            momo_score -= 25
+            momo_reasons.append("⚠️警示:假突破長上影線(主力誘多出貨)")
+            def_score -= 25
+            def_reasons.append("⚠️警示:假突破誘多")
+        elif "⚠️ 破線轉空" in ktag:
+            momo_score -= 20
+            momo_reasons.append("⚠️破線轉空(失守5MA/10MA)")
+            def_score -= 20
+            def_reasons.append("⚠️失守短均線")
+        elif "🚨 跌破20MA月線" in ktag:
+            momo_score -= 25
+            momo_reasons.append("🚨失守20MA生命線")
+            def_score -= 30
+            def_reasons.append("🚨失守20MA生命線")
+
+    # ==========================================
+    # 2. 📊 VOL 量能核心指標評分調整 (加扣分標準)
     # ==========================================
     for vtag in vol_tags:
         if "🔥 帶量長紅突破" in vtag:
-            momo_score += 15
+            momo_score += 16
             momo_reasons.append("帶量長紅實質突破(主力進駐)")
             def_score += 10
             def_reasons.append("帶量突破確認底部")
-        elif "🚀 滾量攻擊" in vtag:
             momo_score += 15
             momo_reasons.append("連續價漲量增(滾量主升段)")
             def_score += 8
