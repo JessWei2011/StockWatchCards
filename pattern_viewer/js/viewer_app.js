@@ -458,6 +458,149 @@
           statKdTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">KD 數據正常</span>`;
         }
       }
+      // =========================================================================
+      // 【MARK: 位置B - 專業看盤側邊欄 操盤決策 CHECKLIST 儀表板動態渲染】
+      // 此處為專業看盤側邊欄即時產生「操盤決策打勾欄 + 5大指標燈號檢核表」。
+      // 若日後需要 MARK 掉或微調，可搜尋此 MARK 標記快速定位。
+      // =========================================================================
+      const sidebarChecklistContainer = this.q('#sidebarChecklistDecisionContent') || document.getElementById('sidebarChecklistDecisionContent');
+      if (sidebarChecklistContainer) {
+        const cleanCode = String(this.currentCode || '').split('.')[0].trim();
+        const allCards = (window.cardsByCode || (window.parent && window.parent.cardsByCode) || (typeof cardsByCode !== 'undefined' ? cardsByCode : {})) || {};
+        const card = allCards[cleanCode] || allCards[this.currentCode] || null;
+        if (card) {
+          const raw = String(card.raw || '');
+          const decision = String(card.decision || '').trim();
+          const pattern = String(card.pattern || '').trim();
+          
+          let actionState = '觀望';
+          const techTags = (card.technicalTags || '').split(/[、,]/).map(s => s.trim());
+          const rsiTags = (card.rsiTags || '').split(/[、,]/).map(s => s.trim());
+          const volTags = (card.volTags || '').split(/[、,]/).map(s => s.trim());
+          const macdTags = (card.macdTags || '').split(/[、,]/).map(s => s.trim());
+          const kdTags = (card.kdTags || '').split(/[、,]/).map(s => s.trim());
+          
+          const isStrongMomo = /歷史|波段新高|Blue Sky|軋空主升|噴發|鈍化/i.test(raw + pattern);
+          const isExit = /空頭|死亡交叉|死叉|跌破|減碼|離場|破線|頂背離|倒貨/i.test(raw) && !/多頭排列/i.test(raw);
+          const isBaseEntry = /買進|Buy|雙底|W底|起漲|金叉|突破|洗盤完成/i.test(raw + decision);
+
+          if (/Strong Buy|強烈買進|主升/i.test(decision) || (isStrongMomo && /買進|Buy/i.test(decision))) {
+            actionState = '強勢入場/續抱';
+          } else if (/加碼|加倉|突破加碼/i.test(decision)) {
+            actionState = '加碼';
+          } else if (isExit || /賣出|Sell|減碼/i.test(decision)) {
+            actionState = '出場';
+          } else if (isBaseEntry || /買進|Buy/i.test(decision)) {
+            actionState = '入場';
+          } else {
+            actionState = '觀望';
+          }
+
+          let maText = pattern ? `${pattern}；${techTags.slice(0, 2).join('、') || '均線多頭架構'}` : '均線多頭排列，短中期均線上彎推進';
+          let maTone = /新高|突破|主升|仰角/i.test(maText) ? 'positive' : (/雙底|W底|反轉|翻揚/i.test(maText) ? 'gold' : (/空頭|跌破|下彎/i.test(maText) ? 'negative' : 'cyan'));
+
+          let macdText = macdTags.join('、') || 'MACD 多方波段整理，零軸上發散';
+          let macdTone = /強勢多頭|零軸上|加速/i.test(macdText) ? 'green' : (/金叉|黃金交叉|翻紅|底背離/i.test(macdText) ? 'gold' : (/死叉|死亡交叉|頂背離|翻綠/i.test(macdText) ? 'negative' : 'cyan'));
+
+          let volText = volTags.join('、') || '成交量能溫和換手推進';
+          let volTone = /滾量|主升|爆量/i.test(volText) ? 'green' : (/黃金交叉|金叉|窒息量|洗淨/i.test(volText) ? 'gold' : (/倒貨|天量|退潮/i.test(volText) ? 'negative' : 'cyan'));
+
+          let rsiText = rsiTags.join('、') || 'RSI 位於健康多方推進區';
+          let rsiTone = /強勢|鈍化/i.test(rsiText) ? 'green' : (/底背離|超跌|黃金交叉/i.test(rsiText) ? 'gold' : (/過熱|超買|頂背離|死叉/i.test(rsiText) ? 'negative' : 'cyan'));
+
+          let kdText = kdTags.join('、') || 'KD 雙軌多方推進';
+          let kdTone = /鈍化|軋空/i.test(kdText) ? 'green' : (/金叉|超賣|底背離|買點/i.test(kdText) ? 'gold' : (/死叉|超買|頂背離|轉弱/i.test(kdText) ? 'negative' : 'cyan'));
+
+          let summaryText = `${card.name} 呈現 ${pattern || '多方推進型態'}，指標結構保持健全。`;
+          let actionPlan = `建議依紀律操作，進場防守線可參考關鍵均線或停損位 ${card.stop ? card.stop + ' 元' : '前低點'}。`;
+          if (actionState === '強勢入場/續抱') {
+            summaryText = `突破歷史/波段天花板，上方無套牢賣壓，主力極致動能軋空主升段！`;
+            actionPlan = `建議順勢進場或續抱，以 5MA 作為移動停利防守線，享受主升段利潤！`;
+          } else if (actionState === '入場') {
+            summaryText = `底部型態確立或量縮洗盤完成，短中期均線剛發動，具極佳安全邊際。`;
+            actionPlan = `於現價附近或支撐區佈局，停損設在 ${card.stop ? card.stop + ' 元' : '前低支撐'}，波段目標價看 ${card.target ? card.target + ' 元' : '前高'}！`;
+          } else if (actionState === '出場') {
+            summaryText = `指標出現高檔轉弱或破線警訊，多頭動能衰退，主力有調節結帳跡象。`;
+            actionPlan = `嚴格執行停利/停損紀律，跌破關鍵支撐應果斷減碼或清倉觀望！`;
+          } else if (actionState === '加碼') {
+            summaryText = `多頭回測支撐有守後再度出量轉強，波段攻擊動能擴張。`;
+            actionPlan = `脫離成本區後於突破點順勢加碼，移動停利點上移至最新突破均線。`;
+          }
+
+          const badgeStyle = (tone) => {
+            if (tone === 'negative') return 'background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);';
+            if (tone === 'gold') return 'background:rgba(234,179,8,0.2); color:#fde047; border:1px solid rgba(234,179,8,0.45);';
+            if (tone === 'green') return 'background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.45);';
+            if (tone === 'cyan') return 'background:rgba(56,189,248,0.2); color:#7dd3fc; border:1px solid rgba(56,189,248,0.45);';
+            return 'background:rgba(148,163,184,0.2); color:#cbd5e1; border:1px solid rgba(148,163,184,0.45);';
+          };
+          const toneName = (tone) => {
+            if (tone === 'negative') return '🔴 警示/轉弱';
+            if (tone === 'gold') return '🟡 轉強/起漲';
+            if (tone === 'green') return '🟢 主升/鈍化';
+            if (tone === 'cyan') return '🔵 多方推進';
+            return '⚪ 中性整理';
+          };
+          const actions = ['入場', '出場', '加碼', '強勢入場/續抱', '觀望'];
+
+          sidebarChecklistContainer.innerHTML = `
+            <div style="border:1px solid rgba(255,255,255,0.12); border-radius:8px; overflow:hidden; background:#131722; font-size:12px;">
+              <div style="padding:6px 10px; background:rgba(236,72,153,0.12); border-bottom:1px solid rgba(236,72,153,0.3); color:#f472b6; font-weight:800; display:flex; justify-content:space-between; align-items:center;">
+                <span>🎯 操盤決策與指標訊號檢核表</span>
+                <span style="font-size:11px; color:#cbd5e1;">即時評估</span>
+              </div>
+              <div style="display:grid; grid-template-columns: 65px repeat(5, 1fr); background:#1a2233; border-bottom:1px solid rgba(255,255,255,0.1); text-align:center; font-weight:800; font-size:11px;">
+                <div style="padding:5px 2px; color:#94a3b8; border-right:1px solid rgba(255,255,255,0.08);">決策狀態</div>
+                ${actions.map(act => `<div style="padding:5px 1px; color:${act === actionState ? '#fde047' : '#94a3b8'}; border-right:1px solid rgba(255,255,255,0.06);">${act.length > 4 ? act.replace('/', '<br>') : act}</div>`).join('')}
+              </div>
+              <div style="display:grid; grid-template-columns: 65px repeat(5, 1fr); background:rgba(0,0,0,0.25); border-bottom:1px solid rgba(255,255,255,0.08); text-align:center; font-size:14px; font-weight:900;">
+                <div style="padding:4px 2px; font-size:11px; color:#cbd5e1; border-right:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center;">執行動作</div>
+                ${actions.map(act => `<div style="padding:4px 1px; border-right:1px solid rgba(255,255,255,0.06); color:${act === actionState ? '#4ade80' : 'transparent'};">${act === actionState ? '✔️' : '—'}</div>`).join('')}
+              </div>
+
+              <table style="width:100%; border-collapse:collapse; text-align:left; font-size:11.5px;">
+                <tbody>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <td style="padding:5px 8px; width:65px; font-weight:800; color:#fbbf24; background:rgba(255,255,255,0.02);">💡 評語</td>
+                    <td style="padding:5px 8px; color:#f8fafc; font-weight:600;" colspan="2">${summaryText}</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <td style="padding:5px 8px; font-weight:800; color:#93c5fd; background:rgba(255,255,255,0.02);">📈 均線</td>
+                    <td style="padding:5px 8px; color:#cbd5e1;">${maText}</td>
+                    <td style="padding:5px 6px; width:82px; text-align:right;"><span style="display:inline-block; padding:1px 5px; border-radius:4px; font-size:10.5px; font-weight:750; ${badgeStyle(maTone)}">${toneName(maTone)}</span></td>
+                  </tr>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <td style="padding:5px 8px; font-weight:800; color:#c084fc; background:rgba(255,255,255,0.02);">🌊 MACD</td>
+                    <td style="padding:5px 8px; color:#cbd5e1;">${macdText}</td>
+                    <td style="padding:5px 6px; width:82px; text-align:right;"><span style="display:inline-block; padding:1px 5px; border-radius:4px; font-size:10.5px; font-weight:750; ${badgeStyle(macdTone)}">${toneName(macdTone)}</span></td>
+                  </tr>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <td style="padding:5px 8px; font-weight:800; color:#fde047; background:rgba(255,255,255,0.02);">📊 VOL</td>
+                    <td style="padding:5px 8px; color:#cbd5e1;">${volText}</td>
+                    <td style="padding:5px 6px; width:82px; text-align:right;"><span style="display:inline-block; padding:1px 5px; border-radius:4px; font-size:10.5px; font-weight:750; ${badgeStyle(volTone)}">${toneName(volTone)}</span></td>
+                  </tr>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <td style="padding:5px 8px; font-weight:800; color:#38bdf8; background:rgba(255,255,255,0.02);">📊 RSI</td>
+                    <td style="padding:5px 8px; color:#cbd5e1;">${rsiText}</td>
+                    <td style="padding:5px 6px; width:82px; text-align:right;"><span style="display:inline-block; padding:1px 5px; border-radius:4px; font-size:10.5px; font-weight:750; ${badgeStyle(rsiTone)}">${toneName(rsiTone)}</span></td>
+                  </tr>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <td style="padding:5px 8px; font-weight:800; color:#fbbf24; background:rgba(255,255,255,0.02);">⚡ KD</td>
+                    <td style="padding:5px 8px; color:#cbd5e1;">${kdText}</td>
+                    <td style="padding:5px 6px; width:82px; text-align:right;"><span style="display:inline-block; padding:1px 5px; border-radius:4px; font-size:10.5px; font-weight:750; ${badgeStyle(kdTone)}">${toneName(kdTone)}</span></td>
+                  </tr>
+                  <tr>
+                    <td style="padding:5px 8px; font-weight:800; color:#4ade80; background:rgba(255,255,255,0.02);">🎯 執行</td>
+                    <td style="padding:5px 8px; color:#86efac; font-weight:700;" colspan="2">${actionPlan}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          `;
+        }
+      }
+      // =========================================================================
+
       if (this.currentStockData && this.currentStockData.dates && this.currentStockData.dates.length) {
         window.updateFocusHUD(this.currentStockData.dates.length - 1, this.currentStockData);
       }
