@@ -332,6 +332,36 @@
         statHighLow.textContent = `${highest} / ${lowest}`;
       }
 
+      // 渲染「📈 K線指標狀態」
+      const statKlineTags = this.q('#statKlineTags') || document.getElementById('statKlineTags');
+      if (statKlineTags) {
+        const cleanCode = String(this.currentCode || '').split('.')[0].trim();
+        const allCards = (window.cardsByCode || (window.parent && window.parent.cardsByCode) || (typeof cardsByCode !== 'undefined' ? cardsByCode : {})) || {};
+        const card = allCards[cleanCode] || allCards[this.currentCode] || null;
+        let klineTagsStr = card ? (card.klineTags || card.kline_tags || card.technicalTags || '') : '';
+        if (!klineTagsStr && card && card.raw) {
+          const m = String(card.raw).match(/K線\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i) || String(card.raw).match(/技術標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
+          if (m) klineTagsStr = m[1].trim();
+        }
+
+        if (klineTagsStr) {
+          const parts = klineTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean).filter(t => !/量能|爆量|放量|增量|縮量/.test(t));
+          statKlineTags.innerHTML = parts.map(t => {
+            let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
+            if (/多頭|上彎|仰角|噴出|金叉|站上|重回/.test(t)) {
+              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
+            } else if (/空頭|下彎|俯角|探底|死叉|跌破|失守/.test(t)) {
+              style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
+            } else if (/糾纏|整理|糾結|蓄勢/.test(t)) {
+              style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
+            }
+            return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
+          }).join('');
+        } else {
+          statKlineTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">均線排列正常</span>`;
+        }
+      }
+
       const statRsiTags = this.q('#statRsiTags');
       if (statRsiTags) {
         const cleanCode = String(this.currentCode || '').split('.')[0].trim();

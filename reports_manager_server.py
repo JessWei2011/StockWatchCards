@@ -183,6 +183,8 @@ def parse_md_report_card(md_path):
     m_target = re.search(r'【目標價】\s*[：:]\s*[^0-9]*([0-9.]+)', text)
     
     m_tech = re.search(r'技術標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text)
+    m_kline = re.search(r'K線\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text, re.I)
+    m_vol = re.search(r'VOL\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text, re.I) or re.search(r'量能標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text, re.I)
     m_chip = re.search(r'籌碼標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text)
     m_rsi = re.search(r'RSI\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text, re.I)
     m_macd = re.search(r'MACD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text, re.I)
@@ -222,7 +224,12 @@ def parse_md_report_card(md_path):
     except ValueError:
         rr_ratio = None
 
-    tech_tags_str = m_tech.group(1).strip() if m_tech else ""
+    raw_tech_str = m_kline.group(1).strip() if m_kline else (m_tech.group(1).strip() if m_tech else "")
+    # 徹底剝離所有殘留的量能字串
+    cleaned_tech_parts = [t.strip() for t in re.split(r'[、,]', raw_tech_str) if t.strip() and not re.search(r'量能|爆量|放量|增量|縮量', t)]
+    tech_tags_str = "、".join(cleaned_tech_parts)
+
+    vol_tags_str = m_vol.group(1).strip() if m_vol else ""
     chip_tags_str = m_chip.group(1).strip() if m_chip else ""
     rsi_tags_str = m_rsi.group(1).strip() if m_rsi else ""
     macd_tags_str = m_macd.group(1).strip() if m_macd else ""
@@ -239,7 +246,9 @@ def parse_md_report_card(md_path):
         "winRate": win_rate,
         "rr": rr_ratio,
         "pattern": pattern,
+        "klineTags": tech_tags_str,
         "rsiTags": rsi_tags_str,
+        "volTags": vol_tags_str,
         "macdTags": macd_tags_str,
         "kdTags": kd_tags_str,
         "technicalTags": tech_tags_str,

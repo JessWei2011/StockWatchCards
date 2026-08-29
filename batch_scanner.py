@@ -482,25 +482,20 @@ def save_stage4_report(r):
 
     technical_tags = []
     if r['short_alignment']:
-        technical_tags.append("MA5>MA10>MA20")
+        technical_tags.append("均線多頭排列")
     else:
-        technical_tags.append("短均線未完整多頭排列")
+        technical_tags.append("均線多空中性整理")
     if r['ma10_trend_state'] == '下彎':
-        technical_tags.append("MA10 下彎（趨勢扣分）")
+        technical_tags.append("10MA轉俯角 (波段修正)")
     elif r['ma10_trend_state'] == '上彎':
-        technical_tags.append("MA10 上彎")
+        technical_tags.append("10MA轉仰角 (波段翻多)")
     else:
-        technical_tags.append("MA10 走平（型態分受限）")
+        technical_tags.append("均線糾纏蓄勢")
 
     if all(r[key] is not None for key in ('ma50', 'ma100', 'ma200')) and r['ma50'] > r['ma100'] > r['ma200']:
         technical_tags.append("中長期均線多頭排列")
     elif all(r[key] is not None for key in ('ma50', 'ma100', 'ma200')) and r['ma50'] < r['ma100'] < r['ma200']:
         technical_tags.append("中長期均線空頭排列")
-    else:
-        technical_tags.append("中長期均線資料不足／整理")
-    technical_tags.append("RSI 過熱" if r['rsi14'] >= 70 else ("RSI 動能偏強" if r['rsi14'] >= 50 else "RSI 動能偏弱"))
-    technical_tags.append("MACD 多方" if r['macd_hist'] > 0 else "MACD 收縮／空方")
-    technical_tags.append("量能放大" if r['vol_ratio'] >= 1.5 else ("量能溫和" if r['vol_ratio'] >= 1 else "量能萎縮"))
 
     buy_days = int(r.get('inst_buy_days', 0))
     chip_tags = [f"近5日法人買超 {buy_days} 日"]

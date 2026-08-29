@@ -243,6 +243,119 @@ def recognize_pattern(df):
     return "高檔盤整/區間震盪", 5.0
 
 
+def detect_kline_tags(df: pd.DataFrame) -> list:
+    """
+    自動解析 K線與均線指標標籤 (5MA/10MA斜率轉折/加速度、均線糾纏、破/站均線、5MA與10MA金叉/死叉)
+    """
+    if len(df) < 20:
+        return ["⚪ K線資料累積中"]
+
+    close_s = pd.to_numeric(df['close'], errors='coerce')
+    high_s = pd.to_numeric(df['high'], errors='coerce')
+    low_s = pd.to_numeric(df['low'], errors='coerce')
+    open_s = pd.to_numeric(df['open'], errors='coerce')
+
+    ma5 = close_s.rolling(5).mean()
+    ma10 = close_s.rolling(10).mean()
+    ma20 = close_s.rolling(20).mean()
+    ma60 = close_s.rolling(60).mean() if len(df) >= 60 else None
+
+    # 當前與前一日收盤價及各天期均線
+    cur_c = float(close_s.iloc[-1])
+    prev_c = float(close_s.iloc[-2])
+    cur_o = float(open_s.iloc[-1])
+    cur_h = float(high_s.iloc[-1])
+    cur_l = float(low_s.iloc[-1])
+
+    cur_ma5 = float(ma5.iloc[-1])
+    prev_ma5 = float(ma5.iloc[-2])
+    prev2_ma5 = float(ma5.iloc[-3]) if len(ma5) >= 3 else prev_ma5
+
+    cur_ma10 = float(ma10.iloc[-1])
+    prev_ma10 = float(ma10.iloc[-2])
+    prev2_ma10 = float(ma10.iloc[-3]) if len(ma10) >= 3 else prev_ma10
+
+    cur_ma20 = float(ma20.iloc[-1])
+    prev_ma20 = float(ma20.iloc[-2])
+
+    # 計算斜率
+    s5_cur = ((cur_ma5 - prev_ma5) / prev_ma5) * 100.0 if prev_ma5 > 0 else 0.0
+    s5_prev = ((prev_ma5 - prev2_ma5) / prev2_ma5) * 100.0 if prev2_ma5 > 0 else 0.0
+
+    s10_cur = ((cur_ma10 - prev_ma10) / prev_ma10) * 100.0 if prev_ma10 > 0 else 0.0
+    s10_prev = ((prev_ma10 - prev2_ma10) / prev2_ma10) * 100.0 if prev2_ma10 > 0 else 0.0
+
+    s20_cur = ((cur_ma20 - prev_ma20) / prev_ma20) * 100.0 if prev_ma20 > 0 else 0.0
+
+    tags = []
+
+    # 1. 5MA 與 10MA 金叉 / 死叉 (最精確之短線多空轉折)
+    if prev_ma5 <= prev_ma10 and cur_ma5 > cur_ma10:
+        tags.append("✨ 5MA金叉10MA (短線轉強)")
+    elif prev_ma5 >= prev_ma10 and cur_ma5 < cur_ma10:
+        tags.append("⚡ 5MA死叉10MA (短線轉弱)")
+
+    # 2. 均線斜率轉折與加速度 (轉仰角/轉俯角/加大仰角/加大俯角)
+    # 5MA 斜率判斷
+    if s5_prev <= 0 and s5_cur > 0.2:
+        tags.append("💡 5MA轉仰角 (翻揚轉強)")
+    elif s5_prev >= 0 and s5_cur < -0.2:
+        tags.append("⚠️ 5MA轉俯角 (下彎轉弱)")
+    elif s5_cur > 1.2 and s5_cur > s5_prev + 0.3:
+        tags.append("🚀 5MA加大仰角 (加速噴出)")
+    elif s5_cur < -1.2 and s5_cur < s5_prev - 0.3:
+        tags.append("❄️ 5MA加大俯角 (加速探底)")
+
+    # 10MA 斜率判斷 (若無 5MA 重複，可補足 10MA 結構)
+    if not any("5MA轉" in t or "5MA加大" in t for t in tags):
+        if s10_prev <= 0 and s10_cur > 0.15:
+            tags.append("💡 10MA轉仰角 (波段翻多)")
+        elif s10_prev >= 0 and s10_cur < -0.15:
+            tags.append("⚠️ 10MA轉俯角 (波段修正)")
+        elif s10_cur > 0.8 and s10_cur > s10_prev + 0.2:
+            tags.append("🚀 10MA加大仰角 (波段推升)")
+        elif s10_cur < -0.8 and s10_cur < s10_prev - 0.2:
+            tags.append("❄️ 10MA加大俯角 (跌勢擴大)")
+
+    # 3. 站上 / 跌破關鍵均線 (5MA / 10MA / 20MA 月線)
+    if prev_c < prev_ma20 and cur_c >= cur_ma20:
+        tags.append("🔥 站上20MA月線 (重回多方區)")
+    elif prev_c > prev_ma20 and cur_c < cur_ma20:
+        tags.append("🚨 跌破20MA月線 (失守生命線)")
+    elif prev_c < prev_ma5 and cur_c >= cur_ma5 and cur_c > cur_o:
+        tags.append("📈 站上5MA強勢線")
+    elif prev_c > prev_ma5 and cur_c < cur_ma5:
+        tags.append("⚠️ 跌破5MA短線轉弱")
+    elif prev_c > prev_ma10 and cur_c < cur_ma10:
+        tags.append("⚠️ 跌破10MA防守線")
+
+    # 4. 均線糾纏 (壓縮蓄勢 / 多空即將變盤表態)
+    # 計算 MA5, MA10, MA20 彼此間最大幅度差
+    ma_min = min(cur_ma5, cur_ma10, cur_ma20)
+    ma_max = max(cur_ma5, cur_ma10, cur_ma20)
+    spread_pct = ((ma_max - ma_min) / cur_c) * 100.0 if cur_c > 0 else 99.0
+    if spread_pct <= 1.8 and abs(s5_cur) < 0.6 and abs(s10_cur) < 0.6:
+        tags.append("💎 短中期均線糾纏 (壓縮蓄勢)")
+
+    # 5. 多頭排列 / 空頭排列 / 常態推進
+    if cur_ma5 > cur_ma10 > cur_ma20 and (ma60 is None or cur_ma20 > float(ma60.iloc[-1])):
+        if not any("多頭" in t for t in tags):
+            tags.append("🚀 均線多頭排列 (強勢多方)")
+    elif cur_ma5 < cur_ma10 < cur_ma20 and (ma60 is None or cur_ma20 < float(ma60.iloc[-1])):
+        if not any("空頭" in t for t in tags):
+            tags.append("📉 均線空頭排列 (空方沉陷)")
+    elif cur_c > cur_ma20 and s20_cur > 0:
+        if not tags:
+            tags.append("📈 站穩上升月線 (穩健多方)")
+    elif cur_c < cur_ma20 and s20_cur <= 0:
+        if not tags:
+            tags.append("📉 壓在下彎月線 (弱勢整理)")
+    elif not tags:
+        tags.append("⚪ 均線多空中性整理")
+
+    return tags
+
+
 def calculate_rsi_series(series: pd.Series, period: int = 14) -> pd.Series:
     """計算標準 Wilder's RSI 數列 (與 stock_report_generator 一致)"""
     delta = series.diff()
@@ -870,6 +983,7 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
         'k': float(k_s.iloc[-1]),
         'd': float(d_s.iloc[-1]),
         'j': float(j_s.iloc[-1]),
+        'kline_tags': kline_tags,
         'rsi_tags': rsi_tags,
         'vol_tags': vol_tags,
         'macd_tags': macd_tags,
@@ -926,6 +1040,10 @@ def save_stage4_report(r):
             return f"下彎 {value:+.2f}%"
         return f"走平 {value:+.2f}%"
 
+    kline_tags = r.get('kline_tags') or []
+    if not kline_tags:
+        kline_tags = ["均線多頭排列"] if (r['s5'] > 0 and r['s10'] > 0 and r['s20'] > 0) else ["均線多空中性整理"]
+
     rsi_tags = r.get('rsi_tags') or []
     if not rsi_tags:
         rsi_tags = [f"RSI(14): {r['rsi14']} （{'超買強勢' if r['rsi14'] > 75 else '多頭推進區' if r['rsi14'] > 50 else '弱勢整理'}）"]
@@ -942,11 +1060,7 @@ def save_stage4_report(r):
     if not kd_tags:
         kd_tags = ["KD 數據正常"]
 
-    technical_tags = []
-    if r['s5'] > 0 and r['s10'] > 0 and r['s20'] > 0:
-        technical_tags.append("均線多頭排列")
-    technical_tags.append(f"5MA仰角 {r['s5']:+.2f}%")
-    technical_tags.append("爆量攻擊" if r['vol_ratio'] >= 1.5 else ("溫和放量" if r['vol_ratio'] >= 1.0 else "量能萎縮"))
+    technical_tags = list(kline_tags)
 
     buy_days = int(r.get('inst_buy_days', 0))
     chip_tags = [f"近5日法人買超 {buy_days} 日"]
@@ -967,6 +1081,7 @@ def save_stage4_report(r):
     lines.append(f"  - **KD(9,3,3)**：K {r.get('k', 50.0):.1f} / D {r.get('d', 50.0):.1f}（{'高檔強勢' if r.get('k', 50)>=80 else '低檔超賣' if r.get('k', 50)<=20 else '多空中性'}）")
     lines.append(f"  - **成交量**：{r['vol']:,} 股（相對 20日均量 {r['vol_ratio']} 倍）\n")
     lines.append("### 【標籤摘要】")
+    lines.append(f"- **K線標籤**：{'、'.join(kline_tags)}")
     lines.append(f"- **技術標籤**：{'、'.join(technical_tags)}")
     lines.append(f"- **VOL 標籤**：{'、'.join(vol_tags)}")
     lines.append(f"- **RSI 標籤**：{'、'.join(rsi_tags)}")

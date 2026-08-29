@@ -900,9 +900,9 @@
                 <div id="statHighLow" class="stat-value stat-value-compact">—</div>
               </div>
             </div>
-            <div class="stat-box full" id="statRsiBox" style="margin-top:8px; padding:6px 10px; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.2); border-radius:6px;">
-              <div class="stat-label" style="color:#7dd3fc; font-size:11px; font-weight:700;">📊 RSI 指標狀態</div>
-              <div id="statRsiTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
+            <div class="stat-box full" id="statKlineBox" style="margin-top:8px; padding:6px 10px; background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.2); border-radius:6px;">
+              <div class="stat-label" style="color:#93c5fd; font-size:11px; font-weight:700;">📈 K線指標狀態</div>
+              <div id="statKlineTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
             </div>
             <div class="stat-box full" id="statVolBox" style="margin-top:6px; padding:6px 10px; background:rgba(234,179,8,0.06); border:1px solid rgba(234,179,8,0.2); border-radius:6px;">
               <div class="stat-label" style="color:#fde047; font-size:11px; font-weight:700;">📊 VOL 指標狀態</div>
@@ -911,6 +911,10 @@
             <div class="stat-box full" id="statMacdBox" style="margin-top:6px; padding:6px 10px; background:rgba(168,85,247,0.06); border:1px solid rgba(168,85,247,0.2); border-radius:6px;">
               <div class="stat-label" style="color:#c084fc; font-size:11px; font-weight:700;">🌊 MACD 指標狀態</div>
               <div id="statMacdTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
+            </div>
+            <div class="stat-box full" id="statRsiBox" style="margin-top:6px; padding:6px 10px; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.2); border-radius:6px;">
+              <div class="stat-label" style="color:#7dd3fc; font-size:11px; font-weight:700;">📊 RSI 指標狀態</div>
+              <div id="statRsiTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
             </div>
             <div class="stat-box full" id="statKdBox" style="margin-top:6px; padding:6px 10px; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); border-radius:6px;">
               <div class="stat-label" style="color:#fbbf24; font-size:11px; font-weight:700;">⚡ KD 指標狀態</div>
@@ -1003,8 +1007,8 @@
             </div>
           </div>
 
-          <button type="button" class="btn" onclick="openRsiCheatSheetModal()" style="margin-top:10px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
-            <span>🎨</span> RSI 標籤顏色含意速查表
+          <button type="button" class="btn" onclick="openKlineCheatSheetModal()" style="margin-top:10px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(59,130,246,0.12); color:#60a5fa; border:1px solid rgba(59,130,246,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
+            <span>📈</span> K線指標與均線型態速查表
           </button>
 
           <button type="button" class="btn" onclick="openVolCheatSheetModal()" style="margin-top:8px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(234,179,8,0.12); color:#fde047; border:1px solid rgba(234,179,8,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
@@ -1013,6 +1017,10 @@
 
           <button type="button" class="btn" onclick="openMacdCheatSheetModal()" style="margin-top:8px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(168,85,247,0.12); color:#c084fc; border:1px solid rgba(168,85,247,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
             <span>🌊</span> MACD 指標與型態速查表
+          </button>
+
+          <button type="button" class="btn" onclick="openRsiCheatSheetModal()" style="margin-top:8px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
+            <span>🎨</span> RSI 標籤顏色含意速查表
           </button>
 
           <button type="button" class="btn" onclick="openKdCheatSheetModal()" style="margin-top:8px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(245,158,11,0.12); color:#fbbf24; border:1px solid rgba(245,158,11,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
@@ -1042,6 +1050,126 @@
       </div>
     </div>
   </section>
+
+  <!-- K線指標與均線型態速查表彈出視窗 -->
+  <div id="klineCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:#161922; border:1px solid rgba(59,130,246,0.35); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
+      <!-- Header -->
+      <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:24px;">📈</span>
+          <div>
+            <h3 style="margin:0; font-size:18px; font-weight:800; color:#f8fafc;">K線指標與均線斜率型態速查表</h3>
+            <p style="margin:2px 0 0; font-size:13.5px; color:#94a3b8;">5MA/10MA 斜率加速度・均線糾纏・關鍵支撐得失與金叉死叉實戰指南</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeKlineCheatSheetModal()" style="background:none; border:none; color:#94a3b8; font-size:28px; cursor:pointer; padding:4px 8px; line-height:1;" title="關閉 (Esc)">&times;</button>
+      </div>
+
+      <!-- Content Table -->
+      <div style="padding:22px 24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:18px;">
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:16px; text-align:left;">
+            <thead>
+              <tr style="background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.12); color:#cbd5e1;">
+                <th style="padding:12px 14px; width:19%; font-size:16px; font-weight:800;">標籤顏色</th>
+                <th style="padding:12px 14px; width:28%; font-size:16px; font-weight:800;">代表含意與市場結構</th>
+                <th style="padding:12px 14px; width:26%; font-size:16px; font-weight:800;">具體標籤範例</th>
+                <th style="padding:12px 14px; width:27%; font-size:16px; font-weight:800;">操盤應對心法</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.45);">🟢 綠色／翠綠系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【多頭加速／強勢噴出】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">均線多頭發散、加大仰角攻擊或突破上軌</span>
+                </td>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">🚀 5MA加大仰角 (加速噴出)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">🚀 均線多頭排列 (強勢多方)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">🔥 站上20MA月線 (重回多方區)</span>
+                  </div>
+                </td>
+                <td style="padding:14px; color:#86efac; font-size:15.5px; line-height:1.6;">
+                  <strong>🚀 順勢抱牢！</strong><br>短線多頭加速衝刺，沿 5MA 順勢續抱，不要預設高點。
+                </td>
+              </tr>
+
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(234,179,8,0.2); color:#fde047; border:1px solid rgba(234,179,8,0.45);">🟡 黃色／金黃系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【轉強金叉／糾纏蓄勢】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">均線轉仰角翻揚、5MA金叉10MA或均線緊密糾纏</span>
+                </td>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">✨ 5MA金叉10MA (短線轉強)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">💡 5MA轉仰角 (翻揚轉強)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">💎 短中期均線糾纏 (壓縮蓄勢)</span>
+                  </div>
+                </td>
+                <td style="padding:14px; color:#fde047; font-size:15.5px; line-height:1.6;">
+                  <strong>💡 絕佳起漲切入點！</strong><br>糾纏表態與均線金叉是風報比極高的買點，設好前低停損大膽進場。
+                </td>
+              </tr>
+
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);">🔴 紅色／警示系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【轉弱死叉／失守支撐】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">跌破月線/5MA、均線轉俯角或5MA死叉10MA</span>
+                </td>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">🚨 跌破20MA月線 (失守生命線)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">⚡ 5MA死叉10MA (短線轉弱)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">⚠️ 5MA轉俯角 (下彎轉弱)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">❄️ 5MA加大俯角 (加速探底)</span>
+                  </div>
+                </td>
+                <td style="padding:14px; color:#fca5a5; font-size:15.5px; line-height:1.6;">
+                  <strong>⚠️ 嚴格防守停損！</strong><br>跌破關鍵均線或死叉應立即減碼或退場觀望，切莫逆勢攤平。
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(148,163,184,0.2); color:#cbd5e1; border:1px solid rgba(148,163,184,0.45);">⚪ 灰白／藍灰系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【常態整理／無明確方向】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">均線走平或區間震盪整理</span>
+                </td>
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(148,163,184,0.18); color:#cbd5e1;">⚪ 均線多空中性整理</span>
+                </td>
+                <td style="padding:14px; color:#cbd5e1; font-size:15.5px; line-height:1.6;">
+                  <strong>⚪ 靜待表態！</strong><br>無方向時多看少做，等待帶量突破均線再進場。
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 實戰口訣三金律 -->
+        <div style="background:rgba(59,130,246,0.09); border:1px solid rgba(59,130,246,0.3); border-radius:8px; padding:14px 18px; font-size:15px; color:#cbd5e1; line-height:1.7;">
+          <div style="font-weight:800; color:#93c5fd; margin-bottom:6px; font-size:16px;">💡 K線與均線操盤三大實戰金律：</div>
+          <div>1. <strong>月線定多空，5MA抓衝刺</strong>：股價站在上彎 20MA（月線）之上只做多；5MA 轉仰角或加大仰角是波段噴發主升段！</div>
+          <div>2. <strong>糾纏是暴風雨前夕</strong>：MA5/10/20 糾纏壓縮（💎）代表籌碼極致收斂，一旦放量突破就是大波段起漲點！</div>
+          <div>3. <strong>破線死叉絕不留戀</strong>：收盤實質跌破 20MA 月線（🚨）或 5MA/10MA 死亡交叉，果斷執行防守紀律！</div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding:14px 24px; background:#1e2330; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:flex-end;">
+        <button type="button" onclick="closeKlineCheatSheetModal()" style="padding:9px 26px; border-radius:6px; background:#3b82f6; color:#fff; font-weight:800; font-size:15px; border:none; cursor:pointer;">關閉速查表</button>
+      </div>
+    </div>
+  </div>
 
   <section class="workspace" id="ranking-workspace" hidden>
     <div class="ranking-shell">
@@ -1650,7 +1778,7 @@
         <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;">
           <div style="background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.35); border-radius:8px; padding:12px; text-align:center;">
             <div style="font-size:12px; color:#93c5fd; font-weight:700;">第 1 步</div>
-            <div style="font-size:16px; font-weight:900; color:#60a5fa; margin:3px 0;">均線與趨勢</div>
+            <div style="font-size:16px; font-weight:900; color:#60a5fa; margin:3px 0;">K線與均線</div>
             <div style="font-size:12.5px; color:#cbd5e1;">【趨勢濾網】<br>決定能不能買</div>
           </div>
           <div style="background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.35); border-radius:8px; padding:12px; text-align:center;">
@@ -1684,17 +1812,17 @@
             <tbody>
               <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
                 <td style="padding:14px;">
-                  <span style="display:inline-block; padding:4px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(59,130,246,0.2); color:#93c5fd; border:1px solid rgba(59,130,246,0.45);">第 1 步：均線與趨勢</span>
+                  <span style="display:inline-block; padding:4px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(59,130,246,0.2); color:#93c5fd; border:1px solid rgba(59,130,246,0.45);">第 1 步：K線與均線</span>
                 </td>
                 <td style="padding:14px; color:#f8fafc; font-weight:600; line-height:1.6;">
                   【這檔是大格局多頭嗎？】<br><span style="font-size:13px; color:#94a3b8;">只做順勢單，不做逆勢單</span>
                 </td>
                 <td style="padding:14px; color:#86efac; line-height:1.6;">
-                  ✅ 均線呈現多頭排列（MA5 > MA10 > MA20）。<br>
-                  ✅ 20MA（月線）斜率上彎，且股價站穩於均線之上。
+                  ✅ 均線呈現多頭排列（MA5 > MA10 > MA20）或<strong>短中期均線糾纏壓縮蓄勢</strong>。<br>
+                  ✅ 20MA（月線）斜率上彎，股價站穩於均線之上；5MA 金叉 10MA 或轉仰角攻擊。
                 </td>
                 <td style="padding:14px; color:#fca5a5; line-height:1.6;">
-                  ❌ 股價位於下彎的月線/季線下方（直接淘汰不用看後面）。
+                  ❌ 股價位於下彎的月線下方，或 5MA/10MA 跌破死叉（直接淘汰不用看後面）。
                 </td>
               </tr>
 
@@ -1770,13 +1898,22 @@
   </div>
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-<script src="pattern_viewer/js/parser.js?v=67"></script>
-<script src="pattern_viewer/js/pattern_engine.js?v=67"></script>
-<script src="pattern_viewer/js/chart_engine.js?v=67"></script>
-<script src="pattern_viewer/js/viewer_app.js?v=67"></script>
-<script src="render-shared.js?v=54"></script>
+<script src="pattern_viewer/js/parser.js?v=68"></script>
+<script src="pattern_viewer/js/pattern_engine.js?v=68"></script>
+<script src="pattern_viewer/js/chart_engine.js?v=68"></script>
+<script src="pattern_viewer/js/viewer_app.js?v=68"></script>
+<script src="render-shared.js?v=55"></script>
 <script>
   const DISPLAY_SCALE_KEY = 'stock-analysis-display-scale';
+
+  window.openKlineCheatSheetModal = function() {
+    const modal = document.getElementById('klineCheatSheetModal');
+    if (modal) modal.style.display = 'flex';
+  };
+  window.closeKlineCheatSheetModal = function() {
+    const modal = document.getElementById('klineCheatSheetModal');
+    if (modal) modal.style.display = 'none';
+  };
 
   window.openRsiCheatSheetModal = function() {
     const modal = document.getElementById('rsiCheatSheetModal');
@@ -2087,14 +2224,24 @@
     if (macdM) macdTags = macdM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
     const kdM = mdText.match(/KD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
     if (kdM) kdTags = kdM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
+    const klineM = mdText.match(/K線\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
+    if (klineM) techTags = klineM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
     const techM = mdText.match(/技術標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/);
-    if (techM) techTags = techM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
+    if (techM && !techTags.length) techTags = techM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
+    // 徹底過濾歷史 .md 報告中混雜的量能字串
+    techTags = techTags.filter(t => !/量能|爆量|放量|增量|縮量/.test(t));
     const chipM = mdText.match(/籌碼標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/);
     if (chipM) chipTags = chipM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
     const patM = mdText.match(/型態標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/);
     if (patM) patternTags = patM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
 
-    // 智能容錯：若歷史報告中尚未包含專屬 VOL / RSI 標籤行，自動由卡片或報告內文即時推導
+    // 智能容錯：若歷史報告中尚未包含專屬 VOL / RSI / K線 標籤行，自動由卡片或報告內文即時推導
+    if (!techTags.length && typeof klineStateTags === 'function' && card) {
+      const derivedK = klineStateTags(card);
+      if (derivedK && derivedK.length) {
+        techTags = derivedK.map(d => d.label);
+      }
+    }
     if (!volTags.length) {
       if (typeof volStateTags === 'function' && card) {
         const derivedVol = volStateTags(card);
@@ -2173,8 +2320,8 @@
     html += `
       <div class="analysis-metrics-bar">
         <div class="analysis-metric-tile">
-          <div class="tile-label">當前價格</div>
-          <div class="tile-value">${escapeHtml(price || '—')}</div>
+          <div class="tile-label">最新收盤價</div>
+          <div class="tile-value highlight">${escapeHtml(price || '—')}</div>
         </div>
         <div class="analysis-metric-tile">
           <div class="tile-label">預期勝率</div>
@@ -2191,27 +2338,25 @@
       </div>
     `;
 
-    // Tags Group (模組化分組顯示：支援 RSI、VOL、MACD、KD 等獨立指標群組)
-    if (rsiTags.length || volTags.length || macdTags.length || kdTags.length || techTags.length || chipTags.length || patternTags.length) {
+    // Tags Group (模組化分組顯示：支援 K線、VOL、MACD、RSI、KD 等獨立指標群組)
+    if (techTags.length || volTags.length || macdTags.length || rsiTags.length || kdTags.length || chipTags.length || patternTags.length) {
       html += `<div class="analysis-tag-group">`;
-      
-      // 1. 📊 RSI 指標群組
-      if (rsiTags.length) {
-        html += `<div class="analysis-tag-row"><span class="tag-label" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.35);">📊 RSI 指標</span><div class="analysis-tag-pills">${rsiTags.map(t => {
+
+      // 1. 📈 K線指標群組
+      if (techTags.length) {
+        html += `<div class="analysis-tag-row"><span class="tag-label" style="background:rgba(59,130,246,0.15); color:#93c5fd; border:1px solid rgba(59,130,246,0.35);">📈 K線指標</span><div class="analysis-tag-pills">${techTags.map(t => {
           let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
-          if (t.includes('過熱') || t.includes('超買') || t.includes('頂背離') || t.includes('死亡交叉')) {
-            style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38); font-weight:750;';
-          } else if (t.includes('超跌') || t.includes('底背離') || t.includes('黃金交叉')) {
-            style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38); font-weight:750;';
-          } else if (t.includes('鈍化')) {
+          if (t.includes('多頭') || t.includes('上彎') || t.includes('仰角') || t.includes('噴出') || t.includes('金叉') || t.includes('站上') || t.includes('重回')) {
             style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38); font-weight:750;';
-          } else if (t.includes('多方') || t.includes('推進')) {
-            style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3); font-weight:750;';
+          } else if (t.includes('空頭') || t.includes('下彎') || t.includes('俯角') || t.includes('探底') || t.includes('死叉') || t.includes('跌破') || t.includes('失守')) {
+            style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38); font-weight:750;';
+          } else if (t.includes('糾纏') || t.includes('整理') || t.includes('糾結') || t.includes('蓄勢')) {
+            style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38); font-weight:750;';
           }
           return `<span class="tag-pill" style="${style}">${escapeHtml(t)}</span>`;
         }).join('')}</div></div>`;
       }
-
+      
       // 2. 📊 VOL 指標群組
       if (volTags.length) {
         html += `<div class="analysis-tag-row"><span class="tag-label" style="background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.35);">📊 VOL 指標</span><div class="analysis-tag-pills">${volTags.map(t => {
@@ -2246,7 +2391,24 @@
         }).join('')}</div></div>`;
       }
 
-      // 4. ⚡ KD 指標群組
+      // 4. 📊 RSI 指標群組
+      if (rsiTags.length) {
+        html += `<div class="analysis-tag-row"><span class="tag-label" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.35);">📊 RSI 指標</span><div class="analysis-tag-pills">${rsiTags.map(t => {
+          let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
+          if (t.includes('過熱') || t.includes('超買') || t.includes('頂背離') || t.includes('死亡交叉')) {
+            style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38); font-weight:750;';
+          } else if (t.includes('超跌') || t.includes('底背離') || t.includes('黃金交叉')) {
+            style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38); font-weight:750;';
+          } else if (t.includes('鈍化')) {
+            style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38); font-weight:750;';
+          } else if (t.includes('多方') || t.includes('推進')) {
+            style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3); font-weight:750;';
+          }
+          return `<span class="tag-pill" style="${style}">${escapeHtml(t)}</span>`;
+        }).join('')}</div></div>`;
+      }
+
+      // 5. ⚡ KD 指標群組
       if (kdTags.length) {
         html += `<div class="analysis-tag-row"><span class="tag-label" style="background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.35);">⚡ KD 指標</span><div class="analysis-tag-pills">${kdTags.map(t => {
           let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
@@ -2263,17 +2425,12 @@
         }).join('')}</div></div>`;
       }
 
-      // 4. 📈 均線與量價特徵
-      if (techTags.length) {
-        html += `<div class="analysis-tag-row"><span class="tag-label">均線量價</span><div class="analysis-tag-pills">${techTags.map(t => `<span class="tag-pill">${escapeHtml(t)}</span>`).join('')}</div></div>`;
-      }
-
-      // 5. 🏛️ 籌碼指標
+      // 6. 🏛️ 籌碼指標
       if (chipTags.length) {
         html += `<div class="analysis-tag-row"><span class="tag-label">籌碼指標</span><div class="analysis-tag-pills">${chipTags.map(t => `<span class="tag-pill" style="background:rgba(249,115,22,0.12); color:#fdba74; border-color:rgba(249,115,22,0.25);">${escapeHtml(t)}</span>`).join('')}</div></div>`;
       }
 
-      // 6. 🎯 識別型態
+      // 7. 🎯 識別型態
       if (patternTags.length) {
         html += `<div class="analysis-tag-row"><span class="tag-label">識別型態</span><div class="analysis-tag-pills">${patternTags.map(t => `<span class="tag-pill" style="background:rgba(168,85,247,0.12); color:#d8b4fe; border-color:rgba(168,85,247,0.25);">${escapeHtml(t)}</span>`).join('')}</div></div>`;
       }
@@ -3467,22 +3624,31 @@
   }
 
   function technicalStateTags(card){
-    if (card.technicalTags) {
-      const parts = card.technicalTags.split(/[、,]/).map(s => s.trim()).filter(Boolean);
+    return klineStateTags(card);
+  }
+
+  function klineStateTags(card){
+    let klineTagsStr = String(card.klineTags || card.kline_tags || card.technicalTags || '').trim();
+    if (!klineTagsStr && card.raw) {
+      const m = String(card.raw).match(/K線\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i) || String(card.raw).match(/技術標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
+      if (m) klineTagsStr = m[1].trim();
+    }
+    if (klineTagsStr) {
+      const parts = klineTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
       if (parts.length) {
         return parts.map(label => {
           let tone = 'neutral';
-          if (/多頭|上彎|主升|放大|攻擊|偏多|金叉/.test(label)) tone = 'positive';
-          else if (/空頭|下彎|萎縮|偏空|死叉/.test(label)) tone = 'negative';
-          else if (/過熱|整理|糾結|處置/.test(label)) tone = 'mixed';
-          return { label, tone, title: label };
+          if (/多頭|上彎|仰角|噴出|金叉|站上|重回/.test(label)) tone = 'positive';
+          else if (/空頭|下彎|俯角|探底|死叉|跌破|失守/.test(label)) tone = 'negative';
+          else if (/糾纏|整理|糾結|蓄勢|處置/.test(label)) tone = 'mixed';
+          return { label, tone, title: `K線指標：${label}` };
         });
       }
     }
     const text = cardSection(card, '技術數據面');
     const pattern = String(card.pattern || '');
     const signal = cardSection(card, '訊號面判定');
-    if (!text) return [{ label: '技術指標完整', tone: 'positive', title: '已由 Gemini 建立技術分析' }];
+    if (!text) return [{ label: 'K線指標正常', tone: 'positive', title: '已由 Gemini 建立技術分析' }];
     const tags = [];
     const add = (label, tone, title) => {
       if (!tags.some(tag => tag.label === label)) tags.push({ label, tone, title });
@@ -3491,47 +3657,26 @@
     const order = orderMatch ? orderMatch[1].split('>') : [];
     const before = (fast, slow) => order.includes(fast) && order.includes(slow) && order.indexOf(fast) < order.indexOf(slow);
     if (['MA5', 'MA10', 'MA20', 'MA60'].every((value, index) => order[index] === value)) {
-      add('均線多頭排列', 'positive', order.join(' > '));
+      add('🚀 均線多頭排列', 'positive', order.join(' > '));
     } else if (['MA60', 'MA20', 'MA10', 'MA5'].every((value, index) => order[index] === value)) {
-      add('均線空頭排列', 'negative', order.join(' > '));
+      add('📉 均線空頭排列', 'negative', order.join(' > '));
     } else if (before('MA5', 'MA20')) {
-      add('短線均線偏多', 'positive', order.length ? order.join(' > ') : 'MA5 位於 MA20 之上');
+      add('📈 短線均線偏多', 'positive', order.length ? order.join(' > ') : 'MA5 位於 MA20 之上');
     } else if (before('MA20', 'MA5')) {
-      add('短線均線偏空', 'negative', order.length ? order.join(' > ') : 'MA5 位於 MA20 之下');
+      add('📉 短線均線偏空', 'negative', order.length ? order.join(' > ') : 'MA5 位於 MA20 之下');
     } else {
-      add('均線糾結', 'mixed', order.length ? order.join(' > ') : '均線順序不明確');
+      add('💎 均線糾纏蓄勢', 'mixed', order.length ? order.join(' > ') : '均線順序不明確');
     }
 
     const current = Number(card.current);
     const ma20 = signedNumber(text, /MA20\s*=\s*([\d.]+)/i);
-    if (Number.isFinite(current) && ma20 !== null) add(current >= ma20 ? '收盤高於月線' : '收盤低於月線', current >= ma20 ? 'positive' : 'negative', `收盤 ${current}／MA20 ${ma20}`);
+    if (Number.isFinite(current) && ma20 !== null) add(current >= ma20 ? '🔥 站穩上升月線' : '🚨 壓在月線下方', current >= ma20 ? 'positive' : 'negative', `收盤 ${current}／MA20 ${ma20}`);
 
     const boll = text.match(/(?:BOLL|布林通道(?:帶狀)?)[：:為\s]*上\s*=\s*([\d.]+)\s*中\s*=\s*([\d.]+)\s*下\s*=\s*([\d.]+)/i);
     if (boll && Number.isFinite(current)) {
       const upper = Number(boll[1]), lower = Number(boll[3]);
-      if (current > upper) add('收盤高於布林上軌', 'positive', `收盤 ${current}／上軌 ${upper}`);
-      else if (current < lower) add('收盤低於布林下軌', 'negative', `收盤 ${current}／下軌 ${lower}`);
-    }
-    const macd = signedNumber(text, /MACD(?:\s+Hist)?[^；。\n]*?([+-][\d,.]+)/i);
-    if (macd !== null) add(macd >= 0 ? 'MACD 多方' : 'MACD 空方', macd >= 0 ? 'positive' : 'negative', `MACD Hist ${macd > 0 ? '+' : ''}${macd}`);
-    const rsiMatch = text.match(/RSI(?:\s*為)?\s*=?\s*([\d.]+)/i);
-    if (rsiMatch) {
-      const rsiValue = Number(rsiMatch[1]);
-      if (rsiValue >= 70) add('RSI 過熱', 'mixed', `RSI ${rsiValue}`);
-      else if (rsiValue <= 30) add('RSI 超賣', 'mixed', `RSI ${rsiValue}`);
-      else add(rsiValue >= 50 ? 'RSI 動能偏強' : 'RSI 動能偏弱', rsiValue >= 50 ? 'positive' : 'negative', `RSI ${rsiValue}`);
-    }
-    const kdMatch = text.match(/K\s*=\s*([\d.]+)[^\d]+D\s*=\s*([\d.]+)/i);
-    if (kdMatch) {
-      const k = Number(kdMatch[1]);
-      const d = Number(kdMatch[2]);
-      add(k >= d ? 'K值高於D值' : 'K值低於D值', k >= d ? 'positive' : 'negative', `目前位置：K ${k}／D ${d}；僅憑單日位置不判定交叉`);
-      if (k >= 80 && d >= 80) add('KD 高檔鈍化', 'mixed', `K ${k}／D ${d}`);
-      if (k <= 20 && d <= 20) add('KD 低檔區', 'mixed', `K ${k}／D ${d}`);
-    } else if (/金叉/.test(text)) {
-      add('KD 金叉', 'positive', '技術摘要判定為 KD 金叉');
-    } else if (/死叉/.test(text)) {
-      add('KD 死叉', 'negative', '技術摘要判定為 KD 死叉');
+      if (current > upper) add('🚀 突破布林上軌', 'positive', `收盤 ${current}／上軌 ${upper}`);
+      else if (current < lower) add('❄️ 跌破布林下軌', 'negative', `收盤 ${current}／下軌 ${lower}`);
     }
     if (card.isDisposition) add('處置期間', 'mixed', card.dispositionDate || '目前為處置股票');
     if (hasDefenseSignal(pattern, signal)) add('防禦訊號', 'negative', '型態或訊號摘要出現防禦牆、推升失敗或爆量警示');
@@ -4018,7 +4163,7 @@
               <td style="padding:5px 12px; color:#f8fafc; font-weight:600; line-height:1.5;" colspan="2">${escapeHtml(data.summaryText)}</td>
             </tr>
             <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-              <td style="padding:5px 10px; font-weight:800; color:#93c5fd; background:rgba(255,255,255,0.02); white-space:nowrap;">📈 均線趨勢</td>
+              <td style="padding:5px 10px; font-weight:800; color:#93c5fd; background:rgba(255,255,255,0.02); white-space:nowrap;">📈 K線指標</td>
               <td style="padding:5px 12px; color:#cbd5e1; line-height:1.5;">${escapeHtml(data.maText)}</td>
               <td style="padding:5px 10px; width:105px; text-align:right; white-space:nowrap;"><span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${badgeStyle(data.maTone)}">${toneName(data.maTone)}</span></td>
             </tr>
@@ -4176,7 +4321,7 @@
         </div>
         <div class="rank-details">
           <div class="rank-tech-tags">
-            <span class="rank-detail-label">均線量價</span>
+            <span class="rank-detail-label">K線指標</span>
             ${renderTechnicalTags(c)}
           </div>
           <div class="rank-vol-tags">
