@@ -322,14 +322,29 @@
 
       const candles = this.currentStockData.candles || [];
       const lastCandle = candles[candles.length - 1];
-      const statCurrentPrice = this.q('#statCurrentPrice');
-      if (statCurrentPrice && lastCandle) statCurrentPrice.textContent = `$${lastCandle[1]}`;
+      const prevCandle = candles.length > 1 ? candles[candles.length - 2] : null;
 
-      const statHighLow = this.q('#statHighLow');
-      if (statHighLow && candles.length) {
-        const highest = Math.max(...candles.map(item => item[3]));
-        const lowest = Math.min(...candles.map(item => item[2]));
-        statHighLow.textContent = `${highest} / ${lowest}`;
+      const statCurrentPrice = this.q('#statCurrentPrice');
+      if (statCurrentPrice && lastCandle) {
+        statCurrentPrice.textContent = `$${lastCandle[1]}`;
+        if (prevCandle) {
+          const diff = lastCandle[1] - prevCandle[1];
+          statCurrentPrice.className = `stat-value ${diff > 0 ? 'up' : (diff < 0 ? 'down' : '')}`;
+        }
+      }
+
+      const statChangePct = this.q('#statChangePct') || this.q('#statHighLow');
+      if (statChangePct && lastCandle) {
+        if (prevCandle && prevCandle[1]) {
+          const diff = lastCandle[1] - prevCandle[1];
+          const pct = (diff / prevCandle[1]) * 100;
+          const sign = diff > 0 ? '+' : '';
+          statChangePct.className = `stat-value ${diff > 0 ? 'up' : (diff < 0 ? 'down' : '')}`;
+          statChangePct.textContent = `${sign}${pct.toFixed(2)}%`;
+        } else {
+          statChangePct.className = 'stat-value';
+          statChangePct.textContent = '0.00%';
+        }
       }
 
       // 渲染「📈 K線指標狀態」

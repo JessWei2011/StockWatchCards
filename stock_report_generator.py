@@ -1296,15 +1296,49 @@ def scan_tracked_stocks():
 
     return [(sid, name, path, category) for sid, (name, path, category) in sorted(found.items(), key=sort_key)]
 
+def get_latest_market_cutoff_time(now=None):
+    """
+    計算最新一筆盤後收盤資料的理論結算時間點。
+    台股交易時間為週一至週五 09:00~13:30，盤後清算與籌碼數據齊全約在 14:00。
+    - 週六、週日：最新收盤資料為「週五 14:00」
+    - 週一至週五 14:00 前：最新收盤資料為「前一交易日 14:00」（週一為「上週五 14:00」）
+    - 週一至週五 14:00 後：最新收盤資料為「當天 14:00」
+    """
+    if now is None:
+        now = datetime.now()
+    weekday = now.weekday()  # 0=Mon, 4=Fri, 5=Sat, 6=Sun
+    if weekday == 5:  # 週六 -> 上週五
+        target_date = (now - timedelta(days=1)).date()
+    elif weekday == 6:  # 週日 -> 上週五
+        target_date = (now - timedelta(days=2)).date()
+    elif now.hour < 14:  # 週一到週五 14:00 之前（盤中/尚未完成盤後結算）
+        if weekday == 0:  # 週一 14:00 前 -> 上週五
+            target_date = (now - timedelta(days=3)).date()
+        else:  # 週二至週五 14:00 前 -> 昨天
+            target_date = (now - timedelta(days=1)).date()
+    else:  # 週一到週五 14:00 之後，當天已收盤結算
+        target_date = now.date()
+
+    return datetime.combine(target_date, datetime.min.time().replace(hour=14, minute=0, second=0))
+
 def file_date_str(path):
-    """回傳報表檔最後修改日期 (YYYY-MM-DD)，用來判斷今天是否已經更新過"""
+    """回傳報表檔最後修改日期 (YYYY-MM-DD)"""
     try:
         return datetime.fromtimestamp(os.path.getmtime(path)).strftime("%Y-%m-%d")
     except Exception:
         return None
 
-ALL_TRACKED_INPUT = "999"       # 更新全部追蹤清單，今天已更新過的會跳過
-FORCE_ALL_TRACKED_INPUT = "998"  # 強制更新全部追蹤清單，不管今天是否已更新過
+def is_report_up_to_date(path, now=None):
+    """判斷報表檔案是否已具備最新交易日的盤後收盤資料"""
+    try:
+        mt = os.path.getmtime(path)
+        cutoff = get_latest_market_cutoff_time(now)
+        return mt >= cutoff.timestamp(), cutoff.strftime("%Y-%m-%d")
+    except Exception:
+        return False, ""
+
+ALL_TRACKED_INPUT = "999"       # 更新全部追蹤清單，已有最新交易日資料的會跳過
+FORCE_ALL_TRACKED_INPUT = "998"  # 強制更新全部追蹤清單，不管是否已有最新資料
 FORCE_HOLDERS_UPDATE_INPUT = "997"  # 強制重新下載集保大戶全市場資料(忽略本週快取)
 
 def force_refresh_holders_market():
@@ -1320,24 +1354,27 @@ def force_refresh_holders_market():
     print(f" ✅ 完成 ({len(lines)} 行)" if lines else " ❌ 失敗")
 
 def print_tracked_list(tracked):
-    today = datetime.now().strftime("%Y-%m-%d")
+    cutoff = get_latest_market_cutoff_time()
+    cutoff_date_str = cutoff.strftime("%Y-%m-%d")
     print("\n📌 追蹤中個股清單 (依分類資料夾列出；")
-    print(f"   輸入 {ALL_TRACKED_INPUT} 或 ALL 更新全部追蹤清單，今天已更新過的會自動跳過；")
-    print(f"   輸入 {FORCE_ALL_TRACKED_INPUT} 或 FORCE 強制更新全部追蹤清單，含今天已更新過的；")
+    print(f"   輸入 {ALL_TRACKED_INPUT} 或 ALL 更新全部追蹤清單，已具備最新收盤資料({cutoff_date_str})的個股會自動跳過；")
+    print(f"   輸入 {FORCE_ALL_TRACKED_INPUT} 或 FORCE 強制更新全部追蹤清單，含已有最新資料的個股；")
     print(f"   輸入 {FORCE_HOLDERS_UPDATE_INPUT} 強制重新下載集保大戶資料，不受本週快取限制):")
     last_category = object()  # 保證第一筆一定會先印出分類標題
     for sid, name, path, category in tracked:
         if category != last_category:
             print(f" 🗂️ {category or '未分類'}")
             last_category = category
+        up_to_date, _ = is_report_up_to_date(path)
         d = file_date_str(path)
-        mark = " (今天已更新)" if d == today else (f" (最後更新 {d})" if d else "")
+        mark = f" (已有最新資料 {d})" if up_to_date else (f" (最後更新 {d})" if d else "")
         print(f"    • {sid} {name}{mark}")
     print()
 
 def resolve_tracked_indices(items, tracked):
-    """999/ALL 展開成全部追蹤清單(跳過今天已更新過的)；998/FORCE 展開成全部追蹤清單(強制全部更新)"""
-    today = datetime.now().strftime("%Y-%m-%d")
+    """999/ALL 展開成全部追蹤清單(跳過已有最新交易日收盤資料的)；998/FORCE 展開成全部追蹤清單(強制全部更新)"""
+    cutoff = get_latest_market_cutoff_time()
+    cutoff_date = cutoff.strftime("%Y-%m-%d")
     resolved = []
     for p in items:
         p_str = str(p).strip()
@@ -1346,8 +1383,9 @@ def resolve_tracked_indices(items, tracked):
             resolved.extend(sid for sid, _, _, _ in tracked)
         elif p_upper in ("ALL", "全部", ALL_TRACKED_INPUT, "999"):
             for sid, name, path, _category in tracked:
-                if file_date_str(path) == today:
-                    print(f" ⏭ {sid} {name} 今天已更新過，跳過")
+                up_to_date, _ = is_report_up_to_date(path)
+                if up_to_date:
+                    print(f" ⏭ {sid} {name} 已具備最新收盤資料 ({cutoff_date})，跳過")
                     continue
                 resolved.append(sid)
         elif p_str == FORCE_HOLDERS_UPDATE_INPUT:
