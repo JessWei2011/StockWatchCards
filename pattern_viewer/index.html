@@ -18,8 +18,11 @@
           <p>Pattern Visual Teaching &amp; Interactive 5-Pane K-Line Engine</p>
         </div>
       </div>
-      <div class="controls-bar">
-        <label for="stockSelect">選擇個股：</label>
+      <div class="controls-bar" style="display:flex; align-items:center; gap:12px;">
+        <button type="button" class="btn" onclick="openEntryCheatSheetModal()" style="padding:6px 14px; font-size:13.5px; font-weight:800; background:rgba(236,72,153,0.14); color:#f472b6; border:1px solid rgba(236,72,153,0.4); border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
+          <span>🎯</span> 空手進場口訣
+        </button>
+        <label for="stockSelect" style="font-weight:700; color:#93c5fd;">🎯 選擇看盤個股：</label>
         <select id="stockSelect" class="stock-selector"></select>
       </div>
     </header>
@@ -742,6 +745,147 @@
     </div>
   </div>
 
+  <!-- 空手進場操盤口訣與檢視順序 Modal (1020px 大視窗 / 16px 大字體) -->
+  <div id="entryCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:#161922; border:1px solid rgba(236,72,153,0.38); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
+      <!-- Header -->
+      <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:26px;">🎯</span>
+          <div>
+            <h3 style="margin:0; font-size:18px; font-weight:800; color:#f8fafc;">空手進場操盤順序與核心檢核口訣</h3>
+            <p style="margin:2px 0 0; font-size:13.5px; color:#f472b6;">空手買進標準 SOP：由大到小、先濾風險、再抓精確扳機點</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeEntryCheatSheetModal()" style="background:none; border:none; color:#94a3b8; font-size:28px; cursor:pointer; padding:4px 8px; line-height:1;" title="關閉 (Esc)">&times;</button>
+      </div>
+
+      <!-- Content -->
+      <div style="padding:22px 24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:18px;">
+        
+        <!-- 流程導航卡片 -->
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;">
+          <div style="background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.35); border-radius:8px; padding:12px; text-align:center;">
+            <div style="font-size:12px; color:#93c5fd; font-weight:700;">第 1 步</div>
+            <div style="font-size:16px; font-weight:900; color:#60a5fa; margin:3px 0;">均線與趨勢</div>
+            <div style="font-size:12.5px; color:#cbd5e1;">【趨勢濾網】<br>決定能不能買</div>
+          </div>
+          <div style="background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.35); border-radius:8px; padding:12px; text-align:center;">
+            <div style="font-size:12px; color:#c084fc; font-weight:700;">第 2 步</div>
+            <div style="font-size:16px; font-weight:900; color:#c084fc; margin:3px 0;">MACD 與量能</div>
+            <div style="font-size:12.5px; color:#cbd5e1;">【波段動能】<br>決定大方向勝率</div>
+          </div>
+          <div style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); border-radius:8px; padding:12px; text-align:center;">
+            <div style="font-size:12px; color:#7dd3fc; font-weight:700;">第 3 步</div>
+            <div style="font-size:16px; font-weight:900; color:#38bdf8; margin:3px 0;">RSI 指標</div>
+            <div style="font-size:12.5px; color:#cbd5e1;">【位階與背離】<br>過濾追高風險</div>
+          </div>
+          <div style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); border-radius:8px; padding:12px; text-align:center;">
+            <div style="font-size:12px; color:#fbbf24; font-weight:700;">第 4 步</div>
+            <div style="font-size:16px; font-weight:900; color:#f59e0b; margin:3px 0;">KD 指標</div>
+            <div style="font-size:12.5px; color:#cbd5e1;">【進場扳機】<br>決定進場時刻</div>
+          </div>
+        </div>
+
+        <!-- 四大步驟詳細表格 -->
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:15.5px; text-align:left;">
+            <thead>
+              <tr style="background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.12); color:#cbd5e1;">
+                <th style="padding:12px 14px; width:17%; font-size:16px; font-weight:800;">檢視順序</th>
+                <th style="padding:12px 14px; width:22%; font-size:16px; font-weight:800;">核心操盤提問</th>
+                <th style="padding:12px 14px; width:33%; font-size:16px; font-weight:800;">合格進場標準（綠燈 ✅）</th>
+                <th style="padding:12px 14px; width:28%; font-size:16px; font-weight:800;">一票否決標準（紅燈 ❌）</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:4px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(59,130,246,0.2); color:#93c5fd; border:1px solid rgba(59,130,246,0.45);">第 1 步：均線與趨勢</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; line-height:1.6;">
+                  【這檔是大格局多頭嗎？】<br><span style="font-size:13px; color:#94a3b8;">只做順勢單，不做逆勢單</span>
+                </td>
+                <td style="padding:14px; color:#86efac; line-height:1.6;">
+                  ✅ 均線呈現多頭排列（MA5 > MA10 > MA20）。<br>
+                  ✅ 20MA（月線）斜率上彎，且股價站穩於均線之上。
+                </td>
+                <td style="padding:14px; color:#fca5a5; line-height:1.6;">
+                  ❌ 股價位於下彎的月線/季線下方（直接淘汰不用看後面）。
+                </td>
+              </tr>
+
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:4px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(168,85,247,0.2); color:#c084fc; border:1px solid rgba(168,85,247,0.45);">第 2 步：MACD 與量能</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; line-height:1.6;">
+                  【主力部隊是在進場還是在出貨？】<br><span style="font-size:13px; color:#94a3b8;">確認中長線波段動能</span>
+                </td>
+                <td style="padding:14px; color:#86efac; line-height:1.6;">
+                  ✅ DIF/MACD 雙線在<strong>零軸之上多頭發散</strong>，或零軸下剛金叉翻多。<br>
+                  ✅ OSC 紅柱放大或綠柱翻紅；攻擊帶量、回檔縮量（窒息量洗盤）。
+                </td>
+                <td style="padding:14px; color:#fca5a5; line-height:1.6;">
+                  ❌ MACD 高檔死叉且紅柱劇烈衰退，或出現高檔爆大量倒貨。
+                </td>
+              </tr>
+
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:4px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(56,189,248,0.2); color:#7dd3fc; border:1px solid rgba(56,189,248,0.45);">第 3 步：RSI 指標</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; line-height:1.6;">
+                  【現在進場會不會追在極端高點？】<br><span style="font-size:13px; color:#94a3b8;">評估性價比與背離風險</span>
+                </td>
+                <td style="padding:14px; color:#86efac; line-height:1.6;">
+                  ✅ RSI(14) 處於 <strong>50 ~ 70</strong> 健康多方推進區。<br>
+                  ✅ 創高過程中無「⚠️ 頂背離」動能萎縮現象。
+                </td>
+                <td style="padding:14px; color:#fca5a5; line-height:1.6;">
+                  ❌ RSI > 80 且大幅正乖離（過熱追高易套牢，應等拉回）。<br>
+                  ❌ 出現股價創高但 RSI 無力創高的「頂背離」。
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:4px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.45);">第 4 步：KD 指標</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; line-height:1.6;">
+                  【今天是不是扣板機的最佳時機？】<br><span style="font-size:13px; color:#94a3b8;">抓最低成本與起漲轉折</span>
+                </td>
+                <td style="padding:14px; color:#86efac; line-height:1.6;">
+                  💡 <strong>買點 A（逢低回測型）</strong>：回測月線/季線支撐時，$K \le 30$ 出現「✨ KD 低檔超賣黃金交叉」，風報比極高！<br>
+                  🚀 <strong>買點 B（突破噴發型）</strong>：突破平台整理區時，$K \ge 70$ 出現「✨ 高檔再金叉」或進入「🚀 高檔強勢鈍化」。
+                </td>
+                <td style="padding:14px; color:#fca5a5; line-height:1.6;">
+                  ❌ KD 高檔死叉下彎（拉回中未止跌，切勿急躁接刀）。
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 實戰口訣總結金律 -->
+        <div style="background:rgba(236,72,153,0.09); border:1px solid rgba(236,72,153,0.35); border-radius:8px; padding:16px 20px; font-size:15.5px; color:#cbd5e1; line-height:1.8;">
+          <div style="font-weight:900; color:#f472b6; margin-bottom:8px; font-size:17px;">🎯 空手進場實戰心法十六字口訣：</div>
+          <div style="font-size:18px; font-weight:900; color:#fff; letter-spacing:1px; margin-bottom:8px; text-shadow:0 0 12px rgba(236,72,153,0.5);">
+            「均線定多空，MACD 看大勢；RSI 濾過熱，KD 扣板機。」
+          </div>
+          <div>1. <strong>大趨勢不對（均線/MACD）</strong>：一票否決，立刻換下一檔，絕不心存僥倖！</div>
+          <div>2. <strong>位階有風險（RSI 頂背離/過熱）</strong>：收入自選觀察名單，耐心等待量縮拉回支撐！</div>
+          <div>3. <strong>訊號全亮綠燈（回測支撐 + KD 金叉 + 出量表態）</strong>：<strong>算好停損點，毫不猶豫果斷進場！</strong></div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding:14px 24px; background:#1e2330; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:flex-end;">
+        <button type="button" onclick="closeEntryCheatSheetModal()" style="padding:9px 26px; border-radius:6px; background:#ec4899; color:#fff; font-weight:800; font-size:15px; border:none; cursor:pointer;">關閉口訣表</button>
+      </div>
+    </div>
+  </div>
+
   <script src="../data.js"></script>
   <script src="js/parser.js?v=67"></script>
   <script src="js/pattern_engine.js?v=67"></script>
@@ -781,6 +925,15 @@
     };
     window.closeKdCheatSheetModal = function() {
       const modal = document.getElementById('kdCheatSheetModal');
+      if (modal) modal.style.display = 'none';
+    };
+
+    window.openEntryCheatSheetModal = function() {
+      const modal = document.getElementById('entryCheatSheetModal');
+      if (modal) modal.style.display = 'flex';
+    };
+    window.closeEntryCheatSheetModal = function() {
+      const modal = document.getElementById('entryCheatSheetModal');
       if (modal) modal.style.display = 'none';
     };
 
