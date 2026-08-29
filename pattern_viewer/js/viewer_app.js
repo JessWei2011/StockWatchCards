@@ -473,72 +473,112 @@
           const decision = String(card.decision || '').trim();
           const pattern = String(card.pattern || '').trim();
           
-          let actionState = '觀望';
-          const techTags = (card.technicalTags || '').split(/[、,]/).map(s => s.trim());
-          const rsiTags = (card.rsiTags || '').split(/[、,]/).map(s => s.trim());
-          const volTags = (card.volTags || '').split(/[、,]/).map(s => s.trim());
-          const macdTags = (card.macdTags || '').split(/[、,]/).map(s => s.trim());
-          const kdTags = (card.kdTags || '').split(/[、,]/).map(s => s.trim());
-          
-          const isStrongMomo = /歷史|波段新高|Blue Sky|軋空主升|噴發|鈍化/i.test(raw + pattern);
-          const isExit = /空頭|死亡交叉|死叉|跌破|減碼|離場|破線|頂背離|倒貨/i.test(raw) && !/多頭排列/i.test(raw);
-          const isBaseEntry = /買進|Buy|雙底|W底|起漲|金叉|突破|洗盤完成/i.test(raw + decision);
+          const techTagsList = (typeof technicalStateTags === 'function' ? technicalStateTags(card) : (window.parent && window.parent.technicalStateTags ? window.parent.technicalStateTags(card) : []));
+          const rsiTagsList = (typeof rsiStateTags === 'function' ? rsiStateTags(card) : (window.parent && window.parent.rsiStateTags ? window.parent.rsiStateTags(card) : []));
+          const volTagsList = (typeof volStateTags === 'function' ? volStateTags(card) : (window.parent && window.parent.volStateTags ? window.parent.volStateTags(card) : []));
+          const macdTagsList = (typeof macdStateTags === 'function' ? macdStateTags(card) : (window.parent && window.parent.macdStateTags ? window.parent.macdStateTags(card) : []));
+          const kdTagsList = (typeof kdStateTags === 'function' ? kdStateTags(card) : (window.parent && window.parent.kdStateTags ? window.parent.kdStateTags(card) : []));
 
-          if (/Strong Buy|強烈買進|主升/i.test(decision) || (isStrongMomo && /買進|Buy/i.test(decision))) {
-            actionState = '強勢入場/續抱';
-          } else if (/加碼|加倉|突破加碼/i.test(decision)) {
-            actionState = '加碼';
-          } else if (isExit || /賣出|Sell|減碼/i.test(decision)) {
+          const techTagsStr = techTagsList.map(t => t.label).join('、');
+          const rsiTagsStr = rsiTagsList.map(t => t.label).join('、');
+          const volTagsStr = volTagsList.map(t => t.label).join('、');
+          const macdTagsStr = macdTagsList.map(t => t.label).join('、');
+          const kdTagsStr = kdTagsList.map(t => t.label).join('、');
+          
+          const combinedAll = `${pattern} ${raw} ${techTagsStr} ${rsiTagsStr} ${volTagsStr} ${macdTagsStr} ${kdTagsStr}`;
+
+          // 1. 嚴謹 5 大操盤時機判斷順序
+          const hasVolExit = /高檔爆大量倒貨|頂背離|主力出貨|異常爆量/.test(volTagsStr);
+          const hasRsiExit = /頂背離|弱勢整理|跌破/.test(rsiTagsStr);
+          const hasMacdExit = /死亡交叉|死叉|空方弱勢|柱狀體翻綠/.test(macdTagsStr);
+          const hasKdExit = /死亡交叉|死叉|空方弱勢/.test(kdTagsStr);
+          const hasPatExit = /跌破|推升失敗|節節敗退|下降趨勢|受阻/.test(pattern);
+
+          const isExit = (hasVolExit || hasRsiExit) || (hasMacdExit && hasKdExit) || (hasKdExit && hasPatExit && !/多頭排列/.test(techTagsStr));
+
+          const isStrongBreakout = /歷史\/波段新高|創歷史|新高爆量突破|噴出|強勢攻擊|主升/.test(pattern + techTagsStr);
+          const isKdDull = /高檔強勢鈍化|軋空主升/.test(kdTagsStr);
+          const isRsiDull = /極度過熱|高檔強勢鈍化|多頭強勢/.test(rsiTagsStr);
+          const isMacdStrong = /零軸上強勢多頭|多頭發散/.test(macdTagsStr);
+
+          const isStrongMomo = !isExit && (isStrongBreakout || (isKdDull && isMacdStrong) || (isRsiDull && isMacdStrong));
+
+          const isVolAttack = /帶量長紅|滾量攻擊|量價齊揚|量能黃金交叉|買盤溫和增量/.test(volTagsStr);
+          const isRsiPush = /多方推進/.test(rsiTagsStr);
+          const isKdPush = /多方強勢推進/.test(kdTagsStr);
+
+          const isAdd = !isExit && !isStrongMomo && isVolAttack && (isRsiPush || isKdPush || /多方波段整理/.test(macdTagsStr));
+
+          const isBottomPattern = /雙底|W底|雙重底|破底翻|打底|上升趨勢結構/.test(pattern);
+          const isQuietVol = /窒息量|籌碼洗淨|縮量沉澱|常態量能/.test(volTagsStr);
+          const isKdGoldCross = /黃金交叉|金叉|強烈買點|短線轉強/.test(kdTagsStr);
+          const isMacdRebound = /落底反彈|零軸下金叉|柱狀體翻紅/.test(macdTagsStr);
+
+          const isBaseEntry = !isExit && !isStrongMomo && !isAdd && (isBottomPattern || isKdGoldCross || isMacdRebound || (isQuietVol && /多方/.test(combinedAll)));
+
+          let actionState = '觀望';
+          if (isExit) {
             actionState = '出場';
-          } else if (isBaseEntry || /買進|Buy/i.test(decision)) {
+          } else if (isStrongMomo) {
+            actionState = '強勢入場/續抱';
+          } else if (isAdd) {
+            actionState = '加碼';
+          } else if (isBaseEntry) {
             actionState = '入場';
           } else {
             actionState = '觀望';
           }
 
-          let maText = pattern ? `${pattern}；${techTags.slice(0, 2).join('、') || '均線多頭架構'}` : '均線多頭排列，短中期均線上彎推進';
-          let maTone = /新高|突破|主升|仰角/i.test(maText) ? 'positive' : (/雙底|W底|反轉|翻揚/i.test(maText) ? 'gold' : (/空頭|跌破|下彎/i.test(maText) ? 'negative' : 'cyan'));
+          // 2. 指標文字與 Tone
+          const primaryTechTag = techTagsList[0] || { tone: 'cyan', label: '均線多頭架構' };
+          let maTone = primaryTechTag.tone || 'cyan';
+          let maText = pattern ? `${pattern}；${techTagsStr || '短中期均線架構完整'}` : (techTagsStr || '短中期均線向上發散推進');
 
-          let macdText = macdTags.join('、') || 'MACD 多方波段整理，零軸上發散';
-          let macdTone = /強勢多頭|零軸上|加速/i.test(macdText) ? 'green' : (/金叉|黃金交叉|翻紅|底背離/i.test(macdText) ? 'gold' : (/死叉|死亡交叉|頂背離|翻綠/i.test(macdText) ? 'negative' : 'cyan'));
+          const primaryMacdTag = macdTagsList[0] || { tone: 'neutral', label: 'MACD 數據正常' };
+          let macdTone = primaryMacdTag.tone || 'cyan';
+          let macdText = macdTagsStr || 'MACD 處於常態波動區間';
 
-          let volText = volTags.join('、') || '成交量能溫和換手推進';
-          let volTone = /滾量|主升|爆量/i.test(volText) ? 'green' : (/黃金交叉|金叉|窒息量|洗淨/i.test(volText) ? 'gold' : (/倒貨|天量|退潮/i.test(volText) ? 'negative' : 'cyan'));
+          const primaryVolTag = volTagsList[0] || { tone: 'neutral', label: '常態量能換手' };
+          let volTone = primaryVolTag.tone || 'cyan';
+          let volText = volTagsStr || '成交量能溫和常態換手';
 
-          let rsiText = rsiTags.join('、') || 'RSI 位於健康多方推進區';
-          let rsiTone = /強勢|鈍化/i.test(rsiText) ? 'green' : (/底背離|超跌|黃金交叉/i.test(rsiText) ? 'gold' : (/過熱|超買|頂背離|死叉/i.test(rsiText) ? 'negative' : 'cyan'));
+          const primaryRsiTag = rsiTagsList[0] || { tone: 'neutral', label: 'RSI 數據正常' };
+          let rsiTone = primaryRsiTag.tone || 'cyan';
+          let rsiText = rsiTagsStr || 'RSI 位於常態多空震盪區';
 
-          let kdText = kdTags.join('、') || 'KD 雙軌多方推進';
-          let kdTone = /鈍化|軋空/i.test(kdText) ? 'green' : (/金叉|超賣|底背離|買點/i.test(kdText) ? 'gold' : (/死叉|超買|頂背離|轉弱/i.test(kdText) ? 'negative' : 'cyan'));
+          const primaryKdTag = kdTagsList[0] || { tone: 'neutral', label: 'KD 數據正常' };
+          let kdTone = primaryKdTag.tone || 'cyan';
+          let kdText = kdTagsStr || 'KD 雙軌多空中性運行';
 
-          let summaryText = `${card.name} 呈現 ${pattern || '多方推進型態'}，指標結構保持健全。`;
-          let actionPlan = `建議依紀律操作，進場防守線可參考關鍵均線或停損位 ${card.stop ? card.stop + ' 元' : '前低點'}。`;
+          let summaryText = `${card.name} 當前呈現多空觀望整理，待指標方向進一步明朗。`;
+          let actionPlan = `暫不躁進建倉，靜待成交量能表態或均線收斂後之方向性突破。`;
+
           if (actionState === '強勢入場/續抱') {
-            summaryText = `突破歷史/波段天花板，上方無套牢賣壓，主力極致動能軋空主升段！`;
-            actionPlan = `建議順勢進場或續抱，以 5MA 作為移動停利防守線，享受主升段利潤！`;
-          } else if (actionState === '入場') {
-            summaryText = `底部型態確立或量縮洗盤完成，短中期均線剛發動，具極佳安全邊際。`;
-            actionPlan = `於現價附近或支撐區佈局，停損設在 ${card.stop ? card.stop + ' 元' : '前低支撐'}，波段目標價看 ${card.target ? card.target + ' 元' : '前高'}！`;
-          } else if (actionState === '出場') {
-            summaryText = `指標出現高檔轉弱或破線警訊，多頭動能衰退，主力有調節結帳跡象。`;
-            actionPlan = `嚴格執行停利/停損紀律，跌破關鍵支撐應果斷減碼或清倉觀望！`;
+            summaryText = `${card.name} 呈現【歷史/波段強勢主升】，指標高檔鈍化，主力動能極致軋空！`;
+            actionPlan = `順勢進場或持股續抱，以 5MA 作為移動停利防守線，不預設高點享受主升段利潤！`;
           } else if (actionState === '加碼') {
-            summaryText = `多頭回測支撐有守後再度出量轉強，波段攻擊動能擴張。`;
-            actionPlan = `脫離成本區後於突破點順勢加碼，移動停利點上移至最新突破均線。`;
+            summaryText = `${card.name} 呈現【多方波段出量攻擊】，均線順暢推進且攻擊量能湧現。`;
+            actionPlan = `持股脫離成本區後於突破點順勢加碼，移動停利點上移至 10MA 或突破紅K低點。`;
+          } else if (actionState === '入場') {
+            summaryText = `${card.name} 呈現【底部打底蓄勢・量縮洗淨起漲】，極具安全邊際。`;
+            actionPlan = `於現價附近或支撐區逢低佈局，停損設在 ${card.stop ? card.stop + ' 元' : '打底低點'}，波段目標看 ${card.target ? card.target + ' 元' : '前高'}！`;
+          } else if (actionState === '出場') {
+            summaryText = `${card.name} 出現【高檔頂背離 / 死叉轉弱 / 主力調節警訊】，多頭動能衰退！`;
+            actionPlan = `嚴格執行停利/停損紀律，跌破關鍵支撐或均線應果斷分批減碼、落袋為安！`;
           }
 
           const badgeStyle = (tone) => {
-            if (tone === 'negative') return 'background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);';
-            if (tone === 'gold') return 'background:rgba(234,179,8,0.2); color:#fde047; border:1px solid rgba(234,179,8,0.45);';
-            if (tone === 'green') return 'background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.45);';
-            if (tone === 'cyan') return 'background:rgba(56,189,248,0.2); color:#7dd3fc; border:1px solid rgba(56,189,248,0.45);';
-            return 'background:rgba(148,163,184,0.2); color:#cbd5e1; border:1px solid rgba(148,163,184,0.45);';
+            if (tone === 'positive') return 'background:rgba(239,68,68,0.22); color:#fca5a5; border:1px solid rgba(248,113,113,0.48);';
+            if (tone === 'mixed')    return 'background:rgba(234,179,8,0.22); color:#fde047; border:1px solid rgba(250,204,21,0.48);';
+            if (tone === 'negative') return 'background:rgba(34,197,94,0.22); color:#86efac; border:1px solid rgba(74,222,128,0.45);';
+            if (tone === 'cyan')     return 'background:rgba(14,165,233,0.22); color:#7dd3fc; border:1px solid rgba(56,189,248,0.45);';
+            return 'background:rgba(148,163,184,0.18); color:#cbd5e1; border:1px solid rgba(148,163,184,0.35);';
           };
           const toneName = (tone) => {
-            if (tone === 'negative') return '🔴 警示/轉弱';
-            if (tone === 'gold') return '🟡 轉強/起漲';
-            if (tone === 'green') return '🟢 主升/鈍化';
-            if (tone === 'cyan') return '🔵 多方推進';
+            if (tone === 'positive') return '🔴 警示 / 死叉';
+            if (tone === 'mixed')    return '🟡 轉強 / 金叉';
+            if (tone === 'negative') return '🟢 主升 / 鈍化';
+            if (tone === 'cyan')     return '🔵 多方推進';
             return '⚪ 中性整理';
           };
           const actions = ['入場', '出場', '加碼', '強勢入場/續抱', '觀望'];
