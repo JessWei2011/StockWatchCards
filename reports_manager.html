@@ -829,9 +829,6 @@
           </div>
           <div class="market-inst-actions">
             <span class="market-inst-status" id="market-inst-status"></span>
-            <button type="button" class="btn" id="toggle-card-view-mode-btn" onclick="toggleCardViewMode()" style="background:rgba(236,72,153,0.18); color:#f472b6; border:1px solid rgba(236,72,153,0.45); font-weight:800; font-size:12px; border-radius:6px; padding:4px 10px; cursor:pointer;" title="在『標準指標標籤模式』與『操盤決策Checklist表格模式』之間切換">
-              📋 顯示模式：決策表格 (已啟用)
-            </button>
             <button type="button" class="btn market-refresh-btn" id="market-inst-refresh-btn" title="向證交所重新整理大盤法人最新數據">🔄 即時重整</button>
           </div>
         </div>
@@ -919,16 +916,6 @@
               <div class="stat-label" style="color:#fbbf24; font-size:11px; font-weight:700;">⚡ KD 指標狀態</div>
               <div id="statKdTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
             </div>
-
-            <!-- ========================================================================= -->
-            <!-- 【MARK: 位置B - 專業看盤側邊欄 操盤決策 CHECKLIST 儀表板】 -->
-            <!-- 此區塊為在專業看盤側邊欄新增的決策勾選與5大指標檢核表。 -->
-            <!-- 若日後需要 MARK 掉或隱藏，可直接將此容器 style 加上 display:none 或搜尋此 MARK 標記。 -->
-            <!-- ========================================================================= -->
-            <div class="stat-box full" id="sidebarChecklistDecisionBox" style="margin-top:10px; padding:0; background:transparent; border:none;">
-              <div id="sidebarChecklistDecisionContent" style="display:flex; flex-direction:column; gap:8px;"></div>
-            </div>
-            <!-- ========================================================================= -->
           </div>
 
           <!-- 即時十字游標數據看板 -->
@@ -4188,45 +4175,34 @@
           </span>
         </div>
         <div class="rank-details">
-          <!-- ========================================================================= -->
-          <!-- 【MARK: 位置A - 模式選擇切換（決策表格 VS 傳統標籤）】 -->
-          <!-- 若 CARD_VIEW_MODE === 'table' 則顯示全新操盤決策Checklist表格 -->
-          <!-- 若 CARD_VIEW_MODE === 'tags' 則還原為原先的各項標籤模式 -->
-          <!-- ========================================================================= -->
-          ${CARD_VIEW_MODE === 'table' ? `
-            ${renderChecklistDecisionTable(c)}
-          ` : `
-            <div class="rank-tech-tags">
-              <span class="rank-detail-label">均線量價</span>
-              ${renderTechnicalTags(c)}
-            </div>
-            <div class="rank-vol-tags">
-              <span class="rank-detail-label">VOL 指標</span>
-              ${renderVolTags(c)}
-            </div>
-            <div class="rank-rsi-tags">
-              <span class="rank-detail-label">RSI 指標</span>
-              ${renderRsiTags(c)}
-            </div>
-            <div class="rank-macd-tags">
-              <span class="rank-detail-label">MACD 指標</span>
-              ${renderMacdTags(c)}
-            </div>
-            <div class="rank-kd-tags">
-              <span class="rank-detail-label">KD 指標</span>
-              ${renderKdTags(c)}
-            </div>
-            <div class="rank-chip-tags">
-              <span class="rank-detail-label">籌碼指標</span>
-              ${renderChipTags(c)}
-            </div>
-            <div class="rank-pattern-tags">
-              <span class="rank-detail-label">型態指標</span>
-              ${renderPatternTags(c)}
-            </div>
-          `}
-          <!-- ========================================================================= -->
-
+          <div class="rank-tech-tags">
+            <span class="rank-detail-label">均線量價</span>
+            ${renderTechnicalTags(c)}
+          </div>
+          <div class="rank-vol-tags">
+            <span class="rank-detail-label">VOL 指標</span>
+            ${renderVolTags(c)}
+          </div>
+          <div class="rank-rsi-tags">
+            <span class="rank-detail-label">RSI 指標</span>
+            ${renderRsiTags(c)}
+          </div>
+          <div class="rank-macd-tags">
+            <span class="rank-detail-label">MACD 指標</span>
+            ${renderMacdTags(c)}
+          </div>
+          <div class="rank-kd-tags">
+            <span class="rank-detail-label">KD 指標</span>
+            ${renderKdTags(c)}
+          </div>
+          <div class="rank-chip-tags">
+            <span class="rank-detail-label">籌碼指標</span>
+            ${renderChipTags(c)}
+          </div>
+          <div class="rank-pattern-tags">
+            <span class="rank-detail-label">型態指標</span>
+            ${renderPatternTags(c)}
+          </div>
           <div class="inst-mini-chart">
             <div class="inst-chart-head">
               <span class="rank-detail-label">三大法人近15日逐日買賣超概數</span>
