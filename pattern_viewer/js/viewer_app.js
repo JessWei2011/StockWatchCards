@@ -457,6 +457,7 @@
         } else {
           statKdTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">KD 數據正常</span>`;
         }
+      }
       if (this.currentStockData && this.currentStockData.dates && this.currentStockData.dates.length) {
         window.updateFocusHUD(this.currentStockData.dates.length - 1, this.currentStockData);
       }
