@@ -42,10 +42,14 @@ window.ChartEngine = {
     const total = stockData.dates.length;
     const stockKey = `${stockData.title}|${total}`;
     let zoomStart, zoomEnd;
+    let prevLegendSelected = null;
     if (this._lastStockKey === stockKey) {
       const prevOption = this.chartInstance.getOption();
       const prevZoom = prevOption && prevOption.dataZoom && prevOption.dataZoom[0];
       if (prevZoom) { zoomStart = prevZoom.start; zoomEnd = prevZoom.end; }
+      if (prevOption && prevOption.legend && prevOption.legend[0] && prevOption.legend[0].selected) {
+        prevLegendSelected = prevOption.legend[0].selected;
+      }
     }
     if (zoomStart == null) {
       zoomEnd = 100;
@@ -173,13 +177,13 @@ window.ChartEngine = {
         data: ['K線', 'MA5', 'MA10', 'MA20', 'MA60', 'MA120', 'BOLL上軌', 'BOLL下軌', '成交量', 'MV5', 'MV20', 'RSI(6)', 'RSI(12)', 'MACD柱體', 'DIF快線', 'MACD慢線', 'K值', 'D值'],
         top: 4,
         textStyle: { color: '#94a3b8', fontSize: 11 },
-        selected: {
+        selected: Object.assign({
           'K線': true,
           'MA5': displayToggles.showMa !== false,
           'MA10': displayToggles.showMa !== false,
           'MA20': displayToggles.showMa !== false,
-          'MA60': displayToggles.showMa !== false,
-          'MA120': displayToggles.showMa !== false,
+          'MA60': false,
+          'MA120': false,
           'BOLL上軌': displayToggles.showBoll !== false,
           'BOLL下軌': displayToggles.showBoll !== false,
           '成交量': true,
@@ -192,7 +196,7 @@ window.ChartEngine = {
           'MACD慢線': true,
           'K值': true,
           'D值': true
-        }
+        }, prevLegendSelected || {})
       },
       grid: [
         { left: '6%', right: '4%', top: '7%', height: '35%' },   // Pane 0: K-Line
@@ -343,7 +347,7 @@ window.ChartEngine = {
             };
           })
         },
-        // 5.1 MV5 (5日均量線 - 琥珀金黃)
+        // 5.1 MV5 (5日均量線 - 快線科技藍)
         {
           name: 'MV5',
           type: 'line',
@@ -352,9 +356,9 @@ window.ChartEngine = {
           data: vma5,
           smooth: true,
           showSymbol: false,
-          lineStyle: { color: '#fbbf24', width: 1.5 }
+          lineStyle: { color: '#38bdf8', width: 1.5 }
         },
-        // 5.2 MV20 (20日均量線 - 靛紫藍)
+        // 5.2 MV20 (20日均量線 - 慢線琥珀黃)
         {
           name: 'MV20',
           type: 'line',
@@ -363,10 +367,10 @@ window.ChartEngine = {
           data: vma20,
           smooth: true,
           showSymbol: false,
-          lineStyle: { color: '#a78bfa', width: 1.5 }
+          lineStyle: { color: '#f59e0b', width: 1.5 }
         },
 
-        // 6. Pane 2: RSI 雙線 (Grid 2) - RSI(6) 短線琥珀黃 + RSI(12) 長線科技藍
+        // 6. Pane 2: RSI 雙線 (Grid 2) - RSI(6) 短線科技藍 + RSI(12) 長線琥珀黃
         {
           name: 'RSI(6)',
           type: 'line',
@@ -375,7 +379,13 @@ window.ChartEngine = {
           data: (rsi6 && rsi6.length) ? rsi6 : rsi,
           smooth: true,
           showSymbol: false,
-          lineStyle: { color: '#fbbf24', width: 1.8 }, // 琥珀亮黃
+          lineStyle: { color: '#38bdf8', width: 2 }, // 短線科技藍
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(56, 189, 248, 0.12)' },
+              { offset: 1, color: 'rgba(56, 189, 248, 0.0)' }
+            ])
+          }
         },
         {
           name: 'RSI(12)',
@@ -385,13 +395,7 @@ window.ChartEngine = {
           data: (rsi12 && rsi12.length) ? rsi12 : rsi,
           smooth: true,
           showSymbol: false,
-          lineStyle: { color: '#38bdf8', width: 2 }, // 科技天藍
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(56, 189, 248, 0.12)' },
-              { offset: 1, color: 'rgba(56, 189, 248, 0.0)' }
-            ])
-          },
+          lineStyle: { color: '#f59e0b', width: 1.8 }, // 長線琥珀黃
           markLine: {
             symbol: 'none',
             data: [
@@ -404,7 +408,7 @@ window.ChartEngine = {
           }
         },
 
-        // 7. Pane 3: MACD (Grid 3) - 柱體 (中空粗框) + DIF快線 + MACD慢線
+        // 7. Pane 3: MACD (Grid 3) - 柱體 (中空粗框) + DIF快線(藍) + MACD慢線(黃)
         {
           name: 'MACD柱體',
           type: 'bar',
@@ -440,7 +444,7 @@ window.ChartEngine = {
           data: macdSignal || [],
           smooth: true,
           showSymbol: false,
-          lineStyle: { color: '#fb923c', width: 2 },
+          lineStyle: { color: '#f59e0b', width: 2 },
           markLine: {
             symbol: 'none',
             data: [
@@ -449,7 +453,7 @@ window.ChartEngine = {
           }
         },
 
-        // 8. Pane 4: KD (Grid 4) - 雙色加粗流線
+        // 8. Pane 4: KD (Grid 4) - K快線(藍) + D慢線(黃)
         {
           name: 'K值',
           type: 'line',
@@ -458,7 +462,7 @@ window.ChartEngine = {
           data: kList,
           smooth: true,
           showSymbol: false,
-          lineStyle: { color: '#f59e0b', width: 2 }
+          lineStyle: { color: '#38bdf8', width: 2 }
         },
         {
           name: 'D值',
@@ -468,7 +472,7 @@ window.ChartEngine = {
           data: dList,
           smooth: true,
           showSymbol: false,
-          lineStyle: { color: '#38bdf8', width: 2 },
+          lineStyle: { color: '#f59e0b', width: 2 },
           markLine: {
             symbol: 'none',
             data: [

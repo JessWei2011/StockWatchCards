@@ -580,7 +580,7 @@
     if (volMaEl) {
       const s5 = (v5 != null && !isNaN(v5)) ? `${Number(v5).toLocaleString()}` : '—';
       const s20 = (v20 != null && !isNaN(v20)) ? `${Number(v20).toLocaleString()}` : '—';
-      volMaEl.innerHTML = `<span style="color:#fbbf24;">MV5:</span> <span style="font-weight:800; color:#fef08a;">${s5}</span> ／ <span style="color:#a78bfa;">MV20:</span> <span style="font-weight:800; color:#ddd6fe;">${s20}</span>`;
+      volMaEl.innerHTML = `<span style="color:#38bdf8;">MV5:</span> <span style="font-weight:800; color:#bae6fd;">${s5}</span> ／ <span style="color:#f59e0b;">MV20:</span> <span style="font-weight:800; color:#fed7aa;">${s20}</span>`;
     }
 
     // Helper
@@ -606,8 +606,8 @@
     const r6 = stockData.rsi6 && stockData.rsi6[idx];
     const r12 = stockData.rsi12 && stockData.rsi12[idx];
     const rsiVal = r6 != null ? r6 : (stockData.rsi && stockData.rsi[idx]);
-    setVal('hudRsi6', r6, '#fbbf24');
-    setVal('hudRsi12', r12, '#38bdf8');
+    setVal('hudRsi6', r6, '#bae6fd');
+    setVal('hudRsi12', r12, '#fed7aa');
 
     // MACD
     setVal('hudMacdDif', stockData.dif && stockData.dif[idx], '#bae6fd');
@@ -625,8 +625,8 @@
     }
 
     // KD
-    setVal('hudK', stockData.kList && stockData.kList[idx], '#f1f5f9');
-    setVal('hudD', stockData.dList && stockData.dList[idx], '#f1f5f9');
+    setVal('hudK', stockData.kList && stockData.kList[idx], '#bae6fd');
+    setVal('hudD', stockData.dList && stockData.dList[idx], '#fed7aa');
 
     // BOLL
     setVal('hudBollUp', stockData.bollUpper && stockData.bollUpper[idx], '#f472b6');
