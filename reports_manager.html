@@ -2228,8 +2228,6 @@
     if (klineM) techTags = klineM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
     const techM = mdText.match(/技術標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/);
     if (techM && !techTags.length) techTags = techM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
-    // 徹底過濾歷史 .md 報告中混雜的量能字串
-    techTags = techTags.filter(t => !/量能|爆量|放量|增量|縮量/.test(t));
     const chipM = mdText.match(/籌碼標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/);
     if (chipM) chipTags = chipM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
     const patM = mdText.match(/型態標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/);

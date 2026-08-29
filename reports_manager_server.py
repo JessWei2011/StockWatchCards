@@ -224,11 +224,7 @@ def parse_md_report_card(md_path):
     except ValueError:
         rr_ratio = None
 
-    raw_tech_str = m_kline.group(1).strip() if m_kline else (m_tech.group(1).strip() if m_tech else "")
-    # 徹底剝離所有殘留的量能字串
-    cleaned_tech_parts = [t.strip() for t in re.split(r'[、,]', raw_tech_str) if t.strip() and not re.search(r'量能|爆量|放量|增量|縮量', t)]
-    tech_tags_str = "、".join(cleaned_tech_parts)
-
+    tech_tags_str = m_kline.group(1).strip() if m_kline else (m_tech.group(1).strip() if m_tech else "")
     vol_tags_str = m_vol.group(1).strip() if m_vol else ""
     chip_tags_str = m_chip.group(1).strip() if m_chip else ""
     rsi_tags_str = m_rsi.group(1).strip() if m_rsi else ""

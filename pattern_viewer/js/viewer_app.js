@@ -345,7 +345,7 @@
         }
 
         if (klineTagsStr) {
-          const parts = klineTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean).filter(t => !/量能|爆量|放量|增量|縮量/.test(t));
+          const parts = klineTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
           statKlineTags.innerHTML = parts.map(t => {
             let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
             if (/多頭|上彎|仰角|噴出|金叉|站上|重回/.test(t)) {
