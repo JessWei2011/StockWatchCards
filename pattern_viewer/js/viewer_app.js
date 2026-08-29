@@ -503,6 +503,36 @@
           statKdTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">KD 數據正常</span>`;
         }
       }
+
+      // 渲染「🏛️ 籌碼指標狀態」
+      const statChipTags = this.q('#statChipTags') || document.getElementById('statChipTags');
+      if (statChipTags) {
+        const cleanCode = String(this.currentCode || '').split('.')[0].trim();
+        const allCards = (window.cardsByCode || (window.parent && window.parent.cardsByCode) || (typeof cardsByCode !== 'undefined' ? cardsByCode : {})) || {};
+        const card = allCards[cleanCode] || allCards[this.currentCode] || null;
+        let chipTagsStr = card ? (card.chipTags || card.chip_tags || '') : '';
+        if (!chipTagsStr && card && card.raw) {
+          const m = String(card.raw).match(/籌碼標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
+          if (m) chipTagsStr = m[1].trim();
+        }
+
+        if (chipTagsStr) {
+          const parts = chipTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
+          statChipTags.innerHTML = parts.map(t => {
+            let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
+            if (/大買|總攻擊|認養|由賣轉買|鎖碼|避險|資減法買|防守|建倉|買超|積極/.test(t)) {
+              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
+            } else if (/倒貨|結帳|資增法賣|退潮|賣超|沉陷/.test(t)) {
+              style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
+            } else if (/護盤|對作|接刀|吃貨/.test(t)) {
+              style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
+            }
+            return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
+          }).join('');
+        } else {
+          statChipTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">法人籌碼中性</span>`;
+        }
+      }
       if (this.currentStockData && this.currentStockData.dates && this.currentStockData.dates.length) {
         window.updateFocusHUD(this.currentStockData.dates.length - 1, this.currentStockData);
       }

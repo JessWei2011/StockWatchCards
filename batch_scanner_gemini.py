@@ -74,8 +74,13 @@ def parse_html_report(file_path):
                 hi = float(cells[2].replace(',', ''))
                 lo = float(cells[3].replace(',', ''))
                 cl = float(cells[4].replace(',', ''))
-                vol_str = cells[5].replace(',', '').replace('M', '000000').replace('K', '000')
-                vol = float(re.sub(r'[^\d.]', '', vol_str)) if vol_str else 0.0
+                v_raw = cells[5].replace(',', '').strip()
+                if v_raw.endswith('M') or v_raw.endswith('m'):
+                    vol = float(v_raw[:-1]) * 1000000
+                elif v_raw.endswith('K') or v_raw.endswith('k'):
+                    vol = float(v_raw[:-1]) * 1000
+                else:
+                    vol = float(re.sub(r'[^\d.]', '', v_raw)) if v_raw else 0.0
                 kline_data.append({
                     'date': date_str, 'open': op, 'high': hi, 'low': lo, 'close': cl, 'volume': vol
                 })
@@ -596,6 +601,134 @@ def detect_macd_tags(close_s: pd.Series) -> list:
     return tags
 
 
+def detect_chip_tags(stock_info: dict, kline_df: pd.DataFrame = None) -> list:
+    """台股實戰專業籌碼指標判定大腦
+    嚴格規範：只看近 1~5 日即時攻防，並以近 20 日（月度）判斷護盤底倉
+    涵蓋：投信爆量總攻/護盤、土洋同步/對作、資減法買/資增法賣、法人高強度鎖碼、自營避險點火
+    """
+    tags = []
+    institutions = stock_info.get('institutions', [])
+    margin = stock_info.get('margin', [])
+    
+    if not institutions:
+        return ["⚪ 法人籌碼中性換手"]
+
+    inst_5 = institutions[:5]
+    inst_20 = institutions[:20]
+    
+    # 最新當日數據
+    latest_inst = inst_5[0]
+    f_0 = latest_inst.get('foreign', 0.0)
+    t_0 = latest_inst.get('trust', 0.0)
+    d_0 = latest_inst.get('dealer', 0.0)
+    tot_0 = latest_inst.get('total', 0.0)
+    
+    # 總成交量 (張數)
+    vol_col = 'volume' if 'volume' in kline_df.columns else ('Volume' if 'Volume' in kline_df.columns else None)
+    close_col = 'close' if 'close' in kline_df.columns else ('Close' if 'Close' in kline_df.columns else None)
+    
+    latest_vol_shares = kline_df[vol_col].iloc[-1] if (kline_df is not None and not kline_df.empty and vol_col) else 0
+    latest_vol_lots = (latest_vol_shares / 1000.0) if latest_vol_shares > 0 else 0
+    
+    # 股價與均線關係 (判斷護盤 vs 總攻)
+    price = kline_df[close_col].iloc[-1] if (kline_df is not None and not kline_df.empty and close_col) else 0
+    ma20_val = kline_df[close_col].rolling(20).mean().iloc[-1] if (kline_df is not None and close_col and len(kline_df) >= 20) else price
+    is_at_support = (price <= ma20_val * 1.02)  # 回檔測支撐區
+
+    # ---------------------------------------------------------
+    # 1. 投信動態 (內資主力、爆量護盤、爆量總攻、連續認養)
+    # ---------------------------------------------------------
+    trust_5_buys = [x.get('trust', 0.0) for x in inst_5]
+    trust_buy_days = sum(1 for x in trust_5_buys if x > 0)
+    
+    # 投信連買天數
+    trust_consecutive_buys = 0
+    for x in trust_5_buys:
+        if x > 0:
+            trust_consecutive_buys += 1
+        else:
+            break
+
+    # 投信暴量判定 (滿足前5日均量3倍或單日買超顯著)
+    past_trust_pos = [x for x in trust_5_buys[1:] if x > 0]
+    avg_past_trust = (sum(past_trust_pos) / len(past_trust_pos)) if past_trust_pos else 0
+    is_trust_surge = (t_0 >= 500 and (avg_past_trust == 0 or t_0 >= avg_past_trust * 2.5)) or (latest_vol_lots > 0 and (t_0 / latest_vol_lots) >= 0.12 and t_0 >= 200)
+
+    if trust_consecutive_buys >= 3 or (trust_buy_days >= 4 and t_0 > 0):
+        if is_trust_surge:
+            if is_at_support:
+                tags.append("🛡️ 投信巨額爆量護盤 (關鍵支撐鎖碼防禦)")
+            else:
+                tags.append("🚀 投信爆量總攻擊 (主力共識急拉主升段)")
+        else:
+            tags.append(f"🚀 投信連續認養 (近5日買超{trust_buy_days}天)")
+    elif t_0 > 0 and all(x <= 0 for x in trust_5_buys[1:3]) and (t_0 >= 200 or is_trust_surge):
+        tags.append("✨ 投信由賣轉買 (首日翻多起漲)")
+    elif all(x < 0 for x in trust_5_buys[:3]) and sum(trust_5_buys[:3]) <= -300:
+        tags.append("⚠️ 投信高檔結帳 (連日調節賣超)")
+
+    # ---------------------------------------------------------
+    # 2. 土洋同盟與對作 (外資 vs 投信)
+    # ---------------------------------------------------------
+    if f_0 > 0 and t_0 > 0 and (f_0 + t_0 >= 300 or (latest_vol_lots > 0 and (f_0 + t_0) / latest_vol_lots >= 0.10)):
+        tags.append("🔥 土洋同步大買 (雙主力合力作多)")
+    elif f_0 < 0 and t_0 > 0 and t_0 >= 150:
+        tags.append("⚔️ 土洋對作 (投信接刀吃貨/外資倒貨)")
+    elif f_0 > 0 and t_0 < 0 and f_0 >= 300:
+        tags.append("⚡ 土洋對作 (外資吃貨/投信調節)")
+    elif f_0 < 0 and t_0 < 0 and d_0 < 0 and tot_0 <= -500:
+        tags.append("🚨 法人集體倒貨 (籌碼沉陷)")
+
+    # ---------------------------------------------------------
+    # 3. 法人高強度鎖碼 & 自營商避險點火
+    # ---------------------------------------------------------
+    if latest_vol_lots > 0 and tot_0 > 0:
+        inst_pct = tot_0 / latest_vol_lots
+        if inst_pct >= 0.30 and tot_0 >= 300:
+            tags.append(f"🔒 法人高強度鎖碼 (單日買超佔比 {int(inst_pct*100)}%)")
+            
+    if latest_vol_lots > 0 and d_0 >= 300 and (d_0 / latest_vol_lots) >= 0.08:
+        tags.append("⚡ 自營避險爆量買超 (權證大戶點火)")
+
+    # ---------------------------------------------------------
+    # 4. 融資籌碼 (資減法買 vs 資增法賣)
+    # ---------------------------------------------------------
+    if margin and len(margin) >= 3:
+        margin_3_changes = [m.get('change', 0.0) for m in margin[:3]]
+        tot_inst_3 = sum(x.get('total', 0.0) for x in inst_5[:3])
+        
+        # 資減法買：融資連減且法人近3日累計買超
+        if all(c < 0 for c in margin_3_changes) and tot_inst_3 > 0:
+            tags.append("💎 資減法買 (散戶退場主力吃飽)")
+        # 資增法賣：融資連增且法人大賣
+        elif all(c > 0 for c in margin_3_changes) and tot_inst_3 < -300:
+            tags.append("⚠️ 資增法賣 (主力倒貨散戶接刀)")
+
+    # ---------------------------------------------------------
+    # 5. 月度護盤底倉 (近20日累計買賣比)
+    # ---------------------------------------------------------
+    if len(inst_20) >= 15:
+        f_20_sum = sum(x.get('foreign', 0.0) for x in inst_20)
+        t_20_sum = sum(x.get('trust', 0.0) for x in inst_20)
+        
+        if f_20_sum >= 2000 and not any("外資" in t for t in tags):
+            tags.append("🛡️ 外資月度重倉防守 (近20日淨買佔優)")
+        elif t_20_sum >= 1500 and not any("投信" in t for t in tags):
+            tags.append("🎯 投信近月密集建倉 (下檔護盤強)")
+
+    # 預設常態
+    if not tags:
+        inst_buy_days_5 = sum(1 for x in inst_5 if x.get('total', 0.0) > 0)
+        if inst_buy_days_5 >= 3 and tot_0 > 0:
+            tags.append(f"📈 近5日法人積極集資 ({inst_buy_days_5}/5日買超)")
+        elif inst_buy_days_5 <= 1:
+            tags.append("📉 法人籌碼退潮 (連日調節)")
+        else:
+            tags.append("⚪ 法人中性換手 (多空互見)")
+
+    return tags[:3]  # 精選最多 3 個最具代表性的籌碼標籤
+
+
 def calculate_kdj_series(high_s: pd.Series, low_s: pd.Series, close_s: pd.Series, n: int = 9):
     """計算標準台股 KD (9,3,3) 數列"""
     lo = low_s.rolling(n).min()
@@ -847,6 +980,7 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
     elif rsi14 > 80:
         def_score -= 8
 
+    kline_tags = detect_kline_tags(df)
     rsi_tags = detect_rsi_tags(close_s)
     vol_tags = detect_volume_tags(df)
     macd_tags = detect_macd_tags(close_s)
@@ -963,6 +1097,60 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
             def_score -= 12
             def_reasons.append("KD高檔死叉修正")
 
+    # ==========================================
+    # 5. 🏛️ 專業籌碼指標判定與評分調整
+    # ==========================================
+    chip_tags = detect_chip_tags(stock_info, df)
+    for ctag in chip_tags:
+        if "🔥 土洋同步大買" in ctag:
+            momo_score += 15
+            momo_reasons.append("土洋同步大買(雙主力合力)")
+            def_score += 15
+            def_reasons.append("土洋同步大買")
+        elif "🚀 投信爆量總攻擊" in ctag:
+            momo_score += 20
+            momo_reasons.append("投信爆量總攻擊(主升段點火)")
+            def_score += 15
+            def_reasons.append("投信爆量總攻")
+        elif "🛡️ 投信巨額爆量護盤" in ctag:
+            def_score += 20
+            def_reasons.append("投信巨額爆量護盤(鎖碼防禦)")
+            momo_score += 10
+        elif "🚀 投信連續認養" in ctag:
+            momo_score += 12
+            momo_reasons.append("投信連續認養")
+            def_score += 12
+        elif "✨ 投信由賣轉買" in ctag:
+            momo_score += 10
+            momo_reasons.append("投信由賣轉買(起漲點)")
+            def_score += 10
+        elif "💎 資減法買" in ctag:
+            momo_score += 12
+            momo_reasons.append("資減法買(籌碼極度乾淨)")
+            def_score += 12
+        elif "🔒 法人高強度鎖碼" in ctag:
+            momo_score += 15
+            momo_reasons.append("法人高強度鎖碼")
+        elif "⚡ 自營避險爆量買超" in ctag:
+            momo_score += 10
+            momo_reasons.append("自營避險爆買(短多點火)")
+        elif "🛡️ 外資月度重倉防守" in ctag or "🎯 投信近月密集建倉" in ctag:
+            def_score += 15
+            def_reasons.append("月度主力重倉護盤")
+        elif "🚨 法人集體倒貨" in ctag:
+            momo_score -= 20
+            momo_reasons.append("⚠️警示:法人集體倒貨")
+            def_score -= 20
+            def_reasons.append("法人集體倒貨")
+        elif "⚠️ 資增法賣" in ctag:
+            momo_score -= 15
+            momo_reasons.append("⚠️警示:資增法賣(散戶接刀)")
+            def_score -= 15
+        elif "⚠️ 投信高檔結帳" in ctag:
+            momo_score -= 15
+            momo_reasons.append("⚠️警示:投信連日結帳賣超")
+            def_score -= 15
+
     k_s, d_s, j_s = calculate_kdj_series(pd.Series(high), pd.Series(low), close_s, n=9)
 
     return {
@@ -988,6 +1176,7 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
         'vol_tags': vol_tags,
         'macd_tags': macd_tags,
         'kd_tags': kd_tags,
+        'chip_tags': chip_tags,
         'vol_ratio': round(vol_ratio, 2),
         'close_loc': round(close_location, 2),
         'is_new_high': is_new_high,
@@ -1062,9 +1251,7 @@ def save_stage4_report(r):
 
     technical_tags = list(kline_tags)
 
-    buy_days = int(r.get('inst_buy_days', 0))
-    chip_tags = [f"近5日法人買超 {buy_days} 日"]
-    chip_tags.append("法人積極佈局" if buy_days >= 4 else ("法人中性" if buy_days >= 2 else "法人偏弱"))
+    chip_tags = r.get('chip_tags') or ["⚪ 法人中性換手 (多空互見)"]
     pattern_tags = [r['pattern']]
     
     lines = []

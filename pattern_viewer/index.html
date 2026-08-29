@@ -64,6 +64,10 @@
               <div class="stat-label" style="color:#fbbf24; font-size:11px; font-weight:700;">⚡ KD 指標狀態</div>
               <div id="statKdTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
             </div>
+            <div class="stat-box full" id="statChipBox" style="margin-top:6px; padding:6px 10px; background:rgba(249,115,22,0.06); border:1px solid rgba(249,115,22,0.2); border-radius:6px;">
+              <div class="stat-label" style="color:#fdba74; font-size:11px; font-weight:700;">🏛️ 籌碼指標狀態</div>
+              <div id="statChipTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
+            </div>
           </div>
         </div>
 
@@ -169,8 +173,12 @@
           <span>🎨</span> RSI 標籤顏色含意速查表
         </button>
 
-        <button type="button" class="btn" onclick="openKdCheatSheetModal()" style="margin-top:8px; margin-bottom:10px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(245,158,11,0.12); color:#fbbf24; border:1px solid rgba(245,158,11,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
+        <button type="button" class="btn" onclick="openKdCheatSheetModal()" style="margin-top:8px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(245,158,11,0.12); color:#fbbf24; border:1px solid rgba(245,158,11,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
           <span>⚡</span> KD 指標與型態速查表
+        </button>
+
+        <button type="button" class="btn" onclick="openChipCheatSheetModal()" style="margin-top:8px; margin-bottom:10px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(249,115,22,0.12); color:#fdba74; border:1px solid rgba(249,115,22,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
+          <span>🏛️</span> 籌碼指標與法人動向速查表
         </button>
 
         <div class="card teaching-card">
@@ -873,6 +881,126 @@
     </div>
   </div>
 
+  <!-- 籌碼指標與法人動向速查表彈出視窗 -->
+  <div id="chipCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:#161922; border:1px solid rgba(249,115,22,0.35); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
+      <!-- Header -->
+      <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:24px;">🏛️</span>
+          <div>
+            <h3 style="margin:0; font-size:18px; font-weight:800; color:#f8fafc;">籌碼指標與三大法人動向實戰速查表</h3>
+            <p style="margin:2px 0 0; font-size:13.5px; color:#94a3b8;">投信認養・爆量護盤・土洋同盟與對作・資減法買籌碼鎖碼指南</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeChipCheatSheetModal()" style="background:none; border:none; color:#94a3b8; font-size:28px; cursor:pointer; padding:4px 8px; line-height:1;" title="關閉 (Esc)">&times;</button>
+      </div>
+
+      <!-- Content Table -->
+      <div style="padding:22px 24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:18px;">
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:16px; text-align:left;">
+            <thead>
+              <tr style="background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.12); color:#cbd5e1;">
+                <th style="padding:12px 14px; width:18%; font-size:16px; font-weight:800;">標籤顏色</th>
+                <th style="padding:12px 14px; width:28%; font-size:16px; font-weight:800;">代表含意與籌碼結構</th>
+                <th style="padding:12px 14px; width:27%; font-size:16px; font-weight:800;">具體標籤範例</th>
+                <th style="padding:12px 14px; width:27%; font-size:16px; font-weight:800;">操盤應對心法</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.45);">🟢 綠色／翠綠系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【強烈作多／主力總攻】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">土洋同盟大買、投信總攻、高強度鎖碼或資減法買</span>
+                </td>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">🔥 土洋同步大買 (雙主力合力作多)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">🚀 投信爆量總攻擊 (主力共識急拉)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">💎 資減法買 (散戶退場主力吃飽)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(34,197,94,0.18); color:#86efac;">🔒 法人高強度鎖碼 (買超佔比>30%)</span>
+                  </div>
+                </td>
+                <td style="padding:14px; color:#86efac; font-size:15.5px; line-height:1.6;">
+                  <strong>🚀 主力狂拉主升段！</strong><br>籌碼高度乾淨集中，籌碼鎖死極易軋空噴出，順勢續抱！
+                </td>
+              </tr>
+
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(234,179,8,0.2); color:#fde047; border:1px solid rgba(234,179,8,0.45);">🟡 黃色／亮金系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【護盤防禦／土洋對作】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">回測支撐投信爆量護盤、外資月度防守或內資吃貨</span>
+                </td>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">🛡️ 投信巨額爆量護盤 (關鍵支撐鎖碼)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">🛡️ 外資月度重倉防守 (近20日淨買)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(234,179,8,0.18); color:#fde047;">⚔️ 土洋對作 (投信接刀/外資倒貨)</span>
+                  </div>
+                </td>
+                <td style="padding:14px; color:#fde047; font-size:15.5px; line-height:1.6;">
+                  <strong>💡 下檔鐵板護盤買點！</strong><br>主力有防守成本壓力，拉回支撐有強大托底買盤，風報比極佳。
+                </td>
+              </tr>
+
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);">🔴 紅色／警示系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【出貨結帳／籌碼凌亂】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">法人集體倒貨、投信季底結帳、資增法賣</span>
+                </td>
+                <td style="padding:14px;">
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">🚨 法人集體倒貨 (籌碼沉陷)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">⚠️ 資增法賣 (主力倒貨散戶接刀)</span>
+                    <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(239,68,68,0.18); color:#fca5a5;">⚠️ 投信高檔結帳 (連日調節賣超)</span>
+                  </div>
+                </td>
+                <td style="padding:14px; color:#fca5a5; font-size:15.5px; line-height:1.6;">
+                  <strong>⚠️ 嚴禁接刀避開浮額！</strong><br>散戶融資大增但主力出逃，易引發多殺多斷頭，果斷退場觀望。
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:5px 10px; border-radius:5px; font-size:14.5px; font-weight:800; background:rgba(148,163,184,0.2); color:#cbd5e1; border:1px solid rgba(148,163,184,0.45);">⚪ 灰白／藍灰系</span>
+                </td>
+                <td style="padding:14px; color:#f8fafc; font-weight:600; font-size:16px; line-height:1.6;">
+                  【常態換手／無顯著主力】<br><span style="font-size:13.5px; color:#94a3b8; font-weight:normal;">法人買賣互見、籌碼常態波動</span>
+                </td>
+                <td style="padding:14px;">
+                  <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:750; background:rgba(148,163,184,0.18); color:#cbd5e1;">⚪ 法人中性換手 (多空互見)</span>
+                </td>
+                <td style="padding:14px; color:#cbd5e1; font-size:15.5px; line-height:1.6;">
+                  <strong>⚪ 以技術面為主！</strong><br>無特殊主力介入時，依據 K線與均線位階操作。
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 實戰口訣三金律 -->
+        <div style="background:rgba(249,115,22,0.09); border:1px solid rgba(249,115,22,0.3); border-radius:8px; padding:14px 18px; font-size:15px; color:#cbd5e1; line-height:1.7;">
+          <div style="font-weight:800; color:#fdba74; margin-bottom:6px; font-size:16px;">💡 台股籌碼操盤三大實戰金律：</div>
+          <div>1. <strong>跟著投信吃肉，緊跟連續認養</strong>：投信連續買超且爆量總攻時，通常是法人季底作帳的狂飆主升段！</div>
+          <div>2. <strong>資減法買最乾淨，資增法賣快逃命</strong>：散戶退場（融資減）而大戶進場（法人買）是籌碼極致乾淨的噴出保證！</div>
+          <div>3. <strong>土洋同盟大爆發，月度重倉有護盤</strong>：外資投信同步大買具有最強攻擊力；拉回時看近20日淨買成本線尋找護盤買點！</div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding:14px 24px; background:#1e2330; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:flex-end;">
+        <button type="button" onclick="closeChipCheatSheetModal()" style="padding:9px 26px; border-radius:6px; background:#f97316; color:#fff; font-weight:800; font-size:15px; border:none; cursor:pointer;">關閉速查表</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 空手進場操盤口訣與檢視順序 Modal (1020px 大視窗 / 16px 大字體) -->
   <div id="entryCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#161922; border:1px solid rgba(236,72,153,0.38); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
@@ -1062,6 +1190,15 @@
     };
     window.closeKdCheatSheetModal = function() {
       const modal = document.getElementById('kdCheatSheetModal');
+      if (modal) modal.style.display = 'none';
+    };
+
+    window.openChipCheatSheetModal = function() {
+      const modal = document.getElementById('chipCheatSheetModal');
+      if (modal) modal.style.display = 'flex';
+    };
+    window.closeChipCheatSheetModal = function() {
+      const modal = document.getElementById('chipCheatSheetModal');
       if (modal) modal.style.display = 'none';
     };
 
