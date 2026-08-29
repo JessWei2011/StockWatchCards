@@ -2931,7 +2931,7 @@
           </div>
           <div style="display:flex; flex-direction:column; gap:5px;">
             ${items.length === 0 ? '<div style="color:var(--text-dim); font-size:14px; padding:12px; text-align:center;">無資料</div>' : items.slice(0, 10).map((it, idx) => `
-              <div style="display:flex; align-items:center; justify-content:space-between; padding:5px 8px; border-radius:7px; background:rgba(255,255,255,0.035); font-size:15px; cursor:pointer; transition:all .15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.background='rgba(255,255,255,0.035)';" onclick="switchToStockAnalysis('${escapeHtml(it.code)}')">
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:5px 8px; border-radius:7px; background:rgba(255,255,255,0.035); font-size:15px; cursor:pointer; transition:all .15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.background='rgba(255,255,255,0.035)';" onclick="openPatternForStock('${escapeHtml(it.code)}')">
                 <div style="display:flex; align-items:center; gap:8px; min-width:0; overflow:hidden;">
                   <span style="font-weight:900; color:var(--text-dim); width:18px; font-size:13.5px; text-align:right;">${idx + 1}</span>
                   <span style="font-weight:850; color:#93c5fd; font-family:monospace; font-size:14.5px;">${escapeHtml(it.code)}</span>
@@ -2951,7 +2951,7 @@
         <div style="margin-bottom:24px; background:#11161f; border:1.5px solid rgba(125,180,255,0.3); border-radius:14px; padding:18px 20px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
             <div style="font-size:17px; font-weight:900; color:#fff; display:flex; align-items:center; gap:10px;">
-              <span style="font-size:20px;">🏆</span> 雙 AI 四大榜單全景一覽 (點擊股票直接查看技術報告)
+              <span style="font-size:20px;">🏆</span> 雙 AI 四大榜單全景一覽 (點擊股票直接開啟專業看盤)
             </div>
             <div style="font-size:13.5px; color:var(--text-dim);">
               資料截止日：<strong style="color:#93c5fd; font-size:14.5px;">${escapeHtml(scanDate || '最新')}</strong>
@@ -3034,7 +3034,7 @@
                 if (scoreVal < 100) scoreClass = 'medium';
 
                 return `
-                  <tr data-stock-code="${escapeHtml(item.code)}" title="點擊直接查看 ${escapeHtml(item.name)} (${escapeHtml(item.code)}) 的詳細技術分析">
+                  <tr data-stock-code="${escapeHtml(item.code)}" title="點擊直接開啟 ${escapeHtml(item.name)} (${escapeHtml(item.code)}) 的專業看盤">
                     <td style="text-align:center;"><span class="rank-badge-num ${badgeClass}">${escapeHtml(item.rank)}</span></td>
                     <td><span class="rank-stock-link"><span class="stock-code" style="font-size:15px;">${escapeHtml(item.code)}</span></span></td>
                     <td><span class="rank-stock-link"><span class="stock-name" style="font-size:16px;">${escapeHtml(item.name)}</span></span></td>
@@ -3072,7 +3072,7 @@
     container.querySelectorAll('tr[data-stock-code]').forEach(row => {
       row.addEventListener('click', () => {
         const code = row.dataset.stockCode;
-        if (code) switchToStockAnalysis(code);
+        if (code) openPatternForStock(code);
       });
     });
   }
