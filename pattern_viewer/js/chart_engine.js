@@ -16,23 +16,63 @@ window.ChartEngine = {
    * @param {Object} displayToggles { showBoll: true, showMa: true }
    */
   render(container, stockData, overlayData, displayToggles = { showBoll: true, showMa: true }) {
+    if (typeof echarts === 'undefined') {
+      const errMsg = '❌ ECharts 圖表庫尚未載入完成 (echarts is undefined)。請重新整理頁面。';
+      console.error('[ChartEngine Error]', errMsg);
+      const targetDom = typeof container === 'string' ? document.querySelector(container) : container;
+      if (targetDom) {
+        targetDom.hidden = false;
+        targetDom.innerHTML = `<div style="padding:40px 20px; color:#f87171; text-align:center; font-size:16px; font-weight:800; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px;">${errMsg}</div>`;
+      }
+      return;
+    }
+
     if (!stockData || !stockData.dates || stockData.dates.length === 0) {
       console.warn('ChartEngine: stockData is empty');
       return;
     }
 
     const dom = typeof container === 'string' ? document.querySelector(container) : container;
-    if (!dom) return;
+    if (!dom) {
+      console.error('[ChartEngine Error] 找不到圖表容器 DOM:', container);
+      return;
+    }
+
+    // 強制移除 hidden 屬性與確保 display: block
+    dom.hidden = false;
+    dom.style.display = 'block';
+
+    const parentW = dom.parentElement ? dom.parentElement.clientWidth : 0;
+    const domWidth = dom.clientWidth || dom.offsetWidth || parentW || 900;
+    const domHeight = Math.max(dom.clientHeight || dom.offsetHeight || 0, 650);
+
+    console.log('[ChartEngine Debug] 🚀 ChartEngine.render() 開始執行', {
+      stock: stockData.title,
+      datesCount: stockData.dates ? stockData.dates.length : 0,
+      domWidth,
+      domHeight,
+      rawClientWidth: dom.clientWidth,
+      rawClientHeight: dom.clientHeight,
+      parentWidth: parentW
+    });
 
     if (this.chartInstance && this.chartInstance.getDom() !== dom) {
       this.destroy();
     }
 
-    if (!this.chartInstance) {
-      this.chartInstance = echarts.init(dom, 'dark');
+    if (!this.chartInstance || this.chartInstance.isDisposed()) {
+      this.chartInstance = echarts.init(dom, 'dark', {
+        width: domWidth,
+        height: domHeight
+      });
       this._attachZoomFix(dom);
       this._resizeHandler = () => this.resize();
       window.addEventListener('resize', this._resizeHandler);
+    } else {
+      this.chartInstance.resize({
+        width: domWidth,
+        height: domHeight
+      });
     }
 
     // Default to the most recent 20 trading days so candles are clear and not squished.
@@ -528,7 +568,15 @@ window.ChartEngine = {
       });
     }
 
-    this.chartInstance.setOption(option, true);
+    try {
+      this.chartInstance.setOption(option, true);
+      console.log('[ChartEngine Debug] ✅ setOption 成功完成！ECharts 實際尺寸:', {
+        width: this.chartInstance.getWidth(),
+        height: this.chartInstance.getHeight()
+      });
+    } catch (err) {
+      console.error('[ChartEngine Debug] ❌ setOption 拋出異常:', err);
+    }
 
     // 同步十字游標焦點至右側「🎯 游標焦點即時數據看板」
     if (this._axisPointerHandler) {
@@ -569,6 +617,11 @@ window.ChartEngine = {
       }
     }
     this.currentStockData = stockData;
+
+    // 多階段延遲觸發 resize，保證容器切換完成後能正確取得寬高並繪製
+    requestAnimationFrame(() => this.resize());
+    setTimeout(() => this.resize(), 60);
+    setTimeout(() => this.resize(), 200);
   },
 
   _attachZoomFix(dom) {
@@ -636,6 +689,15 @@ window.ChartEngine = {
 
   resize() {
     if (this.chartInstance && !this.chartInstance.isDisposed()) {
+      const dom = this.chartInstance.getDom();
+      if (dom) {
+        const w = dom.clientWidth || (dom.parentElement ? dom.parentElement.clientWidth : 0);
+        const h = dom.clientHeight || 650;
+        if (w > 0 && h > 0) {
+          this.chartInstance.resize({ width: w, height: h });
+          return;
+        }
+      }
       this.chartInstance.resize();
     }
   },

@@ -243,6 +243,28 @@ window.PatternParser = {
 
     const { dif, macdSignal, calculatedHist } = calculateMacd(closePrices);
 
+    // Parse 三大法人 table if present
+    const institutionalFlow = [];
+    for (const table of tables) {
+      const headers = Array.from(table.querySelectorAll('th')).map(th => th.innerText.trim());
+      if (headers.includes('外資') && headers.includes('投信')) {
+        const rows = Array.from(table.querySelectorAll('tr')).slice(1);
+        rows.forEach(tr => {
+          const tds = Array.from(tr.querySelectorAll('td')).map(td => td.innerText.trim());
+          if (tds.length >= 5 && !tds[0].includes('累計')) {
+            institutionalFlow.push({
+              date: tds[0],
+              foreign: tds[1],
+              trust: tds[2],
+              dealer: tds[3],
+              total: tds[4]
+            });
+          }
+        });
+        break;
+      }
+    }
+
     return {
       title: titleText,
       dates,
@@ -265,7 +287,8 @@ window.PatternParser = {
       dList,
       bollUpper,
       bollMid,
-      bollLower
+      bollLower,
+      institutionalFlow
     };
   }
 };

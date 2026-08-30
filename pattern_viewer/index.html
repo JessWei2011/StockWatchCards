@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI 股市型態視覺教學與 K線圖形介面</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="css/viewer.css?v=5">
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <link rel="stylesheet" href="css/viewer.css?v=72">
+  <script src="js/vendor/echarts.min.js"></script>
+  <script>if(typeof echarts==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"><\/script>');}</script>
 </head>
 <body class="pattern-page">
   <div class="pattern-viewer">
@@ -212,6 +213,17 @@
           <p id="patternEmptyDetail">型態線圖只使用真實報表，不會產生模擬行情。</p>
         </div>
         <div id="echart-main" hidden></div>
+
+        <!-- 🏛️ 三大法人近15日逐日買賣超概數看板 (放置於 KD 指標下方) -->
+        <div id="patternInstContainer" class="inst-mini-chart" style="display:none; margin-top:16px; margin-bottom:20px; padding:14px 16px; background:#141721; border:1px solid rgba(59,130,246,0.3); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+          <div class="inst-chart-head" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">
+            <span class="rank-detail-label" style="font-weight:800; color:#60a5fa; font-size:15px; display:inline-flex; align-items:center; gap:6px;">
+              <span>🏛️</span> 三大法人近15日逐日買賣超概數
+            </span>
+            <span class="inst-chart-note" style="font-size:12.5px; color:#94a3b8;">日期橫向排列｜<span style="color:#f87171; font-weight:700;">紅色買超</span>・<span style="color:#4ade80; font-weight:700;">綠色賣超</span></span>
+          </div>
+          <div id="patternInstTableWrapper"></div>
+        </div>
       </main>
     </div>
 

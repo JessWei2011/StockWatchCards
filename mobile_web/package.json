@@ -1,0 +1,14 @@
+{
+  "name": "stock2-mobile-web",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "cloudflare:login": "wrangler login",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "exit-hook": "4.0.0",
+    "undici": "7.16.0",
+    "wrangler": "4.46.0"
+  }
+}

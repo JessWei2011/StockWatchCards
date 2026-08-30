@@ -575,7 +575,7 @@ def detect_volume_tags(df: pd.DataFrame) -> list:
 
 
 def detect_macd_tags(close_s: pd.Series) -> list:
-    """精準計算與判讀 MACD 訊號 (空中加油二次金叉、零軸上/下金叉、柱狀體翻轉、頂底背離)"""
+    """精準計算與判讀 MACD 訊號 (空中加油二次金叉、零軸上/下金叉、柱狀體翻轉、頂底背離、綠柱收斂/延伸、紅柱放大/收斂)"""
     if len(close_s) < 26:
         return ["⚪ MACD 資料累積中"]
     tags = []
@@ -592,7 +592,7 @@ def detect_macd_tags(close_s: pd.Series) -> list:
     prev_sig = float(signal.iloc[-2]) if len(signal) >= 2 else cur_sig
     prev_hist = float(hist.iloc[-2]) if len(hist) >= 2 else cur_hist
 
-    # 1. 零軸上二次金叉 (空中加油主升段)
+    # 1. 交叉訊號 (金叉 / 死叉)
     if prev_dif <= prev_sig and cur_dif > cur_sig:
         if cur_dif > 0:
             # 檢查過去 15 天內是否曾在零軸上金叉過（二次金叉）
@@ -611,7 +611,7 @@ def detect_macd_tags(close_s: pd.Series) -> list:
         else:
             tags.append("⚡ MACD 死亡交叉 (動能轉弱)")
 
-    # 2. 柱狀體翻紅/翻綠
+    # 2. 柱狀體翻紅 / 翻綠 (第一天翻轉)
     if prev_hist <= 0 and cur_hist > 0:
         if not any("金叉" in t for t in tags):
             tags.append("🌊 MACD 柱狀體翻紅 (動能增強)")
@@ -649,23 +649,37 @@ def detect_macd_tags(close_s: pd.Series) -> list:
                 if cur_hist > prev_hist or cur_hist > 0:
                     tags.append("💎 MACD 底背離起漲 (雙谷墊高破底翻)")
 
-    # 5. 零軸上強勢多頭發散
-    if cur_dif > 0 and cur_sig > 0:
-        if cur_hist >= prev_hist and cur_hist > 0:
-            if not any("金叉" in t or "翻紅" in t or "背離" in t for t in tags):
-                tags.append("🚀 MACD 零軸上強勢多頭 (柱狀體連續放大)")
-        elif not any("背離" in t for t in tags):
-            if not any("金叉" in t or "翻紅" in t or "死叉" in t or "翻綠" in t for t in tags):
-                tags.append("📈 MACD 多方波段整理")
-
-    # 常態
+    # 5. 柱狀體紅綠磚狀態判定 (精確解決綠磚卻判定多方的矛盾)
     if not tags:
-        if cur_dif >= 0 and cur_hist >= 0:
-            tags.append("📈 MACD 多方波段整理")
-        elif cur_dif < 0 and cur_hist < 0:
-            tags.append("📉 MACD 空方弱勢整理")
+        # A. 紅磚區 (Hist > 0)
+        if cur_hist > 0:
+            if cur_dif > 0 and cur_sig > 0:
+                if cur_hist >= prev_hist:
+                    tags.append("🚀 MACD 零軸上強勢多頭 (紅柱連續放大)")
+                else:
+                    tags.append("📈 MACD 多頭推升收斂 (紅柱縮小整理)")
+            elif cur_hist >= prev_hist:
+                tags.append("📈 MACD 零軸下反彈推進 (紅柱連續放大)")
+            else:
+                tags.append("⚪ MACD 反彈動能趨緩 (紅柱縮小整理)")
+        # B. 綠磚區 (Hist < 0)
+        elif cur_hist < 0:
+            if cur_dif > 0 and cur_sig > 0:
+                if cur_hist > prev_hist:  # 負值變小 (例如 -2.21 > -2.85，綠柱縮短收斂)
+                    tags.append("💡 MACD 綠柱收斂 (零軸上回檔/空方衰退)")
+                else:
+                    tags.append("⚠️ MACD 零軸上回檔修正 (綠柱延伸中)")
+            else:
+                if cur_hist > prev_hist:
+                    tags.append("💡 MACD 綠柱收斂 (空方力道減弱/低檔醞釀)")
+                else:
+                    tags.append("📉 MACD 空方弱勢整理 (零軸下探底)")
+        # C. 零軸常態平水
         else:
-            tags.append("⚪ MACD 多空平衡整理")
+            if cur_dif >= 0:
+                tags.append("⚪ MACD 零軸平水多空平衡")
+            else:
+                tags.append("⚪ MACD 低檔整理")
 
     return tags
 
@@ -1197,6 +1211,25 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
             momo_score -= 10
             momo_reasons.append("MACD柱體翻綠修正")
             def_score -= 10
+        elif "💡 MACD 綠柱收斂" in mtag:
+            def_score += 8
+            def_reasons.append("MACD綠柱收斂(賣壓衰退/尋求止跌)")
+            momo_score += 5
+            momo_reasons.append("MACD綠柱收斂(回檔減速)")
+        elif "⚠️ MACD 零軸上回檔修正" in mtag:
+            momo_score -= 10
+            momo_reasons.append("⚠️MACD零軸上回檔(綠柱擴大中)")
+            def_score -= 8
+            def_reasons.append("⚠️MACD綠柱延伸修正")
+        elif "📉 MACD 空方弱勢整理" in mtag:
+            momo_score -= 15
+            momo_reasons.append("MACD零軸下空方弱勢整理")
+            def_score -= 15
+            def_reasons.append("MACD空方格局")
+        elif "📈 MACD 多頭推升收斂" in mtag:
+            momo_score += 8
+            momo_reasons.append("MACD多頭推升(紅柱整理)")
+            def_score += 6
 
     # ==========================================
     # 4. ⚡ KD 核心指標評分調整 (加扣分標準)

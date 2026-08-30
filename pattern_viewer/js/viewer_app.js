@@ -263,9 +263,10 @@
       box.style.display = '';
       const winText = card.winRate ? (String(card.winRate).includes('%') ? card.winRate : `${card.winRate}%`) : '—';
       const rrText = card.rr ? `｜風報比 ${card.rr}` : '';
-      this.q('#statCardDate').textContent = card.date || '—';
-      this.q('#statCardDecision').textContent =
-        `${card.decision || '—'}｜勝率 ${winText}${rrText}｜${card.pattern || '無明確型態'}`;
+      const dateEl = this.q('#statCardDate');
+      if (dateEl) dateEl.textContent = card.date || '—';
+      const decEl = this.q('#statCardDecision');
+      if (decEl) decEl.textContent = `${card.decision || '—'}｜勝率 ${winText}${rrText}｜${card.pattern || '無明確型態'}`;
       this.updateAnalysisPanel(card);
     }
 
@@ -282,9 +283,10 @@
       const winText = card.winRate ? (String(card.winRate).includes('%') ? card.winRate : `${card.winRate}%`) : '—';
       const rrText = card.rr ? `｜風報比 ${card.rr}` : '';
       section.hidden = false;
-      this.q('#patternAnalysisTitle').textContent = `${card.code} ${card.name}・技術分析`;
-      this.q('#patternAnalysisMeta').textContent =
-        `${card.date || '日期未知'}｜${card.decision || '未定'}｜勝率 ${winText}${rrText}｜${card.pattern || '無明確型態'}`;
+      const titleEl = this.q('#patternAnalysisTitle');
+      if (titleEl) titleEl.textContent = `${card.code} ${card.name}・技術分析`;
+      const metaEl = this.q('#patternAnalysisMeta');
+      if (metaEl) metaEl.textContent = `${card.date || '日期未知'}｜${card.decision || '未定'}｜勝率 ${winText}${rrText}｜${card.pattern || '無明確型態'}`;
 
       if (card.raw && typeof renderRaw === 'function') {
         body.innerHTML = renderRaw(card.raw);
@@ -299,10 +301,14 @@
 
     updateUI() {
       if (!this.currentStockData) return;
+      console.log(`[PatternViewer Debug] 🎨 updateUI() 開始繪製 ${this.currentCode}, 日期天數:`, this.currentStockData.dates ? this.currentStockData.dates.length : 0);
       const overlay = this.getActiveOverlay();
       const chart = this.q('#echart-main');
       const empty = this.q('#patternEmptyState');
-      if (chart) chart.hidden = false;
+      if (chart) {
+        chart.hidden = false;
+        chart.style.display = 'block';
+      }
       if (empty) empty.hidden = true;
 
       if (chart) {
@@ -535,6 +541,27 @@
           statChipTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">法人籌碼中性</span>`;
         }
       }
+      // 渲染「三大法人近15日逐日買賣超概數」表格 (放置於 KD 指標下方)
+      const patternInstTableWrapper = this.q('#patternInstTableWrapper') || document.getElementById('patternInstTableWrapper');
+      const patternInstContainer = this.q('#patternInstContainer') || document.getElementById('patternInstContainer');
+      if (patternInstTableWrapper) {
+        const cleanCode = String(this.currentCode || '').split('.')[0].trim();
+        const allCards = (window.cardsByCode || (window.parent && window.parent.cardsByCode) || (typeof cardsByCode !== 'undefined' ? cardsByCode : {})) || {};
+        let card = allCards[cleanCode] || allCards[this.currentCode] || null;
+        if (!card && this.currentStockData && this.currentStockData.institutionalFlow && this.currentStockData.institutionalFlow.length) {
+          card = { institutionalFlow: this.currentStockData.institutionalFlow };
+        } else if (card && (!card.institutionalFlow || !card.institutionalFlow.length) && this.currentStockData && this.currentStockData.institutionalFlow) {
+          card.institutionalFlow = this.currentStockData.institutionalFlow;
+        }
+        if (card && typeof window.renderInstitutionSummary === 'function') {
+          patternInstTableWrapper.innerHTML = window.renderInstitutionSummary(card);
+          if (patternInstContainer) patternInstContainer.style.display = 'block';
+        } else if (typeof updatePatternInstitutionalSummary === 'function') {
+          updatePatternInstitutionalSummary(cleanCode);
+        } else {
+          if (patternInstContainer) patternInstContainer.style.display = 'none';
+        }
+      }
       if (this.currentStockData && this.currentStockData.dates && this.currentStockData.dates.length) {
         window.updateFocusHUD(this.currentStockData.dates.length - 1, this.currentStockData);
       }
@@ -549,25 +576,36 @@
       const chart = this.q('#echart-main');
       const empty = this.q('#patternEmptyState');
       if (destroyChart) ChartEngine.destroy();
-      chart.hidden = true;
-      empty.hidden = false;
-      this.q('#patternEmptyTitle').textContent = title;
-      this.q('#patternEmptyDetail').textContent = detail;
+      if (chart) chart.hidden = true;
+      if (empty) empty.hidden = false;
+      const titleEl = this.q('#patternEmptyTitle');
+      if (titleEl) titleEl.textContent = title;
+      const detailEl = this.q('#patternEmptyDetail');
+      if (detailEl) detailEl.textContent = detail;
     }
 
     bindEvents() {
       const signal = this.eventController.signal;
-      this.q('#stockSelect').addEventListener('change', event => this.loadStock(event.target.value), { signal });
-      this.q('#viewToggleContainer').addEventListener('click', event => {
-        const button = event.target.closest('.btn-pattern');
-        if (!button) return;
-        this.root.querySelectorAll('#viewToggleContainer .btn-pattern').forEach(item => item.classList.remove('active'));
-        button.classList.add('active');
-        this.currentView = button.dataset.view;
-        this.updateUI();
-      }, { signal });
-      this.q('#toggleBoll').addEventListener('change', () => this.updateUI(), { signal });
-      this.q('#toggleMa').addEventListener('change', () => this.updateUI(), { signal });
+      const stockSelect = this.q('#stockSelect');
+      if (stockSelect) stockSelect.addEventListener('change', event => this.loadStock(event.target.value), { signal });
+
+      const viewToggle = this.q('#viewToggleContainer');
+      if (viewToggle) {
+        viewToggle.addEventListener('click', event => {
+          const button = event.target.closest('.btn-pattern');
+          if (!button) return;
+          this.root.querySelectorAll('#viewToggleContainer .btn-pattern').forEach(item => item.classList.remove('active'));
+          button.classList.add('active');
+          this.currentView = button.dataset.view;
+          this.updateUI();
+        }, { signal });
+      }
+
+      const toggleBoll = this.q('#toggleBoll');
+      if (toggleBoll) toggleBoll.addEventListener('change', () => this.updateUI(), { signal });
+
+      const toggleMa = this.q('#toggleMa');
+      if (toggleMa) toggleMa.addEventListener('change', () => this.updateUI(), { signal });
 
       const fullscreenBtn = this.q('#toggleFullscreenChart');
       if (fullscreenBtn) {

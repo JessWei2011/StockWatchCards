@@ -518,3 +518,27 @@
   .pattern-viewer .analysis-body .raw-top-banner,
   .pattern-viewer .analysis-body .raw-block.sec-action { grid-column: 1; }
 }
+
+/* ── 三大法人近15日逐日買賣超表格樣式 ── */
+.pattern-viewer .inst-chart-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px; }
+.pattern-viewer .inst-chart-note { color:#94a3b8; font-size:11px; }
+.pattern-viewer .inst-flow-scroll { width:100%; overflow-x:auto; }
+.pattern-viewer .inst-flow-table { width:100%; border-collapse:separate; border-spacing:2px; table-layout:fixed; }
+.pattern-viewer .inst-flow-table th {
+  padding:4px 2px; color:#94a3b8; font-size:11px; font-weight:700; text-align:center; white-space:nowrap;
+}
+.pattern-viewer .inst-flow-table th:first-child, .pattern-viewer .inst-flow-table td:first-child {
+  width:58px; background:#18202a;
+}
+.pattern-viewer .inst-flow-table td {
+  padding:5px 2px; background:rgba(255,255,255,.035); border:1px solid rgba(71,85,105,.38);
+  border-radius:4px; text-align:center; font-size:11px; font-variant-numeric:tabular-nums;
+}
+.pattern-viewer .inst-flow-table td:first-child { color:#e2e8f0; font-size:11.5px; font-weight:800; text-align:center; padding-left:0; }
+.pattern-viewer .inst-flow-table tr.total-row td { border-top-color:rgba(148,163,184,.75); font-weight:850; background:rgba(255,255,255,.06); }
+.pattern-viewer .inst-flow-value { display:inline-flex; justify-content:center; font-weight:750; white-space:nowrap; font-size:11px; }
+.pattern-viewer .inst-flow-value.buy { color:#f87171; }
+.pattern-viewer .inst-flow-value.sell { color:#4ade80; }
+.pattern-viewer .inst-flow-value.flat { color:#94a3b8; }
+.pattern-viewer .inst-chart-empty { color:#94a3b8; font-size:12px; padding:12px 0; text-align:center; }
+

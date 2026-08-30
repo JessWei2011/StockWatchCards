@@ -61,3 +61,15 @@ __pycache__/
 .claude/
 margin_data.db
 *.lnk
+
+# Mobile web app
+!IPHONE_STOCK_CENTER_IMPLEMENTATION_PLAN.txt
+!export_mobile_site.py
+!發布手機版.bat
+!mobile_web/
+!mobile_web/**
+mobile_web/node_modules/
+mobile_web/.wrangler/
+mobile_web/.dev.vars
+mobile_web/pnpm-lock.yaml
+

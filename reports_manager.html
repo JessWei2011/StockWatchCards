@@ -114,14 +114,57 @@
     background:var(--card-bg); color:var(--text-dim); cursor:pointer;
   }
   .tree-toolbar button:hover{ border-color:var(--accent); color:var(--accent); }
+  .tree-toolbar button.active{
+    background:rgba(250,204,21,0.15);
+    border-color:#facc15;
+    color:#facc15;
+    font-weight:700;
+  }
   .tree-actions{ margin-left:auto; display:none; gap:4px; }
   .tree-row:hover .tree-actions{ display:flex; }
   .tree-report-row{
-    display:flex; align-items:center; gap:6px; padding:4px 8px 4px 22px; border-radius:6px;
+    display:flex; align-items:center; gap:5px; padding:4px 8px 4px 18px; border-radius:6px;
     cursor:grab; font-size:13px; color:var(--text-dim); white-space:nowrap; overflow:hidden;
+    transition: background 0.15s;
   }
   .tree-report-row:hover{ background:var(--hover); color:var(--text); }
   .tree-report-row.dragging{ opacity:0.4; }
+  .tree-report-row.is-starred{
+    background:rgba(250,204,21,0.08);
+  }
+  .tree-report-row.is-starred:hover{
+    background:rgba(250,204,21,0.15);
+  }
+  .tree-report-row.is-starred .name{
+    color:#fef08a;
+    font-weight:700;
+  }
+  .tree-star-btn{
+    width:17px; height:17px; padding:0; border-radius:4px;
+    display:inline-flex; align-items:center; justify-content:center;
+    background:transparent; border:1px solid rgba(147,197,253,0.45); color:#93c5fd;
+    font-size:11px; line-height:1; cursor:pointer; flex-shrink:0; margin-right:1px;
+    transition: all 0.15s ease;
+  }
+  .tree-star-btn:hover{
+    border-color:#93c5fd;
+    background:rgba(147,197,253,0.15);
+    color:#bfdbfe;
+    transform:scale(1.1);
+  }
+  .tree-star-btn.active{
+    background:#facc15;
+    border-color:#facc15;
+    color:#000000;
+    font-weight:900;
+    box-shadow:0 0 6px rgba(250,204,21,0.5);
+  }
+  .tree-star-btn.active:hover{
+    background:#fde047;
+    border-color:#fde047;
+    color:#000000;
+    transform:scale(1.15);
+  }
   .tree-report-row .code{
     color:var(--text-dim); flex-shrink:0; width:36px;
     font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
@@ -781,7 +824,7 @@
     box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
   }
 </style>
-<link rel="stylesheet" href="pattern_viewer/css/viewer.css?v=61">
+<link rel="stylesheet" href="pattern_viewer/css/viewer.css?v=73">
 </head>
 <body>
   <header>
@@ -815,6 +858,7 @@
       <div class="tree-toolbar">
         <button id="expand-all-btn">🔽 全開</button>
         <button id="collapse-all-btn">🔼 全收</button>
+        <button id="filter-starred-btn" title="切換：僅顯示重點標注關注股票 / 顯示全部">⭐ 重點</button>
       </div>
       <div id="sidebar-tree"></div>
     </div>
@@ -1055,6 +1099,17 @@
             <p id="patternEmptyDetail">型態線圖只使用真實報表，不會產生模擬行情。</p>
           </div>
           <div id="echart-main" hidden></div>
+
+          <!-- 🏛️ 三大法人近15日逐日買賣超概數看板 (放置於 KD 指標下方) -->
+          <div id="patternInstContainer" class="inst-mini-chart" style="display:none; margin-top:16px; margin-bottom:20px; padding:14px 16px; background:#141721; border:1px solid rgba(59,130,246,0.3); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+            <div class="inst-chart-head" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">
+              <span class="rank-detail-label" style="font-weight:800; color:#60a5fa; font-size:15px; display:inline-flex; align-items:center; gap:6px;">
+                <span>🏛️</span> 三大法人近15日逐日買賣超概數
+              </span>
+              <span class="inst-chart-note" style="font-size:12.5px; color:#94a3b8;">日期橫向排列｜<span style="color:#f87171; font-weight:700;">紅色買超</span>・<span style="color:#4ade80; font-weight:700;">綠色賣超</span></span>
+            </div>
+            <div id="patternInstTableWrapper"></div>
+          </div>
         </main>
       </div>
     </div>
@@ -2075,12 +2130,13 @@
     </div>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-<script src="pattern_viewer/js/parser.js?v=68"></script>
-<script src="pattern_viewer/js/pattern_engine.js?v=68"></script>
-<script src="pattern_viewer/js/chart_engine.js?v=68"></script>
-<script src="pattern_viewer/js/viewer_app.js?v=69"></script>
-<script src="render-shared.js?v=55"></script>
+<script src="pattern_viewer/js/vendor/echarts.min.js"></script>
+<script>if(typeof echarts==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"><\/script>');}</script>
+<script src="pattern_viewer/js/parser.js?v=76"></script>
+<script src="pattern_viewer/js/pattern_engine.js?v=76"></script>
+<script src="pattern_viewer/js/chart_engine.js?v=76"></script>
+<script src="pattern_viewer/js/viewer_app.js?v=76"></script>
+<script src="render-shared.js?v=76"></script>
 <script>
   const DISPLAY_SCALE_KEY = 'stock-analysis-display-scale';
 
@@ -2318,6 +2374,8 @@
         await PatternViewer.loadStock(selectedStockCode);
       }
       requestAnimationFrame(() => PatternViewer.resize());
+      setTimeout(() => PatternViewer.resize(), 80);
+      setTimeout(() => PatternViewer.resize(), 250);
     }
     if (target === 'ranking') await loadWinrateRankingReport();
     if (target === 'analysis') {
@@ -3099,6 +3157,9 @@
         }
       } catch (e) {}
     }
+    if (typeof updatePatternInstitutionalSummary === 'function') {
+      updatePatternInstitutionalSummary(normalizedCode);
+    }
 
     // 3. 左側目錄樹高亮對應項目並滾動可見
     document.querySelectorAll('.tree-report-row').forEach(row => {
@@ -3146,6 +3207,9 @@
 
   async function openPatternForStock(code){
     await selectStockGlobal(code, { switchWorkspace: 'pattern' });
+    if (typeof updatePatternInstitutionalSummary === 'function') {
+      updatePatternInstitutionalSummary(code);
+    }
     document.getElementById('pattern-workspace').scrollTo({ top: 0, behavior: 'auto' });
     requestAnimationFrame(() => PatternViewer.resize());
   }
@@ -3176,6 +3240,7 @@
   let tree = null;
   let currentPath = '';
   let cardsByCode = {};
+  window.cardsByCode = cardsByCode;
   let deleteTargetPath = null;
   let collapsedPaths = new Set();
   let selectedBases = new Set();
@@ -3205,6 +3270,50 @@
     const el = document.getElementById('status');
     el.textContent = msg || '';
     el.classList.toggle('error', !!isError);
+  }
+
+  const STARRED_KEY = 'stockCardsWatchlist';
+  let starredOnlyMode = false;
+
+  function getStarredStocks(){
+    try {
+      const raw = localStorage.getItem(STARRED_KEY);
+      if (!raw) return new Set();
+      const list = JSON.parse(raw);
+      return new Set(Array.isArray(list) ? list.map(String) : []);
+    } catch(e){
+      return new Set();
+    }
+  }
+
+  function isStockStarred(code){
+    if (!code) return false;
+    return getStarredStocks().has(String(code).trim());
+  }
+
+  function toggleStarredStock(code){
+    const normCode = String(code || '').trim();
+    if (!normCode) return;
+    const starred = getStarredStocks();
+    const isNowStarred = !starred.has(normCode);
+    if (isNowStarred) {
+      starred.add(normCode);
+    } else {
+      starred.delete(normCode);
+    }
+    localStorage.setItem(STARRED_KEY, JSON.stringify(Array.from(starred)));
+
+    // 即時更新畫面上所有相同股號的星號狀態
+    document.querySelectorAll(`.tree-star-btn[data-code="${CSS.escape(normCode)}"]`).forEach(btn => {
+      btn.classList.toggle('active', isNowStarred);
+      btn.title = isNowStarred ? '已標注重點關注 (點擊取消)' : '標注重點關注';
+      const row = btn.closest('.tree-report-row');
+      if (row) row.classList.toggle('is-starred', isNowStarred);
+    });
+
+    if (starredOnlyMode) {
+      renderTree();
+    }
   }
 
   async function loadTree(){
@@ -3289,19 +3398,41 @@
     if (hasChildren) {
       const childWrap = document.createElement('div');
       childWrap.className = 'tree-children' + (collapsedPaths.has(node.path) ? ' collapsed' : '');
-      (node.children || []).forEach(c => childWrap.appendChild(renderNode(c, false)));
-      reports.forEach(r => childWrap.appendChild(renderTreeReport(r, node.path)));
+      let visibleChildrenCount = 0;
+      (node.children || []).forEach(c => {
+        const cNode = renderNode(c, false);
+        if (cNode && cNode.style.display !== 'none') {
+          visibleChildrenCount++;
+        }
+        childWrap.appendChild(cNode);
+      });
+      reports.forEach(r => {
+        const rItem = renderTreeReport(r, node.path);
+        if (rItem) {
+          visibleChildrenCount++;
+          childWrap.appendChild(rItem);
+        }
+      });
+      if (starredOnlyMode && !isRoot && visibleChildrenCount === 0) {
+        wrap.style.display = 'none';
+      }
       wrap.appendChild(childWrap);
     }
     return wrap;
   }
 
   function renderTreeReport(r, folderPath){
+    const code = String(r.code || '').trim();
+    const isStarred = isStockStarred(code);
+
+    if (starredOnlyMode && !isStarred) {
+      return null;
+    }
+
     const item = document.createElement('div');
-    item.className = 'tree-report-row';
+    item.className = 'tree-report-row' + (isStarred ? ' is-starred' : '');
     item.draggable = true;
 
-    const code = String(r.code || '').trim();
     if (code) item.dataset.code = code;
     const card = cardsByCode[code] || {};
     const stat = (window.winrateMapByCode && window.winrateMapByCode[code]) ? window.winrateMapByCode[code] : {};
@@ -3346,8 +3477,23 @@
         <button type="button" class="tree-quick-btn report" data-action="report" title="開啟 ${escapeHtml(r.name || code)} 的分析報告">📑</button>
       </span>` : '';
 
-    item.innerHTML = `<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(r.name || r.base)}">${escapeHtml(r.name || r.base)}</span><span class="tree-stat-pills">${quickActions}${winPill}${rrPill}${pePill}</span>`;
+    const starBtn = code ? `
+      <button type="button" class="tree-star-btn ${isStarred ? 'active' : ''}" data-code="${escapeHtml(code)}" title="${isStarred ? '已標注重點關注 (點擊取消)' : '標注重點關注'}">★</button>` : '';
+
+    item.innerHTML = `${starBtn}<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(r.name || r.base)}">${escapeHtml(r.name || r.base)}</span><span class="tree-stat-pills">${quickActions}${winPill}${rrPill}${pePill}</span>`;
     item.addEventListener('click', () => focusAiResult(r.code));
+
+    const starBtnEl = item.querySelector('.tree-star-btn');
+    if (starBtnEl) {
+      starBtnEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        toggleStarredStock(code);
+      });
+      starBtnEl.addEventListener('mousedown', e => e.stopPropagation());
+      starBtnEl.addEventListener('dragstart', e => e.preventDefault());
+    }
+
     item.querySelectorAll('.tree-quick-btn').forEach(button => {
       button.addEventListener('click', event => {
         event.stopPropagation();
@@ -3522,6 +3668,17 @@
     collapsedPaths = new Set(allFolderPaths(tree, []).filter(p => p !== ''));
     renderTree();
   });
+  const filterStarredBtn = document.getElementById('filter-starred-btn');
+  if (filterStarredBtn) {
+    filterStarredBtn.addEventListener('click', () => {
+      starredOnlyMode = !starredOnlyMode;
+      filterStarredBtn.classList.toggle('active', starredOnlyMode);
+      if (starredOnlyMode) {
+        collapsedPaths.clear(); // 切換為重點模式時自動全開以直接看到關注股票
+      }
+      renderTree();
+    });
+  }
 
   document.getElementById('select-all-checkbox').addEventListener('change', (e) => {
     // 每個 checkbox 的 change handler 都會依當下選取數回頭更新這顆全選 checkbox 的狀態，
@@ -4012,10 +4169,10 @@
       if (parts.length) {
         return parts.map(label => {
           let tone = 'neutral';
-          if (/死亡交叉|死叉|翻綠|頂背離|轉弱/.test(label)) tone = 'positive';
-          else if (/金叉|黃金交叉|翻紅|底背離|反彈|起漲/.test(label)) tone = 'mixed';
-          else if (/零軸上強勢多頭|多頭發散|強勢攻擊/.test(label)) tone = 'negative';
-          else if (/多方|波段/.test(label)) tone = 'cyan';
+          if (/死亡交叉|死叉|翻綠|頂背離|轉弱|回檔修正|弱勢|探底/.test(label)) tone = 'negative';
+          else if (/金叉|黃金交叉|翻紅|強勢多頭|多頭發散|強勢攻擊/.test(label)) tone = 'positive';
+          else if (/底背離|反彈|起漲|綠柱收斂|收斂/.test(label)) tone = 'mixed';
+          else if (/多方|波段|推升/.test(label)) tone = 'cyan';
           return { label, tone, title: `MACD 標籤：${label}` };
         });
       }
@@ -4506,6 +4663,23 @@
       </tr>`).join('')}</tbody>
     </table></div>`;
   }
+
+  function updatePatternInstitutionalSummary(code){
+    const wrapper = document.getElementById('patternInstTableWrapper');
+    const container = document.getElementById('patternInstContainer');
+    if (!wrapper) return;
+    const cleanCode = String(code || '').split('.')[0].trim();
+    const card = cardsByCode[cleanCode] || cardsByCode[code] || null;
+    if (card) {
+      wrapper.innerHTML = renderInstitutionSummary(card);
+      if (container) container.style.display = 'block';
+    } else {
+      wrapper.innerHTML = '<div class="inst-chart-empty">尚無法人籌碼資料</div>';
+      if (container) container.style.display = 'block';
+    }
+  }
+  window.updatePatternInstitutionalSummary = updatePatternInstitutionalSummary;
+  window.renderInstitutionSummary = renderInstitutionSummary;
 
   function renderLatestInstitutionSummary(card){
     const rows = institutionalRows(card);
