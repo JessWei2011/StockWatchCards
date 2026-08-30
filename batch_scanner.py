@@ -12,11 +12,14 @@ r"""
 ========================================================================================
 """
 
+import gc
 import json
 import math
 import os
 import re
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -2128,8 +2131,9 @@ def write_ranked_watchlist(momo_results, def_results):
 
 
 def main():
+    t_start = time.perf_counter()
     print("=" * 65)
-    print("啟動個股雙軌觀察掃描器 (batch_scanner.py)")
+    print("⚡ 啟動個股雙軌觀察掃描器 (batch_scanner.py - 多核心平行加速版)")
     print("=" * 65)
     
     if not REPORTS_DIR.exists():
@@ -2137,32 +2141,40 @@ def main():
         return
         
     html_files = sorted(REPORTS_DIR.glob("**/*.html"), key=lambda p: p.stat().st_mtime, reverse=True)
-    print(f"📂 於 reports/ 目錄下搜尋到 {len(html_files)} 個 HTML 檔案")
+    total_files = len(html_files)
+    optimal_workers = min(total_files, max(2, min(16, (os.cpu_count() or 4))))
+    print(f"📂 於 reports/ 目錄下搜尋到 {total_files} 個 HTML 檔案（啟用 {optimal_workers} 核心並行加速）")
     
+    # 1. 多核心平行解析 HTML 報表
+    with ThreadPoolExecutor(max_workers=optimal_workers) as executor:
+        parsed_results = list(executor.map(parse_html_report, html_files))
+
     infos_by_code = {}
     cat_counts = {}
-    for p in html_files:
-        info = parse_html_report(p)
+    for info in parsed_results:
         if not info:
             continue
         infos_by_code.setdefault(info['code'], info)
         cat = info['category']
         cat_counts[cat] = cat_counts.get(cat, 0) + 1
 
-    # 以最多報告共有的最後交易日為準（本批資料為 08/26）
+    # 以最多報告共有的最後交易日為準
     date_counts = {}
     for info in infos_by_code.values():
         if info['kline']:
             date = info['kline'][-1]['date']
             date_counts[date] = date_counts.get(date, 0) + 1
-    as_of = max(date_counts, key=date_counts.get)
+    as_of = max(date_counts, key=date_counts.get) if date_counts else '未知'
     print(f"📅 本次統一使用資料截止日：{as_of}")
 
-    evaluated = []
-    for info in infos_by_code.values():
-        res = evaluate_dual_strategy(info, all_category_counts=cat_counts, as_of=as_of)
-        if res:
-            evaluated.append(res)
+    # 2. 多核心平行評估雙軌策略
+    def _eval_single(info):
+        return evaluate_dual_strategy(info, all_category_counts=cat_counts, as_of=as_of)
+
+    with ThreadPoolExecutor(max_workers=optimal_workers) as executor:
+        eval_results = list(executor.map(_eval_single, list(infos_by_code.values())))
+
+    evaluated = [res for res in eval_results if res is not None]
             
     if not evaluated:
         print("⚠️ 未解構出有效的個股數據。")
@@ -2187,8 +2199,14 @@ def main():
         print(f"#{i:<3} {r['code']:<6} {r['name']:<10} {r['category']:<8} {r['price']:<10.2f} +{r['s20']:<9.2f}% {r['bias_20']:<7.1f}% {r['inst_buy_days']}/5天   {r['def_score']}")
 
     write_ranked_watchlist(momo_results, def_results)
+    
+    # 記憶體即時釋放
+    gc.collect()
+    
+    t_end = time.perf_counter()
     print(f"\n📄 雙軌選股儀表板已寫入至：{OUTPUT_MD}")
     print(f"📄 突破候選池已寫入至：{BREAKOUT_OUTPUT_MD}")
+    print(f"⏱️ 總運算耗時：{t_end - t_start:.2f} 秒（{optimal_workers} 核心並行）")
 
 
 if __name__ == "__main__":

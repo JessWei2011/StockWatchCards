@@ -17,11 +17,14 @@ r"""
 ========================================================================================
 """
 
+import gc
 import json
 import math
 import os
 import re
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -1492,7 +1495,14 @@ def save_stage4_report(r):
     lines.append("---")
     lines.append("\n*本報告由 batch_scanner_gemini 依據最新行情數據自動生成。*")
 
-    output_path.write_text("\n".join(lines), encoding="utf-8")
+    content = "\n".join(lines)
+    if output_path.exists():
+        try:
+            if output_path.read_text(encoding="utf-8") == content:
+                return output_path
+        except Exception:
+            pass
+    output_path.write_text(content, encoding="utf-8")
     return output_path
 
 
@@ -1536,8 +1546,9 @@ def write_ranked_watchlist(momo_results, def_results):
 
 
 def main():
+    t_start = time.perf_counter()
     print("=" * 65)
-    print("🚀 啟動個股雙軌勝率與動能掃描器 (batch_scanner_gemini.py)")
+    print("🚀 啟動個股雙軌勝率與動能掃描器 (batch_scanner_gemini.py - 多核心平行加速版)")
     print("=" * 65)
     
     if not REPORTS_DIR.exists():
@@ -1545,12 +1556,17 @@ def main():
         return
         
     html_files = sorted(REPORTS_DIR.glob("**/*.html"), key=lambda p: p.stat().st_mtime, reverse=True)
-    print(f"📂 於 reports/ 目錄下搜尋到 {len(html_files)} 個 HTML 檔案")
+    total_files = len(html_files)
+    optimal_workers = min(total_files, max(2, min(16, (os.cpu_count() or 4))))
+    print(f"📂 於 reports/ 目錄下搜尋到 {total_files} 個 HTML 檔案（啟用 {optimal_workers} 核心並行加速）")
     
+    # 1. 多核心平行解析 HTML 報表
+    with ThreadPoolExecutor(max_workers=optimal_workers) as executor:
+        parsed_results = list(executor.map(parse_html_report, html_files))
+
     infos_by_code = {}
     cat_counts = {}
-    for p in html_files:
-        info = parse_html_report(p)
+    for info in parsed_results:
         if not info:
             continue
         infos_by_code.setdefault(info['code'], info)
@@ -1562,19 +1578,23 @@ def main():
         if info['kline']:
             date = info['kline'][-1]['date']
             date_counts[date] = date_counts.get(date, 0) + 1
-    as_of = max(date_counts, key=date_counts.get)
+    as_of = max(date_counts, key=date_counts.get) if date_counts else '未知'
     print(f"📅 本次統一使用資料截止日：{as_of}")
 
-    evaluated = []
-    for info in infos_by_code.values():
+    # 2. 多核心平行評估策略與更新個股 4 階段 Markdown 分析報告
+    def _eval_and_save(info):
         res = evaluate_dual_strategy(info, all_category_counts=cat_counts, as_of=as_of)
         if res:
-            evaluated.append(res)
-            # 自動生成/更新個股專屬 4 階段技術分析報告 (.md)
             try:
                 save_stage4_report(res)
-            except Exception as e:
+            except Exception:
                 pass
+        return res
+
+    with ThreadPoolExecutor(max_workers=optimal_workers) as executor:
+        eval_results = list(executor.map(_eval_and_save, list(infos_by_code.values())))
+
+    evaluated = [res for res in eval_results if res is not None]
             
     if not evaluated:
         print("⚠️ 未解構出有效的個股數據。")
@@ -1583,7 +1603,7 @@ def main():
     momo_results = sorted(evaluated, key=lambda x: x['momo_score'], reverse=True)
     def_results = sorted(evaluated, key=lambda x: x['def_score'], reverse=True)
     
-    print(f"✅ 完成 {len(evaluated)} 檔個股的雙軌進化版策略評分。")
+    print(f"✅ 完成 {len(evaluated)} 檔個股的雙軌進化版策略評分與 4 階段報告更新。")
     print("\n🚀 【暴漲動能型 TOP 10】")
     print(f"{'排名':<4} {'代號':<6} {'股票名稱':<10} {'類群':<8} {'收盤價':<10} {'5MA斜率':<10} {'RSI':<8} {'量比':<8} {'動能分數'}")
     print("-" * 85)
@@ -1598,8 +1618,14 @@ def main():
         print(f"#{i:<3} {r['code']:<6} {r['name']:<10} {r['category']:<8} {r['price']:<10.2f} +{r['s20']:<9.2f}% {r['bias_20']:<7.1f}% {r['inst_buy_days']}/5天   {r['def_score']}")
 
     write_ranked_watchlist(momo_results, def_results)
+    
+    # 記憶體即時釋放
+    gc.collect()
+    
+    t_end = time.perf_counter()
     print(f"\n📄 雙軌選股儀表板已寫入至：{OUTPUT_MD}")
     print(f"📄 突破候選池已寫入至：{BREAKOUT_OUTPUT_MD}")
+    print(f"⏱️ 總運算耗時：{t_end - t_start:.2f} 秒（{optimal_workers} 核心並行）")
 
 
 if __name__ == "__main__":

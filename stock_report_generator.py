@@ -3,7 +3,7 @@
 台股分析工具 - 精簡Token版 (上市/上櫃 完美整合版 + 處置期間判斷)
 用法: python tw_analysis.py 6182
 """
-import sys, time, warnings, os, re, json, logging, glob, threading
+import sys, time, warnings, os, re, json, logging, glob, threading, gc
 try:
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
@@ -22,16 +22,24 @@ try:
     import pandas as pd
     import numpy as np
     import requests
+    from requests.adapters import HTTPAdapter
     import matplotlib
     matplotlib.use("Agg")
     matplotlib.rcParams["font.sans-serif"] = ["Microsoft JhengHei", "Microsoft YaHei", "SimHei"]
     matplotlib.rcParams["axes.unicode_minus"] = False
+    import matplotlib.pyplot as plt
     import mplfinance as mpf
 except ImportError as e:
     print(f"❌ 缺少套件: {e}")
     print("請執行: pip install yfinance pandas numpy requests urllib3 matplotlib mplfinance")
     input("按 Enter 鍵結束…")
     sys.exit(1)
+
+# 全域連線池 Session（複用 TCP 連線，減少連線延遲與記憶體開銷）
+_session = requests.Session()
+_adapter = HTTPAdapter(pool_connections=32, pool_maxsize=32, max_retries=2)
+_session.mount("https://", _adapter)
+_session.mount("http://", _adapter)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -46,8 +54,8 @@ HOLDERS_MARKET_CACHE = os.path.join(CACHE_DIR, "holders_market.csv")
 REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
 HOLDERS_WEEKS = 8  # 大戶持股比例趨勢顯示週數
 HOLDERS_BACKFILL_WEEKS = 3  # 快取不足時，額外回補的過去週數(一次性，補齊後不再重複查詢)
-DEFAULT_BATCH_WORKERS = 3
-MAX_BATCH_WORKERS = 4
+DEFAULT_BATCH_WORKERS = max(4, min(12, (os.cpu_count() or 4)))
+MAX_BATCH_WORKERS = max(8, min(16, (os.cpu_count() or 4) * 2))
 _chart_render_lock = threading.Lock()
 
 
@@ -117,7 +125,7 @@ def _fetch_holders_market_locked():
             pass
 
     try:
-        r = requests.get("https://opendata.tdcc.com.tw/getOD.ashx?id=1-5", headers=HEADERS, timeout=30)
+        r = _session.get("https://opendata.tdcc.com.tw/getOD.ashx?id=1-5", headers=HEADERS, timeout=30)
         if r.status_code == 200 and r.text.strip():
             os.makedirs(CACHE_DIR, exist_ok=True)
             with open(HOLDERS_MARKET_CACHE, "w", encoding="utf-8") as f:
@@ -285,6 +293,9 @@ def build_chart(sid, name, df, ma5, ma10, ma20, ma60, bu, bm, bl, n_tail, out_pa
         return True
     except Exception:
         return False
+    finally:
+        plt.close('all')
+        gc.collect()
 
 # ── 共用工具 ──────────────────────────────────────────
 _twse_response_cache = {}
@@ -308,7 +319,7 @@ def _twse_get_locked(url, params):
         return _twse_response_cache[cache_key]
     for _ in range(2):
         try:
-            r = requests.get(url, params=params, headers=HEADERS, timeout=12)
+            r = _session.get(url, params=params, headers=HEADERS, timeout=12)
             if r.status_code == 200 and r.text.strip():
                 data = r.json()
                 _twse_response_cache[cache_key] = data
@@ -341,7 +352,7 @@ def _fetch_otc_company_names_locked():
     names = {}
     try:
         otc_hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        r = requests.get(
+        r = _session.get(
             "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes",
             headers=otc_hdrs, timeout=15, verify=False
         )
@@ -359,7 +370,7 @@ def _fetch_otc_company_names_locked():
 def resolve_by_name(query):
     """用中文股票名稱查詢代號（TWSE codeQuery 同時涵蓋上市與上櫃）"""
     try:
-        res = requests.get(
+        res = _session.get(
             "https://www.twse.com.tw/zh/api/codeQuery",
             params={"query": query}, headers=HEADERS, timeout=8
         )
@@ -679,7 +690,7 @@ def fetch_disposition_info(sid, is_otc=False):
 
         for url, params in candidates:
             try:
-                r = requests.get(url, params=params, headers=HEADERS, timeout=12)
+                r = _session.get(url, params=params, headers=HEADERS, timeout=12)
                 txt = r.text.strip()
                 if r.status_code != 200 or not txt:
                     continue
@@ -747,7 +758,7 @@ def fetch_disposition_info(sid, is_otc=False):
 
         for url, params in candidates:
             try:
-                r = requests.get(url, params=params, headers=otc_hdrs, timeout=12, verify=False)
+                r = _session.get(url, params=params, headers=otc_hdrs, timeout=12, verify=False)
                 txt = r.text.strip()
                 if r.status_code != 200 or not txt:
                     continue
@@ -867,7 +878,7 @@ def fetch_inst(sid, dates, is_otc=False, cache=None):
         else:
             url = "https://www.tpex.org.tw/web/stock/3insti/daily_trade/3itrade_hedge_result.php"
             try:
-                r = requests.get(url, params={"l": "zh-tw", "o": "json", "se": "AL", "t": "D", "d": to_roc_date(d)},
+                r = _session.get(url, params={"l": "zh-tw", "o": "json", "se": "AL", "t": "D", "d": to_roc_date(d)},
                                  headers=otc_hdrs, timeout=10, verify=False)
                 r.encoding = 'utf-8'
                 data = r.json() if r.status_code == 200 else {}
@@ -937,7 +948,7 @@ def fetch_margin(sid, dates, is_otc=False, cache=None):
         else:
             url = "https://www.tpex.org.tw/web/stock/margin_trading/margin_balance/margin_bal_result.php"
             try:
-                r = requests.get(url, params={"l": "zh-tw", "o": "json", "d": to_roc_date(d)}, headers=otc_hdrs, timeout=10, verify=False)
+                r = _session.get(url, params={"l": "zh-tw", "o": "json", "d": to_roc_date(d)}, headers=otc_hdrs, timeout=10, verify=False)
                 r.encoding = 'utf-8'
                 data = r.json() if r.status_code == 200 else {}
             except:
@@ -1024,7 +1035,7 @@ def run(ticker_input):
 
     if not is_otc:
         try:
-            res = requests.get(
+            res = _session.get(
                 "https://www.twse.com.tw/zh/api/codeQuery",
                 params={"query": sid}, headers=HEADERS, timeout=5
             )
@@ -1042,7 +1053,7 @@ def run(ticker_input):
     if not name and is_otc:
         try:
             otc_hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-            res = requests.get(
+            res = _session.get(
                 "https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_no1430/stk_wn1430_result.php",
                 params={"l": "zh-tw", "o": "json", "se": "EW", "s": "0,asc", "d": to_roc_date(dates[0])},
                 headers=otc_hdrs, timeout=8, verify=False
@@ -1417,6 +1428,7 @@ def run_batch(tickers):
         print(f"{'✅ OK' if ok else '❌ 失敗'} [1/1] {t}")
         return
 
+    t_start = time.perf_counter()
     try:
         configured_workers = int(os.environ.get("STOCK_UPDATE_WORKERS", DEFAULT_BATCH_WORKERS))
     except (TypeError, ValueError):
@@ -1438,11 +1450,14 @@ def run_batch(tickers):
             print(f"{'✅ OK' if ok else '❌ 失敗'} [{completed}/{total}] {ticker}")
             results_by_index[index] = (ticker, ok)
 
+    gc.collect()
+    t_end = time.perf_counter()
     print(f"\n{'='*60}")
-    print(f"批次執行完畢（{worker_count} 執行緒）")
+    print(f"批次執行完畢（{worker_count} 執行緒並行）")
     for index in range(total):
         t, ok = results_by_index[index]
         print(f"  {'✅' if ok else '❌'} {t}")
+    print(f"⏱️ 總更新耗時：{t_end - t_start:.2f} 秒")
     print('='*60)
 
 if __name__ == "__main__":
