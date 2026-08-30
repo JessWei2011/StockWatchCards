@@ -804,6 +804,7 @@
   <div class="generate-bar">
     <input type="text" id="generate-input" placeholder="輸入股票代號/名稱（可用逗號分隔多筆），或輸入 ALL 更新全部追蹤清單">
     <button class="btn primary" id="generate-btn">🚀 產生/更新報表</button>
+    <button class="btn" id="deploy-mobile-btn" title="執行「發布手機版.bat」全自動匯出 73 檔個股快照並發布至 Cloudflare 手機版分析中心" style="background:#0284c7; color:#fff; font-weight:750; border-color:#0284c7;">📱 發布手機版</button>
     <button class="btn" id="batch-scanner-btn" title="呼叫 batch_scanner.bat 執行 ChatGPT 雙軌量化掃描並存入 stock_winrate_ranking.md" style="background:#10b981; color:#000; font-weight:750; border-color:#10b981;">🟢 Chatgpt Scanner</button>
     <button class="btn primary" id="gemini-scanner-btn" title="呼叫 batch_scanner_gemini.bat 執行 Gemini 雙軌動能掃描並存入 stock_winrate_ranking_gemini.md" style="font-weight:750;">✨ Gemini Scanner</button>
     <span class="spinner" id="generate-spinner"></span>
@@ -3771,6 +3772,71 @@
     });
   }
 
+  // 📱 手機版發布按鈕點擊處理
+  const deployMobileBtn = document.getElementById('deploy-mobile-btn');
+  if (deployMobileBtn) {
+    deployMobileBtn.addEventListener('click', async () => {
+      if (deployMobileBtn.disabled) return;
+      const statusEl = document.getElementById('generate-status');
+      const spinnerEl = document.getElementById('generate-spinner');
+
+      try {
+        const res = await fetch('/api/deploy-mobile', { method: 'POST' });
+        const data = await res.json();
+        if (!data.ok) {
+          alert(data.error || '啟動發布失敗');
+          return;
+        }
+      } catch (e) {
+        alert('連線失敗: ' + e);
+        return;
+      }
+
+      deployMobileBtn.className = 'btn danger';
+      deployMobileBtn.disabled = true;
+      deployMobileBtn.textContent = '⏳ 手機版發布中...';
+      if (statusEl) {
+        statusEl.style.display = 'inline-block';
+        statusEl.innerHTML = '📱 正在執行「發布手機版.bat」全自動匯出 73 檔個股並部署至 Cloudflare...';
+      }
+      if (spinnerEl) spinnerEl.style.display = 'inline-block';
+
+      const timer = setInterval(async () => {
+        try {
+          const res = await fetch('/api/deploy-mobile/status');
+          const status = await res.json();
+          if (status.ok && status.done) {
+            clearInterval(timer);
+            deployMobileBtn.disabled = false;
+            if (spinnerEl) spinnerEl.style.display = 'none';
+
+            if (status.returncode === 0) {
+              deployMobileBtn.className = 'btn success';
+              deployMobileBtn.textContent = '✅ 發布成功';
+              if (statusEl) {
+                statusEl.innerHTML = '✅ 73 檔手機個股分析中心已發布上線！<a href="https://stock2-mobile.lilis0501.workers.dev/" target="_blank" style="color:#38bdf8; text-decoration:underline; font-weight:bold; margin-left:8px;">開啟手機版網址 🔗</a>';
+              }
+            } else {
+              deployMobileBtn.className = 'btn danger';
+              deployMobileBtn.textContent = '❌ 發布失敗';
+              if (statusEl) {
+                statusEl.innerHTML = '❌ 手機版發布失敗，請確認網路連線或憑證狀態。';
+              }
+            }
+
+            setTimeout(() => {
+              deployMobileBtn.className = 'btn';
+              deployMobileBtn.style.background = '#0284c7';
+              deployMobileBtn.style.color = '#fff';
+              deployMobileBtn.style.borderColor = '#0284c7';
+              deployMobileBtn.textContent = '📱 發布手機版';
+            }, 6000);
+          }
+        } catch (err) {}
+      }, 1000);
+    });
+  }
+
   document.getElementById('shutdown-server-btn').addEventListener('click', async () => {
     try {
       await fetch('/api/shutdown', { method: 'POST' });
@@ -3834,8 +3900,8 @@
       if (parts.length) {
         return parts.map(label => {
           let tone = 'neutral';
-          if (/多頭|上彎|仰角|噴出|金叉|站上|重回/.test(label)) tone = 'positive';
-          else if (/空頭|下彎|俯角|探底|死叉|跌破|失守/.test(label)) tone = 'negative';
+          if (/多頭|上彎|仰角|噴出|金叉|站上|重回|站穩|守穩/.test(label)) tone = 'positive';
+          else if (/空頭|下彎|俯角|探底|死叉|跌破|失守|破線|轉弱|拉回/.test(label)) tone = 'negative';
           else if (/糾纏|整理|糾結|蓄勢|處置/.test(label)) tone = 'mixed';
           return { label, tone, title: `K線指標：${label}` };
         });
@@ -3921,7 +3987,7 @@
           if (/天量|倒貨|頂背離|死亡交叉|死叉|退潮/.test(label)) tone = 'positive';
           else if (/突破|黃金交叉|金叉|窒息量|洗淨/.test(label)) tone = 'mixed';
           else if (/滾量|量價齊揚|主升/.test(label)) tone = 'negative';
-          else if (/溫和|增量/.test(label)) tone = 'cyan';
+          else if (/溫和|增量|放量/.test(label)) tone = 'cyan';
           return { label, tone, title: `VOL 標籤：${label}` };
         });
       }

@@ -887,7 +887,7 @@ def rank_observed_stock(stock_info, as_of=None):
 
 def detect_kline_tags(df: pd.DataFrame) -> list:
     """
-    自動解析 K線與均線指標標籤 (均線開花多頭發散、突破整理箱頂、回測月線有守、糾纏向上噴出、假突破長上影線、破線轉空)
+    自動解析 K線與均線指標標籤 (均線開花多頭發散、突破整理箱頂、回測月線有守、糾纏向上噴出、假突破長上影線、跌破/站穩5MA/10MA/20MA)
     """
     if len(df) < 20:
         return ["⚪ K線資料累積中"]
@@ -931,8 +931,8 @@ def detect_kline_tags(df: pd.DataFrame) -> list:
 
     tags = []
 
-    # 1. 均線開花多頭發散 (5MA > 10MA > 20MA 且皆向上加速發散)
-    if cur_ma5 > cur_ma10 > cur_ma20 and s5_cur > 1.0 and s10_cur > 0.4 and s20_cur > 0.2:
+    # 1. 均線開花多頭發散 (5MA > 10MA > 20MA 且皆向上加速發散，且收盤價穩居 5MA 之上)
+    if cur_c >= cur_ma5 and cur_ma5 > cur_ma10 > cur_ma20 and s5_cur > 1.0 and s10_cur > 0.4 and s20_cur > 0.2:
         if ma60 is None or cur_ma20 > float(ma60.iloc[-1]):
             tags.append("🚀 均線開花多頭發散 (主升段連鎖加速)")
 
@@ -942,13 +942,7 @@ def detect_kline_tags(df: pd.DataFrame) -> list:
         if cur_c > past20_box_high and cur_c >= cur_o * 1.02:
             tags.append("🔥 突破波段整理箱頂 (實質表態)")
 
-    # 3. 回測上升月線有守 (回檔第一買點)
-    if len(df) >= 20 and s20_cur > 0.25:
-        # 當日最低點回測 20MA 附近 (0.985 ~ 1.015)，收盤拉升站穩 20MA 之上
-        if (cur_l <= cur_ma20 * 1.015) and (cur_c >= cur_ma20 * 0.995) and (cur_c >= cur_l + (cur_h - cur_l) * 0.4):
-            tags.append("💡 回測上升月線有守 (回檔第一買點)")
-
-    # 4. 假突破長上影線 (主力誘多出貨)
+    # 3. 假突破長上影線 (主力誘多出貨)
     if len(df) >= 21:
         past20_h = float(high_s.iloc[-21:-1].max())
         upper_shadow = cur_h - max(cur_c, cur_o)
@@ -956,41 +950,79 @@ def detect_kline_tags(df: pd.DataFrame) -> list:
         if cur_h > past20_h and cur_c < past20_h and upper_shadow >= body * 1.8:
             tags.append("🚨 假突破收長上影線 (主力誘多出貨)")
 
-    # 5. 破線轉空 (一舉跌破 5MA 與 10MA)
-    if prev_c >= prev_ma5 and cur_c < cur_ma5 and cur_c < cur_ma10 and s5_cur < 0:
-        tags.append("⚠️ 破線轉空 (失守雙均線)")
+    # 4. 關鍵均線破線警示 (跌破 5MA / 10MA / 20MA)
+    if prev_c >= prev_ma20 and cur_c < cur_ma20:
+        tags.append("🚨 跌破20MA月線 (生命線失守)")
+    elif prev_c >= prev_ma10 and cur_c < cur_ma10:
+        if cur_c < cur_ma5:
+            tags.append("⚠️ 跌破10MA (失守雙均線)")
+        else:
+            tags.append("⚠️ 跌破10MA (短線轉弱)")
+    elif prev_c >= prev_ma5 and cur_c < cur_ma5:
+        if cur_c >= cur_ma10:
+            tags.append("⚠️ 跌破5MA (短線動能拉回)")
+        else:
+            tags.append("⚠️ 跌破5MA (轉弱回測)")
+    elif cur_c < cur_ma5 and cur_c < cur_ma10 and cur_c < cur_ma20:
+        if not any("跌破" in t for t in tags):
+            tags.append("⚠️ 失守所有短均線 (短中線偏空)")
 
-    # 6. 5MA 與 10MA 金叉 / 死叉 (最精確之短線多空轉折)
+    # 5. 關鍵均線攻克與突破 (站上 5MA / 10MA / 20MA)
+    if prev_c < prev_ma20 and cur_c >= cur_ma20:
+        tags.append("🔥 突破站上月線 (重返多頭生命線)")
+    elif prev_c < prev_ma10 and cur_c >= cur_ma10:
+        tags.append("✨ 突破站上10MA (收復短線支撐)")
+    elif prev_c < prev_ma5 and cur_c >= cur_ma5:
+        tags.append("✨ 突破站上5MA (短線點火轉強)")
+
+    # 6. 回測守穩 / 站穩均線
+    if len(df) >= 20 and s20_cur > 0.25:
+        # 當日最低點回測 20MA 附近 (0.985 ~ 1.015)，收盤拉升站穩 20MA 之上
+        if (cur_l <= cur_ma20 * 1.015) and (cur_c >= cur_ma20 * 0.995) and (cur_c >= cur_l + (cur_h - cur_l) * 0.4):
+            tags.append("💡 回測上升月線有守 (回檔第一買點)")
+
+    if cur_c < cur_ma5 and cur_c >= cur_ma10 and (cur_c >= cur_ma10 * 0.995) and s10_cur > 0:
+        if not any("回測" in t or "守穩" in t for t in tags):
+            tags.append("💡 守穩10MA (短線回測有守)")
+
+    if cur_c >= cur_ma5 and cur_c > prev_c and s5_cur > 0.5 and not any("突破" in t or "開花" in t for t in tags):
+        tags.append("📈 站穩5MA (強勢沿線推升)")
+    elif cur_c >= cur_ma10 and cur_c >= cur_ma5 and s10_cur > 0.3 and not any("突破" in t or "開花" in t or "5MA" in t for t in tags):
+        tags.append("📈 站穩10MA (短多結構穩固)")
+
+    # 7. 5MA 與 10MA 金叉 / 死叉
     if prev_ma5 <= prev_ma10 and cur_ma5 > cur_ma10:
         tags.append("✨ 5MA金叉10MA (短線轉強)")
     elif prev_ma5 >= prev_ma10 and cur_ma5 < cur_ma10:
         tags.append("⚡ 5MA死叉10MA (短線轉弱)")
 
-    # 7. 均線斜率轉折與加速度
+    # 8. 均線斜率轉折與加速度
     if s5_prev <= 0 and s5_cur > 0.2:
         tags.append("💡 5MA轉仰角 (翻揚轉強)")
     elif s5_prev >= 0 and s5_cur < -0.2:
         tags.append("⚠️ 5MA轉俯角 (下彎轉弱)")
     elif s5_cur > 1.5 and s5_cur > s5_prev + 0.3:
-        if not any("均線開花" in t for t in tags):
+        if not any("均線開花" in t or "站穩5MA" in t for t in tags):
             tags.append("🚀 5MA加大仰角 (加速噴出)")
     elif s5_cur < -1.5 and s5_cur < s5_prev - 0.3:
         tags.append("❄️ 5MA加大俯角 (加速探底)")
 
-    # 8. 均線糾纏 (壓縮蓄勢)
+    # 9. 均線糾纏 (壓縮蓄勢)
     ma_min = min(cur_ma5, cur_ma10, cur_ma20)
     ma_max = max(cur_ma5, cur_ma10, cur_ma20)
     spread_pct = ((ma_max - ma_min) / cur_c) * 100.0 if cur_c > 0 else 99.0
     if spread_pct <= 1.8 and abs(s5_cur) < 0.6 and abs(s10_cur) < 0.6:
         tags.append("💎 短中期均線糾纏 (壓縮蓄勢)")
 
-    # 常態
+    # 常態備選
     if not tags:
-        if cur_ma5 > cur_ma10 > cur_ma20:
+        if cur_c >= cur_ma5 and cur_ma5 > cur_ma10 > cur_ma20:
             tags.append("🚀 均線多頭排列 (強勢多方)")
+        elif cur_c < cur_ma5 and cur_ma5 > cur_ma10 > cur_ma20 and cur_c >= cur_ma20:
+            tags.append("📈 多頭拉回整理 (均線多頭排列)")
         elif cur_ma5 < cur_ma10 < cur_ma20:
             tags.append("📉 均線空頭排列 (空方沉陷)")
-        elif cur_c > cur_ma20 and s20_cur > 0:
+        elif cur_c >= cur_ma20 and s20_cur > 0:
             tags.append("📈 站穩上升月線 (穩健多方)")
         else:
             tags.append("⚪ 均線多空中性整理")
@@ -1098,6 +1130,7 @@ def detect_volume_tags(df: pd.DataFrame) -> list:
     vma20 = vol_s.rolling(20).mean()
     
     cur_vol = float(vol_s.iloc[-1])
+    prev_vol = float(vol_s.iloc[-2]) if len(vol_s) >= 2 else cur_vol
     cur_v5 = float(vma5.iloc[-1]) if pd.notna(vma5.iloc[-1]) else None
     cur_v20 = float(vma20.iloc[-1]) if pd.notna(vma20.iloc[-1]) else None
     prev_v5 = float(vma5.iloc[-2]) if len(vma5) >= 2 and pd.notna(vma5.iloc[-2]) else None
@@ -1141,12 +1174,23 @@ def detect_volume_tags(df: pd.DataFrame) -> list:
         elif prev_v5 >= prev_v20 and cur_v5 < cur_v20:
             tags.append("⚡ 量能死亡交叉 (退潮警戒)")
 
-    # 常態
+    # 常態 (綜合 20日均量 與 昨日成交量)
     if not tags:
-        if cur_v20 is not None and cur_vol >= cur_v20 * 1.2:
+        if cur_v20 is not None and cur_vol >= cur_v20 * 1.5:
+            tags.append("🔥 帶量突破換手")
+        elif cur_v20 is not None and cur_vol >= cur_v20 * 1.2:
             tags.append("📈 買盤溫和增量")
         elif cur_v20 is not None and cur_vol < cur_v20 * 0.8:
-            tags.append("📉 縮量沉澱整理")
+            if prev_vol > 0 and cur_vol >= prev_vol * 1.15:
+                tags.append("📈 較昨溫和量增 (處低均量區)")
+            elif cur_vol <= cur_v20 * 0.45:
+                tags.append("💎 價跌量急縮窒息量 (主力洗盤完畢)")
+            else:
+                tags.append("📉 縮量沉澱整理")
+        elif prev_vol > 0 and cur_vol >= prev_vol * 1.15:
+            tags.append("📈 較昨日增量換手")
+        elif prev_vol > 0 and cur_vol <= prev_vol * 0.85:
+            tags.append("📉 較昨日量縮整理")
         else:
             tags.append("⚪ 常態量能換手")
 
@@ -1701,16 +1745,46 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
             momo_reasons.append("⚠️警示:假突破長上影線(主力誘多出貨)")
             def_score -= 25
             def_reasons.append("⚠️警示:假突破誘多")
-        elif "⚠️ 破線轉空" in ktag:
-            momo_score -= 20
-            momo_reasons.append("⚠️破線轉空(失守5MA/10MA)")
-            def_score -= 20
-            def_reasons.append("⚠️失守短均線")
-        elif "🚨 跌破20MA月線" in ktag:
+        elif "🚨 跌破20MA月線" in ktag or "失守所有短均線" in ktag:
             momo_score -= 25
             momo_reasons.append("🚨失守20MA生命線")
             def_score -= 30
             def_reasons.append("🚨失守20MA生命線")
+        elif "⚠️ 跌破10MA" in ktag or "破線轉空" in ktag:
+            momo_score -= 15
+            momo_reasons.append("⚠️跌破10MA短線轉弱")
+            def_score -= 15
+            def_reasons.append("⚠️失守10MA短均線")
+        elif "⚠️ 跌破5MA" in ktag:
+            momo_score -= 10
+            momo_reasons.append("⚠️跌破5MA攻擊線拉回")
+            def_score -= 8
+            def_reasons.append("⚠️跌破5MA短線降溫")
+        elif "🔥 突破站上月線" in ktag:
+            momo_score += 15
+            momo_reasons.append("🔥突破站上20MA月線(重返多頭)")
+            def_score += 15
+            def_reasons.append("重返月線生命線支撐")
+        elif "✨ 突破站上10MA" in ktag:
+            momo_score += 12
+            momo_reasons.append("✨突破站上10MA(收復短線支撐)")
+            def_score += 10
+            def_reasons.append("收復10MA短線支撐")
+        elif "✨ 突破站上5MA" in ktag:
+            momo_score += 12
+            momo_reasons.append("✨突破站上5MA(短線點火轉強)")
+            def_score += 8
+            def_reasons.append("站上5MA攻擊線")
+        elif "📈 站穩5MA" in ktag:
+            momo_score += 12
+            momo_reasons.append("站穩5MA強勢推升")
+            def_score += 8
+            def_reasons.append("穩居5MA攻擊線之上")
+        elif "📈 站穩10MA" in ktag or "💡 守穩10MA" in ktag:
+            def_score += 12
+            def_reasons.append("守穩10MA短線支撐")
+            momo_score += 8
+            momo_reasons.append("回測10MA有守")
 
     # 2. VOL量能
     for vtag in vol_tags:

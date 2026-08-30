@@ -589,6 +589,59 @@ BATCH_SCANNER_GEMINI_SCRIPT = ROOT_DIR / "batch_scanner_gemini.py"
 BATCH_SCANNER_GEMINI_LOCK = threading.Lock()
 batch_scanner_gemini_job = _new_batch_scanner_job()
 
+DEPLOY_MOBILE_BAT = ROOT_DIR / "發布手機版.bat"
+DEPLOY_MOBILE_LOCK = threading.Lock()
+
+
+def _new_deploy_mobile_job():
+    return {
+        "running": False,
+        "lines": [],
+        "done": False,
+        "returncode": None,
+    }
+
+
+deploy_mobile_job = _new_deploy_mobile_job()
+
+
+def _run_deploy_mobile():
+    global deploy_mobile_job
+    child_env = {
+        **os.environ,
+        "PYTHONIOENCODING": "utf-8",
+        "PATH": r"C:\Users\User\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin;" + os.environ.get("PATH", "")
+    }
+    try:
+        proc = subprocess.Popen(
+            ["cmd.exe", "/c", str(DEPLOY_MOBILE_BAT), "--no-pause"],
+            cwd=ROOT_DIR,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=child_env,
+        )
+    except OSError as e:
+        with DEPLOY_MOBILE_LOCK:
+            deploy_mobile_job["lines"].append(f"❌ 無法啟動 發布手機版.bat: {e}")
+            deploy_mobile_job["done"] = True
+            deploy_mobile_job["running"] = False
+        return
+
+    for raw_line in proc.stdout:
+        line = raw_line.rstrip("\n")
+        with DEPLOY_MOBILE_LOCK:
+            deploy_mobile_job["lines"].append(line)
+
+    proc.wait()
+    with DEPLOY_MOBILE_LOCK:
+        deploy_mobile_job["done"] = True
+        deploy_mobile_job["running"] = False
+        deploy_mobile_job["returncode"] = proc.returncode
+
 
 def _run_batch_scanner():
     global batch_scanner_job
@@ -819,6 +872,10 @@ class Handler(SimpleHTTPRequestHandler):
             with BATCH_SCANNER_GEMINI_LOCK:
                 self._json(200, {"ok": True, **batch_scanner_gemini_job})
             return
+        if parsed.path == "/api/deploy-mobile/status":
+            with DEPLOY_MOBILE_LOCK:
+                self._json(200, {"ok": True, **deploy_mobile_job})
+            return
         if parsed.path == "/api/markdown-report":
             qs = parse_qs(parsed.query)
             code = (qs.get("code") or [""])[0].strip()
@@ -904,6 +961,18 @@ class Handler(SimpleHTTPRequestHandler):
                 batch_scanner_gemini_job = _new_batch_scanner_job()
                 batch_scanner_gemini_job["running"] = True
             threading.Thread(target=_run_batch_scanner_gemini, daemon=True).start()
+            self._json(200, {"ok": True})
+            return
+
+        if parsed.path == "/api/deploy-mobile":
+            global deploy_mobile_job
+            with DEPLOY_MOBILE_LOCK:
+                if deploy_mobile_job["running"]:
+                    self._json(409, {"ok": False, "error": "已經有手機版發布任務在執行中，請稍候"})
+                    return
+                deploy_mobile_job = _new_deploy_mobile_job()
+                deploy_mobile_job["running"] = True
+            threading.Thread(target=_run_deploy_mobile, daemon=True).start()
             self._json(200, {"ok": True})
             return
 
