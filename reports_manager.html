@@ -41,56 +41,14 @@
   }
   .main{ flex:1; min-width:0; padding:20px; overflow-y:auto; }
 
-  .rank-panel{
-    width:260px; padding:16px 14px; overflow-y:auto; flex-shrink:0;
-  }
-
   .resizer{
     width:5px; flex-shrink:0; cursor:col-resize; background:var(--border);
-    position:relative;
+    position:relative; touch-action:none;
   }
   .resizer:hover, .resizer.active{ background:var(--accent); }
   .resizer::after{
     content:''; position:absolute; top:0; bottom:0; left:-3px; right:-3px;
   }
-  .rank-panel h2{ font-size:14px; margin:0 0 12px; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
-  .rank-row{ padding:7px 6px; border-radius:8px; cursor:pointer; }
-  .rank-row:hover{ background:var(--hover); }
-  .rank-row-main{ display:flex; align-items:center; gap:8px; font-size:14px; }
-  .rank-identity, .rank-row-actions{ display:flex; align-items:center; gap:10px; min-width:0; }
-  .rank-row-actions{ justify-content:flex-end; }
-  .rank-row-actions .tree-stat-pill{ width:auto; min-width:38px; padding:2px 6px; }
-  .rank-row .rank-num{ width:20px; flex-shrink:0; text-align:center; color:var(--text-dim); font-size:12px; font-weight:700; }
-  .rank-row .rank-code{ color:var(--text-dim); font-size:12.5px; flex-shrink:0; }
-  .rank-row .rank-name{
-    flex-shrink:0; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  }
-  .rank-decision{ flex-shrink:0; min-width:68px; color:#bfdbfe; font-size:12px; font-weight:800; }
-  .rank-dispo-inline{
-    flex-shrink:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    font-size:11px; font-weight:700; color:#fca5a5;
-    background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35);
-    border-radius:4px; padding:1px 6px;
-  }
-  .rank-del-btn{
-    flex-shrink:0; background:none; border:none; color:var(--text-dim); opacity:0;
-    cursor:pointer; font-size:12px; padding:2px 4px;
-  }
-  .rank-row:hover .rank-del-btn{ opacity:0.8; }
-  .rank-del-btn:hover{ opacity:1 !important; color:var(--danger); }
-  .rank-meta{
-    display:flex; align-items:center; gap:8px; padding-left:28px; margin-top:2px;
-  }
-  .rank-group{
-    flex:1; min-width:0; font-size:11px; color:var(--text-dim); opacity:0.75;
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  }
-  .rank-date-dot{
-    width:9px; height:9px; border-radius:50%; flex-shrink:0; margin-right:2px;
-  }
-  .rank-date-dot.fresh{ background:#4ade80; box-shadow:0 0 4px rgba(74,222,128,0.7); }
-  .rank-date-dot.stale{ background:#14532d; }
-  .rank-empty{ color:var(--text-dim); font-size:12.5px; text-align:center; padding:24px 0; }
   .tree-node{ user-select:none; }
   .tree-row{
     display:flex; align-items:center; gap:6px; padding:6px 8px; border-radius:6px;
@@ -183,6 +141,12 @@
   }
   .tree-quick-btn.pattern{ border-color:rgba(56,189,248,.45); }
   .tree-quick-btn.report{ border-color:rgba(196,181,253,.45); }
+  .tree-quick-btn.delete{
+    width:24px; color:#fca5a5; border-color:rgba(248,113,113,.5);
+  }
+  .tree-quick-btn.delete:hover{
+    color:#fff; background:rgba(239,68,68,.3); border-color:#f87171;
+  }
   .tree-quick-btn:hover{ background:rgba(255,255,255,.16); }
   .tree-stat-pill{
     display:inline-flex; align-items:center; justify-content:center;
@@ -526,64 +490,11 @@
     .display-scale-control{ order:3; width:100%; margin-left:0; }
   }
 
-  /* 報表管理改為兩欄：左側分類，右側完整寬度的決策資訊。 */
+  /* 報表管理維持左側分類與右側大盤資訊。 */
   #reports-workspace .main{ padding:18px 24px 28px; }
-  #reports-workspace .rank-panel{ width:auto; padding:0; overflow:visible; }
-  #rank-list{ border:1px solid var(--border); border-radius:12px; overflow:hidden; background:rgba(255,255,255,.015); }
-  .rank-row{
-    display:grid; grid-template-columns:minmax(0,1fr) 170px; align-items:center;
-    padding:10px 14px; border-radius:0; border-bottom:1px solid rgba(58,64,80,.75);
-    transition:background-color .14s ease, box-shadow .14s ease;
-  }
-  .rank-ai-score{
-    flex-shrink:0; min-width:48px; padding:3px 9px; border-radius:999px;
-    color:#fff; font-size:12.5px; font-weight:900; text-align:center;
-  }
-  .rank-ai-score.badge-red{ background:linear-gradient(135deg,#ef4444,#dc2626); }
-  .rank-ai-score.badge-orange{ background:linear-gradient(135deg,#f97316,#ea580c); }
-  .rank-ai-score.badge-yellow{ background:linear-gradient(135deg,#d97706,#b45309); }
-  .rank-ai-score.badge-gray{ background:linear-gradient(135deg,#64748b,#475569); }
-  .rank-row:nth-child(odd){ background:#171a20; }
-  .rank-row:nth-child(even){ background:#242b37; }
-  .rank-row:nth-child(odd):hover, .rank-row:nth-child(even):hover{
-    background:#293d59;
-    box-shadow:inset 4px 0 0 #60a5fa;
-  }
-  .rank-row.ai-focus-target{
-    background:#29466b;
-    box-shadow:inset 5px 0 0 #60a5fa,0 0 0 2px rgba(96,165,250,.45),0 0 24px rgba(59,130,246,.3);
-  }
-  .rank-row:last-child{ border-bottom:0; }
-  .rank-row-main{
-    grid-column:1 / -1; display:grid; grid-template-columns:minmax(250px,1fr) auto minmax(170px,1fr);
-    gap:12px; align-items:center;
-  }
-  .rank-row .rank-name{ max-width:none; font-weight:700; }
-  .rank-meta{ padding-left:0; margin-top:0; justify-content:flex-end; }
-  .rank-group{ flex:0 1 auto; text-align:right; }
-  .rank-del-btn{ opacity:.45; }
-  .rank-details{
-    grid-column:1 / -1; display:grid;
-    grid-template-columns:1fr;
-    gap:12px; margin:9px 0 1px 32px;
-  }
-  .rank-rsi-tags, .rank-vol-tags, .rank-macd-tags, .rank-kd-tags, .rank-tech-tags, .rank-chip-tags, .rank-pattern-tags{
-    display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px;
-  }
   .rank-detail-label{
     color:var(--text-dim); font-size:11px; font-weight:700; margin-right:2px;
   }
-  .tech-state-tag, .chip-state-tag, .pattern-state-tag, .rsi-state-tag, .vol-state-tag, .macd-state-tag, .kd-state-tag{
-    display:inline-flex; align-items:center; gap:4px; min-height:24px; padding:3px 8px;
-    border:1px solid var(--border); border-radius:6px; background:rgba(255,255,255,.035);
-    color:var(--text-dim); font-size:11.5px; white-space:nowrap;
-  }
-  .tech-state-tag, .chip-state-tag, .pattern-state-tag, .rsi-state-tag, .vol-state-tag, .macd-state-tag, .kd-state-tag{ font-weight:750; }
-  .tech-state-tag.positive, .chip-state-tag.positive, .pattern-state-tag.positive, .rsi-state-tag.positive, .vol-state-tag.positive, .macd-state-tag.positive, .kd-state-tag.positive{ color:#fca5a5; border-color:rgba(248,113,113,.48); background:rgba(239,68,68,.12); }
-  .tech-state-tag.negative, .chip-state-tag.negative, .pattern-state-tag.negative, .rsi-state-tag.negative, .vol-state-tag.negative, .macd-state-tag.negative, .kd-state-tag.negative{ color:#86efac; border-color:rgba(74,222,128,.45); background:rgba(34,197,94,.12); }
-  .tech-state-tag.mixed, .chip-state-tag.mixed, .pattern-state-tag.mixed, .rsi-state-tag.mixed, .vol-state-tag.mixed, .macd-state-tag.mixed, .kd-state-tag.mixed{ color:#fde047; border-color:rgba(250,204,21,.48); background:rgba(234,179,8,.12); }
-  .tech-state-tag.cyan, .chip-state-tag.cyan, .pattern-state-tag.cyan, .rsi-state-tag.cyan, .vol-state-tag.cyan, .macd-state-tag.cyan, .kd-state-tag.cyan{ color:#7dd3fc; border-color:rgba(56,189,248,.45); background:rgba(14,165,233,.12); }
-  .tech-state-tag.neutral, .chip-state-tag.neutral, .pattern-state-tag.neutral, .rsi-state-tag.neutral, .vol-state-tag.neutral, .macd-state-tag.neutral, .kd-state-tag.neutral{ color:#cbd5e1; border-color:rgba(148,163,184,.35); background:rgba(148,163,184,.10); }
   .inst-mini-chart{
     grid-column:1 / -1; min-width:0; padding:8px 10px 7px;
     border:1px solid rgba(71,85,105,.55); border-radius:8px; background:#11161c;
@@ -608,18 +519,6 @@
   .inst-flow-value.buy{ color:#f87171; }
   .inst-flow-value.sell{ color:#4ade80; }
   .inst-flow-value.flat{ color:#94a3b8; }
-  .rank-latest-summary{
-    display:flex; align-items:center; justify-content:center; gap:3px;
-    min-width:0; white-space:nowrap;
-  }
-  .rank-latest-stat{
-    display:inline-flex; align-items:center; gap:3px; padding:3px 5px;
-    border-left:1px solid rgba(71,85,105,.55); color:var(--text-dim); font-size:10px;
-  }
-  .rank-latest-stat:first-child{ border-left:0; }
-  .rank-latest-stat strong{ color:var(--text); font-size:11.5px; }
-  .rank-latest-stat strong.positive{ color:#f87171; }
-  .rank-latest-stat strong.negative{ color:#4ade80; }
   .inst-chart-empty{ color:var(--text-dim); font-size:11.5px; padding:12px 0; }
 
   /* ── 台股大盤三大法人買賣金額看板 ── */
@@ -685,14 +584,7 @@
   .organizer-heading h2{ margin:0; font-size:15px; }
   .organizer-panel.collapsed .organizer-body{ display:none; }
   .organizer-panel .toolbar-row{ margin-bottom:14px; }
-  @media (max-width:900px){
-    .insight-actions{ justify-content:flex-start; }
-    .rank-row{ grid-template-columns:1fr; gap:6px; }
-    .rank-row-main{ grid-template-columns:1fr; }
-    .rank-identity, .rank-row-actions, .rank-latest-summary{ justify-content:center; }
-    .rank-meta{ justify-content:flex-start; padding-left:32px; }
-    .rank-details{ grid-template-columns:1fr; margin-left:32px; }
-  }
+  @media (max-width:900px){ .insight-actions{ justify-content:flex-start; } }
 
   /* ── 分析報告工作區樣式 ── */
   #analysis-workspace{ overflow:auto; background:#0f1117; }
@@ -880,10 +772,6 @@
         <div class="market-inst-body" id="market-inst-body">
           <div class="market-inst-loading">⏳ 正在連線台灣證券交易所取得大盤三大法人數據...</div>
         </div>
-      </div>
-
-      <div class="rank-panel">
-        <div id="rank-list"></div>
       </div>
 
       <section class="organizer-panel collapsed" id="organizer-panel" hidden>
@@ -1290,7 +1178,7 @@
 
   <div class="modal-overlay hidden" id="report-delete-modal">
     <div class="modal">
-      <h3>刪除報表檔案</h3>
+      <h3>刪除個股</h3>
       <p id="report-delete-modal-text"></p>
       <div class="modal-actions">
         <button class="btn" id="report-delete-cancel-btn">取消</button>
@@ -3173,10 +3061,10 @@
       }
     });
 
-    // 4. 同步「🗂️ 報表管理」(Card/Rank) 與「🏆 排行榜」滾動高亮聚焦
+    // 4. 同步「🏆 排行榜」與檔案整理區的卡片滾動高亮聚焦
     if (highlightRanking) {
       requestAnimationFrame(() => {
-        const target = Array.from(document.querySelectorAll('#rank-list .rank-row, #ranking-workspace tr[data-stock-code], #grid .card'))
+        const target = Array.from(document.querySelectorAll('#ranking-workspace tr[data-stock-code], #grid .card'))
           .find(el => {
             if (el.dataset.code === normalizedCode || el.dataset.stockCode === normalizedCode) return true;
             const codeEl = el.querySelector('.code');
@@ -3368,9 +3256,6 @@
     const { data } = await api('GET', '/api/tree');
     tree = data.tree;
     renderTree();
-    // 排行榜的類股是照資料夾第一層分的，資料夾異動(搬移/改名/刪除)後這裡也要跟著重畫，
-    // 不然分類會跟畫面上的資料夾結構兜不起來。
-    renderRankPanel();
   }
 
   function renderTree(){
@@ -3523,6 +3408,7 @@
       <span class="tree-quick-actions">
         <button type="button" class="tree-quick-btn pattern" data-action="pattern" title="開啟 ${escapeHtml(r.name || code)} 的專業看盤">📈</button>
         <button type="button" class="tree-quick-btn report" data-action="report" title="開啟 ${escapeHtml(r.name || code)} 的分析報告">📑</button>
+        <button type="button" class="tree-quick-btn delete" data-action="delete" title="刪除 ${escapeHtml(r.name || code)} 的 HTML 與 Markdown 報表" aria-label="刪除 ${escapeHtml(r.name || code)}">🗑️</button>
       </span>` : '';
 
     const starBtn = code ? `
@@ -3546,7 +3432,8 @@
       button.addEventListener('click', event => {
         event.stopPropagation();
         if (button.dataset.action === 'pattern') openPatternForStock(code);
-        else switchToStockAnalysis(code);
+        else if (button.dataset.action === 'report') switchToStockAnalysis(code);
+        else if (button.dataset.action === 'delete') openReportDeleteModal(code, r.name || r.base || code);
       });
       button.addEventListener('mousedown', event => event.stopPropagation());
       button.addEventListener('dragstart', event => event.preventDefault());
@@ -3592,11 +3479,6 @@
     grid.innerHTML = '';
     if (!ok) { setStatus(data.error || '載入失敗', true); updateSelectionBar(); return; }
     setStatus('');
-
-    // 選資料夾時，主要視野同步顯示該第一層類股；根目錄則回到全部個股。
-    const topFolder = pathParts(currentPath)[0] || '';
-    rankGroupFilter = topFolder;
-    renderRankPanel();
 
     const reportCount = data.reports.length;
     organizer.hidden = reportCount === 0;
@@ -3839,7 +3721,7 @@
   function openReportDeleteModal(code, name){
     reportDeleteTargetCode = code;
     document.getElementById('report-delete-modal-text').textContent =
-      `確定要刪除「${code} ${name}」的報表檔案(html+md)嗎？此動作無法復原，不會動到 AI 分析卡片本身。`;
+      `確定要刪除「${code} ${name}」嗎？確認後會永久刪除這檔個股的 HTML 與 Markdown 報表，並從左側主目錄移除。此動作無法復原。`;
     document.getElementById('report-delete-modal').classList.remove('hidden');
   }
 
@@ -3852,13 +3734,23 @@
 
   document.getElementById('report-delete-confirm-btn').addEventListener('click', async () => {
     const code = reportDeleteTargetCode;
+    if (!code) return;
+    const confirmBtn = document.getElementById('report-delete-confirm-btn');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = '刪除中…';
     closeReportDeleteModal();
-    const { ok, data } = await api('POST', '/api/report/delete', { code });
-    if (!ok) { setStatus('❌ ' + data.error, true); return; }
-    setStatus(data.deletedFiles > 0 ? `✅ 已刪除 ${code} 的報表檔案` : `⚠️ 找不到 ${code} 對應的報表檔案（可能只有 AI 分析、沒有實際報表）`);
-    await loadTree();
-    await loadList();
-    await refreshPatternData();
+    try {
+      const { ok, data } = await api('POST', '/api/report/delete', { code });
+      if (!ok) { setStatus('❌ ' + data.error, true); return; }
+      setStatus(data.deletedFiles > 0 ? `✅ 已刪除 ${code} 的 HTML 與 Markdown 報表` : `⚠️ 找不到 ${code} 對應的報表檔案`);
+      await loadTree();
+      await loadCards();
+      await loadList();
+      await refreshPatternData();
+    } finally {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = '刪除';
+    }
   });
 
   // 🟢 ChatGPT Scanner 按鈕點擊處理
@@ -4061,7 +3953,6 @@
       }
     } catch (e) {}
     if (tree) renderTree();
-    renderRankPanel();
   }
 
   document.getElementById('toggle-organizer-btn').addEventListener('click', () => {
@@ -4070,9 +3961,6 @@
     document.getElementById('toggle-organizer-btn').textContent = organizerExpanded ? '收合整理區' : '展開整理區';
   });
 
-  let rankedCards = [];
-  let rankGroupFilter = '';  // '' 代表全部類股
-
   function cardSection(card, keyword){
     return String(card.raw || '').split(/\r?\n/).find(line => line.includes(keyword)) || '';
   }
@@ -4080,74 +3968,6 @@
   function signedNumber(text, pattern){
     const match = String(text || '').match(pattern);
     return match ? Number(match[1].replace(/,/g, '')) : null;
-  }
-
-  function hasDefenseSignal(pattern, signal){
-    const patternHit = /防禦牆|推升失敗|爆量滯漲|拉高派發/.test(String(pattern || ''));
-    const signalText = String(signal || '');
-    if (/未觸發|未見|未觀察到|無防禦/.test(signalText)) return patternHit;
-    const signalHit = /觸發防禦牆|Alert\s*\d|推升失敗|爆量滯漲|拉高派發/.test(signalText);
-    return patternHit || signalHit;
-  }
-
-  function technicalStateTags(card){
-    return klineStateTags(card);
-  }
-
-  function klineStateTags(card){
-    let klineTagsStr = String(card.klineTags || card.kline_tags || card.technicalTags || '').trim();
-    if (!klineTagsStr && card.raw) {
-      const m = String(card.raw).match(/K線\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i) || String(card.raw).match(/技術標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
-      if (m) klineTagsStr = m[1].trim();
-    }
-    if (klineTagsStr) {
-      const parts = klineTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
-      if (parts.length) {
-        return parts.map(label => {
-          let tone = 'neutral';
-          if (/多頭|上彎|仰角|噴出|金叉|站上|重回|站穩|守穩/.test(label)) tone = 'positive';
-          else if (/空頭|下彎|俯角|探底|死叉|跌破|失守|破線|轉弱|拉回/.test(label)) tone = 'negative';
-          else if (/糾纏|整理|糾結|蓄勢|處置/.test(label)) tone = 'mixed';
-          return { label, tone, title: `K線指標：${label}` };
-        });
-      }
-    }
-    const text = cardSection(card, '技術數據面');
-    const pattern = String(card.pattern || '');
-    const signal = cardSection(card, '訊號面判定');
-    if (!text) return [{ label: 'K線指標正常', tone: 'positive', title: '已由 Gemini 建立技術分析' }];
-    const tags = [];
-    const add = (label, tone, title) => {
-      if (!tags.some(tag => tag.label === label)) tags.push({ label, tone, title });
-    };
-    const orderMatch = text.match(/均線(?:呈現|排列)?(?:為)?\s*([MA\d>]+)/);
-    const order = orderMatch ? orderMatch[1].split('>') : [];
-    const before = (fast, slow) => order.includes(fast) && order.includes(slow) && order.indexOf(fast) < order.indexOf(slow);
-    if (['MA5', 'MA10', 'MA20', 'MA60'].every((value, index) => order[index] === value)) {
-      add('🚀 均線多頭排列', 'positive', order.join(' > '));
-    } else if (['MA60', 'MA20', 'MA10', 'MA5'].every((value, index) => order[index] === value)) {
-      add('📉 均線空頭排列', 'negative', order.join(' > '));
-    } else if (before('MA5', 'MA20')) {
-      add('📈 短線均線偏多', 'positive', order.length ? order.join(' > ') : 'MA5 位於 MA20 之上');
-    } else if (before('MA20', 'MA5')) {
-      add('📉 短線均線偏空', 'negative', order.length ? order.join(' > ') : 'MA5 位於 MA20 之下');
-    } else {
-      add('💎 均線糾纏蓄勢', 'mixed', order.length ? order.join(' > ') : '均線順序不明確');
-    }
-
-    const current = Number(card.current);
-    const ma20 = signedNumber(text, /MA20\s*=\s*([\d.]+)/i);
-    if (Number.isFinite(current) && ma20 !== null) add(current >= ma20 ? '🔥 站穩上升月線' : '🚨 壓在月線下方', current >= ma20 ? 'positive' : 'negative', `收盤 ${current}／MA20 ${ma20}`);
-
-    const boll = text.match(/(?:BOLL|布林通道(?:帶狀)?)[：:為\s]*上\s*=\s*([\d.]+)\s*中\s*=\s*([\d.]+)\s*下\s*=\s*([\d.]+)/i);
-    if (boll && Number.isFinite(current)) {
-      const upper = Number(boll[1]), lower = Number(boll[3]);
-      if (current > upper) add('🚀 突破布林上軌', 'positive', `收盤 ${current}／上軌 ${upper}`);
-      else if (current < lower) add('❄️ 跌破布林下軌', 'negative', `收盤 ${current}／下軌 ${lower}`);
-    }
-    if (card.isDisposition) add('處置期間', 'mixed', card.dispositionDate || '目前為處置股票');
-    if (hasDefenseSignal(pattern, signal)) add('防禦訊號', 'negative', '型態或訊號摘要出現防禦牆、推升失敗或爆量警示');
-    return tags.slice(0, 9);
   }
 
   function rsiStateTags(card){
@@ -4172,12 +3992,6 @@
     return [{ label: 'RSI 數據正常', tone: 'neutral', title: '暫無特殊 RSI 警示訊號' }];
   }
 
-  function renderRsiTags(card){
-    return rsiStateTags(card).map(tag =>
-      `<span class="rsi-state-tag ${tag.tone}" title="${escapeHtml(tag.title)}">${escapeHtml(tag.label)}</span>`
-    ).join('');
-  }
-
   function volStateTags(card){
     let volTagsStr = String(card.volTags || card.vol_tags || '').trim();
     if (!volTagsStr && card.raw) {
@@ -4198,126 +4012,6 @@
       }
     }
     return [{ label: '常態量能換手', tone: 'neutral', title: '暫無特殊量能異動' }];
-  }
-
-  function renderVolTags(card){
-    return volStateTags(card).map(tag =>
-      `<span class="vol-state-tag ${tag.tone}" title="${escapeHtml(tag.title)}">${escapeHtml(tag.label)}</span>`
-    ).join('');
-  }
-
-  function macdStateTags(card){
-    let macdTagsStr = String(card.macdTags || card.macd_tags || '').trim();
-    if (!macdTagsStr && card.raw) {
-      const m = String(card.raw).match(/MACD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
-      if (m) macdTagsStr = m[1].trim();
-    }
-    if (macdTagsStr) {
-      const parts = macdTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
-      if (parts.length) {
-        return parts.map(label => {
-          let tone = 'neutral';
-          if (/死亡交叉|死叉|翻綠|頂背離|轉弱|回檔修正|弱勢|探底/.test(label)) tone = 'negative';
-          else if (/金叉|黃金交叉|翻紅|強勢多頭|多頭發散|強勢攻擊/.test(label)) tone = 'positive';
-          else if (/底背離|反彈|起漲|綠柱收斂|收斂/.test(label)) tone = 'mixed';
-          else if (/多方|波段|推升/.test(label)) tone = 'cyan';
-          return { label, tone, title: `MACD 標籤：${label}` };
-        });
-      }
-    }
-    return [{ label: 'MACD 數據正常', tone: 'neutral', title: '暫無特殊 MACD 轉折訊號' }];
-  }
-
-  function renderMacdTags(card){
-    return macdStateTags(card).map(tag =>
-      `<span class="macd-state-tag ${tag.tone}" title="${escapeHtml(tag.title)}">${escapeHtml(tag.label)}</span>`
-    ).join('');
-  }
-
-  function kdStateTags(card){
-    let kdTagsStr = String(card.kdTags || card.kd_tags || '').trim();
-    if (!kdTagsStr && card.raw) {
-      const m = String(card.raw).match(/KD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
-      if (m) kdTagsStr = m[1].trim();
-    }
-    if (kdTagsStr) {
-      const parts = kdTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
-      if (parts.length) {
-        return parts.map(label => {
-          let tone = 'neutral';
-          if (/死亡交叉|死叉|頂背離|超買|轉弱/.test(label)) tone = 'positive';
-          else if (/金叉|黃金交叉|超賣|底背離|買點|轉強/.test(label)) tone = 'mixed';
-          else if (/鈍化|軋空/.test(label)) tone = 'negative';
-          else if (/多方|推進/.test(label)) tone = 'cyan';
-          return { label, tone, title: `KD 標籤：${label}` };
-        });
-      }
-    }
-    return [{ label: 'KD 數據正常', tone: 'neutral', title: '暫無特殊 KD 轉折訊號' }];
-  }
-
-  function renderKdTags(card){
-    return kdStateTags(card).map(tag =>
-      `<span class="kd-state-tag ${tag.tone}" title="${escapeHtml(tag.title)}">${escapeHtml(tag.label)}</span>`
-    ).join('');
-  }
-
-  function renderTechnicalTags(card){
-    return technicalStateTags(card).map(tag =>
-      `<span class="tech-state-tag ${tag.tone}" title="${escapeHtml(tag.title)}">${escapeHtml(tag.label)}</span>`
-    ).join('');
-  }
-
-  function patternStateTags(card){
-    const pattern = String(card.pattern || '').trim();
-    if (!pattern) return [{ label: '型態資料不足', tone: 'neutral', title: 'AI 卡片沒有型態辨識文字' }];
-    let teachingLabel = '趨勢結構待確認';
-    let tone = 'neutral';
-    if (/底底高|頭頭高|墊高|階梯式上升|打底拉升|拉升墊高/.test(pattern)) {
-      teachingLabel = '上升趨勢結構'; tone = 'positive';
-    } else if (/底底低|頭頭低|階梯式下降|節節敗退/.test(pattern)) {
-      teachingLabel = '下降趨勢結構'; tone = 'negative';
-    } else if (/雙重底|W底/.test(pattern)) {
-      teachingLabel = 'W 底反轉型態'; tone = 'positive';
-    } else if (/箱型|箱體|區間整理/.test(pattern)) {
-      teachingLabel = '箱型整理結構'; tone = 'mixed';
-    } else if (/破底翻|V轉|V型反轉|打底翻揚/.test(pattern)) {
-      teachingLabel = '破底翻反轉訊號'; tone = 'positive';
-    } else if (/漲停|噴發|噴出|強勢攻擊/.test(pattern)) {
-      teachingLabel = '單日噴出攻擊訊號'; tone = 'positive';
-    } else if (/攻克|站上|突破/.test(pattern)) {
-      teachingLabel = '均線攻克訊號'; tone = 'positive';
-    } else if (/受阻|回測|拉回|縮腳|派發/.test(pattern)) {
-      teachingLabel = '短線攻擊受阻整理'; tone = /派發/.test(pattern) ? 'negative' : 'mixed';
-    }
-    const sourceTone = /跌破|轉弱|失敗|派發/.test(pattern) ? 'negative' : (/突破|反攻|翻揚|多頭|噴發|漲停/.test(pattern) ? 'positive' : 'neutral');
-    return [
-      { label: teachingLabel, tone, title: '與型態教學頁使用相同的文字比對分類' },
-      { label: pattern, tone: sourceTone, title: `AI 原始型態辨識：${pattern}` }
-    ];
-  }
-
-  function renderPatternTags(card){
-    return patternStateTags(card).map(tag =>
-      `<span class="pattern-state-tag ${tag.tone}" title="${escapeHtml(tag.title)}">${escapeHtml(tag.label)}</span>`
-    ).join('');
-  }
-
-  function renderChipTags(card){
-    if (card.chipTags) {
-      const parts = card.chipTags.split(/[、,]/).map(s => s.trim()).filter(Boolean);
-      if (parts.length) {
-        return parts.map(label => {
-          let tone = 'neutral';
-          if (/買超|多|積極|大增|主力/.test(label)) tone = 'positive';
-          else if (/賣超|空|調節|減/.test(label)) tone = 'negative';
-          return `<span class="chip-state-tag ${tone}">${escapeHtml(label)}</span>`;
-        }).join('');
-      }
-    }
-    return chipFlowTags(card).map(tag =>
-      `<span class="chip-state-tag ${tag.tone}" title="${escapeHtml(tag.title)}">${escapeHtml(tag.label)}</span>`
-    ).join('');
   }
 
   function latestInstitutionalFlow(card){
@@ -4344,344 +4038,6 @@
     if (!Number.isFinite(value)) return '—';
     return `${value > 0 ? '+' : ''}${value.toLocaleString('zh-TW')}`;
   }
-
-  function consecutiveDirection(rows, key){
-    if (!rows.length || !Number.isFinite(rows[0][key]) || rows[0][key] === 0) return 0;
-    const direction = Math.sign(rows[0][key]);
-    let count = 0;
-    for (const row of rows) {
-      if (Math.sign(row[key]) !== direction) break;
-      count += 1;
-    }
-    return count;
-  }
-
-  function chipStateTags(card){
-    const rows = institutionalRows(card);
-    if (!rows.length) return [{ label: '法人資料不足', tone: 'neutral', title: '報表沒有可用的法人日資料' }];
-    const latest = rows[0];
-    const tags = [];
-    const add = (label, tone, title) => {
-      if (!tags.some(tag => tag.label === label)) tags.push({ label, tone, title });
-    };
-    const actors = [latest.foreign, latest.trust, latest.dealer];
-    if (actors.every(value => value > 0)) add('三大法人同步買超', 'positive', '外資、投信、自營商最新一日皆買超');
-    if (actors.every(value => value < 0)) add('三大法人同步賣超', 'negative', '外資、投信、自營商最新一日皆賣超');
-
-    const domestic = latest.trust + latest.dealer;
-    if (latest.foreign * domestic < 0) {
-      add(latest.foreign > 0 ? '土洋對作・外買內賣' : '土洋對作・外賣內買', 'mixed', '外資與投信加自營商方向相反');
-    }
-    if (latest.foreign < 0 && latest.trust > 0) {
-      if (latest.total > 0 || latest.trust >= Math.abs(latest.foreign) * 0.3) {
-        add('投信逆勢護盤', 'positive', '外資賣超時投信買超，且投信買盤具一定規模');
-      } else {
-        add('外資賣、投信買', 'mixed', '外資與投信方向相反，但投信買盤尚未扭轉法人合計');
-      }
-    }
-    if (latest.foreign > 0 && latest.trust < 0) add('外資買、投信調節', 'mixed', '外資買超、投信賣超');
-
-    const totalStreak = consecutiveDirection(rows, 'total');
-    if (totalStreak >= 2) add(`法人合計連${totalStreak}日${latest.total > 0 ? '買超' : '賣超'}`, latest.total > 0 ? 'positive' : 'negative', `三大法人合計連續 ${totalStreak} 日${latest.total > 0 ? '淨買超' : '淨賣超'}`);
-    const trustStreak = consecutiveDirection(rows, 'trust');
-    if (trustStreak >= 3) add(`投信連${trustStreak}日${latest.trust > 0 ? '買超' : '賣超'}`, latest.trust > 0 ? 'positive' : 'negative', `投信連續 ${trustStreak} 日${latest.trust > 0 ? '買超' : '賣超'}`);
-    if (rows.length >= 2 && Math.sign(latest.total) * Math.sign(rows[1].total) < 0) {
-      add(latest.total > 0 ? '法人由賣轉買' : '法人由買轉賣', latest.total > 0 ? 'positive' : 'negative', '三大法人合計方向較前一日反轉');
-    }
-
-    const absActors = actors.reduce((sum, value) => sum + Math.abs(value), 0);
-    if (absActors > 0) {
-      const leaders = [
-        ['外資', latest.foreign], ['投信', latest.trust], ['自營商', latest.dealer]
-      ].sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
-      if (Math.abs(leaders[0][1]) / absActors >= 0.6) {
-        add(`${leaders[0][0]}主導${leaders[0][1] > 0 ? '買超' : '賣超'}`, leaders[0][1] > 0 ? 'positive' : 'negative', '占最新一日三類法人絕對買賣超量至少六成');
-      }
-    }
-
-    const margin = Array.isArray(card.marginFlow) ? card.marginFlow[0] : null;
-    if (margin && Number.isFinite(margin.marginChange)) {
-      const priorBalance = Math.max(1, Math.abs(margin.marginBalance - margin.marginChange));
-      if (Math.abs(margin.marginChange) / priorBalance >= 0.03) {
-        add(margin.marginChange > 0 ? '融資大增' : '融資大減', margin.marginChange > 0 ? 'mixed' : 'positive', `最新融資增減達前一日餘額的 ${(Math.abs(margin.marginChange) / priorBalance * 100).toFixed(1)}%`);
-      }
-      const priorShort = Math.max(1, Math.abs(margin.shortBalance - margin.shortChange));
-      if (Number.isFinite(margin.shortChange) && Math.abs(margin.shortChange) / priorShort >= 0.1) {
-        add(margin.shortChange > 0 ? '融券大增' : '融券大減', margin.shortChange > 0 ? 'negative' : 'mixed', `最新融券增減達前一日餘額的 ${(Math.abs(margin.shortChange) / priorShort * 100).toFixed(1)}%`);
-      }
-    }
-    if (!tags.length) add('法人籌碼分歧', 'neutral', '最新一日三類法人方向未形成明確共識');
-    return tags.slice(0, 5);
-  }
-
-  function renderChipTags(card){
-    let rawTags = card.chipTags || card.chip_tags || '';
-    if (!rawTags && card.raw) {
-      const m = String(card.raw).match(/籌碼標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
-      if (m) rawTags = m[1].trim();
-    }
-    if (rawTags) {
-      const parts = rawTags.split(/[、,]/).map(s => s.trim()).filter(Boolean);
-      if (parts.length) {
-        return parts.map(label => {
-          let tone = 'neutral';
-          if (/倒貨|結帳|資增法賣|退潮|賣超|沉陷|警示/.test(label)) tone = 'positive'; // 🔴 紅色系 (警示/出貨/死叉)
-          else if (/由賣轉買|護盤|對作|接刀|吃貨|避險|點火|起漲/.test(label)) tone = 'mixed'; // 🟡 亮金黃系 (轉強/起漲/發動)
-          else if (/大買|總攻擊|認養|鎖碼|資減法買|主升|狂拉/.test(label)) tone = 'negative'; // 🟢 翠綠系 (主升/鈍化/鎖碼)
-          else if (/防守|建倉|重倉|集資|買超|積極/.test(label)) tone = 'cyan'; // 🔵 天藍系 (多方推進/健康溫和)
-          return `<span class="chip-state-tag ${tone}">${escapeHtml(label)}</span>`;
-        }).join('');
-      }
-    }
-    return chipStateTags(card).map(tag =>
-      `<span class="chip-state-tag ${tag.tone}" title="${escapeHtml(tag.title)}">${escapeHtml(tag.label)}</span>`
-    ).join('');
-  }
-
-  // =========================================================================
-  // 【MARK: 位置A - 操盤決策 CHECKLIST 表格渲染邏輯】
-  // 此處為將傳統標籤整合為「操盤狀態勾選表 + 5大指標檢核表」之核心函式。
-  // 若需切換或調整，可搜尋此 MARK 標記快速定位。
-  // =========================================================================
-  let CARD_VIEW_MODE = localStorage.getItem('stock_card_view_mode') || 'table'; // 'table' 或 'tags'
-
-  window.toggleCardViewMode = function() {
-    CARD_VIEW_MODE = CARD_VIEW_MODE === 'table' ? 'tags' : 'table';
-    localStorage.setItem('stock_card_view_mode', CARD_VIEW_MODE);
-    const btn = document.getElementById('toggle-card-view-mode-btn');
-    if (btn) {
-      btn.innerHTML = CARD_VIEW_MODE === 'table' ? '📋 顯示模式：決策表格 (已啟用)' : '🏷️ 顯示模式：傳統標籤 (已啟用)';
-    }
-    renderRankPanel();
-  };
-
-  function buildStockDecisionChecklist(card) {
-    const raw = String(card.raw || '');
-    const decision = String(card.decision || '').trim();
-    const pattern = String(card.pattern || '').trim();
-    
-    // 獲取 5 大指標標籤陣列與其對應的 Tone 樣式
-    const techTagsList = technicalStateTags(card);
-    const rsiTagsList = rsiStateTags(card);
-    const volTagsList = volStateTags(card);
-    const macdTagsList = macdStateTags(card);
-    const kdTagsList = kdStateTags(card);
-
-    const techTagsStr = techTagsList.map(t => t.label).join('、');
-    const rsiTagsStr = rsiTagsList.map(t => t.label).join('、');
-    const volTagsStr = volTagsList.map(t => t.label).join('、');
-    const macdTagsStr = macdTagsList.map(t => t.label).join('、');
-    const kdTagsStr = kdTagsList.map(t => t.label).join('、');
-    
-    const combinedAll = `${pattern} ${raw} ${techTagsStr} ${rsiTagsStr} ${volTagsStr} ${macdTagsStr} ${kdTagsStr}`;
-
-    // =========================================================================
-    // 【1. 嚴謹 5 大操盤時機判斷順序（絕不含糊全勾入場）】
-    // 依據空手與持股之四步判斷：均線架構 -> MACD動能 -> VOL量能 -> RSI/KD轉折
-    // =========================================================================
-
-    // A. 判定【出場 (Exit)】條件：
-    // - VOL 出現「高檔爆大量倒貨」或「量價頂背離 (無量空漲)」
-    // - RSI 出現「頂背離」或「跌破 45 進入弱勢整理」
-    // - MACD / KD 同步出現「死亡交叉」、「柱體翻綠」或「空方弱勢回檔」
-    // - 型態跌破關鍵支撐、推升失敗或出現防禦警訊
-    const hasVolExit = /高檔爆大量倒貨|頂背離|主力出貨|異常爆量/.test(volTagsStr);
-    const hasRsiExit = /頂背離|弱勢整理|跌破/.test(rsiTagsStr);
-    const hasMacdExit = /死亡交叉|死叉|空方弱勢|柱狀體翻綠/.test(macdTagsStr);
-    const hasKdExit = /死亡交叉|死叉|空方弱勢/.test(kdTagsStr);
-    const hasPatExit = /跌破|推升失敗|節節敗退|下降趨勢|受阻/.test(pattern);
-
-    const isExit = (hasVolExit || hasRsiExit) || (hasMacdExit && hasKdExit) || (hasKdExit && hasPatExit && !/多頭排列/.test(techTagsStr));
-
-    // B. 判定【強勢入場/續抱 (Momentum Strong Buy / Hold)】條件：
-    // - 均線多頭排列且 5MA 強烈仰角
-    // - 型態為「歷史/波段新高突破 (Breakout)」或「正統杯柄突破」
-    // - KD 出現「高檔強勢鈍化 (軋空主升段)」或 RSI 突破 70 進入主升鈍化區
-    // - MACD 位於零軸上強勢多頭發散
-    const isStrongBreakout = /歷史\/波段新高|創歷史|新高爆量突破|噴出|強勢攻擊|主升/.test(pattern + techTagsStr);
-    const isKdDull = /高檔強勢鈍化|軋空主升/.test(kdTagsStr);
-    const isRsiDull = /極度過熱|高檔強勢鈍化|多頭強勢/.test(rsiTagsStr);
-    const isMacdStrong = /零軸上強勢多頭|多頭發散/.test(macdTagsStr);
-
-    const isStrongMomo = !isExit && (isStrongBreakout || (isKdDull && isMacdStrong) || (isRsiDull && isMacdStrong));
-
-    // C. 判定【加碼 (Add Position)】條件：
-    // - 脫離成本區，處於健康多方波段
-    // - VOL 出現「帶量長紅突破」、「滾量攻擊 (量價齊揚)」或「量能黃金交叉」
-    // - KD 多方強勢推進 (未鈍化) 且 RSI 於 55~70 健康多方推進區
-    const isVolAttack = /帶量長紅|滾量攻擊|量價齊揚|量能黃金交叉|買盤溫和增量/.test(volTagsStr);
-    const isRsiPush = /多方推進/.test(rsiTagsStr);
-    const isKdPush = /多方強勢推進/.test(kdTagsStr);
-
-    const isAdd = !isExit && !isStrongMomo && isVolAttack && (isRsiPush || isKdPush || /多方波段整理/.test(macdTagsStr));
-
-    // D. 判定【入場 (Base Entry / 底部安全買點)】條件：
-    // - 型態為「雙底打底成型蓄勢 (Double Bottom)」、「W底」、「破底翻」或「築底完成」
-    // - VOL 出現「窒息量 (籌碼洗淨)」後量能剛復甦，或量縮沉澱回測均線
-    // - KD 出現「低檔超賣黃金交叉 (強烈買點)」或「短線轉強」
-    // - MACD 出現「零軸下金叉 (落底反彈)」或「柱體翻紅 (動能增強)」
-    const isBottomPattern = /雙底|W底|雙重底|破底翻|打底|上升趨勢結構/.test(pattern);
-    const isQuietVol = /窒息量|籌碼洗淨|縮量沉澱|常態量能/.test(volTagsStr);
-    const isKdGoldCross = /黃金交叉|金叉|強烈買點|短線轉強/.test(kdTagsStr);
-    const isMacdRebound = /落底反彈|零軸下金叉|柱狀體翻紅/.test(macdTagsStr);
-
-    const isBaseEntry = !isExit && !isStrongMomo && !isAdd && (isBottomPattern || isKdGoldCross || isMacdRebound || (isQuietVol && /多方/.test(combinedAll)));
-
-    // E. 綜合判定最終操盤動作 (Action State)
-    let actionState = '觀望';
-    if (isExit) {
-      actionState = '出場';
-    } else if (isStrongMomo) {
-      actionState = '強勢入場/續抱';
-    } else if (isAdd) {
-      actionState = '加碼';
-    } else if (isBaseEntry) {
-      actionState = '入場';
-    } else {
-      actionState = '觀望';
-    }
-
-    // =========================================================================
-    // 【2. 提煉 5 大指標具體解讀與完全對齊指標標籤的 Tone 燈號樣式】
-    // =========================================================================
-
-    // A. 均線趨勢
-    const primaryTechTag = techTagsList[0] || { tone: 'cyan', label: '均線多頭架構' };
-    let maTone = primaryTechTag.tone || 'cyan';
-    let maText = pattern ? `${pattern}；${techTagsStr || '短中期均線架構完整'}` : (techTagsStr || '短中期均線向上發散推進');
-
-    // B. MACD
-    const primaryMacdTag = macdTagsList[0] || { tone: 'neutral', label: 'MACD 數據正常' };
-    let macdTone = primaryMacdTag.tone || 'cyan';
-    let macdText = macdTagsStr || 'MACD 處於常態波動區間';
-
-    // C. VOL 量能
-    const primaryVolTag = volTagsList[0] || { tone: 'neutral', label: '常態量能換手' };
-    let volTone = primaryVolTag.tone || 'cyan';
-    let volText = volTagsStr || '成交量能溫和常態換手';
-
-    // D. RSI
-    const primaryRsiTag = rsiTagsList[0] || { tone: 'neutral', label: 'RSI 數據正常' };
-    let rsiTone = primaryRsiTag.tone || 'cyan';
-    let rsiText = rsiTagsStr || 'RSI 位於常態多空震盪區';
-
-    // E. KD
-    const primaryKdTag = kdTagsList[0] || { tone: 'neutral', label: 'KD 數據正常' };
-    let kdTone = primaryKdTag.tone || 'cyan';
-    let kdText = kdTagsStr || 'KD 雙軌多空中性運行';
-
-    // F. 評語與操盤執行建議
-    let summaryText = `${card.name} 當前呈現多空觀望整理，待指標方向進一步明朗。`;
-    let actionPlan = `暫不躁進建倉，靜待成交量能表態或均線收斂後之方向性突破。`;
-
-    if (actionState === '強勢入場/續抱') {
-      summaryText = `${card.name} 呈現【歷史/波段強勢主升】，指標高檔鈍化，主力動能極致軋空！`;
-      actionPlan = `順勢進場或持股續抱，以 5MA 作為移動停利防守線，不預設高點享受主升段利潤！`;
-    } else if (actionState === '加碼') {
-      summaryText = `${card.name} 呈現【多方波段出量攻擊】，均線順暢推進且攻擊量能湧現。`;
-      actionPlan = `持股脫離成本區後於突破點順勢加碼，移動停利點上移至 10MA 或突破紅K低點。`;
-    } else if (actionState === '入場') {
-      summaryText = `${card.name} 呈現【底部打底蓄勢・量縮洗淨起漲】，極具安全邊際。`;
-      actionPlan = `於現價附近或支撐區逢低佈局，停損設在 ${card.stop ? card.stop + ' 元' : '打底低點'}，波段目標看 ${card.target ? card.target + ' 元' : '前高'}！`;
-    } else if (actionState === '出場') {
-      summaryText = `${card.name} 出現【高檔頂背離 / 死叉轉弱 / 主力調節警訊】，多頭動能衰退！`;
-      actionPlan = `嚴格執行停利/停損紀律，跌破關鍵支撐或均線應果斷分批減碼、落袋為安！`;
-    }
-
-    return {
-      actionState,
-      summaryText,
-      maText, maTone,
-      macdText, macdTone,
-      volText, volTone,
-      rsiText, rsiTone,
-      kdText, kdTone,
-      actionPlan
-    };
-  }
-
-  function renderChecklistDecisionTable(card) {
-    const data = buildStockDecisionChecklist(card);
-    
-    // 完全對齊系統標準 5 大色系規範：
-    // positive: 🔴 紅色系 (警示/超買/頂背離/死叉/賣超)
-    // mixed:    🟡 亮金黃系 (轉強/起漲/金叉/底背離)
-    // negative: 🟢 翠綠系 (主升/鈍化/強勢多頭/買超)
-    // cyan:     🔵 天藍系 (多方推進/健康溫和)
-    // neutral:  ⚪ 灰白系 (中性平衡/整理)
-    const badgeStyle = (tone) => {
-      if (tone === 'positive') return 'background:rgba(239,68,68,0.22); color:#fca5a5; border:1px solid rgba(248,113,113,0.48);';
-      if (tone === 'mixed')    return 'background:rgba(234,179,8,0.22); color:#fde047; border:1px solid rgba(250,204,21,0.48);';
-      if (tone === 'negative') return 'background:rgba(34,197,94,0.22); color:#86efac; border:1px solid rgba(74,222,128,0.45);';
-      if (tone === 'cyan')     return 'background:rgba(14,165,233,0.22); color:#7dd3fc; border:1px solid rgba(56,189,248,0.45);';
-      return 'background:rgba(148,163,184,0.18); color:#cbd5e1; border:1px solid rgba(148,163,184,0.35);';
-    };
-    const toneName = (tone) => {
-      if (tone === 'positive') return '🔴 警示 / 死叉';
-      if (tone === 'mixed')    return '🟡 轉強 / 金叉';
-      if (tone === 'negative') return '🟢 主升 / 鈍化';
-      if (tone === 'cyan')     return '🔵 多方推進';
-      return '⚪ 中性整理';
-    };
-
-    const actions = ['入場', '出場', '加碼', '強勢入場/續抱', '觀望'];
-
-    return `
-      <!-- 【MARK: 卡片操盤決策 CHECKLIST 表格 (寬版置中防換行優化)】 -->
-      <div class="stock-decision-matrix" style="max-width:920px; margin:4px auto; width:100%; border:1px solid rgba(255,255,255,0.12); border-radius:8px; overflow:hidden; background:rgba(0,0,0,0.36); font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,0.35);">
-        
-        <!-- 頂部操盤決策勾選列 -->
-        <div style="display:grid; grid-template-columns: 88px repeat(5, 1fr); background:#1a2233; border-bottom:1px solid rgba(255,255,255,0.1); text-align:center; font-weight:800;">
-          <div style="padding:6px 4px; background:rgba(0,0,0,0.25); color:#94a3b8; border-right:1px solid rgba(255,255,255,0.08); font-size:12.5px;">操盤決策</div>
-          ${actions.map(act => `<div style="padding:6px 4px; color:${act === data.actionState ? '#fde047' : '#94a3b8'}; border-right:1px solid rgba(255,255,255,0.06); font-size:12.5px; white-space:nowrap;">${act}</div>`).join('')}
-        </div>
-        <div style="display:grid; grid-template-columns: 88px repeat(5, 1fr); background:rgba(0,0,0,0.22); border-bottom:1px solid rgba(255,255,255,0.08); text-align:center; font-size:15px; font-weight:900;">
-          <div style="padding:5px 4px; font-size:12px; color:#cbd5e1; border-right:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center;">執行動作</div>
-          ${actions.map(act => `<div style="padding:5px 4px; border-right:1px solid rgba(255,255,255,0.06); color:${act === data.actionState ? '#4ade80' : 'transparent'};">${act === data.actionState ? '✔️' : '—'}</div>`).join('')}
-        </div>
-
-        <!-- 指標檢核表格本體 (加大寬度、緊湊邊距、防止中文字不當換行) -->
-        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:12.5px; table-layout:auto;">
-          <tbody>
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-              <td style="padding:5px 10px; width:88px; font-weight:800; color:#fbbf24; background:rgba(255,255,255,0.02); white-space:nowrap;">💡 核心評語</td>
-              <td style="padding:5px 12px; color:#f8fafc; font-weight:600; line-height:1.5;" colspan="2">${escapeHtml(data.summaryText)}</td>
-            </tr>
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-              <td style="padding:5px 10px; font-weight:800; color:#93c5fd; background:rgba(255,255,255,0.02); white-space:nowrap;">📈 K線指標</td>
-              <td style="padding:5px 12px; color:#cbd5e1; line-height:1.5;">${escapeHtml(data.maText)}</td>
-              <td style="padding:5px 10px; width:105px; text-align:right; white-space:nowrap;"><span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${badgeStyle(data.maTone)}">${toneName(data.maTone)}</span></td>
-            </tr>
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-              <td style="padding:5px 10px; font-weight:800; color:#c084fc; background:rgba(255,255,255,0.02); white-space:nowrap;">🌊 MACD</td>
-              <td style="padding:5px 12px; color:#cbd5e1; line-height:1.5;">${escapeHtml(data.macdText)}</td>
-              <td style="padding:5px 10px; width:105px; text-align:right; white-space:nowrap;"><span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${badgeStyle(data.macdTone)}">${toneName(data.macdTone)}</span></td>
-            </tr>
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-              <td style="padding:5px 10px; font-weight:800; color:#fde047; background:rgba(255,255,255,0.02); white-space:nowrap;">📊 VOL 量能</td>
-              <td style="padding:5px 12px; color:#cbd5e1; line-height:1.5;">${escapeHtml(data.volText)}</td>
-              <td style="padding:5px 10px; width:105px; text-align:right; white-space:nowrap;"><span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${badgeStyle(data.volTone)}">${toneName(data.volTone)}</span></td>
-            </tr>
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-              <td style="padding:5px 10px; font-weight:800; color:#38bdf8; background:rgba(255,255,255,0.02); white-space:nowrap;">📊 RSI 指標</td>
-              <td style="padding:5px 12px; color:#cbd5e1; line-height:1.5;">${escapeHtml(data.rsiText)}</td>
-              <td style="padding:5px 10px; width:105px; text-align:right; white-space:nowrap;"><span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${badgeStyle(data.rsiTone)}">${toneName(data.rsiTone)}</span></td>
-            </tr>
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-              <td style="padding:5px 10px; font-weight:800; color:#fbbf24; background:rgba(255,255,255,0.02); white-space:nowrap;">⚡ KD 指標</td>
-              <td style="padding:5px 12px; color:#cbd5e1; line-height:1.5;">${escapeHtml(data.kdText)}</td>
-              <td style="padding:5px 10px; width:105px; text-align:right; white-space:nowrap;"><span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${badgeStyle(data.kdTone)}">${toneName(data.kdTone)}</span></td>
-            </tr>
-            <tr>
-              <td style="padding:5px 10px; font-weight:800; color:#4ade80; background:rgba(255,255,255,0.02); white-space:nowrap;">🎯 操盤執行</td>
-              <td style="padding:5px 12px; color:#86efac; font-weight:700; line-height:1.5;" colspan="2">${escapeHtml(data.actionPlan)}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    `;
-  }
-  // =========================================================================
 
   function formatApproxLots(value){
     if (!Number.isFinite(value) || value === 0) return '0';
@@ -4729,145 +4085,10 @@
   window.updatePatternInstitutionalSummary = updatePatternInstitutionalSummary;
   window.renderInstitutionSummary = renderInstitutionSummary;
 
-  function renderLatestInstitutionSummary(card){
-    const rows = institutionalRows(card);
-    if (!rows.length) return '<span class="rank-latest-stat">法人資料 <strong>—</strong></span>';
-    const latest = rows[0];
-    const previous = rows.length > 1 ? rows[1] : null;
-    const changePct = Number.isFinite(latest.close) && previous && Number.isFinite(previous.close) && previous.close !== 0
-      ? (latest.close / previous.close - 1) * 100 : null;
-    const valueClass = value => value > 0 ? 'positive' : (value < 0 ? 'negative' : '');
-    const priceTone = valueClass(changePct);
-    const cells = [
-      ['日期', String(latest.date || '').slice(5).replace('-', '/'), ''],
-      ['外資', formatSignedLots(latest.foreign), valueClass(latest.foreign)],
-      ['投信', formatSignedLots(latest.trust), valueClass(latest.trust)],
-      ['自營商', formatSignedLots(latest.dealer), valueClass(latest.dealer)],
-      ['法人合計', formatSignedLots(latest.total), valueClass(latest.total)],
-      ['股價', Number.isFinite(latest.close) ? latest.close.toLocaleString('zh-TW') : '—', priceTone],
-      ['漲跌幅', changePct === null ? '—' : `${changePct > 0 ? '+' : ''}${changePct.toFixed(2)}%`, priceTone]
-    ];
-    return cells.map(([label, value, tone]) =>
-      `<span class="rank-latest-stat">${escapeHtml(label)} <strong class="${tone}">${escapeHtml(value)}</strong></span>`
-    ).join('');
-  }
-
   function todayDateStr(){
     const d = new Date();
     const pad = n => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  }
-
-  // 類股分類直接使用 reports/ 底下由使用者整理的資料夾，不採用其他推測分類。
-  // 改成直接照 reports/ 正下面那一層
-  // 資料夾名稱分類——只看第一層，子資料夾(例如 CPO/光纖磊晶片)一律算在 CPO 底下，
-  // 不再往下細分，這樣分類才是使用者自己排的，不是我猜的。
-  function buildCodeToTopFolderMap(){
-    const map = {};
-    if (!tree) return map;
-    (tree.reports || []).forEach(r => { if (r.code) map[r.code] = '未分類'; });
-    (tree.children || []).forEach(topNode => {
-      (function walk(node){
-        (node.reports || []).forEach(r => { if (r.code) map[r.code] = topNode.name; });
-        (node.children || []).forEach(walk);
-      })(topNode);
-    });
-    return map;
-  }
-
-  function renderRankPanel(){
-    const list = document.getElementById('rank-list');
-    const codeToTopFolder = buildCodeToTopFolderMap();
-    const allCards = Object.values(cardsByCode);
-    rankedCards = rankGroupFilter
-      ? allCards.filter(c => (codeToTopFolder[c.code] || '未分類') === rankGroupFilter)
-      : allCards;
-    rankedCards.sort((a, b) => {
-      const wa = parseFloat(window.winrateMapByCode?.[a.code]?.winRate) || 0;
-      const wb = parseFloat(window.winrateMapByCode?.[b.code]?.winRate) || 0;
-      return wb - wa || String(a.code).localeCompare(String(b.code));
-    });
-    if (!rankedCards.length) {
-      list.innerHTML = `<div class="rank-empty">${rankGroupFilter ? '這個類股沒有個股資料' : '尚無個股資料'}</div>`;
-      return;
-    }
-    list.innerHTML = '';
-    const today = todayDateStr();
-    rankedCards.forEach((c, i) => {
-      const row = document.createElement('div');
-      row.className = 'rank-row';
-      row.dataset.code = String(c.code || '');
-      const isFresh = c.date === today;
-      const stat = window.winrateMapByCode?.[c.code] || {};
-      const winVal = stat.winRate ? stat.winRate.replace(/[%`*]/g, '') : null;
-      const rrVal = stat.rr ? stat.rr.replace(/[`*]/g, '') : null;
-      const decVal = stat.decision || c.decision || '未判定';
-
-      row.innerHTML = `
-        <div class="rank-row-main">
-          <span class="rank-identity">
-            <span class="rank-num">${i + 1}</span>
-            <span class="rank-code" style="cursor:pointer;" title="點擊開啟 ${escapeHtml(c.name)} (${escapeHtml(c.code)}) 的專業看盤" onclick="event.stopPropagation(); openPatternForStock('${escapeHtml(c.code)}');">${escapeHtml(c.code)}</span>
-            <span class="rank-name" style="cursor:pointer;" title="點擊開啟 ${escapeHtml(c.name)} (${escapeHtml(c.code)}) 的專業看盤" onclick="event.stopPropagation(); openPatternForStock('${escapeHtml(c.code)}');">${escapeHtml(c.name)}</span>
-            <span class="rank-decision">${escapeHtml(decVal)}</span>
-            ${c.isDisposition ? `<span class="rank-dispo-inline" title="處置期間 ${escapeHtml(c.dispositionDate || '')}">⚠ ${escapeHtml(c.dispositionDate || '')}</span>` : ''}
-          </span>
-          <span class="rank-latest-summary" title="最新法人買賣超單位：張">${renderLatestInstitutionSummary(c)}</span>
-          <span class="rank-row-actions">
-            <span class="rank-group">${escapeHtml(codeToTopFolder[c.code] || '未分類')}</span>
-            <span class="rank-date-dot ${isFresh ? 'fresh' : 'stale'}" title="${isFresh ? '今天更新' : escapeHtml(c.date || '日期未知') + ' 更新'}"></span>
-            ${winVal ? `<span class="tree-stat-pill winrate ${parseFloat(winVal)>=60 ? 'high' : ''}" title="模型勝率：${winVal}%">${winVal}%</span>` : ''}
-            ${rrVal ? `<span class="tree-stat-pill rr" title="風報比：${rrVal}">${rrVal}</span>` : ''}
-            <button class="rank-del-btn" title="刪除這檔股票的報表檔">🗑️</button>
-          </span>
-        </div>
-        <div class="rank-details">
-          <div class="rank-tech-tags">
-            <span class="rank-detail-label">K線指標</span>
-            ${renderTechnicalTags(c)}
-          </div>
-          <div class="rank-vol-tags">
-            <span class="rank-detail-label">VOL 指標</span>
-            ${renderVolTags(c)}
-          </div>
-          <div class="rank-rsi-tags">
-            <span class="rank-detail-label">RSI 指標</span>
-            ${renderRsiTags(c)}
-          </div>
-          <div class="rank-macd-tags">
-            <span class="rank-detail-label">MACD 指標</span>
-            ${renderMacdTags(c)}
-          </div>
-          <div class="rank-kd-tags">
-            <span class="rank-detail-label">KD 指標</span>
-            ${renderKdTags(c)}
-          </div>
-          <div class="rank-chip-tags">
-            <span class="rank-detail-label">籌碼指標</span>
-            ${renderChipTags(c)}
-          </div>
-          <div class="rank-pattern-tags">
-            <span class="rank-detail-label">型態指標</span>
-            ${renderPatternTags(c)}
-          </div>
-          <div class="inst-mini-chart">
-            <div class="inst-chart-head">
-              <span class="rank-detail-label">三大法人近15日逐日買賣超概數</span>
-              <span class="inst-chart-note">日期橫向排列｜紅色買超・綠色賣超</span>
-            </div>
-            ${renderInstitutionSummary(c)}
-          </div>
-        </div>
-      `;
-      row.title = `${c.code} ${c.name} － 點擊選取並同步全部頁面`;
-      row.addEventListener('click', () => selectStockGlobal(c.code));
-      const delBtn = row.querySelector('.rank-del-btn');
-      delBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openReportDeleteModal(c.code, c.name);
-      });
-      list.appendChild(row);
-    });
   }
 
   // ── 產生/更新報表 ──
@@ -4984,13 +4205,13 @@
           if (found && found.code) {
             targetCode = found.code;
           } else {
-            // 從樹狀清單或排行榜節點找符合的名稱
-            const el = Array.from(document.querySelectorAll('.tree-report-row, .rank-row, #grid .card')).find(node => {
-              const nameEl = node.querySelector('.name, .rank-name');
+            // 從樹狀清單或檔案整理區找符合的名稱
+            const el = Array.from(document.querySelectorAll('.tree-report-row, #grid .card')).find(node => {
+              const nameEl = node.querySelector('.name');
               return nameEl && nameEl.textContent.includes(raw);
             });
             if (el) {
-              const cEl = el.querySelector('.code, .rank-code');
+              const cEl = el.querySelector('.code');
               targetCode = el.dataset.code || (cEl ? cEl.textContent.trim() : '');
             }
           }
@@ -5022,33 +4243,57 @@
 
   function applyPanelWidths(){
     const widths = loadPanelWidths();
-    if (widths.sidebar) document.querySelector('.sidebar').style.width = widths.sidebar + 'px';
+    if (widths.sidebar) {
+      const savedWidth = Math.min(PANEL_MAX, Math.max(PANEL_MIN, Number(widths.sidebar) || 380));
+      const sidebar = document.querySelector('.sidebar');
+      sidebar.style.width = savedWidth + 'px';
+      sidebar.style.flexBasis = savedWidth + 'px';
+    }
   }
 
   function setupResizer(handleEl, panelEl, widthKey, growsWithMouseRight){
-    handleEl.addEventListener('mousedown', (e) => {
+    let dragState = null;
+
+    const resizeFromPointer = (e) => {
+      if (!dragState || e.pointerId !== dragState.pointerId) return;
+      const visualDelta = e.clientX - dragState.startX;
+      const cssDelta = visualDelta / dragState.pageZoom;
+      const direction = growsWithMouseRight ? 1 : -1;
+      const newWidth = Math.min(PANEL_MAX, Math.max(PANEL_MIN, dragState.startWidth + cssDelta * direction));
+      const roundedWidth = `${Math.round(newWidth)}px`;
+      panelEl.style.width = roundedWidth;
+      panelEl.style.flexBasis = roundedWidth;
+    };
+
+    const finishDrag = (e) => {
+      if (!dragState || (e.pointerId !== undefined && e.pointerId !== dragState.pointerId)) return;
+      document.removeEventListener('pointermove', resizeFromPointer);
+      document.removeEventListener('pointerup', finishDrag);
+      document.removeEventListener('pointercancel', finishDrag);
+      handleEl.classList.remove('active');
+      document.body.style.userSelect = dragState.previousUserSelect;
+      const widths = loadPanelWidths();
+      widths[widthKey] = Math.round(panelEl.offsetWidth);
+      savePanelWidths(widths);
+      dragState = null;
+    };
+
+    handleEl.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
       e.preventDefault();
-      const startX = e.clientX;
-      const startWidth = panelEl.getBoundingClientRect().width;
+      const pageZoom = Number.parseFloat(getComputedStyle(document.body).zoom) || 1;
+      dragState = {
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startWidth: panelEl.offsetWidth,
+        pageZoom,
+        previousUserSelect: document.body.style.userSelect
+      };
       handleEl.classList.add('active');
       document.body.style.userSelect = 'none';
-
-      function onMouseMove(ev){
-        const delta = (ev.clientX - startX) * (growsWithMouseRight ? 1 : -1);
-        const newWidth = Math.min(PANEL_MAX, Math.max(PANEL_MIN, startWidth + delta));
-        panelEl.style.width = newWidth + 'px';
-      }
-      function onMouseUp(){
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-        handleEl.classList.remove('active');
-        document.body.style.userSelect = '';
-        const widths = loadPanelWidths();
-        widths[widthKey] = Math.round(panelEl.getBoundingClientRect().width);
-        savePanelWidths(widths);
-      }
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
+      document.addEventListener('pointermove', resizeFromPointer);
+      document.addEventListener('pointerup', finishDrag);
+      document.addEventListener('pointercancel', finishDrag);
     });
   }
 
