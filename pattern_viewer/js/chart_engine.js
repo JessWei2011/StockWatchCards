@@ -7,6 +7,7 @@
 window.ChartEngine = {
   chartInstance: null,
   _resizeHandler: null,
+  _lastShowMa: null,
 
   /**
    * Initialize or update the 5-pane chart
@@ -81,9 +82,12 @@ window.ChartEngine = {
     const DEFAULT_ZOOM_DAYS = 20;
     const total = stockData.dates.length;
     const stockKey = `${stockData.title}|${total}`;
+    const isSameStock = this._lastStockKey === stockKey;
+    const showShortMa = displayToggles.showMa !== false;
+    const maToggleChanged = isSameStock && this._lastShowMa !== null && this._lastShowMa !== showShortMa;
     let zoomStart, zoomEnd;
     let prevLegendSelected = null;
-    if (this._lastStockKey === stockKey) {
+    if (isSameStock) {
       const prevOption = this.chartInstance.getOption();
       const prevZoom = prevOption && prevOption.dataZoom && prevOption.dataZoom[0];
       if (prevZoom) { zoomStart = prevZoom.start; zoomEnd = prevZoom.end; }
@@ -98,6 +102,7 @@ window.ChartEngine = {
         : 0;
     }
     this._lastStockKey = stockKey;
+    this._lastShowMa = showShortMa;
 
     const {
       dates,
@@ -217,11 +222,12 @@ window.ChartEngine = {
         data: ['K線', 'MA5', 'MA10', 'MA20', 'MA60', 'MA120', 'BOLL上軌', 'BOLL下軌', '成交量', 'MV5', 'MV20', 'RSI(6)', 'RSI(12)', 'MACD柱體', 'DIF快線', 'MACD慢線', 'K值', 'D值'],
         top: 4,
         textStyle: { color: '#94a3b8', fontSize: 11 },
-        selected: Object.assign({
+        selected: (() => {
+          const selected = Object.assign({
           'K線': true,
-          'MA5': displayToggles.showMa !== false,
-          'MA10': displayToggles.showMa !== false,
-          'MA20': displayToggles.showMa !== false,
+          'MA5': true,
+          'MA10': true,
+          'MA20': true,
           'MA60': false,
           'MA120': false,
           'BOLL上軌': displayToggles.showBoll !== false,
@@ -236,7 +242,21 @@ window.ChartEngine = {
           'MACD慢線': true,
           'K值': true,
           'D值': true
-        }, prevLegendSelected || {})
+          }, isSameStock ? (prevLegendSelected || {}) : {});
+
+          // 換股一律套用統一預設；同股只有按下「均線」總開關時才覆寫短均線。
+          if (!isSameStock || maToggleChanged) {
+            selected['K線'] = true;
+            selected['MA5'] = showShortMa;
+            selected['MA10'] = showShortMa;
+            selected['MA20'] = showShortMa;
+            if (!isSameStock) {
+              selected['MA60'] = false;
+              selected['MA120'] = false;
+            }
+          }
+          return selected;
+        })()
       },
       grid: [
         { left: '6%', right: '4%', top: '7%', height: '35%' },   // Pane 0: K-Line
@@ -716,5 +736,6 @@ window.ChartEngine = {
     }
     this.chartInstance = null;
     this._lastStockKey = null;
+    this._lastShowMa = null;
   }
 };

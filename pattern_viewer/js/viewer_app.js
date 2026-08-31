@@ -162,7 +162,12 @@
     async loadStock(code) {
       const normalizedCode = String(code || '').trim();
       const requestId = ++this.requestSerial;
+      const isStockChange = this.currentCode !== normalizedCode;
       this.currentCode = normalizedCode;
+      if (isStockChange) {
+        const toggleMa = this.q('#toggleMa');
+        if (toggleMa) toggleMa.checked = true;
+      }
       this.showLoading(normalizedCode);
 
       console.log(`[PatternViewer Debug] 🔄 開始載入股票: "${normalizedCode}"`);
