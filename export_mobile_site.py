@@ -18,12 +18,24 @@ from zoneinfo import ZoneInfo
 ROOT_DIR = Path(__file__).resolve().parent
 REPORTS_DIR = ROOT_DIR / "reports"
 DATA_JS_FILE = ROOT_DIR / "data.js"
+WATCHLIST_FILE = ROOT_DIR / "watchlist.json"
 PUBLIC_DIR = ROOT_DIR / "mobile_web" / "public"
 OUTPUT_DIR = PUBLIC_DIR / "data"
 DEFAULT_CODE = "3324"
 
 STOCK_CARDS_RE = re.compile(r"const\s+STOCK_CARDS\s*=\s*(\[.*\])\s*;?\s*$", re.S)
 REPORT_RE = re.compile(r"^(\d+)_(.+?)\((TW|TWO)\)(.*?)\.html$", re.I)
+
+
+def load_watchlist() -> set[str]:
+    if not WATCHLIST_FILE.exists():
+        return set()
+    try:
+        data = json.loads(WATCHLIST_FILE.read_text(encoding="utf-8"))
+        starred = data.get("starred") if isinstance(data, dict) else data
+        return set(str(c).strip() for c in (starred or []) if str(c).strip())
+    except Exception:
+        return set()
 
 
 def load_latest_cards() -> dict[str, dict]:
@@ -185,6 +197,7 @@ def main() -> None:
     stocks_dir.mkdir(parents=True, exist_ok=True)
 
     now = datetime.now(ZoneInfo("Asia/Taipei")).isoformat(timespec="seconds")
+    watchlist = load_watchlist()
     stock_index = []
     for code in sorted(reports, key=lambda value: int(value)):
         report_info = reports[code]
@@ -203,6 +216,7 @@ def main() -> None:
             "name": report_info["name"],
             "group": report_info["group"],
             "date": latest_analysis.get("date") or str(card.get("date") or ""),
+            "isStarred": code in watchlist,
         })
         stock_payload = {
             "version": 2,
@@ -228,7 +242,17 @@ def main() -> None:
             "decision": latest_analysis.get("decision") or card.get("decision") or "",
             "winRate": latest_analysis.get("winRate") or card.get("winRate") or "",
             "pattern": latest_analysis.get("pattern") or card.get("pattern") or "",
+            "isStarred": code in watchlist,
         })
+
+    (OUTPUT_DIR / "watchlist.json").write_text(
+        json.dumps({
+            "version": 1,
+            "updatedAt": now,
+            "starred": list(watchlist),
+        }, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
     (OUTPUT_DIR / "index.json").write_text(
         json.dumps({

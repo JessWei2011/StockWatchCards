@@ -35,6 +35,7 @@ ROOT_DIR = Path(__file__).resolve().parent
 REPORTS_DIR = ROOT_DIR / "reports"
 DATA_JS_FILE = ROOT_DIR / "data.js"
 AI_RANKINGS_FILE = ROOT_DIR / "ai_rankings.json"
+WATCHLIST_FILE = ROOT_DIR / "watchlist.json"
 PORT = 8935
 
 REPORTS_DIR.mkdir(exist_ok=True)
@@ -49,6 +50,50 @@ if STOCK_NAME_DICT_PATH.exists():
         STOCK_NAME_DICT = json.loads(STOCK_NAME_DICT_PATH.read_text(encoding="utf-8"))
     except Exception:
         pass
+
+
+def read_watchlist():
+    try:
+        payload = json.loads(WATCHLIST_FILE.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {"version": 1, "updatedAt": "", "starred": []}
+    starred = payload.get("starred") if isinstance(payload, dict) else payload
+    if not isinstance(starred, list):
+        starred = []
+    seen = set()
+    cleaned = []
+    for item in starred:
+        code = str(item or "").strip()
+        if code and code not in seen:
+            seen.add(code)
+            cleaned.append(code)
+    return {
+        "version": 1,
+        "updatedAt": str(payload.get("updatedAt", "")) if isinstance(payload, dict) else "",
+        "starred": cleaned
+    }
+
+
+def write_watchlist(starred_list):
+    if not isinstance(starred_list, list):
+        raise ValueError("starred 必須是代號陣列")
+    seen = set()
+    cleaned = []
+    for item in starred_list:
+        code = str(item or "").strip()
+        if code and code not in seen:
+            seen.add(code)
+            cleaned.append(code)
+    now_str = time.strftime("%Y-%m-%d %H:%M:%S")
+    payload = {
+        "version": 1,
+        "updatedAt": now_str,
+        "starred": cleaned
+    }
+    tmp_file = WATCHLIST_FILE.with_suffix(".tmp")
+    tmp_file.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    tmp_file.replace(WATCHLIST_FILE)
+    return payload
 
 
 def read_ai_rankings():
@@ -902,6 +947,9 @@ class Handler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/cards":
             self._json(200, {"ok": True, "cards": read_stock_cards()})
             return
+        if parsed.path == "/api/watchlist":
+            self._json(200, {"ok": True, **read_watchlist()})
+            return
         if parsed.path == "/api/ai-rankings":
             self._json(200, {"ok": True, **read_ai_rankings()})
             return
@@ -1061,6 +1109,20 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json(500, {"ok": False, "error": f"排行榜寫入失敗: {e}"})
                 return
             self._json(200, {"ok": True, "ranking": saved})
+            return
+
+        if parsed.path == "/api/watchlist":
+            try:
+                body = self._read_json_body()
+                starred_input = body.get("starred", []) if isinstance(body, dict) else body
+                saved = write_watchlist(starred_input)
+            except (ValueError, json.JSONDecodeError) as e:
+                self._json(400, {"ok": False, "error": str(e)})
+                return
+            except OSError as e:
+                self._json(500, {"ok": False, "error": f"關注清單寫入失敗: {e}"})
+                return
+            self._json(200, {"ok": True, **saved})
             return
 
         try:

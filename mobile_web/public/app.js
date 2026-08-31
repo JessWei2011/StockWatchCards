@@ -87,7 +87,7 @@
       return `
       <button type="button" class="stock-list-button${item.code === state.currentCode ? ' active' : ''}" data-code="${escapeHtml(item.code)}">
         <span>
-          <span class="stock-list-name">${escapeHtml(item.code)} ${escapeHtml(item.name)}</span>
+          <span class="stock-list-name">${item.isStarred ? '⭐ ' : ''}${escapeHtml(item.code)} ${escapeHtml(item.name)}</span>
           <span class="stock-list-detail">${escapeHtml(item.group || '未分類')}｜${escapeHtml(item.decision || '最新分析')}</span>
         </span>
         <span class="stock-list-numbers">

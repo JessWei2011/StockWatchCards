@@ -62,6 +62,28 @@ function loadWatchlist(){
 }
 function saveWatchlist(list){
   localStorage.setItem(WATCHLIST_KEY, JSON.stringify(list));
+  fetch('/api/watchlist', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ starred: list })
+  }).catch(() => {});
+}
+
+async function syncWatchlistFile(){
+  try {
+    let res = await fetch('/api/watchlist').catch(() => null);
+    if (!res || !res.ok) {
+      res = await fetch('watchlist.json').catch(() => null);
+    }
+    if (res && res.ok) {
+      const data = await res.json();
+      const starred = Array.isArray(data.starred) ? data.starred : (Array.isArray(data) ? data : null);
+      if (starred && starred.length > 0) {
+        localStorage.setItem(WATCHLIST_KEY, JSON.stringify(starred));
+        if (typeof render === 'function') render();
+      }
+    }
+  } catch (e) {}
 }
 
 function loadUI(){
@@ -290,4 +312,5 @@ document.addEventListener('DOMContentLoaded', () => {
   setupColorFilter();
   ZoomModal.setup();
   render();
+  syncWatchlistFile();
 });

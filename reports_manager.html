@@ -3274,15 +3274,58 @@
 
   const STARRED_KEY = 'stockCardsWatchlist';
   let starredOnlyMode = false;
+  let starredStocksCache = null;
 
   function getStarredStocks(){
+    if (starredStocksCache !== null) {
+      return starredStocksCache;
+    }
     try {
       const raw = localStorage.getItem(STARRED_KEY);
-      if (!raw) return new Set();
-      const list = JSON.parse(raw);
-      return new Set(Array.isArray(list) ? list.map(String) : []);
+      if (!raw) {
+        starredStocksCache = new Set();
+      } else {
+        const list = JSON.parse(raw);
+        starredStocksCache = new Set(Array.isArray(list) ? list.map(String) : []);
+      }
     } catch(e){
-      return new Set();
+      starredStocksCache = new Set();
+    }
+    return starredStocksCache;
+  }
+
+  async function syncWatchlistFromServer(){
+    try {
+      const res = await fetch('/api/watchlist');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.ok && Array.isArray(data.starred)) {
+          const localSet = getStarredStocks();
+          if (data.starred.length > 0) {
+            starredStocksCache = new Set(data.starred.map(String));
+            localStorage.setItem(STARRED_KEY, JSON.stringify(Array.from(starredStocksCache)));
+          } else if (localSet.size > 0) {
+            await pushWatchlistToServer(Array.from(localSet));
+          } else {
+            starredStocksCache = new Set();
+          }
+          return;
+        }
+      }
+    } catch(e) {
+      console.warn('無法從伺服器載入 watchlist.json，使用本地快取', e);
+    }
+  }
+
+  async function pushWatchlistToServer(list){
+    try {
+      await fetch('/api/watchlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ starred: list })
+      });
+    } catch(e) {
+      console.warn('儲存 watchlist.json 失敗', e);
     }
   }
 
@@ -3291,7 +3334,7 @@
     return getStarredStocks().has(String(code).trim());
   }
 
-  function toggleStarredStock(code){
+  async function toggleStarredStock(code){
     const normCode = String(code || '').trim();
     if (!normCode) return;
     const starred = getStarredStocks();
@@ -3301,7 +3344,8 @@
     } else {
       starred.delete(normCode);
     }
-    localStorage.setItem(STARRED_KEY, JSON.stringify(Array.from(starred)));
+    const starredArr = Array.from(starred);
+    localStorage.setItem(STARRED_KEY, JSON.stringify(starredArr));
 
     // 即時更新畫面上所有相同股號的星號狀態
     document.querySelectorAll(`.tree-star-btn[data-code="${CSS.escape(normCode)}"]`).forEach(btn => {
@@ -3314,9 +3358,13 @@
     if (starredOnlyMode) {
       renderTree();
     }
+
+    // 同步寫入後端實體檔案 watchlist.json
+    await pushWatchlistToServer(starredArr);
   }
 
   async function loadTree(){
+    await syncWatchlistFromServer();
     const { data } = await api('GET', '/api/tree');
     tree = data.tree;
     renderTree();
