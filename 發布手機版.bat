@@ -8,13 +8,19 @@ echo     Stock2 全個股手機分析中心 - 一鍵發布作業
 echo ===================================================
 echo.
 
-set PY_EXE=C:\Users\User\AppData\Local\Programs\Python\Python311\python.exe
-set NODE_BIN=C:\Users\User\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin
-set PROJECT_ROOT=%~dp0
-set MOBILE_DIR=%PROJECT_ROOT%mobile_web
+set "PROJECT_ROOT=%~dp0"
+set "MOBILE_DIR=%PROJECT_ROOT%mobile_web"
 
-if not exist "%PY_EXE%" (
-    echo [錯誤] 找不到指定的 Python 執行檔: %PY_EXE%
+set "PY_EXE="
+where python >nul 2>&1 && set "PY_EXE=python"
+if not defined PY_EXE (
+    if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" set "PY_EXE=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+)
+if not defined PY_EXE (
+    py -3 --version >nul 2>&1 && set "PY_EXE=py -3"
+)
+if not defined PY_EXE (
+    echo [錯誤] 找不到 Python 執行檔，請確認已安裝 Python 3。
     goto FAIL
 )
 
@@ -24,8 +30,6 @@ if errorlevel 1 goto EXPORT_FAIL
 
 echo.
 echo [2/3] 正在驗證手機版必要靜態檔案與個股目錄...
-if not exist "%MOBILE_DIR%\public\data\index.json" (
-    echo [錯誤] 找不到 %MOBILE_DIR%\public\data\index.json
     goto FAIL
 )
 if not exist "%MOBILE_DIR%\public\data\stocks" (
@@ -50,7 +54,6 @@ echo [OK] 靜態檔案與全個股資料完整性檢查通過。
 
 echo.
 echo [3/3] 正在部署至 Cloudflare Worker stock2-mobile ...
-set PATH=%NODE_BIN%;%PATH%
 cd /d "%MOBILE_DIR%"
 call "node_modules\.bin\wrangler.cmd" deploy
 if errorlevel 1 goto DEPLOY_FAIL
