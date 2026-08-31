@@ -637,13 +637,10 @@
   }
   .macro-history-list{ margin-top:14px; border-top:1px solid rgba(56,189,248,.22); padding-top:9px; }
   .macro-history-list[hidden]{ display:none; }
-  .macro-history-item{ display:grid; grid-template-columns:76px minmax(0,1fr) 30px; align-items:center; gap:7px; padding:6px 1px; border-bottom:1px solid rgba(71,85,105,.22); }
+  .macro-history-item{ display:grid; grid-template-columns:78px minmax(0,1fr); align-items:center; gap:8px; padding:6px 2px; border-bottom:1px solid rgba(71,85,105,.22); }
   .macro-history-item:last-child{ border-bottom:0; }
   .macro-history-date{ color:#94a3b8; font-family:"Courier New",Courier,monospace; font-size:12px; }
   .macro-history-item .macro-num{ min-width:0; padding:3px 5px; margin:-3px -5px; font-family:"Courier New",Courier,monospace; font-size:16px; font-weight:750; }
-  .macro-history-delete-placeholder{ display:block; }
-  .macro-delete-btn{ border:0; background:transparent; color:#f87171; cursor:pointer; font-size:16px; padding:3px 5px; border-radius:5px; }
-  .macro-delete-btn:hover{ background:rgba(239,68,68,.18); }
   .macro-backup-card{ margin-top:18px; padding:19px 24px; }
   .macro-backup-header{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
   .macro-backup-title{ color:#22d3ee; font-size:19.5px; font-weight:850; }
@@ -4567,19 +4564,14 @@
       history.hidden=!macroHistoryExpanded;
       history.innerHTML=sorted.slice(1, 11).map((entry,index) => {
         const dataIndex=index+1;
-        const deleteControl=field.key === 'vixtwn'
-          ? `<button type="button" class="macro-delete-btn" data-date="${escapeHtml(entry.date)}" title="刪除 ${escapeHtml(entry.date)} 的整筆總經紀錄">🗑️</button>`
-          : '<span class="macro-history-delete-placeholder" aria-hidden="true"></span>';
         return `<div class="macro-history-item">
           <span class="macro-history-date">${escapeHtml(entry.date)}</span>
           <span class="macro-num macro-field-${field.key}" data-date="${escapeHtml(entry.date)}" data-key="${field.key}">${macroCellHtml(sorted,dataIndex,field.key)}</span>
-          ${deleteControl}
         </div>`;
       }).join('') || '<div class="macro-history-item"><span class="macro-blank">沒有更早的資料</span></div>';
     });
 
     document.querySelectorAll('#macro-dashboard .macro-num[data-date]').forEach(cell => cell.addEventListener('click', () => startMacroCellEdit(cell)));
-    document.querySelectorAll('#macro-dashboard .macro-delete-btn').forEach(button => button.addEventListener('click', () => deleteMacroEntry(button.dataset.date)));
   }
 
   async function loadMacroData({quiet=false}={}){
