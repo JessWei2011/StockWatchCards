@@ -4856,9 +4856,9 @@
       pad + index * (width-pad*2)/(points.length-1),
       pad + (height-pad*2) * (1-(value-min)/range)
     ]);
-    const up=points[points.length-1] > points[0];
-    const flat=points[points.length-1] === points[0];
-    const color=flat ? '#94a3b8' : (up ? '#f87171' : '#4ade80');
+    // 與最新數值採用相同基準：比較最新一期和前一期，而非整段走勢的首尾。
+    const direction=macroDirection(points[points.length-1], points[points.length-2]);
+    const color=direction === 'flat' ? '#94a3b8' : (direction === 'up' ? '#f87171' : '#4ade80');
     const line=xy.map(([x,y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
     const area=`${pad},${height} ${line} ${width-pad},${height}`;
     return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" preserveAspectRatio="none"><polygon points="${area}" fill="${color}" opacity=".13"></polygon><polyline points="${line}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>`;
