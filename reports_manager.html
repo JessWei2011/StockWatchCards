@@ -837,27 +837,29 @@
   .ranking-tier-badge{
     display:inline-flex; align-items:center; justify-content:center;
     font-size:11px; font-weight:900; line-height:1; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    padding:2px 5px; border-radius:4px; flex-shrink:0; letter-spacing:0.4px;
+    padding:2px 6px; border-radius:5px; flex-shrink:0; letter-spacing:0.5px;
+    vertical-align:middle; margin-left:5px;
   }
   .ranking-tier-badge.tier-a{
-    background:linear-gradient(135deg, #ef4444, #f59e0b);
-    color:#ffffff; border:1px solid #fde047;
-    box-shadow:0 0 6px rgba(239,68,68,0.6);
-    animation:pulse-tier-a 2.2s infinite ease-in-out;
+    background:linear-gradient(135deg, #ff0055 0%, #ff5500 45%, #ffcc00 100%);
+    color:#ffffff; border:1.5px solid #ffe066;
+    box-shadow:0 0 10px rgba(255,102,0,0.85), 0 0 18px rgba(255,204,0,0.55), inset 0 1px 1px rgba(255,255,255,0.8);
+    text-shadow:0 1px 2px rgba(0,0,0,0.8);
+    animation:glow-tier-a 2s infinite ease-in-out;
   }
   .ranking-tier-badge.tier-b{
     background:linear-gradient(135deg, #0284c7, #38bdf8);
     color:#ffffff; border:1px solid #7dd3fc;
-    box-shadow:0 0 6px rgba(56,189,248,0.5);
+    box-shadow:0 0 7px rgba(56,189,248,0.6);
   }
   .ranking-tier-badge.tier-c{
     background:linear-gradient(135deg, #059669, #10b981);
     color:#ffffff; border:1px solid #6ee7b7;
-    box-shadow:0 0 5px rgba(16,185,129,0.4);
+    box-shadow:0 0 6px rgba(16,185,129,0.5);
   }
-  @keyframes pulse-tier-a{
-    0%, 100%{ transform:scale(1); }
-    50%{ transform:scale(1.08); }
+  @keyframes glow-tier-a{
+    0%, 100%{ transform:scale(1); box-shadow:0 0 8px rgba(255,102,0,0.8), 0 0 16px rgba(255,204,0,0.4); }
+    50%{ transform:scale(1.12); box-shadow:0 0 14px rgba(255,50,0,1), 0 0 24px rgba(255,220,0,0.85); }
   }
 
 </style>
@@ -2916,7 +2918,9 @@
 
   window.winrateMapByCode = {};
   let winrateRankingSource = 'gemini'; // 'gemini' | 'chatgpt'
-  let winrateActiveTrack = 'momentum'; // 'momentum' | 'defensive'
+  let winrateActiveTrack = 'momentum';
+  const STOCK_NAMES_MAP = {"1101": "台泥", "1102": "亞泥", "1216": "統一", "1301": "台塑", "1303": "南亞", "1326": "台化", "1504": "東元", "1513": "中興電", "1514": "亞力", "1519": "華城", "1590": "亞德客-KY", "2049": "上銀", "2059": "川湖", "2301": "光寶科", "2303": "聯電", "2308": "台達電", "2317": "鴻海", "2324": "仁寶", "2327": "國巨", "2330": "台積電", "2344": "華邦電", "2345": "智邦", "2356": "英業達", "2357": "華碩", "2368": "金像電", "2376": "技嘉", "2377": "微星", "2379": "瑞昱", "2382": "廣達", "2383": "台光電", "2395": "研華", "2408": "南亞科", "2412": "中華電", "2426": "鼎元", "2454": "聯發科", "2455": "全新", "2467": "志聖", "2478": "大毅", "2486": "一詮", "2492": "華新科", "2603": "長榮", "2609": "陽明", "2615": "萬海", "2881": "富邦金", "2882": "國泰金", "2891": "中信金", "3008": "大立光", "3017": "奇鋐", "3022": "威強電", "3026": "禾伸堂", "3034": "聯詠", "3035": "智原", "3037": "欣興", "3044": "健鼎", "3081": "聯亞", "3105": "穩懋", "3163": "波若威", "3189": "景碩", "3231": "緯創", "3234": "光環", "3264": "欣銓", "3324": "雙鴻", "3362": "先進光", "3363": "上詮", "3374": "精材", "3406": "玉晶光", "3441": "聯一光", "3443": "創意", "3450": "聯鈞", "3491": "昇達科", "3529": "力旺", "3532": "台勝科", "3624": "光頡", "3653": "健策", "3661": "世芯-KY", "3693": "營邦", "3711": "日月光投控", "4760": "勤凱", "4931": "新盛力", "4958": "臻鼎-KY", "4966": "譜瑞-KY", "5269": "祥碩", "5274": "信驊", "5328": "華容", "5347": "世界", "5483": "中美晶", "5536": "聖暉", "6147": "頎邦", "6155": "鈞寶", "6173": "信昌電", "6182": "合晶", "6187": "萬潤", "6207": "雷科", "6213": "聯茂", "6214": "精誠", "6217": "中探針", "6223": "旺矽", "6226": "光鼎", "6239": "力成", "6265": "方土昶", "6274": "台燿", "6446": "藥華藥", "6449": "鈺邦", "6488": "環球晶", "6515": "穎崴", "6531": "愛普", "6584": "南俊國際", "6669": "緯穎", "6781": "AES-KY", "6805": "富世達", "8021": "尖點", "8039": "台虹", "8046": "南電", "8069": "元太", "8150": "南茂", "8227": "巨有科技", "8299": "群聯", "8358": "金居", "8996": "高力"};
+ // 'momentum' | 'defensive'
   let winrateParsedData = { gemini: null, chatgpt: null };
   let winrateFilterDecision = 'all';
   let winrateSearchQuery = '';
@@ -3004,10 +3008,13 @@
         if (cells[0].includes('排名')) continue;
 
         if (cells.length >= 7) {
+          const rawCode = cells[1].replace(/[*`]/g, '').trim();
+          const rawName = cells[2].replace(/[*`]/g, '').trim();
+          const resolvedName = STOCK_NAMES_MAP[rawCode] || (rawName.includes('Advanced Energy') ? 'AES-KY' : (rawName.includes('Fositek') ? '富世達' : rawName));
           const item = {
             rank: cells[0].replace(/[*`]/g, '').trim(),
-            code: cells[1].replace(/[*`]/g, '').trim(),
-            name: cells[2].replace(/[*`]/g, '').trim(),
+            code: rawCode,
+            name: resolvedName,
             category: (cells[3] || '').replace(/[*`]/g, '').trim(),
             price: (cells[4] || '').replace(/[*`]/g, '').trim(),
             slope: (cells[5] || '').replace(/[*`]/g, '').trim(),
@@ -3146,11 +3153,11 @@
           <div style="display:flex; flex-direction:column; gap:4px;">
             ${items.length === 0 ? '<div style="color:var(--text-dim); font-size:15px; padding:10px; text-align:center;">無資料</div>' : items.slice(0, 10).map((it, idx) => `
               <div style="display:flex; align-items:center; justify-content:space-between; padding:4px 7px; border-radius:6px; background:rgba(255,255,255,0.035); font-size:15px; cursor:pointer; transition:all .15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.background='rgba(255,255,255,0.035)';" onclick="openPatternForStock('${escapeHtml(it.code)}')">
-                <div style="display:flex; align-items:center; gap:5px; min-width:0; overflow:hidden;">
+                <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;">
                   <span style="font-weight:900; color:var(--text-dim); width:18px; font-size:14px; text-align:right;">${idx + 1}</span>
-                  ${tierBadgesMap[it.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[it.code].tier}" title="${escapeHtml(tierBadgesMap[it.code].title)}">${tierBadgesMap[it.code].label}</span>` : ''}
                   <span style="font-weight:850; color:#93c5fd; font-family:monospace; font-size:15px;">${escapeHtml(it.code)}</span>
                   <span style="font-weight:800; color:#ffffff; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</span>
+                  ${tierBadgesMap[it.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[it.code].tier}" title="${escapeHtml(tierBadgesMap[it.code].title)}">${tierBadgesMap[it.code].label}</span>` : ''}
                 </div>
                 <span style="font-size:14.5px; font-weight:850; color:${colorTheme}; white-space:nowrap;">${escapeHtml(it.price || it.score || '')}</span>
               </div>
@@ -3250,8 +3257,8 @@
                 return `
                   <tr data-stock-code="${escapeHtml(item.code)}" title="點擊直接開啟 ${escapeHtml(item.name)} (${escapeHtml(item.code)}) 的專業看盤">
                     <td style="text-align:center;"><span class="rank-badge-num ${badgeClass}">${escapeHtml(item.rank)}</span></td>
-                    <td><span class="rank-stock-link">${tierBadgesMap[item.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[item.code].tier}" title="${escapeHtml(tierBadgesMap[item.code].title)}">${tierBadgesMap[item.code].label}</span>` : ''}<span class="stock-code">${escapeHtml(item.code)}</span></span></td>
-                    <td><span class="rank-stock-link"><span class="stock-name">${escapeHtml(item.name)}</span></span></td>
+                    <td><span class="rank-stock-link"><span class="stock-code">${escapeHtml(item.code)}</span></span></td>
+                    <td><span class="rank-stock-link"><span class="stock-name">${escapeHtml(item.name)}</span>${tierBadgesMap[item.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[item.code].tier}" title="${escapeHtml(tierBadgesMap[item.code].title)}">${tierBadgesMap[item.code].label}</span>` : ''}</span></td>
                     <td style="text-align:center;"><span class="tag-pill" style="font-size:14px; padding:3px 7px; white-space:nowrap;">${escapeHtml(item.category)}</span></td>
                     <td style="text-align:right; font-weight:850; color:#fff;">${escapeHtml(item.price)}</td>
                     <td style="text-align:center; color:#fca5a5; font-weight:800;">${escapeHtml(item.slope)}</td>
