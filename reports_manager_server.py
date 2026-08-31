@@ -261,21 +261,9 @@ def _record_client_disconnect(client_id):
 
 
 def _client_watchdog():
-    """最後一個管理頁關閉後自動結束；重整會在寬限期內重新註冊，不會誤關。"""
-    global LAST_CLIENT_CHANGE
+    """維持背景連線健康監控，依賴使用者點擊『關閉伺服器』或系統管理，避免分頁背景休眠時誤判自動關閉。"""
     while True:
-        time.sleep(2)
-        now = time.monotonic()
-        with CLIENT_LOCK:
-            stale_ids = [key for key, last_seen in CLIENT_HEARTBEATS.items() if now - last_seen > 45]
-            for key in stale_ids:
-                CLIENT_HEARTBEATS.pop(key, None)
-            if stale_ids:
-                LAST_CLIENT_CHANGE = now
-            should_stop = CLIENTS_HAVE_CONNECTED and not CLIENT_HEARTBEATS and now - LAST_CLIENT_CHANGE >= 8
-        if should_stop:
-            _shutdown_application(delay=0)
-            return
+        time.sleep(10)
 
 
 # ── 記憶體快取加速層 (避免重複檔案遍歷與解析，API 延遲降至 < 1ms) ───────────
