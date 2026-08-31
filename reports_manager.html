@@ -388,54 +388,66 @@
   #reports-workspace{ display:flex; flex-direction:column; }
   #pattern-workspace{ overflow:auto; background:#0f1117; }
   #pattern-workspace .pattern-viewer{ min-height:100%; }
-  #ranking-workspace{ overflow-y:auto; overflow-x:hidden; background:#0f1117; }
+  #ranking-workspace{ overflow-y:auto; overflow-x:hidden; background:#0f1117; font-size:16px; }
   #ranking-workspace[hidden]{ display:none !important; }
-  .ranking-shell{ max-width:1360px; width:100%; margin:0 auto; padding:18px 20px 60px; box-sizing:border-box; }
+  .ranking-shell{ width:80%; max-width:1380px; margin:0 auto; padding:10px 0 36px; box-sizing:border-box; }
+  .ranking-detail-toolbar{
+    display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px 10px;
+    margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid var(--border);
+  }
+  .ranking-track-actions{ grid-column:1 / -1; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; min-width:0; }
+  .ranking-track-actions .btn{ width:100%; justify-content:center; padding-left:6px !important; padding-right:6px !important; }
+  .ranking-detail-label, .ranking-track-actions .btn, .ranking-refresh-action .btn{ white-space:nowrap; }
+  .ranking-refresh-action{ grid-column:2; grid-row:1; flex-shrink:0; }
+  @media (max-width:860px){
+    .ranking-shell{ width:100%; padding-left:12px; padding-right:12px; }
+    .ranking-track-actions{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  }
   
   .ranking-card{
     background:var(--card-bg); border:1px solid var(--border); border-radius:14px;
-    padding:18px 20px; margin-bottom:20px; box-shadow:0 6px 18px rgba(0,0,0,0.3);
+    padding:12px 16px; margin-bottom:12px; box-shadow:0 6px 18px rgba(0,0,0,0.3);
   }
   .ranking-hero-header{
-    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
-    margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border);
   }
-  .ranking-hero-title{ margin:0; font-size:20px; font-weight:800; color:#fff; display:flex; align-items:center; gap:10px; }
-  .ranking-hero-meta{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .ranking-hero-title{ margin:0; font-size:20px; font-weight:800; color:#fff; display:flex; align-items:center; gap:8px; }
+  .ranking-hero-meta{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   
   .ranking-filter-bar{
-    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
-    margin-bottom:14px; padding:10px 14px; background:rgba(0,0,0,0.25); border-radius:10px; border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    margin-bottom:8px; padding:6px 10px; background:rgba(0,0,0,0.25); border-radius:8px; border:1px solid var(--border);
   }
   .ranking-filter-bar .search-box{ display:flex; align-items:center; gap:8px; flex:1; min-width:200px; max-width:360px; }
   .ranking-filter-bar .search-input{
-    width:100%; padding:6px 12px; border-radius:6px; border:1px solid var(--border);
-    background:var(--bg); color:var(--text); font-size:12.5px;
+    width:100%; padding:5px 10px; border-radius:6px; border:1px solid var(--border);
+    background:var(--bg); color:var(--text); font-size:16px;
   }
   .ranking-filter-tabs{ display:flex; gap:6px; flex-wrap:wrap; }
   .rank-filter-btn{
-    padding:5px 12px; border-radius:6px; font-size:12px; font-weight:700; border:1px solid var(--border);
+    padding:5px 11px; border-radius:6px; font-size:14.5px; font-weight:700; border:1px solid var(--border);
     background:rgba(255,255,255,0.03); color:var(--text-dim); cursor:pointer;
   }
   .rank-filter-btn:hover{ color:var(--text); background:var(--hover); }
   .rank-filter-btn.active{ color:#fff; background:var(--accent); border-color:var(--accent); }
 
-  .ranking-table-wrap{ overflow:hidden; margin:14px 0 20px; border-radius:10px; border:1px solid var(--border); background:#11161c; width:100%; }
-  .ranking-full-table{ width:100%; border-collapse:collapse; font-size:14px; text-align:left; table-layout:fixed; }
+  .ranking-table-wrap{ overflow:auto; margin:8px 0 12px; border-radius:10px; border:1px solid var(--border); background:#11161c; width:100%; }
+  .ranking-full-table{ width:100%; min-width:1180px; border-collapse:collapse; font-size:16px; text-align:left; table-layout:fixed; }
   .ranking-full-table th, .ranking-full-table td{
-    padding:10px 10px; border-bottom:1px solid rgba(255,255,255,0.06);
+    padding:7px 10px; border-bottom:1px solid rgba(255,255,255,0.06);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
-  .ranking-full-table th{ background:#19202c; color:#93c5fd; font-size:14px; font-weight:750; position:sticky; top:0; z-index:2; border-bottom:2px solid var(--border); white-space:nowrap; }
+  .ranking-full-table th{ background:#19202c; color:#93c5fd; font-size:16px; font-weight:750; position:sticky; top:0; z-index:2; border-bottom:2px solid var(--border); white-space:nowrap; }
   .ranking-full-table tr{ cursor:pointer; transition:background .15s ease; }
   .ranking-full-table tr:hover{ background:rgba(59,130,246,0.12); }
   
   .rank-stock-link{
     color:inherit; text-decoration:none; display:inline-flex; align-items:center;
-    transition:color .15s ease, transform .15s ease; cursor:pointer; font-size:14.5px;
+    transition:color .15s ease, transform .15s ease; cursor:pointer; font-size:16px;
   }
-  .rank-stock-link .stock-code{ color:#93c5fd; font-weight:800; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:14px; }
-  .rank-stock-link .stock-name{ color:#fff; font-weight:800; font-size:14.5px; }
+  .rank-stock-link .stock-code{ color:#93c5fd; font-weight:800; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:16px; }
+  .rank-stock-link .stock-name{ color:#fff; font-weight:800; font-size:16px; }
   .ranking-full-table tr:hover .rank-stock-link .stock-code,
   .ranking-full-table tr:hover .rank-stock-link .stock-name,
   .rank-stock-link:hover .stock-code,
@@ -445,7 +457,7 @@
   
   .rank-badge-num{
     display:inline-flex; align-items:center; justify-content:center;
-    width:26px; height:26px; border-radius:50%; font-weight:900; font-size:13px;
+    width:28px; height:28px; border-radius:50%; font-weight:900; font-size:14px;
   }
   .rank-badge-num.top1{ background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff; box-shadow:0 0 8px rgba(245,158,11,0.5); }
   .rank-badge-num.top2{ background:linear-gradient(135deg, #94a3b8, #64748b); color:#fff; }
@@ -453,7 +465,7 @@
   .rank-badge-num.normal{ background:rgba(255,255,255,0.08); color:var(--text-dim); }
 
   .rank-score-pill{
-    display:inline-block; padding:4px 10px; border-radius:6px; font-weight:800; font-size:13.5px;
+    display:inline-block; padding:3px 9px; border-radius:6px; font-weight:800; font-size:16px;
   }
   .rank-score-pill.high{ background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); }
   .rank-score-pill.medium{ background:rgba(59,130,246,0.15); color:#93c5fd; border:1px solid rgba(59,130,246,0.3); }
@@ -461,7 +473,7 @@
 
   .rank-decision-tag{
     display:inline-flex; align-items:center; justify-content:center;
-    padding:3px 8px; border-radius:6px; font-size:11.5px; font-weight:750;
+    padding:3px 8px; border-radius:6px; font-size:14px; font-weight:750;
     white-space:nowrap; max-width:100%; box-sizing:border-box;
   }
   .rank-decision-tag.strong-buy{ background:rgba(239,68,68,0.22); color:#f87171; border:1px solid rgba(239,68,68,0.5); font-weight:850; box-shadow:0 0 8px rgba(239,68,68,0.2); }
@@ -493,7 +505,7 @@
   /* 報表管理維持左側分類與右側大盤資訊。 */
   #reports-workspace .main{ padding:18px 24px 28px; }
   .rank-detail-label{
-    color:var(--text-dim); font-size:11px; font-weight:700; margin-right:2px;
+    color:var(--text-dim); font-size:15px; font-weight:800; margin-right:2px;
   }
   .inst-mini-chart{
     grid-column:1 / -1; min-width:0; padding:8px 10px 7px;
@@ -945,138 +957,138 @@
                 <div id="statChangePct" class="stat-value">—</div>
               </div>
             </div>
-            <div class="stat-box full" id="statKlineBox" style="margin-top:8px; padding:6px 10px; background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.2); border-radius:6px;">
-              <div class="stat-label" style="color:#93c5fd; font-size:11px; font-weight:700;">📈 K線指標狀態</div>
-              <div id="statKlineTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
+            <div class="stat-box full" id="statKlineBox" style="margin-top:8px; padding:8px 12px; background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.2); border-radius:6px;">
+              <div class="stat-label" style="color:#93c5fd; font-size:15px; font-weight:800;">📈 K線指標狀態</div>
+              <div id="statKlineTags" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">—</div>
             </div>
-            <div class="stat-box full" id="statVolBox" style="margin-top:6px; padding:6px 10px; background:rgba(234,179,8,0.06); border:1px solid rgba(234,179,8,0.2); border-radius:6px;">
-              <div class="stat-label" style="color:#fde047; font-size:11px; font-weight:700;">📊 VOL 指標狀態</div>
-              <div id="statVolTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
+            <div class="stat-box full" id="statVolBox" style="margin-top:7px; padding:8px 12px; background:rgba(234,179,8,0.06); border:1px solid rgba(234,179,8,0.2); border-radius:6px;">
+              <div class="stat-label" style="color:#fde047; font-size:15px; font-weight:800;">📊 VOL 指標狀態</div>
+              <div id="statVolTags" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">—</div>
             </div>
-            <div class="stat-box full" id="statMacdBox" style="margin-top:6px; padding:6px 10px; background:rgba(168,85,247,0.06); border:1px solid rgba(168,85,247,0.2); border-radius:6px;">
-              <div class="stat-label" style="color:#c084fc; font-size:11px; font-weight:700;">🌊 MACD 指標狀態</div>
-              <div id="statMacdTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
+            <div class="stat-box full" id="statMacdBox" style="margin-top:7px; padding:8px 12px; background:rgba(168,85,247,0.06); border:1px solid rgba(168,85,247,0.2); border-radius:6px;">
+              <div class="stat-label" style="color:#c084fc; font-size:15px; font-weight:800;">🌊 MACD 指標狀態</div>
+              <div id="statMacdTags" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">—</div>
             </div>
-            <div class="stat-box full" id="statRsiBox" style="margin-top:6px; padding:6px 10px; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.2); border-radius:6px;">
-              <div class="stat-label" style="color:#7dd3fc; font-size:11px; font-weight:700;">📊 RSI 指標狀態</div>
-              <div id="statRsiTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
+            <div class="stat-box full" id="statRsiBox" style="margin-top:7px; padding:8px 12px; background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.2); border-radius:6px;">
+              <div class="stat-label" style="color:#7dd3fc; font-size:15px; font-weight:800;">📊 RSI 指標狀態</div>
+              <div id="statRsiTags" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">—</div>
             </div>
-            <div class="stat-box full" id="statKdBox" style="margin-top:6px; padding:6px 10px; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); border-radius:6px;">
-              <div class="stat-label" style="color:#fbbf24; font-size:11px; font-weight:700;">⚡ KD 指標狀態</div>
-              <div id="statKdTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
+            <div class="stat-box full" id="statKdBox" style="margin-top:7px; padding:8px 12px; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); border-radius:6px;">
+              <div class="stat-label" style="color:#fbbf24; font-size:15px; font-weight:800;">⚡ KD 指標狀態</div>
+              <div id="statKdTags" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">—</div>
             </div>
-            <div class="stat-box full" id="statChipBox" style="margin-top:6px; padding:6px 10px; background:rgba(249,115,22,0.06); border:1px solid rgba(249,115,22,0.2); border-radius:6px;">
-              <div class="stat-label" style="color:#fdba74; font-size:11px; font-weight:700;">🏛️ 籌碼指標狀態</div>
-              <div id="statChipTags" style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">—</div>
+            <div class="stat-box full" id="statChipBox" style="margin-top:7px; padding:8px 12px; background:rgba(249,115,22,0.06); border:1px solid rgba(249,115,22,0.2); border-radius:6px;">
+              <div class="stat-label" style="color:#fdba74; font-size:15px; font-weight:800;">🏛️ 籌碼指標狀態</div>
+              <div id="statChipTags" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">—</div>
             </div>
           </div>
 
           <!-- 即時十字游標數據看板 -->
           <div class="card focus-hud-card" style="margin-top:10px; background:#141721; border:1px solid rgba(59,130,246,0.35); border-radius:8px; padding:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:10px;">
-              <span style="font-weight:800; color:#60a5fa; font-size:15px;">🎯 游標焦點即時數據</span>
-              <span id="hudFocusDate" style="font-size:13px; color:#38bdf8; font-weight:750; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); padding:2px 8px; border-radius:4px;">最新收盤</span>
+              <span style="font-weight:800; color:#60a5fa; font-size:17px;">🎯 游標焦點即時數據</span>
+              <span id="hudFocusDate" style="font-size:15px; color:#38bdf8; font-weight:750; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); padding:3px 9px; border-radius:4px;">最新收盤</span>
             </div>
 
-            <div style="display:flex; flex-direction:column; gap:8px; font-size:14px;">
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:16px;">
               <!-- 1. 價格與量能 -->
               <div style="background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                  <span style="color:#94a3b8; font-size:14px;">開盤／收盤</span>
-                  <span id="hudOpenClose" style="font-weight:800; color:#f8fafc; font-size:14.5px;">— / —</span>
+                  <span style="color:#94a3b8; font-size:16px;">開盤／收盤</span>
+                  <span id="hudOpenClose" style="font-weight:800; color:#f8fafc; font-size:16.5px;">— / —</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                  <span style="color:#94a3b8; font-size:14px;">最高／最低</span>
-                  <span id="hudHighLow" style="font-weight:800; color:#f8fafc; font-size:14.5px;">— / —</span>
+                  <span style="color:#94a3b8; font-size:16px;">最高／最低</span>
+                  <span id="hudHighLow" style="font-weight:800; color:#f8fafc; font-size:16.5px;">— / —</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                  <span style="color:#94a3b8; font-size:14px;">當日漲跌</span>
-                  <span id="hudChange" style="font-weight:800; font-size:14.5px;">—</span>
+                  <span style="color:#94a3b8; font-size:16px;">當日漲跌</span>
+                  <span id="hudChange" style="font-weight:800; font-size:16.5px;">—</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                  <span style="color:#94a3b8; font-size:14px;">成交量</span>
-                  <span id="hudVolume" style="font-weight:800; color:#38bdf8; font-size:14.5px;">—</span>
+                  <span style="color:#94a3b8; font-size:16px;">成交量</span>
+                  <span id="hudVolume" style="font-weight:800; color:#38bdf8; font-size:16.5px;">—</span>
                 </div>
                 <div style="display:flex; justify-content:space-between;">
-                  <span style="color:#94a3b8; font-size:13.5px;">量均線</span>
-                  <span id="hudVolMa" style="font-weight:800; font-size:13.5px; color:#cbd5e1;">—</span>
+                  <span style="color:#94a3b8; font-size:15.5px;">量均線</span>
+                  <span id="hudVolMa" style="font-weight:800; font-size:15.5px; color:#cbd5e1;">—</span>
                 </div>
               </div>
 
               <!-- 2. 均線數據 -->
               <div style="background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
-                <div style="font-weight:800; color:#fde047; margin-bottom:6px; font-size:14px;">📈 均線 (MA)</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px 10px; font-size:14px;">
-                  <div><span style="color:#94a3b8;">MA5:</span> <span id="hudMa5" style="font-weight:800; color:#f59e0b; font-size:14px;">—</span></div>
-                  <div><span style="color:#94a3b8;">MA10:</span> <span id="hudMa10" style="font-weight:800; color:#38bdf8; font-size:14px;">—</span></div>
-                  <div><span style="color:#94a3b8;">MA20:</span> <span id="hudMa20" style="font-weight:800; color:#ec4899; font-size:14px;">—</span></div>
-                  <div><span style="color:#94a3b8;">MA60:</span> <span id="hudMa60" style="font-weight:800; color:#8b5cf6; font-size:14px;">—</span></div>
+                <div style="font-weight:800; color:#fde047; margin-bottom:6px; font-size:16px;">📈 均線 (MA)</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; font-size:16px;">
+                  <div><span style="color:#94a3b8;">MA5:</span> <span id="hudMa5" style="font-weight:800; color:#f59e0b; font-size:16px;">—</span></div>
+                  <div><span style="color:#94a3b8;">MA10:</span> <span id="hudMa10" style="font-weight:800; color:#38bdf8; font-size:16px;">—</span></div>
+                  <div><span style="color:#94a3b8;">MA20:</span> <span id="hudMa20" style="font-weight:800; color:#ec4899; font-size:16px;">—</span></div>
+                  <div><span style="color:#94a3b8;">MA60:</span> <span id="hudMa60" style="font-weight:800; color:#8b5cf6; font-size:16px;">—</span></div>
                 </div>
               </div>
 
               <!-- 3. RSI 雙線 -->
               <div style="background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
-                <div style="font-weight:800; color:#38bdf8; margin-bottom:5px; font-size:14px;">📊 RSI 雙軌 (數值)</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px 10px; font-size:14px;">
-                  <div><span style="color:#38bdf8;">RSI(6):</span> <span id="hudRsi6" style="font-weight:800; color:#bae6fd; font-size:14.5px;">—</span></div>
-                  <div><span style="color:#f59e0b;">RSI(12):</span> <span id="hudRsi12" style="font-weight:800; color:#fed7aa; font-size:14.5px;">—</span></div>
+                <div style="font-weight:800; color:#38bdf8; margin-bottom:5px; font-size:16px;">📊 RSI 雙軌 (數值)</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; font-size:16px;">
+                  <div><span style="color:#38bdf8;">RSI(6):</span> <span id="hudRsi6" style="font-weight:800; color:#bae6fd; font-size:16.5px;">—</span></div>
+                  <div><span style="color:#f59e0b;">RSI(12):</span> <span id="hudRsi12" style="font-weight:800; color:#fed7aa; font-size:16.5px;">—</span></div>
                 </div>
               </div>
 
               <!-- 4. MACD 雙線與柱體 -->
               <div style="background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
-                <div style="font-weight:800; color:#c084fc; margin-bottom:5px; font-size:14px;">🌊 MACD (雙線與柱體)</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px 10px; font-size:14px; margin-bottom:5px;">
-                  <div><span style="color:#38bdf8;">DIF:</span> <span id="hudMacdDif" style="font-weight:800; color:#bae6fd; font-size:14px;">—</span></div>
-                  <div><span style="color:#f59e0b;">MACD:</span> <span id="hudMacdSignal" style="font-weight:800; color:#fed7aa; font-size:14px;">—</span></div>
+                <div style="font-weight:800; color:#c084fc; margin-bottom:5px; font-size:16px;">🌊 MACD (雙線與柱體)</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; font-size:16px; margin-bottom:5px;">
+                  <div><span style="color:#38bdf8;">DIF:</span> <span id="hudMacdDif" style="font-weight:800; color:#bae6fd; font-size:16px;">—</span></div>
+                  <div><span style="color:#f59e0b;">MACD:</span> <span id="hudMacdSignal" style="font-weight:800; color:#fed7aa; font-size:16px;">—</span></div>
                 </div>
-                <div style="display:flex; justify-content:space-between; font-size:14px;">
+                <div style="display:flex; justify-content:space-between; font-size:16px;">
                   <span style="color:#94a3b8;">OSC 柱體:</span>
-                  <span id="hudMacdHist" style="font-weight:800; font-size:14.5px;">—</span>
+                  <span id="hudMacdHist" style="font-weight:800; font-size:16.5px;">—</span>
                 </div>
               </div>
 
               <!-- 5. KD 指標 -->
               <div style="background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
-                <div style="font-weight:800; color:#fde047; margin-bottom:5px; font-size:14px;">⚡ KD 雙軌 (數值)</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px 10px; font-size:14px;">
-                  <div><span style="color:#38bdf8;">K值:</span> <span id="hudK" style="font-weight:800; color:#bae6fd; font-size:14px;">—</span></div>
-                  <div><span style="color:#f59e0b;">D值:</span> <span id="hudD" style="font-weight:800; color:#fed7aa; font-size:14px;">—</span></div>
+                <div style="font-weight:800; color:#fde047; margin-bottom:5px; font-size:16px;">⚡ KD 雙軌 (數值)</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; font-size:16px;">
+                  <div><span style="color:#38bdf8;">K值:</span> <span id="hudK" style="font-weight:800; color:#bae6fd; font-size:16px;">—</span></div>
+                  <div><span style="color:#f59e0b;">D值:</span> <span id="hudD" style="font-weight:800; color:#fed7aa; font-size:16px;">—</span></div>
                 </div>
               </div>
 
               <!-- 5. 布林通道 -->
               <div style="background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
-                <div style="font-weight:800; color:#a78bfa; margin-bottom:5px; font-size:14px;">🌐 布林通道 (BOLL)</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px 10px; font-size:14px;">
-                  <div><span style="color:#94a3b8;">BOLL上軌:</span> <span id="hudBollUp" style="font-weight:800; color:#f472b6; font-size:14px;">—</span></div>
-                  <div><span style="color:#94a3b8;">BOLL下軌:</span> <span id="hudBollLow" style="font-weight:800; color:#34d399; font-size:14px;">—</span></div>
+                <div style="font-weight:800; color:#a78bfa; margin-bottom:5px; font-size:16px;">🌐 布林通道 (BOLL)</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; font-size:16px;">
+                  <div><span style="color:#94a3b8;">BOLL上軌:</span> <span id="hudBollUp" style="font-weight:800; color:#f472b6; font-size:16px;">—</span></div>
+                  <div><span style="color:#94a3b8;">BOLL下軌:</span> <span id="hudBollLow" style="font-weight:800; color:#34d399; font-size:16px;">—</span></div>
                 </div>
               </div>
             </div>
           </div>
 
-          <button type="button" class="btn" onclick="openKlineCheatSheetModal()" style="margin-top:10px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(59,130,246,0.12); color:#60a5fa; border:1px solid rgba(59,130,246,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
+          <button type="button" class="btn" onclick="openKlineCheatSheetModal()" style="margin-top:10px; width:100%; padding:10px 12px; font-size:15.5px; font-weight:750; background:rgba(59,130,246,0.12); color:#60a5fa; border:1px solid rgba(59,130,246,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
             <span>📈</span> K線指標與均線型態速查表
           </button>
 
-          <button type="button" class="btn" onclick="openVolCheatSheetModal()" style="margin-top:8px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(234,179,8,0.12); color:#fde047; border:1px solid rgba(234,179,8,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
+          <button type="button" class="btn" onclick="openVolCheatSheetModal()" style="margin-top:8px; width:100%; padding:10px 12px; font-size:15.5px; font-weight:750; background:rgba(234,179,8,0.12); color:#fde047; border:1px solid rgba(234,179,8,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
             <span>📊</span> VOL 量能指標與型態速查表
           </button>
 
-          <button type="button" class="btn" onclick="openMacdCheatSheetModal()" style="margin-top:8px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(168,85,247,0.12); color:#c084fc; border:1px solid rgba(168,85,247,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
+          <button type="button" class="btn" onclick="openMacdCheatSheetModal()" style="margin-top:8px; width:100%; padding:10px 12px; font-size:15.5px; font-weight:750; background:rgba(168,85,247,0.12); color:#c084fc; border:1px solid rgba(168,85,247,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
             <span>🌊</span> MACD 指標與型態速查表
           </button>
 
-          <button type="button" class="btn" onclick="openRsiCheatSheetModal()" style="margin-top:8px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
+          <button type="button" class="btn" onclick="openRsiCheatSheetModal()" style="margin-top:8px; width:100%; padding:10px 12px; font-size:15.5px; font-weight:750; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
             <span>🎨</span> RSI 標籤顏色含意速查表
           </button>
 
-          <button type="button" class="btn" onclick="openKdCheatSheetModal()" style="margin-top:8px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(245,158,11,0.12); color:#fbbf24; border:1px solid rgba(245,158,11,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
+          <button type="button" class="btn" onclick="openKdCheatSheetModal()" style="margin-top:8px; width:100%; padding:10px 12px; font-size:15.5px; font-weight:750; background:rgba(245,158,11,0.12); color:#fbbf24; border:1px solid rgba(245,158,11,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
             <span>⚡</span> KD 指標與型態速查表
           </button>
 
-          <button type="button" class="btn" onclick="openChipCheatSheetModal()" style="margin-top:8px; margin-bottom:10px; width:100%; padding:9px 12px; font-size:13.5px; font-weight:750; background:rgba(249,115,22,0.12); color:#fdba74; border:1px solid rgba(249,115,22,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
+          <button type="button" class="btn" onclick="openChipCheatSheetModal()" style="margin-top:8px; margin-bottom:10px; width:100%; padding:10px 12px; font-size:15.5px; font-weight:750; background:rgba(249,115,22,0.12); color:#fdba74; border:1px solid rgba(249,115,22,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
             <span>🏛️</span> 籌碼指標與法人動向速查表
           </button>
         </aside>
@@ -1103,7 +1115,7 @@
           <!-- 🏛️ 三大法人近15日逐日買賣超概數看板 (放置於 KD 指標下方) -->
           <div id="patternInstContainer" class="inst-mini-chart" style="display:none; margin-top:16px; margin-bottom:20px; padding:14px 16px; background:#141721; border:1px solid rgba(59,130,246,0.3); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
             <div class="inst-chart-head" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">
-              <span class="rank-detail-label" style="font-weight:800; color:#60a5fa; font-size:15px; display:inline-flex; align-items:center; gap:6px;">
+              <span class="rank-detail-label" style="font-weight:800; color:#60a5fa; font-size:17px; display:inline-flex; align-items:center; gap:6px;">
                 <span>🏛️</span> 三大法人近15日逐日買賣超概數
               </span>
               <span class="inst-chart-note" style="font-size:12.5px; color:#94a3b8;">日期橫向排列｜<span style="color:#f87171; font-weight:700;">紅色買超</span>・<span style="color:#4ade80; font-weight:700;">綠色賣超</span></span>
@@ -1594,10 +1606,10 @@
           <table style="width:100%; border-collapse:collapse; text-align:left; background:rgba(0,0,0,0.25); border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
             <thead>
               <tr style="background:#1e2330; border-bottom:2px solid rgba(255,255,255,0.12);">
-                <th style="padding:12px 14px; color:#94a3b8; font-size:14px; width:17%;">顏色色系</th>
-                <th style="padding:12px 14px; color:#94a3b8; font-size:14px; width:22%;">型態分類</th>
-                <th style="padding:12px 14px; color:#94a3b8; font-size:14px; width:33%;">對應智能標籤</th>
-                <th style="padding:12px 14px; color:#94a3b8; font-size:14px; width:28%;">操盤實戰含意與決策</th>
+                <th style="padding:12px 14px; color:#94a3b8; font-size:16px; width:17%;">顏色色系</th>
+                <th style="padding:12px 14px; color:#94a3b8; font-size:16px; width:22%;">型態分類</th>
+                <th style="padding:12px 14px; color:#94a3b8; font-size:16px; width:33%;">對應智能標籤</th>
+                <th style="padding:12px 14px; color:#94a3b8; font-size:16px; width:28%;">操盤實戰含意與決策</th>
               </tr>
             </thead>
             <tbody>
@@ -2982,21 +2994,21 @@
     function renderMiniOverviewCol(titleText, icon, colorTheme, items, src, track){
       const isCur = (winrateRankingSource === src && winrateActiveTrack === track);
       return `
-        <div style="flex:1; min-width:240px; background:rgba(0,0,0,0.4); border:2px solid ${isCur ? colorTheme : 'rgba(255,255,255,0.12)'}; border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:8px; box-shadow:${isCur ? `0 0 16px ${colorTheme}44` : 'none'};">
-          <div style="text-align:center; border-bottom:1.5px solid rgba(255,255,255,0.12); padding-bottom:8px; cursor:pointer;" onclick="winrateRankingSource='${src}'; winrateActiveTrack='${track}'; renderWinrateRankingUI();">
-            <span style="font-weight:900; font-size:16px; color:${colorTheme}; white-space:nowrap; letter-spacing:0.3px;">
+        <div style="flex:1; min-width:220px; background:rgba(0,0,0,0.4); border:2px solid ${isCur ? colorTheme : 'rgba(255,255,255,0.12)'}; border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; box-shadow:${isCur ? `0 0 16px ${colorTheme}44` : 'none'};">
+          <div style="text-align:center; border-bottom:1.5px solid rgba(255,255,255,0.12); padding-bottom:6px; cursor:pointer;" onclick="winrateRankingSource='${src}'; winrateActiveTrack='${track}'; renderWinrateRankingUI();">
+            <span style="font-weight:900; font-size:16.5px; color:${colorTheme}; white-space:nowrap; letter-spacing:0.3px;">
               ${escapeHtml(titleText)}
             </span>
           </div>
-          <div style="display:flex; flex-direction:column; gap:5px;">
-            ${items.length === 0 ? '<div style="color:var(--text-dim); font-size:14px; padding:12px; text-align:center;">無資料</div>' : items.slice(0, 10).map((it, idx) => `
-              <div style="display:flex; align-items:center; justify-content:space-between; padding:5px 8px; border-radius:7px; background:rgba(255,255,255,0.035); font-size:15px; cursor:pointer; transition:all .15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.background='rgba(255,255,255,0.035)';" onclick="openPatternForStock('${escapeHtml(it.code)}')">
-                <div style="display:flex; align-items:center; gap:8px; min-width:0; overflow:hidden;">
-                  <span style="font-weight:900; color:var(--text-dim); width:18px; font-size:13.5px; text-align:right;">${idx + 1}</span>
-                  <span style="font-weight:850; color:#93c5fd; font-family:monospace; font-size:14.5px;">${escapeHtml(it.code)}</span>
-                  <span style="font-weight:800; color:#ffffff; font-size:15.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</span>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            ${items.length === 0 ? '<div style="color:var(--text-dim); font-size:15px; padding:10px; text-align:center;">無資料</div>' : items.slice(0, 10).map((it, idx) => `
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:4px 7px; border-radius:6px; background:rgba(255,255,255,0.035); font-size:15px; cursor:pointer; transition:all .15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.background='rgba(255,255,255,0.035)';" onclick="openPatternForStock('${escapeHtml(it.code)}')">
+                <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;">
+                  <span style="font-weight:900; color:var(--text-dim); width:18px; font-size:14px; text-align:right;">${idx + 1}</span>
+                  <span style="font-weight:850; color:#93c5fd; font-family:monospace; font-size:15px;">${escapeHtml(it.code)}</span>
+                  <span style="font-weight:800; color:#ffffff; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</span>
                 </div>
-                <span style="font-size:14px; font-weight:850; color:${colorTheme};">${escapeHtml(it.price || it.score || '')}</span>
+                <span style="font-size:14.5px; font-weight:850; color:${colorTheme}; white-space:nowrap;">${escapeHtml(it.price || it.score || '')}</span>
               </div>
             `).join('')}
           </div>
@@ -3007,16 +3019,16 @@
     let html = `
       <div class="ranking-card">
         <!-- 🚀 4 榜全景總覽 (Master Overview) 一覽無遺 -->
-        <div style="margin-bottom:24px; background:#11161f; border:1.5px solid rgba(125,180,255,0.3); border-radius:14px; padding:18px 20px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-            <div style="font-size:17px; font-weight:900; color:#fff; display:flex; align-items:center; gap:10px;">
+        <div style="margin-bottom:16px; background:#11161f; border:1.5px solid rgba(125,180,255,0.3); border-radius:12px; padding:12px 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+            <div style="font-size:17px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
               <span style="font-size:20px;">🏆</span> 雙 AI 四大榜單全景一覽 (點擊股票直接開啟專業看盤)
             </div>
-            <div style="font-size:13.5px; color:var(--text-dim);">
-              資料截止日：<strong style="color:#93c5fd; font-size:14.5px;">${escapeHtml(scanDate || '最新')}</strong>
+            <div style="font-size:14px; color:var(--text-dim);">
+              資料截止日：<strong style="color:#93c5fd; font-size:15px;">${escapeHtml(scanDate || '最新')}</strong>
             </div>
           </div>
-          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
             ${renderMiniOverviewCol('Gemini 暴漲動能 TOP 10', '🚀', '#f87171', gMomo, 'gemini', 'momentum')}
             ${renderMiniOverviewCol('Gemini 穩健防守 TOP 10', '🛡️', '#4ade80', gDef, 'gemini', 'defensive')}
             ${renderMiniOverviewCol('ChatGPT 攻擊型 TOP 10', '⚡', '#f97316', cMomo, 'chatgpt', 'momentum')}
@@ -3025,39 +3037,38 @@
         </div>
 
         <!-- 4 榜一鍵直達切換器 (整合為同一行) -->
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border);">
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex:1;">
-            <div style="font-size:13.5px; font-weight:800; color:var(--text-dim); margin-right:4px;">🤖 詳細報表：</div>
-            
-            <button type="button" class="btn" style="padding:7px 14px; font-size:13px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${isGemini && isMomo ? '#f87171' : 'var(--border)'}; background:${isGemini && isMomo ? 'rgba(239,68,68,0.22)' : 'var(--card-bg)'}; color:${isGemini && isMomo ? '#fca5a5' : 'var(--text)'};" onclick="winrateRankingSource='gemini'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
+        <div class="ranking-detail-toolbar">
+          <div class="ranking-detail-label" style="font-size:16px; font-weight:800; color:var(--text-dim); margin-right:4px;">🤖 詳細報表：</div>
+          <div class="ranking-track-actions">
+            <button type="button" class="btn" style="padding:6px 12px; font-size:16px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${isGemini && isMomo ? '#f87171' : 'var(--border)'}; background:${isGemini && isMomo ? 'rgba(239,68,68,0.22)' : 'var(--card-bg)'}; color:${isGemini && isMomo ? '#fca5a5' : 'var(--text)'};" onclick="winrateRankingSource='gemini'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
               <span>🚀</span> ✨ Gemini 暴漲進攻
             </button>
             
-            <button type="button" class="btn" style="padding:7px 14px; font-size:13px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${isGemini && !isMomo ? '#4ade80' : 'var(--border)'}; background:${isGemini && !isMomo ? 'rgba(34,197,94,0.22)' : 'var(--card-bg)'}; color:${isGemini && !isMomo ? '#86efac' : 'var(--text)'};" onclick="winrateRankingSource='gemini'; winrateActiveTrack='defensive'; renderWinrateRankingUI();">
+            <button type="button" class="btn" style="padding:6px 12px; font-size:16px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${isGemini && !isMomo ? '#4ade80' : 'var(--border)'}; background:${isGemini && !isMomo ? 'rgba(34,197,94,0.22)' : 'var(--card-bg)'}; color:${isGemini && !isMomo ? '#86efac' : 'var(--text)'};" onclick="winrateRankingSource='gemini'; winrateActiveTrack='defensive'; renderWinrateRankingUI();">
               <span>🛡️</span> ✨ Gemini 穩健防守
             </button>
             
-            <button type="button" class="btn" style="padding:7px 14px; font-size:13px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${!isGemini && isMomo ? '#f97316' : 'var(--border)'}; background:${!isGemini && isMomo ? 'rgba(249,115,22,0.22)' : 'var(--card-bg)'}; color:${!isGemini && isMomo ? '#fdba74' : 'var(--text)'};" onclick="winrateRankingSource='chatgpt'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
+            <button type="button" class="btn" style="padding:6px 12px; font-size:16px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${!isGemini && isMomo ? '#f97316' : 'var(--border)'}; background:${!isGemini && isMomo ? 'rgba(249,115,22,0.22)' : 'var(--card-bg)'}; color:${!isGemini && isMomo ? '#fdba74' : 'var(--text)'};" onclick="winrateRankingSource='chatgpt'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
               <span>⚡</span> 🟢 ChatGPT 攻擊型
             </button>
             
-            <button type="button" class="btn" style="padding:7px 14px; font-size:13px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${!isGemini && !isMomo ? '#38bdf8' : 'var(--border)'}; background:${!isGemini && !isMomo ? 'rgba(56,189,248,0.22)' : 'var(--card-bg)'}; color:${!isGemini && !isMomo ? '#7dd3fc' : 'var(--text)'};" onclick="winrateRankingSource='chatgpt'; winrateActiveTrack='defensive'; renderWinrateRankingUI();">
+            <button type="button" class="btn" style="padding:6px 12px; font-size:16px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${!isGemini && !isMomo ? '#38bdf8' : 'var(--border)'}; background:${!isGemini && !isMomo ? 'rgba(56,189,248,0.22)' : 'var(--card-bg)'}; color:${!isGemini && !isMomo ? '#7dd3fc' : 'var(--text)'};" onclick="winrateRankingSource='chatgpt'; winrateActiveTrack='defensive'; renderWinrateRankingUI();">
               <span>🌱</span> 🟢 ChatGPT 穩健型
             </button>
           </div>
           
-          <div style="display:flex; gap:8px;">
-            <button type="button" class="btn" onclick="triggerScannerRun('${source}');">🔄 重新執行 ${isGemini ? 'Gemini 掃描' : 'ChatGPT Scanner'}</button>
+          <div class="ranking-refresh-action" style="display:flex; gap:8px;">
+            <button type="button" class="btn" style="padding:6px 12px; font-size:14.5px; font-weight:750;" onclick="triggerScannerRun('${source}');">🔄 重新執行 ${isGemini ? 'Gemini 掃描' : 'ChatGPT Scanner'}</button>
           </div>
         </div>
 
         <!-- 搜尋列 -->
-        <div class="ranking-filter-bar" style="margin-bottom:12px;">
+        <div class="ranking-filter-bar" style="margin-bottom:10px;">
           <div class="search-box" style="flex:1;">
             <span>🔍</span>
             <input type="text" class="search-input" id="winrate-search-input" placeholder="搜尋代號、名稱、類群或特徵..." value="${escapeHtml(winrateSearchQuery)}">
           </div>
-          <div style="font-size:13px; color:var(--text-dim); padding-right:6px;">
+          <div style="font-size:15px; color:var(--text-dim); padding-right:6px; white-space:nowrap;">
             目前顯示：<strong style="color:#fff;">${filtered.length}</strong> 檔
           </div>
         </div>
@@ -3067,20 +3078,20 @@
           <table class="ranking-full-table">
             <thead>
               <tr>
-                <th style="width:50px; text-align:center;">名次</th>
-                <th style="width:70px;">代號</th>
-                <th style="width:110px;">股票名稱</th>
-                <th style="width:95px; text-align:center;">類群/路徑</th>
-                <th style="width:95px; text-align:right;">收盤價</th>
-                <th style="width:95px; text-align:center;">${isMomo ? '5MA斜率' : '20MA斜率'}</th>
-                <th style="width:95px; text-align:center;">${isMomo ? 'RSI(14)' : '月乖離率'}</th>
+                <th style="width:44px; text-align:center;">名次</th>
+                <th style="width:68px;">代號</th>
+                <th style="width:100px;">股票名稱</th>
+                <th style="width:90px; text-align:center;">類群/路徑</th>
+                <th style="width:85px; text-align:right;">收盤價</th>
+                <th style="width:90px; text-align:center;">${isMomo ? '5MA斜率' : '20MA斜率'}</th>
+                <th style="width:90px; text-align:center;">${isMomo ? 'RSI(14)' : '月乖離率'}</th>
                 <th style="width:95px; text-align:center;">${isMomo ? '成交量比' : '法人買超'}</th>
-                <th style="width:90px; text-align:center;">${isMomo ? '動能評分' : '穩健評分'}</th>
-                <th style="min-width:240px;">核心多空與型態特徵</th>
+                <th style="width:85px; text-align:center;">${isMomo ? '動能評分' : '穩健評分'}</th>
+                <th style="min-width:220px;">核心多空與型態特徵</th>
               </tr>
             </thead>
             <tbody>
-              ${filtered.length === 0 ? `<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-dim); font-size:15px;">無符合條件的股票。</td></tr>` : ''}
+              ${filtered.length === 0 ? `<tr><td colspan="10" style="text-align:center; padding:24px; color:var(--text-dim); font-size:16px;">無符合條件的股票。</td></tr>` : ''}
               ${filtered.map((item, idx) => {
                 const rankNum = parseInt(item.rank) || (idx + 1);
                 let badgeClass = 'normal';
@@ -3095,15 +3106,15 @@
                 return `
                   <tr data-stock-code="${escapeHtml(item.code)}" title="點擊直接開啟 ${escapeHtml(item.name)} (${escapeHtml(item.code)}) 的專業看盤">
                     <td style="text-align:center;"><span class="rank-badge-num ${badgeClass}">${escapeHtml(item.rank)}</span></td>
-                    <td><span class="rank-stock-link"><span class="stock-code" style="font-size:15px;">${escapeHtml(item.code)}</span></span></td>
-                    <td><span class="rank-stock-link"><span class="stock-name" style="font-size:16px;">${escapeHtml(item.name)}</span></span></td>
-                    <td style="text-align:center;"><span class="tag-pill" style="font-size:13px; padding:3px 8px;">${escapeHtml(item.category)}</span></td>
-                    <td style="text-align:right; font-weight:850; font-size:16px; color:#fff;">${escapeHtml(item.price)}</td>
-                    <td style="text-align:center; color:#fca5a5; font-weight:800; font-size:15px;">${escapeHtml(item.slope)}</td>
-                    <td style="text-align:center; color:#93c5fd; font-weight:800; font-size:15px;">${escapeHtml(item.metric)}</td>
-                    <td style="text-align:center; color:#e2e8f0; font-weight:750; font-size:14.5px;">${escapeHtml(item.volOrChip)}</td>
-                    <td style="text-align:center;"><span class="rank-score-pill ${scoreClass}" style="font-size:14.5px; font-weight:900;">${escapeHtml(item.score)}</span></td>
-                    <td style="white-space:normal; line-height:1.5;"><span style="font-size:14.5px; color:#f8fafc; font-weight:500;">${escapeHtml(item.feature)}</span></td>
+                    <td><span class="rank-stock-link"><span class="stock-code">${escapeHtml(item.code)}</span></span></td>
+                    <td><span class="rank-stock-link"><span class="stock-name">${escapeHtml(item.name)}</span></span></td>
+                    <td style="text-align:center;"><span class="tag-pill" style="font-size:14px; padding:3px 7px; white-space:nowrap;">${escapeHtml(item.category)}</span></td>
+                    <td style="text-align:right; font-weight:850; color:#fff;">${escapeHtml(item.price)}</td>
+                    <td style="text-align:center; color:#fca5a5; font-weight:800;">${escapeHtml(item.slope)}</td>
+                    <td style="text-align:center; color:#93c5fd; font-weight:800;">${escapeHtml(item.metric)}</td>
+                    <td style="text-align:center; color:#e2e8f0; font-weight:750;">${escapeHtml(item.volOrChip)}</td>
+                    <td style="text-align:center;"><span class="rank-score-pill ${scoreClass}">${escapeHtml(item.score)}</span></td>
+                    <td style="white-space:normal; line-height:1.45;"><span style="font-size:15.5px; color:#f8fafc; font-weight:500;">${escapeHtml(item.feature)}</span></td>
                   </tr>
                 `;
               }).join('')}
@@ -3135,7 +3146,6 @@
       });
     });
   }
-
   async function selectStockGlobal(code, { switchWorkspace = null, highlightRanking = true } = {}){
     const normalizedCode = String(code || '').trim();
     if (!normalizedCode) return;
@@ -3527,7 +3537,7 @@
       <button type="button" class="tree-star-btn ${isStarred ? 'active' : ''}" data-code="${escapeHtml(code)}" title="${isStarred ? '已標注重點關注 (點擊取消)' : '標注重點關注'}">★</button>` : '';
 
     item.innerHTML = `${starBtn}<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(r.name || r.base)}">${escapeHtml(r.name || r.base)}</span><span class="tree-stat-pills">${quickActions}${winPill}${rrPill}${pePill}</span>`;
-    item.addEventListener('click', () => focusAiResult(r.code));
+    item.addEventListener('click', () => openPatternForStock(code));
 
     const starBtnEl = item.querySelector('.tree-star-btn');
     if (starBtnEl) {

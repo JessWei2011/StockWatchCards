@@ -115,7 +115,7 @@
 .pattern-viewer .main-container {
   flex: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-columns: minmax(0, 1fr) 350px;
   gap: 16px;
   padding: 16px 24px;
   min-width: 0;
@@ -145,8 +145,8 @@
 .pattern-viewer .card-title {
   gap: 8px;
   color: var(--pv-cyan);
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 800;
   margin-bottom: 12px;
   padding-bottom: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -273,8 +273,8 @@
 }
 
 .pattern-viewer .stat-box.full { grid-column: 1 / -1; }
-.pattern-viewer .stat-label { margin-bottom: 2px; color: var(--pv-muted); font-size: 0.75rem; }
-.pattern-viewer .stat-value { font-size: 1.05rem; font-weight: 700; }
+.pattern-viewer .stat-label { margin-bottom: 3px; color: var(--pv-muted); font-size: 14.5px; }
+.pattern-viewer .stat-value { font-size: 22px; font-weight: 900; }
 .pattern-viewer .stat-value.up { color: var(--pv-up); }
 .pattern-viewer .stat-value.down { color: var(--pv-down); }
 .pattern-viewer .stat-value.small { font-size: 0.85rem; }

@@ -375,10 +375,10 @@
             } else if (/糾纏|整理|糾結|蓄勢/.test(t)) {
               style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
             }
-            return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
+            return `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; ${style}">${t}</span>`;
           }).join('');
         } else {
-          statKlineTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">均線排列正常</span>`;
+          statKlineTags.innerHTML = `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">均線排列正常</span>`;
         }
       }
 
@@ -406,10 +406,10 @@
             } else if (/多方|推進/.test(t)) {
               style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
             }
-            return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
+            return `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; ${style}">${t}</span>`;
           }).join('');
         } else {
-          statRsiTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">RSI 數據正常</span>`;
+          statRsiTags.innerHTML = `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">RSI 數據正常</span>`;
         }
       }
 
@@ -438,10 +438,10 @@
             } else if (/溫和|增量/.test(t)) {
               style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
             }
-            return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
+            return `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; ${style}">${t}</span>`;
           }).join('');
         } else {
-          statVolTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">常態量能換手</span>`;
+          statVolTags.innerHTML = `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">常態量能換手</span>`;
         }
       }
 
@@ -470,10 +470,10 @@
             } else if (/多方|波段/.test(t)) {
               style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
             }
-            return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
+            return `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; ${style}">${t}</span>`;
           }).join('');
         } else {
-          statMacdTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">MACD 數據正常</span>`;
+          statMacdTags.innerHTML = `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">MACD 數據正常</span>`;
         }
       }
 
@@ -502,10 +502,10 @@
             } else if (/多方|推進/.test(t)) {
               style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
             }
-            return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
+            return `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; ${style}">${t}</span>`;
           }).join('');
         } else {
-          statKdTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">KD 數據正常</span>`;
+          statKdTags.innerHTML = `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">KD 數據正常</span>`;
         }
       }
 
@@ -534,10 +534,10 @@
             } else if (/防守|建倉|重倉|集資|買超|積極/.test(t)) {
               style = 'background:rgba(56,189,248,0.18); color:#7dd3fc; border:1px solid rgba(56,189,248,0.38);';
             }
-            return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; ${style}">${t}</span>`;
+            return `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; ${style}">${t}</span>`;
           }).join('');
         } else {
-          statChipTags.innerHTML = `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">法人籌碼中性</span>`;
+          statChipTags.innerHTML = `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">法人籌碼中性</span>`;
         }
       }
       // 渲染「三大法人近15日逐日買賣超概數」表格 (放置於 KD 指標下方)
