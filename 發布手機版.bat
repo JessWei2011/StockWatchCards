@@ -30,6 +30,8 @@ if errorlevel 1 goto EXPORT_FAIL
 
 echo.
 echo [2/3] 正在驗證手機版必要靜態檔案與個股目錄...
+if not exist "%MOBILE_DIR%\public\data\index.json" (
+    echo [錯誤] 找不到 %MOBILE_DIR%\public\data\index.json
     goto FAIL
 )
 if not exist "%MOBILE_DIR%\public\data\stocks" (
