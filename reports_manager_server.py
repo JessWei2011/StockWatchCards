@@ -34,9 +34,22 @@ if sys.stdout.encoding != "utf-8":
 ROOT_DIR = Path(__file__).resolve().parent
 REPORTS_DIR = ROOT_DIR / "reports"
 WATCHLIST_FILE = ROOT_DIR / "watchlist.json"
+MACRO_DIR = ROOT_DIR / "指標數據"
+MACRO_DATA_FILE = MACRO_DIR / "macro_data.json"
+MACRO_STATUS_FILE = MACRO_DIR / "macro_update_status.json"
+MACRO_UPDATE_SCRIPT = MACRO_DIR / "update_macro_data.py"
 PORT = 8935
 
 REPORTS_DIR.mkdir(exist_ok=True)
+
+MACRO_FILE_LOCK = threading.Lock()
+MACRO_UPDATE_LOCK = threading.Lock()
+MACRO_UPDATE_PROCESS = None
+MACRO_UPDATE_JOB = {"running": False, "done": False, "returncode": None, "lines": []}
+CLIENT_LOCK = threading.Lock()
+CLIENT_HEARTBEATS = {}
+CLIENTS_HAVE_CONNECTED = False
+LAST_CLIENT_CHANGE = time.monotonic()
 
 TRACKED_FILENAME_RE = re.compile(r'^([0-9A-Za-z]{2,6})_(.+?)\((TW|TWO)\)')
 FORBIDDEN_NAME_CHARS = set('\\/:*?"<>|')
@@ -91,6 +104,178 @@ def write_watchlist(starred_list):
     tmp_file.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     tmp_file.replace(WATCHLIST_FILE)
     return payload
+
+
+def read_macro_data():
+    try:
+        payload = json.loads(MACRO_DATA_FILE.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return []
+    if not isinstance(payload, list):
+        raise ValueError("macro_data.json 內容不是陣列")
+    return payload
+
+
+def write_macro_data(entries):
+    if not isinstance(entries, list) or not all(
+        isinstance(entry, dict) and isinstance(entry.get("date"), str) for entry in entries
+    ):
+        raise ValueError("總經資料格式不正確")
+    sorted_entries = sorted(entries, key=lambda entry: entry["date"])
+    with MACRO_FILE_LOCK:
+        temp_file = MACRO_DATA_FILE.with_suffix(".json.tmp")
+        temp_file.write_text(
+            json.dumps(sorted_entries, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        temp_file.replace(MACRO_DATA_FILE)
+    return sorted_entries
+
+
+def read_macro_update_status():
+    try:
+        payload = json.loads(MACRO_STATUS_FILE.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else {}
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {
+            "state": "idle",
+            "message": "尚未執行總經資料更新。",
+            "updatedFields": [],
+            "failedFields": [],
+        }
+
+
+def _new_macro_update_job():
+    return {"running": False, "done": False, "returncode": None, "lines": []}
+
+
+def _run_macro_update():
+    global MACRO_UPDATE_JOB, MACRO_UPDATE_PROCESS
+    child_env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+    returncode = -1
+    try:
+        proc = subprocess.Popen(
+            [sys.executable, str(MACRO_UPDATE_SCRIPT)],
+            cwd=MACRO_DIR,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=child_env,
+        )
+        with MACRO_UPDATE_LOCK:
+            MACRO_UPDATE_PROCESS = proc
+        for raw_line in proc.stdout:
+            with MACRO_UPDATE_LOCK:
+                MACRO_UPDATE_JOB["lines"].append(raw_line.rstrip("\n"))
+        proc.wait()
+        returncode = proc.returncode
+    except OSError as error:
+        with MACRO_UPDATE_LOCK:
+            MACRO_UPDATE_JOB["lines"].append(f"無法啟動總經更新程式: {error}")
+        returncode = -1
+    finally:
+        with MACRO_UPDATE_LOCK:
+            MACRO_UPDATE_PROCESS = None
+            MACRO_UPDATE_JOB["running"] = False
+            MACRO_UPDATE_JOB["done"] = True
+            MACRO_UPDATE_JOB["returncode"] = returncode
+
+
+def _stop_macro_update_process():
+    with MACRO_UPDATE_LOCK:
+        proc = MACRO_UPDATE_PROCESS
+    if proc is None or proc.poll() is not None:
+        return
+    try:
+        proc.terminate()
+        proc.wait(timeout=2)
+    except (OSError, subprocess.TimeoutExpired):
+        try:
+            proc.kill()
+        except OSError:
+            pass
+
+
+def _stop_legacy_macro_server():
+    """清理由舊版指標數據/server.py 留下的 8934 listener。"""
+    if os.name != "nt":
+        return
+    try:
+        output = subprocess.check_output(
+            ["netstat", "-ano"], text=True, encoding="utf-8", errors="replace"
+        )
+    except OSError:
+        return
+    pids = set()
+    for line in output.splitlines():
+        if ":8934" not in line or "LISTENING" not in line.upper():
+            continue
+        parts = line.split()
+        if parts and parts[-1].isdigit():
+            pids.add(parts[-1])
+    for pid in pids:
+        try:
+            subprocess.run(
+                ["taskkill", "/F", "/PID", pid],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+        except OSError:
+            pass
+
+
+def _shutdown_application(delay=0.3):
+    def worker():
+        time.sleep(delay)
+        try:
+            _stop_macro_update_process()
+            _stop_legacy_macro_server()
+        finally:
+            # 回應送達且子程序完成清理後，直接結束整個 Windows process；
+            # 即使清理舊程序時遇到 Windows 權限問題，也不可留下主 server。
+            os._exit(0)
+
+    threading.Thread(target=worker, daemon=True).start()
+
+
+def _record_client_heartbeat(client_id):
+    global CLIENTS_HAVE_CONNECTED, LAST_CLIENT_CHANGE
+    if not client_id:
+        return
+    with CLIENT_LOCK:
+        CLIENT_HEARTBEATS[client_id] = time.monotonic()
+        CLIENTS_HAVE_CONNECTED = True
+        LAST_CLIENT_CHANGE = time.monotonic()
+
+
+def _record_client_disconnect(client_id):
+    global LAST_CLIENT_CHANGE
+    if not client_id:
+        return
+    with CLIENT_LOCK:
+        CLIENT_HEARTBEATS.pop(client_id, None)
+        LAST_CLIENT_CHANGE = time.monotonic()
+
+
+def _client_watchdog():
+    """最後一個管理頁關閉後自動結束；重整會在寬限期內重新註冊，不會誤關。"""
+    global LAST_CLIENT_CHANGE
+    while True:
+        time.sleep(2)
+        now = time.monotonic()
+        with CLIENT_LOCK:
+            stale_ids = [key for key, last_seen in CLIENT_HEARTBEATS.items() if now - last_seen > 45]
+            for key in stale_ids:
+                CLIENT_HEARTBEATS.pop(key, None)
+            if stale_ids:
+                LAST_CLIENT_CHANGE = now
+            should_stop = CLIENTS_HAVE_CONNECTED and not CLIENT_HEARTBEATS and now - LAST_CLIENT_CHANGE >= 8
+        if should_stop:
+            _shutdown_application(delay=0)
+            return
 
 
 # ── 記憶體快取加速層 (避免重複檔案遍歷與解析，API 延遲降至 < 1ms) ───────────
@@ -697,7 +882,7 @@ def _run_generate(args):
 
 
 def fetch_institutional_breakdown():
-    """即時打 TWSE 官方「三大法人買賣金額統計表」API，回傳當天大盤完整明細（自營商自行買賣/避險、投信、外資及陸資、合計）"""
+    """即時打 TWSE 官方 API，回傳大盤法人明細（略過自營商避險）。"""
     try:
         resp = requests.get("https://www.twse.com.tw/rwd/zh/fund/BFI82U?response=json", timeout=10)
         resp.raise_for_status()
@@ -713,7 +898,7 @@ def fetch_institutional_breakdown():
         if len(item) < 4:
             continue
         label, buy, sell, net = item[0], item[1], item[2], item[3]
-        if label == "外資自營商":
+        if label == "外資自營商" or "自營商避險" in label or "自營商(避險)" in label:
             continue
         try:
             rows.append({
@@ -750,6 +935,17 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path == "/api/macro/data":
+            try:
+                self._json(200, {"ok": True, "entries": read_macro_data()})
+            except (OSError, ValueError, json.JSONDecodeError) as error:
+                self._json(500, {"ok": False, "error": f"總經資料讀取失敗: {error}"})
+            return
+        if parsed.path == "/api/macro/update-status":
+            with MACRO_UPDATE_LOCK:
+                job = dict(MACRO_UPDATE_JOB)
+            self._json(200, {"ok": True, "status": read_macro_update_status(), "job": job})
+            return
         if parsed.path == "/api/institutional-breakdown":
             data, error = fetch_institutional_breakdown()
             if data is not None:
@@ -874,8 +1070,53 @@ class Handler(SimpleHTTPRequestHandler):
 
         if parsed.path == "/api/shutdown":
             self._json(200, {"ok": True})
-            # 給回應一點時間真的送到瀏覽器，再結束 process
-            threading.Thread(target=lambda: (time.sleep(0.3), os._exit(0))).start()
+            _shutdown_application()
+            return
+
+        if parsed.path == "/api/client/heartbeat":
+            try:
+                body = self._read_json_body()
+            except Exception:
+                body = {}
+            _record_client_heartbeat(str(body.get("clientId") or "").strip())
+            self._json(200, {"ok": True})
+            return
+
+        if parsed.path == "/api/client/disconnect":
+            try:
+                body = self._read_json_body()
+            except Exception:
+                body = {}
+            _record_client_disconnect(str(body.get("clientId") or "").strip())
+            self._json(200, {"ok": True})
+            return
+
+        if parsed.path == "/api/macro/update":
+            global MACRO_UPDATE_JOB
+            if not MACRO_UPDATE_SCRIPT.exists():
+                self._json(404, {"ok": False, "error": "找不到總經更新程式"})
+                return
+            with MACRO_UPDATE_LOCK:
+                if MACRO_UPDATE_JOB["running"]:
+                    self._json(409, {"ok": False, "error": "總經數據正在更新中，請稍候"})
+                    return
+                MACRO_UPDATE_JOB = _new_macro_update_job()
+                MACRO_UPDATE_JOB["running"] = True
+            threading.Thread(target=_run_macro_update, daemon=True).start()
+            self._json(200, {"ok": True})
+            return
+
+        if parsed.path == "/api/macro/save":
+            try:
+                body = self._read_json_body()
+                saved = write_macro_data(body.get("entries"))
+            except (ValueError, json.JSONDecodeError) as error:
+                self._json(400, {"ok": False, "error": str(error)})
+                return
+            except OSError as error:
+                self._json(500, {"ok": False, "error": f"總經資料寫入失敗: {error}"})
+                return
+            self._json(200, {"ok": True, "entries": saved})
             return
 
         if parsed.path == "/api/batch-scanner":
@@ -1080,8 +1321,15 @@ class Handler(SimpleHTTPRequestHandler):
         print("[reports-manager]", fmt % args)
 
 
+class ReportsManagerServer(ThreadingTCPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+
+
 if __name__ == "__main__":
     os.chdir(ROOT_DIR)
-    with ThreadingTCPServer(("", PORT), Handler) as httpd:
+    _stop_legacy_macro_server()
+    with ReportsManagerServer(("", PORT), Handler) as httpd:
+        threading.Thread(target=_client_watchdog, daemon=True).start()
         print(f"Serving {ROOT_DIR} at http://localhost:{PORT}/reports_manager.html")
         httpd.serve_forever()

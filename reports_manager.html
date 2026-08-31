@@ -524,36 +524,36 @@
   /* ── 台股大盤三大法人買賣金額看板 ── */
   .market-inst-card{
     background:#11161c; border:1px solid rgba(71,85,105,.55); border-radius:12px;
-    padding:12px 16px; margin-bottom:14px; box-shadow:0 4px 12px rgba(0,0,0,0.25);
+    padding:18px 24px; margin-bottom:20px; box-shadow:0 5px 16px rgba(0,0,0,0.25);
   }
   .market-inst-header{
     display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
-    margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(71,85,105,.35);
+    margin-bottom:15px; padding-bottom:12px; border-bottom:1px solid rgba(71,85,105,.35);
   }
   .market-inst-title{
-    display:flex; align-items:center; gap:8px; font-size:14px; font-weight:800; color:#f8fafc;
+    display:flex; align-items:center; gap:10px; font-size:21px; font-weight:800; color:#f8fafc;
   }
-  .market-inst-title .icon{ font-size:16px; }
+  .market-inst-title .icon{ font-size:24px; }
   .market-inst-date-badge{
-    font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px;
+    font-size:16px; font-weight:700; padding:3px 12px; border-radius:7px;
     background:rgba(96,165,250,.18); color:#93c5fd; border:1px solid rgba(96,165,250,.4);
   }
   .market-inst-date-badge.stale{
     background:rgba(148,163,184,.15); color:#94a3b8; border-color:rgba(148,163,184,.3);
   }
-  .market-inst-actions{ display:flex; align-items:center; gap:8px; }
-  .market-inst-status{ font-size:11.5px; color:var(--text-dim); }
+  .market-inst-actions{ display:flex; align-items:center; gap:12px; }
+  .market-inst-status{ font-size:17px; color:var(--text-dim); }
   .market-refresh-btn{
-    height:28px; padding:0 10px; font-size:11.5px; font-weight:700; border-radius:6px;
+    height:40px; padding:0 15px; font-size:16px; font-weight:700; border-radius:8px;
     background:rgba(255,255,255,.06); border:1px solid var(--border); color:var(--text); cursor:pointer;
   }
   .market-refresh-btn:hover{ background:var(--hover); color:#fff; }
   .market-inst-grid{
-    display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px;
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(255px, 1fr)); gap:15px;
   }
   .market-inst-cell{
     background:rgba(255,255,255,.025); border:1px solid rgba(71,85,105,.4); border-radius:8px;
-    padding:8px 12px; display:flex; flex-direction:column; gap:4px;
+    padding:12px 18px; display:flex; flex-direction:column; gap:6px;
     transition:background .15s ease, border-color .15s ease;
   }
   .market-inst-cell:hover{ background:rgba(255,255,255,.05); }
@@ -562,21 +562,97 @@
     box-shadow:0 0 12px rgba(234,179,8,.08);
   }
   .market-inst-cell-name{
-    font-size:12px; font-weight:700; color:var(--text-dim); display:flex; align-items:center; justify-content:space-between;
+    font-size:18px; font-weight:700; color:var(--text-dim); display:flex; align-items:center; justify-content:space-between;
   }
   .market-inst-cell.total .market-inst-cell-name{ color:#fde047; font-weight:800; }
   .market-inst-cell-net{
-    font-size:16px; font-weight:900; font-family:"Courier New", Courier, monospace;
+    font-size:24px; font-weight:900; font-family:"Courier New", Courier, monospace;
     display:flex; align-items:center; gap:4px;
   }
   .market-inst-cell-net.buy{ color:#f87171; }
   .market-inst-cell-net.sell{ color:#4ade80; }
   .market-inst-cell-net.flat{ color:#94a3b8; }
   .market-inst-cell-sub{
-    font-size:10.5px; color:var(--text-dim); font-family:"Courier New", Courier, monospace;
+    font-size:15.5px; color:var(--text-dim); font-family:"Courier New", Courier, monospace;
   }
-  .market-inst-loading{ padding:12px; text-align:center; color:var(--text-dim); font-size:12.5px; }
-  .market-inst-error{ padding:12px; text-align:center; color:var(--danger); font-size:12.5px; }
+  .market-inst-loading{ padding:18px; text-align:center; color:var(--text-dim); font-size:18px; }
+  .market-inst-error{ padding:18px; text-align:center; color:var(--danger); font-size:18px; }
+
+  /* ── 總經數據中心（移植自獨立 macro tracker 的紅框區） ── */
+  .macro-panel{ margin-top:20px; color:#f8fafc; }
+  .macro-table-card, .macro-backup-card{
+    background:#12141a; border:1px solid rgba(71,85,105,.6); border-radius:12px;
+    box-shadow:0 4px 12px rgba(0,0,0,.22); overflow:hidden;
+  }
+  .macro-table-toolbar{
+    display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:15px 18px; border-bottom:1px solid rgba(71,85,105,.45);
+  }
+  .macro-panel-title{ font-size:21px; font-weight:850; color:#67e8f9; }
+  .macro-panel-meta{ display:flex; align-items:center; gap:12px; color:var(--text-dim); font-size:17px; }
+  .macro-status{ min-height:27px; color:#67e8f9; font-size:17px; font-weight:700; }
+  .macro-status.success{ color:#4ade80; }
+  .macro-status.error{ color:#fca5a5; }
+  .macro-dashboard{
+    display:grid; grid-template-columns:repeat(4,minmax(210px,1fr)); gap:14px; padding:18px;
+  }
+  .macro-indicator-card{
+    min-width:0; background:#171b25; border:1px solid rgba(71,85,105,.55); border-radius:10px;
+    padding:15px; box-shadow:inset 0 1px rgba(255,255,255,.025); transition:border-color .15s, background .15s;
+  }
+  .macro-indicator-card:hover{ background:#1b202b; border-color:rgba(103,232,249,.48); }
+  .macro-card-heading{ display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+  .macro-th-label{ display:block; white-space:nowrap; font-size:17px; font-weight:850; }
+  .macro-fresh{ display:block; min-height:20px; margin-top:3px; color:#94a3b8; font-size:13.5px; font-weight:500; white-space:nowrap; }
+  .macro-spark{ display:block; height:54px; margin-top:11px; border-radius:5px; background:rgba(255,255,255,.04); overflow:hidden; }
+  .macro-card-latest{ display:flex; justify-content:space-between; align-items:flex-end; gap:8px; margin-top:13px; }
+  .macro-latest-date{ color:#67e8f9; font-size:13px; font-weight:800; white-space:nowrap; }
+  .macro-num{ cursor:pointer; transition:background .12s; }
+  .macro-num:hover{ background:#252a38; outline:1px dashed #22d3ee; outline-offset:2px; border-radius:4px; }
+  .macro-card-latest .macro-num{ padding:3px 5px; margin:-3px -5px; font-family:"Courier New",Courier,monospace; font-size:25px; font-weight:850; }
+  .macro-value{ font-weight:850; }
+  .macro-field-vixtwn .macro-th-label, .macro-field-vixtwn .macro-value{ color:#ff6b6b; }
+  .macro-field-vix .macro-th-label, .macro-field-vix .macro-value{ color:#ffb74d; }
+  .macro-field-oil .macro-th-label, .macro-field-oil .macro-value{ color:#4dd0e1; }
+  .macro-field-gold .macro-th-label, .macro-field-gold .macro-value{ color:#ffd54f; }
+  .macro-field-us10y .macro-th-label, .macro-field-us10y .macro-value{ color:#ba68c8; }
+  .macro-field-us30y .macro-th-label, .macro-field-us30y .macro-value{ color:#ab47bc; }
+  .macro-field-spread .macro-th-label, .macro-field-spread .macro-value{ color:#81c784; }
+  .macro-field-dxy .macro-th-label, .macro-field-dxy .macro-value{ color:#64b5f6; }
+  .macro-delta{ display:inline-block; margin-left:4px; padding:2px 5px; border-radius:5px; font-size:14px; }
+  .macro-delta.up{ color:#f87171; background:rgba(239,68,68,.16); }
+  .macro-delta.down{ color:#4ade80; background:rgba(34,197,94,.16); }
+  .macro-delta.flat{ color:#94a3b8; background:rgba(148,163,184,.13); }
+  .macro-blank{ color:#64748b; font-size:16px; font-style:italic; }
+  .macro-edit-input{
+    width:116px; padding:5px 7px; border:1px solid #22d3ee; border-radius:5px;
+    background:#111827; color:#5eead4; font:inherit; outline:none;
+  }
+  .macro-history-list{ margin-top:14px; border-top:1px solid rgba(71,85,105,.42); padding-top:9px; }
+  .macro-history-list[hidden]{ display:none; }
+  .macro-history-item{ display:grid; grid-template-columns:76px minmax(0,1fr) 30px; align-items:center; gap:7px; padding:6px 1px; border-bottom:1px solid rgba(71,85,105,.22); }
+  .macro-history-item:last-child{ border-bottom:0; }
+  .macro-history-date{ color:#94a3b8; font-family:"Courier New",Courier,monospace; font-size:12px; }
+  .macro-history-item .macro-num{ min-width:0; padding:3px 5px; margin:-3px -5px; font-family:"Courier New",Courier,monospace; font-size:16px; font-weight:750; }
+  .macro-history-delete-placeholder{ display:block; }
+  .macro-delete-btn{ border:0; background:transparent; color:#f87171; cursor:pointer; font-size:16px; padding:3px 5px; border-radius:5px; }
+  .macro-delete-btn:hover{ background:rgba(239,68,68,.18); }
+  .macro-backup-card{ margin-top:18px; padding:19px 24px; }
+  .macro-backup-header{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+  .macro-backup-title{ color:#22d3ee; font-size:19.5px; font-weight:850; }
+  .macro-backup-note{ margin-top:5px; color:#4ade80; font-size:15.5px; font-weight:700; }
+  .macro-backup-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .macro-backup-actions .btn{ font-size:16px; padding:9px 15px; }
+  #macro-update-btn{ background:#7c3aed; color:#fff; border-color:#8b5cf6; font-weight:800; }
+  #macro-update-btn:hover{ background:#8b5cf6; }
+  #macro-update-btn:disabled{ opacity:.65; cursor:wait; }
+  @media (max-width:900px){
+    .macro-table-toolbar, .macro-backup-header{ align-items:flex-start; flex-direction:column; }
+    .macro-dashboard{ grid-template-columns:repeat(2,minmax(190px,1fr)); }
+  }
+  @media (max-width:520px){
+    .macro-dashboard{ grid-template-columns:1fr; padding:12px; }
+  }
 
   .organizer-panel{ margin-top:18px; padding-top:16px; border-top:1px solid var(--border); }
   .organizer-panel[hidden]{ display:none; }
@@ -741,6 +817,7 @@
     <button class="btn primary" id="generate-btn">🚀 產生/更新報表</button>
     <button class="btn" id="deploy-mobile-btn" title="執行「發布手機版.bat」全自動匯出目前全部個股快照並發布至 Cloudflare 手機版分析中心" style="background:#0284c7; color:#fff; font-weight:750; border-color:#0284c7;">📱 發布手機版</button>
     <button class="btn primary" id="gemini-scanner-btn" title="呼叫 batch_scanner_gemini.bat 執行 Gemini 雙軌動能掃描並存入 stock_winrate_ranking_gemini.md" style="font-weight:750;">✨ Gemini Scanner</button>
+    <button class="btn" id="macro-update-btn" title="手動呼叫伺服器更新八項總經數據；開啟頁面時不會自動更新">🌐 總經數據更新</button>
     <button class="btn" id="batch-scanner-btn" title="呼叫 batch_scanner.bat 執行 ChatGPT 雙軌量化掃描並存入 stock_winrate_ranking.md" style="background:#10b981; color:#000; font-weight:750; border-color:#10b981;">🟢 Chatgpt Scanner</button>
     <span class="spinner" id="generate-spinner"></span>
     <span class="generate-status" id="generate-status"></span>
@@ -773,6 +850,46 @@
           <div class="market-inst-loading">⏳ 正在連線台灣證券交易所取得大盤三大法人數據...</div>
         </div>
       </div>
+
+      <section class="macro-panel" id="macro-panel" aria-label="總經數據中心">
+        <div class="macro-table-card">
+          <div class="macro-table-toolbar">
+            <div>
+              <div class="macro-panel-title">🌐 總經與波動率數據</div>
+              <div class="macro-status" id="macro-status">載入既有資料中…</div>
+            </div>
+            <div class="macro-panel-meta">
+              <span id="macro-count">筆數：0</span>
+              <button type="button" class="btn" id="macro-toggle-history-btn">📖 展開歷史數據</button>
+            </div>
+          </div>
+          <div class="macro-dashboard" id="macro-dashboard">
+            <article class="macro-indicator-card macro-field-vixtwn" data-macro-key="vixtwn"><div class="macro-card-heading"><div><span class="macro-th-label">VIXTWN（台）</span><span class="macro-fresh" id="macro-fresh-vixtwn"></span></div></div><span class="macro-spark" id="macro-spark-vixtwn"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-vixtwn">--</span><span class="macro-num" data-key="vixtwn"></span></div><div class="macro-history-list" id="macro-history-vixtwn" hidden></div></article>
+            <article class="macro-indicator-card macro-field-vix" data-macro-key="vix"><div class="macro-card-heading"><div><span class="macro-th-label">VIX（美）</span><span class="macro-fresh" id="macro-fresh-vix"></span></div></div><span class="macro-spark" id="macro-spark-vix"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-vix">--</span><span class="macro-num" data-key="vix"></span></div><div class="macro-history-list" id="macro-history-vix" hidden></div></article>
+            <article class="macro-indicator-card macro-field-gold" data-macro-key="gold"><div class="macro-card-heading"><div><span class="macro-th-label">現貨黃金 XAU/USD</span><span class="macro-fresh" id="macro-fresh-gold"></span></div></div><span class="macro-spark" id="macro-spark-gold"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-gold">--</span><span class="macro-num" data-key="gold"></span></div><div class="macro-history-list" id="macro-history-gold" hidden></div></article>
+            <article class="macro-indicator-card macro-field-dxy" data-macro-key="dxy"><div class="macro-card-heading"><div><span class="macro-th-label">美元指數 DXY</span><span class="macro-fresh" id="macro-fresh-dxy"></span></div></div><span class="macro-spark" id="macro-spark-dxy"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-dxy">--</span><span class="macro-num" data-key="dxy"></span></div><div class="macro-history-list" id="macro-history-dxy" hidden></div></article>
+            <article class="macro-indicator-card macro-field-oil" data-macro-key="oil"><div class="macro-card-heading"><div><span class="macro-th-label">布蘭特原油 ($)</span><span class="macro-fresh" id="macro-fresh-oil"></span></div></div><span class="macro-spark" id="macro-spark-oil"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-oil">--</span><span class="macro-num" data-key="oil"></span></div><div class="macro-history-list" id="macro-history-oil" hidden></div></article>
+            <article class="macro-indicator-card macro-field-us10y" data-macro-key="us10y"><div class="macro-card-heading"><div><span class="macro-th-label">10年美債 (%)</span><span class="macro-fresh" id="macro-fresh-us10y"></span></div></div><span class="macro-spark" id="macro-spark-us10y"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-us10y">--</span><span class="macro-num" data-key="us10y"></span></div><div class="macro-history-list" id="macro-history-us10y" hidden></div></article>
+            <article class="macro-indicator-card macro-field-us30y" data-macro-key="us30y"><div class="macro-card-heading"><div><span class="macro-th-label">30年美債 (%)</span><span class="macro-fresh" id="macro-fresh-us30y"></span></div></div><span class="macro-spark" id="macro-spark-us30y"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-us30y">--</span><span class="macro-num" data-key="us30y"></span></div><div class="macro-history-list" id="macro-history-us30y" hidden></div></article>
+            <article class="macro-indicator-card macro-field-spread" data-macro-key="spread"><div class="macro-card-heading"><div><span class="macro-th-label">利差 Spread (%)</span><span class="macro-fresh" id="macro-fresh-spread"></span></div></div><span class="macro-spark" id="macro-spark-spread"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-spread">--</span><span class="macro-num" data-key="spread"></span></div><div class="macro-history-list" id="macro-history-spread" hidden></div></article>
+          </div>
+        </div>
+
+        <div class="macro-backup-card">
+          <div class="macro-backup-header">
+            <div>
+              <div class="macro-backup-title">📁 Git 同步檔（macro_data.json）</div>
+              <div class="macro-backup-note">✅ 更新與表格修改只寫入本機 macro_data.json；Git pull / push 維持手動執行</div>
+            </div>
+            <div class="macro-backup-actions">
+              <button type="button" class="btn" id="macro-download-btn">💾 手動下載 macro_data.json</button>
+              <button type="button" class="btn" id="macro-copy-json-btn">📋 複製 JSON</button>
+              <button type="button" class="btn" id="macro-copy-prompt-btn">📝 網頁版分析 Prompt</button>
+            </div>
+          </div>
+          <div class="macro-status" id="macro-copy-status"></div>
+        </div>
+      </section>
 
       <section class="organizer-panel collapsed" id="organizer-panel" hidden>
         <div class="organizer-heading">
@@ -4296,6 +4413,350 @@
       document.addEventListener('pointercancel', finishDrag);
     });
   }
+
+  // ── 總經與波動率資料（只在按鈕觸發時更新；開頁僅載入既有 JSON） ──
+  const MACRO_FIELDS = [
+    { key:'vixtwn', label:'VIXTWN（台股）' },
+    { key:'vix', label:'VIX（美股）' },
+    { key:'gold', label:'現貨黃金 XAU/USD' },
+    { key:'dxy', label:'美元指數 DXY' },
+    { key:'oil', label:'布蘭特原油' },
+    { key:'us10y', label:'10年美債殖利率' },
+    { key:'us30y', label:'30年美債殖利率' },
+    { key:'spread', label:'高收益債利差' }
+  ];
+  const MACRO_TOP_FIELDS = MACRO_FIELDS.slice(0, 4);
+  const MACRO_BOTTOM_FIELDS = MACRO_FIELDS.slice(4);
+  let macroEntries = [];
+  let macroHistoryExpanded = false;
+  let macroStatusTimer = null;
+
+  function setMacroStatus(message, type=''){
+    const el = document.getElementById('macro-status');
+    el.className = `macro-status ${type}`.trim();
+    el.textContent = message || '';
+  }
+
+  function macroSortedDesc(){
+    return [...macroEntries].sort((a,b) => String(b.date).localeCompare(String(a.date)));
+  }
+
+  function macroEffectiveValue(sorted, index, key){
+    for (let i=index; i<sorted.length; i++) {
+      const raw = sorted[i]?.[key];
+      if (raw !== null && raw !== undefined && raw !== '' && Number.isFinite(Number(raw))) {
+        return Number(raw);
+      }
+    }
+    return null;
+  }
+
+  function macroDelta(value, previous){
+    if (!Number.isFinite(value) || !Number.isFinite(previous)) return '';
+    const diff = value - previous;
+    if (Math.abs(diff) < .001) return '<span class="macro-delta flat">0.00</span>';
+    const cls = diff > 0 ? 'up' : 'down';
+    const arrow = diff > 0 ? '▲' : '▼';
+    return `<span class="macro-delta ${cls}">${arrow}${diff > 0 ? '+' : ''}${diff.toFixed(2)}</span>`;
+  }
+
+  function macroCellHtml(sorted, index, key){
+    const raw = sorted[index]?.[key];
+    if (raw === null || raw === undefined || raw === '' || !Number.isFinite(Number(raw))) {
+      return '<span class="macro-blank">-（留白）</span>';
+    }
+    const value = Number(raw);
+    const previous = macroEffectiveValue(sorted, index + 1, key);
+    return `<span class="macro-value">${value.toFixed(2)}</span>${macroDelta(value, previous)}`;
+  }
+
+  function macroSparkSvg(points){
+    if (points.length < 2) return '';
+    const width=100, height=24, pad=2;
+    const min=Math.min(...points), max=Math.max(...points), range=max-min || 1;
+    const xy=points.map((value,index) => [
+      pad + index * (width-pad*2)/(points.length-1),
+      pad + (height-pad*2) * (1-(value-min)/range)
+    ]);
+    const up=points[points.length-1] > points[0];
+    const flat=points[points.length-1] === points[0];
+    const color=flat ? '#94a3b8' : (up ? '#f87171' : '#4ade80');
+    const line=xy.map(([x,y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+    const area=`${pad},${height} ${line} ${width-pad},${height}`;
+    return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" preserveAspectRatio="none"><polygon points="${area}" fill="${color}" opacity=".13"></polygon><polyline points="${line}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>`;
+  }
+
+  function macroPrevTradingDay(date){
+    const result = new Date(date);
+    result.setDate(result.getDate()-1);
+    while (result.getDay() === 0 || result.getDay() === 6) result.setDate(result.getDate()-1);
+    return result;
+  }
+
+  function macroExpectedDate(key){
+    const now=new Date();
+    if (now.getDay() === 0 || now.getDay() === 6) {
+      let d=new Date(now);
+      while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate()-1);
+      return d.toISOString().slice(0,10);
+    }
+    const today=now.toISOString().slice(0,10);
+    if (key === 'vixtwn') return now.getHours() >= 14 ? today : macroPrevTradingDay(now).toISOString().slice(0,10);
+    const cutoff=({oil:5,gold:5,spread:22})[key] || 4;
+    let expected=macroPrevTradingDay(now);
+    if (now.getHours() < cutoff) expected=macroPrevTradingDay(expected);
+    return expected.toISOString().slice(0,10);
+  }
+
+  function renderMacroHeaders(sorted){
+    const asc=[...sorted].reverse().slice(-14);
+    const latest=sorted[0] || {};
+    const meta=latest._meta || {};
+    MACRO_FIELDS.forEach(field => {
+      const values=asc.map(entry => Number(entry[field.key])).filter(Number.isFinite);
+      const spark=document.getElementById(`macro-spark-${field.key}`);
+      if (spark) spark.innerHTML=macroSparkSvg(values);
+      const fresh=document.getElementById(`macro-fresh-${field.key}`);
+      if (!fresh) return;
+      const asof=meta[field.key]?.asof;
+      if (!asof) {
+        fresh.textContent='⚪ 無更新日期';
+        fresh.title=`${field.label}：沒有自動更新紀錄`;
+        return;
+      }
+      const isFresh=asof >= macroExpectedDate(field.key);
+      fresh.textContent=`${isFresh ? '🟢' : '⚪'} ${asof.slice(5).replace('-','/')}`;
+      fresh.title=`${field.label}：資料日期 ${asof}`;
+    });
+  }
+
+  function renderMacroTable(){
+    const sorted=macroSortedDesc();
+    document.getElementById('macro-count').textContent=`筆數：${sorted.length}`;
+    renderMacroHeaders(sorted);
+    MACRO_FIELDS.forEach(field => {
+      const latestCell=document.querySelector(`#macro-dashboard .macro-num[data-key="${field.key}"]`);
+      const latestDate=document.getElementById(`macro-date-${field.key}`);
+      const history=document.getElementById(`macro-history-${field.key}`);
+      if (!latestCell || !latestDate || !history) return;
+
+      if (!sorted.length) {
+        latestCell.dataset.date='';
+        latestCell.innerHTML='<span class="macro-blank">尚無資料</span>';
+        latestDate.textContent='--';
+        history.hidden=true;
+        history.innerHTML='';
+        return;
+      }
+
+      const latest=sorted[0];
+      latestCell.dataset.date=latest.date;
+      latestCell.innerHTML=macroCellHtml(sorted,0,field.key);
+      latestDate.textContent=latest.date;
+      history.hidden=!macroHistoryExpanded;
+      history.innerHTML=sorted.slice(1).map((entry,index) => {
+        const dataIndex=index+1;
+        const deleteControl=field.key === 'vixtwn'
+          ? `<button type="button" class="macro-delete-btn" data-date="${escapeHtml(entry.date)}" title="刪除 ${escapeHtml(entry.date)} 的整筆總經紀錄">🗑️</button>`
+          : '<span class="macro-history-delete-placeholder" aria-hidden="true"></span>';
+        return `<div class="macro-history-item">
+          <span class="macro-history-date">${escapeHtml(entry.date)}</span>
+          <span class="macro-num macro-field-${field.key}" data-date="${escapeHtml(entry.date)}" data-key="${field.key}">${macroCellHtml(sorted,dataIndex,field.key)}</span>
+          ${deleteControl}
+        </div>`;
+      }).join('') || '<div class="macro-history-item"><span class="macro-blank">沒有更早的資料</span></div>';
+    });
+
+    document.querySelectorAll('#macro-dashboard .macro-num[data-date]').forEach(cell => cell.addEventListener('click', () => startMacroCellEdit(cell)));
+    document.querySelectorAll('#macro-dashboard .macro-delete-btn').forEach(button => button.addEventListener('click', () => deleteMacroEntry(button.dataset.date)));
+  }
+
+  async function loadMacroData({quiet=false}={}){
+    try {
+      const response=await fetch('/api/macro/data?t='+Date.now(),{cache:'no-store'});
+      const data=await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || `HTTP ${response.status}`);
+      macroEntries=Array.isArray(data.entries) ? data.entries : [];
+      renderMacroTable();
+      if (!quiet) setMacroStatus('✅ 已載入本機 macro_data.json；需要新資料時請按上方「總經數據更新」。','success');
+      return true;
+    } catch (error) {
+      macroEntries=[];
+      renderMacroTable();
+      setMacroStatus(`❌ 總經資料載入失敗：${error.message}`,'error');
+      return false;
+    }
+  }
+
+  async function saveMacroData(message){
+    const {ok,data}=await api('POST','/api/macro/save',{entries:macroEntries});
+    if (!ok) {
+      setMacroStatus(`❌ ${data.error || 'macro_data.json 寫入失敗'}`,'error');
+      return false;
+    }
+    macroEntries=data.entries || macroEntries;
+    renderMacroTable();
+    setMacroStatus(message || '✅ 已存入本機 macro_data.json。','success');
+    return true;
+  }
+
+  function startMacroCellEdit(cell){
+    if (cell.querySelector('input')) return;
+    const entry=macroEntries.find(item => item.date === cell.dataset.date);
+    if (!entry) return;
+    const oldValue=entry[cell.dataset.key];
+    cell.innerHTML=`<input type="number" step="0.01" class="macro-edit-input" value="${Number.isFinite(Number(oldValue)) ? Number(oldValue) : ''}" placeholder="留白">`;
+    const input=cell.querySelector('input');
+    let finished=false;
+    const commit=async () => {
+      if (finished) return;
+      finished=true;
+      const raw=input.value.trim();
+      entry[cell.dataset.key]=raw === '' ? null : Number(raw);
+      await saveMacroData(`✅ ${entry.date} ${cell.dataset.key} 已更新。`);
+    };
+    input.addEventListener('click',event => event.stopPropagation());
+    input.addEventListener('blur',commit,{once:true});
+    input.addEventListener('keydown',event => {
+      if (event.key === 'Enter') input.blur();
+      if (event.key === 'Escape') { finished=true; renderMacroTable(); }
+    });
+    input.focus();
+    input.select();
+  }
+
+  async function deleteMacroEntry(date){
+    if (!confirm(`確定要刪除 ${date} 的總經紀錄嗎？此動作會寫回 macro_data.json。`)) return;
+    macroEntries=macroEntries.filter(entry => entry.date !== date);
+    await saveMacroData(`✅ 已刪除 ${date} 的總經紀錄。`);
+  }
+
+  function macroJsonText(){
+    return JSON.stringify([...macroEntries].sort((a,b) => String(a.date).localeCompare(String(b.date))),null,2);
+  }
+
+  function macroAnalysisPrompt(){
+    return `你是一位總經與跨資產分析師。請先搜尋近期相關新聞與事件，再結合下方完整歷史 JSON 分析，不要只複述數字。
+
+【嚴禁混淆】VIXTWN 是台股期貨恐慌指數，只能分析台股／0050；VIX 是美股恐慌指數，只能分析美股／QQQM。每次引用都請完整標註來源。
+
+【欄位】vixtwn=VIXTWN、vix=VIX、oil=布蘭特原油、gold=現貨黃金、us10y=10年美債殖利率、us30y=30年美債殖利率、spread=美國高收益債利差、dxy=美元指數。
+
+【標的】QQQM=NASDAQ 100 ETF；0050=台灣50 ETF；IAU=黃金 ETF；00948B=投資等級長天期美元公司債 ETF；00953B=非投資等級短天期高收益債 ETF。
+
+請回答：
+1. 最新一天相對前一天變動最明顯的指標及新聞原因。
+2. 對黃金、美元、科技股、公債的傳導方向與邏輯。
+3. 對 QQQM、0050、IAU、00948B、00953B 分別給出「緊抱／加碼／減碼／出場」之一，並連回前述因果；0050 只引用 VIXTWN，QQQM 只引用 VIX，00948B 引用美債殖利率，00953B 引用 spread。
+
+請使用繁體中文、段落分明。
+
+【完整歷史數據 JSON】
+${macroJsonText()}`;
+  }
+
+  async function copyMacroText(text, successMessage){
+    const status=document.getElementById('macro-copy-status');
+    try {
+      await navigator.clipboard.writeText(text);
+      status.className='macro-status success';
+      status.textContent=successMessage;
+    } catch (error) {
+      status.className='macro-status error';
+      status.textContent='❌ 複製失敗，請確認瀏覽器剪貼簿權限。';
+    }
+  }
+
+  async function pollMacroUpdateStatus(){
+    const button=document.getElementById('macro-update-btn');
+    try {
+      const response=await fetch('/api/macro/update-status?t='+Date.now(),{cache:'no-store'});
+      const data=await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || `HTTP ${response.status}`);
+      const running=Boolean(data.job?.running);
+      button.disabled=running;
+      button.textContent=running ? '⏳ 總經數據更新中…' : '🌐 總經數據更新';
+      if (running) {
+        setMacroStatus(data.status?.message || '⏳ 正在更新八項總經資料…');
+        return true;
+      }
+      if (macroStatusTimer) {
+        clearInterval(macroStatusTimer);
+        macroStatusTimer=null;
+        await loadMacroData({quiet:true});
+        const state=data.status?.state;
+        const type=state === 'success' ? 'success' : (state === 'partial' ? '' : 'error');
+        setMacroStatus(data.status?.message || '總經更新程序已完成。',type);
+      }
+      return false;
+    } catch (error) {
+      button.disabled=false;
+      button.textContent='🌐 總經數據更新';
+      setMacroStatus(`❌ 無法取得總經更新狀態：${error.message}`,'error');
+      return false;
+    }
+  }
+
+  document.getElementById('macro-update-btn').addEventListener('click',async () => {
+    const button=document.getElementById('macro-update-btn');
+    button.disabled=true;
+    button.textContent='⏳ 總經數據更新中…';
+    setMacroStatus('⏳ 正在啟動總經資料更新…');
+    const {ok,data}=await api('POST','/api/macro/update',{});
+    if (!ok) {
+      button.disabled=false;
+      button.textContent='🌐 總經數據更新';
+      setMacroStatus(`❌ ${data.error || '總經更新啟動失敗'}`,'error');
+      return;
+    }
+    await pollMacroUpdateStatus();
+    if (!macroStatusTimer) macroStatusTimer=setInterval(pollMacroUpdateStatus,1500);
+  });
+
+  document.getElementById('macro-toggle-history-btn').addEventListener('click',event => {
+    macroHistoryExpanded=!macroHistoryExpanded;
+    event.currentTarget.textContent=macroHistoryExpanded ? '📕 收起歷史數據' : '📖 展開歷史數據';
+    renderMacroTable();
+  });
+
+  document.getElementById('macro-download-btn').addEventListener('click',() => {
+    const blob=new Blob([macroJsonText()],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement('a');
+    link.href=url;
+    link.download='macro_data.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  });
+  document.getElementById('macro-copy-json-btn').addEventListener('click',() => copyMacroText(macroJsonText(),'✅ 已複製完整 macro_data.json。'));
+  document.getElementById('macro-copy-prompt-btn').addEventListener('click',() => copyMacroText(macroAnalysisPrompt(),'✅ 已複製網頁版總經分析 Prompt。'));
+
+  // 管理頁關閉時通知主伺服器；重整會在 8 秒寬限期內重新註冊，不會誤關。
+  const REPORTS_CLIENT_ID=sessionStorage.getItem('reports-manager-client-id') || (crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`);
+  sessionStorage.setItem('reports-manager-client-id',REPORTS_CLIENT_ID);
+  async function sendClientHeartbeat(){
+    try { await fetch('/api/client/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientId:REPORTS_CLIENT_ID}),keepalive:true}); } catch (e) {}
+  }
+  sendClientHeartbeat();
+  setInterval(sendClientHeartbeat,5000);
+  let clientDisconnectSent=false;
+  function disconnectReportsClient(){
+    if (clientDisconnectSent) return;
+    clientDisconnectSent=true;
+    const body=JSON.stringify({clientId:REPORTS_CLIENT_ID});
+    // text/plain 可避免瀏覽器在頁面卸載階段為 application/json 另做協商；
+    // sendBeacon 與 keepalive fetch 雙路送出，提升關閉分頁時的可靠度。
+    navigator.sendBeacon('/api/client/disconnect',new Blob([body],{type:'text/plain;charset=UTF-8'}));
+    fetch('/api/client/disconnect',{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body,keepalive:true}).catch(()=>{});
+  }
+  window.addEventListener('pagehide',disconnectReportsClient);
+  window.addEventListener('beforeunload',disconnectReportsClient);
+  window.addEventListener('unload',disconnectReportsClient);
+
+  loadMacroData();
+  pollMacroUpdateStatus().then(running => {
+    if (running && !macroStatusTimer) macroStatusTimer=setInterval(pollMacroUpdateStatus,1500);
+  });
 
   // ── 大盤三大法人買賣金額明細 ──
   function formatMarketYi(v, withSign){
