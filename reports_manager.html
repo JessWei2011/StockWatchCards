@@ -469,6 +469,16 @@
   }
   .rank-stock-link .stock-code{ color:#93c5fd; font-weight:800; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:16px; }
   .rank-stock-link .stock-name{ color:#fff; font-weight:800; font-size:16px; }
+  .ranking-star-btn{
+    display:inline-grid; place-items:center; flex:0 0 auto;
+    width:25px; height:25px; padding:0; margin-right:5px; border-radius:6px;
+    border:1px solid rgba(148,163,184,.35); background:rgba(255,255,255,.035);
+    color:#64748b; font-size:18px; line-height:1; cursor:pointer;
+    transition:color .15s ease, border-color .15s ease, background .15s ease, transform .15s ease;
+  }
+  .ranking-star-btn:hover:not(:disabled){ color:#fde047; border-color:#eab308; transform:translateY(-1px); }
+  .ranking-star-btn.active{ color:#facc15; border-color:#eab308; background:rgba(234,179,8,.16); }
+  .ranking-star-btn:disabled{ opacity:.55; cursor:wait; }
   .ranking-full-table tr:hover .rank-stock-link .stock-code,
   .ranking-full-table tr:hover .rank-stock-link .stock-name,
   .rank-stock-link:hover .stock-code,
@@ -815,6 +825,37 @@
     border-color: #38bdf8;
     box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
   }
+  .pattern-viewer .pattern-star-btn {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 8px;
+    border: 1px solid #475569;
+    background: #161922;
+    color: #64748b;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    transition: color .16s ease, border-color .16s ease, background .16s ease, transform .16s ease, box-shadow .16s ease;
+  }
+  .pattern-viewer .pattern-star-btn:hover:not(:disabled) {
+    color: #fde047;
+    border-color: #eab308;
+    transform: translateY(-1px);
+  }
+  .pattern-viewer .pattern-star-btn.active {
+    color: #facc15;
+    border-color: #eab308;
+    background: rgba(234,179,8,.16);
+    box-shadow: 0 0 12px rgba(234,179,8,.25);
+  }
+  .pattern-viewer .pattern-star-btn:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+  }
 
   .server-status-group{
     display:inline-flex; align-items:center; gap:6px; margin-left:auto;
@@ -1035,6 +1076,7 @@
           </button>
           <label for="stockSelect" style="font-weight:700; color:#93c5fd;">🎯 選擇看盤個股：</label>
           <select id="stockSelect" class="stock-selector"></select>
+          <button type="button" id="patternStarBtn" class="pattern-star-btn" aria-label="加入重點清單" aria-pressed="false" title="加入重點清單" disabled>★</button>
         </div>
       </header>
 
@@ -2480,6 +2522,7 @@
         }
         await PatternViewer.loadStock(selectedStockCode);
       }
+      updatePatternStarButton();
       requestAnimationFrame(() => PatternViewer.resize());
       setTimeout(() => PatternViewer.resize(), 80);
       setTimeout(() => PatternViewer.resize(), 250);
@@ -3176,6 +3219,7 @@
               <div style="display:flex; align-items:center; justify-content:space-between; padding:4px 7px; border-radius:6px; background:rgba(255,255,255,0.035); font-size:15px; cursor:pointer; transition:all .15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.background='rgba(255,255,255,0.035)';" onclick="openPatternForStock('${escapeHtml(it.code)}')">
                 <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;">
                   <span style="font-weight:900; color:var(--text-dim); width:18px; font-size:14px; text-align:right;">${idx + 1}</span>
+                  <button type="button" class="ranking-star-btn ${isStockStarred(it.code) ? 'active' : ''}" data-code="${escapeHtml(it.code)}" aria-label="${isStockStarred(it.code) ? '從重點清單移除' : '加入重點清單'}" aria-pressed="${isStockStarred(it.code)}" title="${isStockStarred(it.code) ? '已加入重點（點擊取消）' : '加入重點清單'}">★</button>
                   <span style="font-weight:850; color:#93c5fd; font-family:monospace; font-size:15px;">${escapeHtml(it.code)}</span>
                   <span style="font-weight:800; color:#ffffff; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</span>
                   ${tierBadgesMap[it.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[it.code].tier}" title="${escapeHtml(tierBadgesMap[it.code].title)}">${tierBadgesMap[it.code].label}</span>` : ''}
@@ -3251,7 +3295,7 @@
             <thead>
               <tr>
                 <th style="width:44px; text-align:center;">名次</th>
-                <th style="width:68px;">代號</th>
+                <th style="width:105px;">代號</th>
                 <th style="width:100px;">股票名稱</th>
                 <th style="width:90px; text-align:center;">類群/路徑</th>
                 <th style="width:85px; text-align:right;">收盤價</th>
@@ -3278,7 +3322,7 @@
                 return `
                   <tr data-stock-code="${escapeHtml(item.code)}" title="點擊直接開啟 ${escapeHtml(item.name)} (${escapeHtml(item.code)}) 的專業看盤">
                     <td style="text-align:center;"><span class="rank-badge-num ${badgeClass}">${escapeHtml(item.rank)}</span></td>
-                    <td><span class="rank-stock-link"><span class="stock-code">${escapeHtml(item.code)}</span></span></td>
+                    <td><span class="rank-stock-link"><button type="button" class="ranking-star-btn ${isStockStarred(item.code) ? 'active' : ''}" data-code="${escapeHtml(item.code)}" aria-label="${isStockStarred(item.code) ? '從重點清單移除' : '加入重點清單'}" aria-pressed="${isStockStarred(item.code)}" title="${isStockStarred(item.code) ? '已加入重點（點擊取消）' : '加入重點清單'}">★</button><span class="stock-code">${escapeHtml(item.code)}</span></span></td>
                     <td><span class="rank-stock-link"><span class="stock-name">${escapeHtml(item.name)}</span>${tierBadgesMap[item.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[item.code].tier}" title="${escapeHtml(tierBadgesMap[item.code].title)}">${tierBadgesMap[item.code].label}</span>` : ''}</span></td>
                     <td style="text-align:center;"><span class="tag-pill" style="font-size:14px; padding:3px 7px; white-space:nowrap;">${escapeHtml(item.category)}</span></td>
                     <td style="text-align:right; font-weight:850; color:#fff;">${escapeHtml(item.price)}</td>
@@ -3317,11 +3361,29 @@
         if (code) openPatternForStock(code);
       });
     });
+
+    container.querySelectorAll('.ranking-star-btn').forEach(button => {
+      button.addEventListener('click', async event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const code = String(button.dataset.code || '').trim();
+        if (!code || button.disabled) return;
+        button.disabled = true;
+        try {
+          await toggleStarredStock(code);
+        } finally {
+          document.querySelectorAll(`.ranking-star-btn[data-code="${CSS.escape(code)}"]`).forEach(item => {
+            item.disabled = false;
+          });
+        }
+      });
+    });
   }
   async function selectStockGlobal(code, { switchWorkspace = null, highlightRanking = true } = {}){
     const normalizedCode = String(code || '').trim();
     if (!normalizedCode) return;
     selectedStockCode = normalizedCode;
+    updatePatternStarButton(normalizedCode);
 
     // 1. 同步「📑 分析報告」
     loadMarkdownReport(normalizedCode);
@@ -3334,6 +3396,7 @@
           const option = Array.from(select.options).find(item => item.value === normalizedCode);
           if (option) select.value = normalizedCode;
         }
+        updatePatternStarButton(normalizedCode);
         if (patternViewerInitialized) {
           PatternViewer.loadStock(normalizedCode);
         }
@@ -3538,6 +3601,7 @@
           } else {
             starredStocksCache = new Set();
           }
+          updatePatternStarButton();
           return;
         }
       }
@@ -3563,6 +3627,26 @@
     return getStarredStocks().has(String(code).trim());
   }
 
+  function getPatternSelectedCode(){
+    const select = document.querySelector('#pattern-workspace #stockSelect');
+    return String((select && select.value) || selectedStockCode || '').trim();
+  }
+
+  function updatePatternStarButton(code){
+    const button = document.getElementById('patternStarBtn');
+    if (!button) return;
+    const normalizedCode = String(code || getPatternSelectedCode()).trim();
+    const isStarred = normalizedCode ? isStockStarred(normalizedCode) : false;
+    button.disabled = !normalizedCode;
+    button.dataset.code = normalizedCode;
+    button.classList.toggle('active', isStarred);
+    button.setAttribute('aria-pressed', String(isStarred));
+    button.setAttribute('aria-label', isStarred ? '從重點清單移除' : '加入重點清單');
+    button.title = normalizedCode
+      ? (isStarred ? `${normalizedCode} 已加入重點（點擊取消）` : `將 ${normalizedCode} 加入重點清單`)
+      : '請先選擇看盤個股';
+  }
+
   async function toggleStarredStock(code){
     const normCode = String(code || '').trim();
     if (!normCode) return;
@@ -3583,6 +3667,13 @@
       const row = btn.closest('.tree-report-row');
       if (row) row.classList.toggle('is-starred', isNowStarred);
     });
+    document.querySelectorAll(`.ranking-star-btn[data-code="${CSS.escape(normCode)}"]`).forEach(btn => {
+      btn.classList.toggle('active', isNowStarred);
+      btn.setAttribute('aria-pressed', String(isNowStarred));
+      btn.setAttribute('aria-label', isNowStarred ? '從重點清單移除' : '加入重點清單');
+      btn.title = isNowStarred ? '已加入重點（點擊取消）' : '加入重點清單';
+    });
+    updatePatternStarButton();
 
     if (starredOnlyMode) {
       renderTree();
@@ -3590,6 +3681,28 @@
 
     // 同步寫入後端實體檔案 watchlist.json
     await pushWatchlistToServer(starredArr);
+  }
+
+  const patternStarBtn = document.getElementById('patternStarBtn');
+  if (patternStarBtn) {
+    patternStarBtn.addEventListener('click', async () => {
+      const code = getPatternSelectedCode();
+      if (!code || patternStarBtn.disabled) return;
+      patternStarBtn.disabled = true;
+      try {
+        await toggleStarredStock(code);
+      } finally {
+        updatePatternStarButton(code);
+      }
+    });
+  }
+
+  const patternStockSelect = document.querySelector('#pattern-workspace #stockSelect');
+  if (patternStockSelect) {
+    patternStockSelect.addEventListener('change', event => {
+      selectedStockCode = String(event.target.value || '').trim() || selectedStockCode;
+      updatePatternStarButton(event.target.value);
+    });
   }
 
   async function loadTree(){
