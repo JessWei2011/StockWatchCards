@@ -33,8 +33,6 @@ if sys.stdout.encoding != "utf-8":
 
 ROOT_DIR = Path(__file__).resolve().parent
 REPORTS_DIR = ROOT_DIR / "reports"
-DATA_JS_FILE = ROOT_DIR / "data.js"
-AI_RANKINGS_FILE = ROOT_DIR / "ai_rankings.json"
 WATCHLIST_FILE = ROOT_DIR / "watchlist.json"
 PORT = 8935
 
@@ -42,7 +40,6 @@ REPORTS_DIR.mkdir(exist_ok=True)
 
 TRACKED_FILENAME_RE = re.compile(r'^([0-9A-Za-z]{2,6})_(.+?)\((TW|TWO)\)')
 FORBIDDEN_NAME_CHARS = set('\\/:*?"<>|')
-STOCK_CARDS_RE = re.compile(r"const\s+STOCK_CARDS\s*=\s*(\[.*\])\s*;?\s*$", re.S)
 STOCK_NAME_DICT_PATH = ROOT_DIR / "stock_name_dict.json"
 STOCK_NAME_DICT = {}
 if STOCK_NAME_DICT_PATH.exists():
@@ -96,15 +93,6 @@ def write_watchlist(starred_list):
     return payload
 
 
-def read_ai_rankings():
-    try:
-        payload = json.loads(AI_RANKINGS_FILE.read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return {"version": 1, "rankings": []}
-    rankings = payload.get("rankings") if isinstance(payload, dict) else None
-    return {"version": 3, "rankings": rankings if isinstance(rankings, list) else []}
-
-
 # ── 記憶體快取加速層 (避免重複檔案遍歷與解析，API 延遲降至 < 1ms) ───────────
 _CACHE_LOCK = threading.Lock()
 _CARDS_CACHE = {"timestamp": 0, "data": None}
@@ -119,119 +107,6 @@ def invalidate_all_caches():
         _REPORTS_INDEX_CACHE["timestamp"] = 0
         _TREE_CACHE["timestamp"] = 0
         _MD_REPORTS_CACHE.clear()
-
-
-def validate_ai_ranking(entry):
-    if not isinstance(entry, dict):
-        raise ValueError("排行榜資料必須是 JSON 物件")
-    date = str(entry.get("date") or "").strip()
-    ai = str(entry.get("ai") or "").strip()
-    top5 = entry.get("top5")
-    audit = entry.get("audit")
-    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
-        raise ValueError("date 必須是 YYYY-MM-DD")
-    if not ai or len(ai) > 50:
-        raise ValueError("ai 名稱不可空白且最多 50 字")
-    if not isinstance(top5, list) or len(top5) != 5:
-        raise ValueError("top5 必須剛好包含 5 筆")
-    if not isinstance(audit, dict) or audit.get("status") != "passed":
-        raise ValueError("缺少第二次規則稽核；audit.status 必須是 passed")
-    cleaned = []
-    seen_codes = set()
-    seen_ranks = set()
-    for item in top5:
-        if not isinstance(item, dict):
-            raise ValueError("top5 每一筆都必須是物件")
-        try:
-            rank = int(item.get("rank"))
-        except (TypeError, ValueError):
-            raise ValueError("rank 必須是 1 到 5")
-        code = str(item.get("code") or "").strip()
-        name = str(item.get("name") or "").strip()
-        decision = str(item.get("decision") or "").strip()
-        reason = str(item.get("reason") or "").strip()
-        score = item.get("score")
-        if rank not in range(1, 6) or rank in seen_ranks:
-            raise ValueError("rank 必須為不重複的 1 到 5")
-        if not re.fullmatch(r"[0-9A-Za-z]{2,8}", code) or code in seen_codes:
-            raise ValueError("股票代號不可空白、重複或含特殊字元")
-        if not name or not reason:
-            raise ValueError("每筆必須包含股票名稱與推薦原因")
-        try:
-            score = float(score)
-        except (TypeError, ValueError):
-            raise ValueError("每筆 score 必須是數字")
-        seen_ranks.add(rank)
-        seen_codes.add(code)
-        cleaned.append({
-            "rank": rank, "code": code, "name": name[:50], "score": score,
-            "decision": decision[:30], "reason": reason[:1000],
-        })
-    cleaned.sort(key=lambda item: item["rank"])
-    scores = [item["score"] for item in cleaned]
-    if any(scores[index] < scores[index + 1] for index in range(len(scores) - 1)):
-        raise ValueError("top5 必須依綜合分數降冪排列")
-    if any(
-        cleaned[index]["score"] == cleaned[index + 1]["score"]
-        and cleaned[index]["code"] > cleaned[index + 1]["code"]
-        for index in range(len(cleaned) - 1)
-    ):
-        raise ValueError("top5 同分時必須依股票代號排序")
-
-    audit_top5 = audit.get("top5")
-    if not isinstance(audit_top5, list) or len(audit_top5) != 5:
-        raise ValueError("audit.top5 必須包含稽核確認後的 5 筆名次、代號與分數")
-    try:
-        audited = sorted(
-            [(int(item.get("rank")), str(item.get("code") or "").strip(), float(item.get("score")))
-             for item in audit_top5],
-            key=lambda item: item[0],
-        )
-    except (AttributeError, TypeError, ValueError):
-        raise ValueError("audit.top5 的 rank、code、score 格式不正確")
-    submitted = [(item["rank"], item["code"], float(item["score"])) for item in cleaned]
-    if audited != submitted:
-        raise ValueError("第二次稽核結果尚未與第一次榜單同步；請先依稽核意見修正，再重新稽核")
-
-    canonical = canonical_top5_cards(ai)
-    if len(canonical) != 5:
-        raise ValueError(f"data.js 內 {ai} 的獨立分析不足 5 筆，禁止借用其他 AI 的分數")
-    expected = [(str(card["code"]), float(card["winRate"])) for card in canonical]
-    actual = [(item["code"], float(item["score"])) for item in cleaned]
-    if actual != expected:
-        expected_text = "、".join(f"#{i+1} {code} {score:g}分" for i, (code, score) in enumerate(expected))
-        actual_text = "、".join(f"#{i+1} {code} {score:g}分" for i, (code, score) in enumerate(actual))
-        raise ValueError(
-            f"排行榜與 data.js 內 {ai} 的獨立分析尚未同步，本次結果未儲存。請先更新該 AI 的 aiAnalysis 欄位，再執行第二次規則稽核。"
-            f" {ai} TOP 5：{expected_text}；送出榜單：{actual_text}"
-        )
-    issues = audit.get("issues")
-    if issues not in (None, []):
-        raise ValueError("audit.status 為 passed 時，audit.issues 必須是空陣列")
-    return {
-        "date": date,
-        "ai": ai,
-        "top5": cleaned,
-        "verification": {
-            "status": "passed",
-            "method": "evidence_audit",
-            "checkedAt": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-        },
-    }
-
-
-def upsert_ai_ranking(entry):
-    cleaned = validate_ai_ranking(entry)
-    payload = read_ai_rankings()
-    rankings = [item for item in payload["rankings"]
-                if not (item.get("date") == cleaned["date"] and item.get("ai") == cleaned["ai"])]
-    rankings.append(cleaned)
-    rankings.sort(key=lambda item: (item.get("date", ""), item.get("ai", "")))
-    payload = {"version": 3, "rankings": rankings}
-    temp_path = AI_RANKINGS_FILE.with_suffix(".json.tmp")
-    temp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    temp_path.replace(AI_RANKINGS_FILE)
-    return cleaned
 
 
 def parse_md_report_card(md_path):
@@ -345,38 +220,6 @@ def read_stock_cards():
         _CARDS_CACHE["data"] = by_code
 
     return by_code
-
-
-def card_for_ai(card, ai_name):
-    """Return one AI's isolated analysis without borrowing another AI's score."""
-    analyses = card.get("aiAnalysis")
-    if not isinstance(analyses, dict):
-        return None
-    wanted = str(ai_name or "").strip().casefold()
-    analysis = next(
-        (value for key, value in analyses.items()
-         if str(key).strip().casefold() == wanted and isinstance(value, dict)),
-        None,
-    )
-    if not analysis or not isinstance(analysis.get("score"), (int, float)):
-        return None
-    isolated = dict(card)
-    isolated["winRate"] = analysis["score"]
-    isolated["decision"] = analysis.get("decision") or card.get("decision")
-    isolated["action"] = analysis.get("reason") or card.get("action")
-    isolated["date"] = analysis.get("date") or card.get("date")
-    isolated["verified"] = analysis.get("verified") is True
-    return isolated
-
-
-def canonical_top5_cards(ai_name=None):
-    """Return display TOP 5, or an isolated AI TOP 5 when ai_name is supplied."""
-    cards = list(read_stock_cards().values())
-    if ai_name:
-        cards = [isolated for card in cards if (isolated := card_for_ai(card, ai_name))]
-    scored = [card for card in cards if isinstance(card.get("winRate"), (int, float))]
-    scored.sort(key=lambda card: (-float(card["winRate"]), str(card.get("code", ""))))
-    return scored[:5]
 
 
 def resolve_safe_path(rel_path):
@@ -950,9 +793,6 @@ class Handler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/watchlist":
             self._json(200, {"ok": True, **read_watchlist()})
             return
-        if parsed.path == "/api/ai-rankings":
-            self._json(200, {"ok": True, **read_ai_rankings()})
-            return
         if parsed.path == "/api/reports-index":
             # 保持原 PatternViewer API 的裸陣列格式，第二階段元件化前即可直接換用
             # reports_manager_server.py，不必同步修改舊介面。
@@ -1097,20 +937,6 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(200, {"ok": True})
             return
 
-        if parsed.path == "/api/ai-rankings/upsert":
-            try:
-                body = self._read_json_body()
-                saved = upsert_ai_ranking(body)
-                invalidate_all_caches()
-            except (ValueError, json.JSONDecodeError) as e:
-                self._json(400, {"ok": False, "error": str(e)})
-                return
-            except OSError as e:
-                self._json(500, {"ok": False, "error": f"排行榜寫入失敗: {e}"})
-                return
-            self._json(200, {"ok": True, "ranking": saved})
-            return
-
         if parsed.path == "/api/watchlist":
             try:
                 body = self._read_json_body()
@@ -1227,7 +1053,7 @@ class Handler(SimpleHTTPRequestHandler):
                     return
                 # 用代號遞迴找整個 reports/ (含所有子資料夾)，不用先知道報表放在哪個分類，
                 # 排行榜上的股票不一定跟目前選取的資料夾在同一層。只刪報表檔本身
-                # (html+md，若有殘留 png 也一併清理)，不會動到 data.js 裡的 AI 分析卡片資料。
+                # (html+md，若有殘留 png 也一併清理)。
                 matches = (
                     list(REPORTS_DIR.rglob(f"{code}_*.html"))
                     + list(REPORTS_DIR.rglob(f"{code}_*.md"))

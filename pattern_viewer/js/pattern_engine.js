@@ -1,6 +1,6 @@
 /**
  * PatternEngine Module
- * Given the pattern text a stock's real AI card already concluded (data.js STOCK_CARDS[].pattern),
+ * Given the pattern text parsed from a stock's Markdown analysis card,
  * find the geometric evidence for THAT specific pattern in the candle data and build a chart overlay.
  * This does NOT independently guess/scan for every known pattern shape — the card's own conclusion
  * drives which visualization gets built. Unmatched pattern text falls back to a generic trend overlay.
@@ -519,7 +519,7 @@ window.PatternEngine = {
   ],
 
   /**
-   * Main entry point: build the overlay that visualizes the pattern text a real STOCK_CARDS
+   * Main entry point: build the overlay that visualizes the pattern text a real analysis card
    * entry already concluded, instead of independently scanning for every known shape.
    */
   buildOverlayForCard(patternText, stockData) {

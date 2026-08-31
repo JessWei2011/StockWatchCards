@@ -847,7 +847,7 @@
   <div class="generate-bar">
     <input type="text" id="generate-input" placeholder="輸入股票代號/名稱（可用逗號分隔多筆），或輸入 ALL 更新全部追蹤清單">
     <button class="btn primary" id="generate-btn">🚀 產生/更新報表</button>
-    <button class="btn" id="deploy-mobile-btn" title="執行「發布手機版.bat」全自動匯出 73 檔個股快照並發布至 Cloudflare 手機版分析中心" style="background:#0284c7; color:#fff; font-weight:750; border-color:#0284c7;">📱 發布手機版</button>
+    <button class="btn" id="deploy-mobile-btn" title="執行「發布手機版.bat」全自動匯出目前全部個股快照並發布至 Cloudflare 手機版分析中心" style="background:#0284c7; color:#fff; font-weight:750; border-color:#0284c7;">📱 發布手機版</button>
     <button class="btn primary" id="gemini-scanner-btn" title="呼叫 batch_scanner_gemini.bat 執行 Gemini 雙軌動能掃描並存入 stock_winrate_ranking_gemini.md" style="font-weight:750;">✨ Gemini Scanner</button>
     <button class="btn" id="batch-scanner-btn" title="呼叫 batch_scanner.bat 執行 ChatGPT 雙軌量化掃描並存入 stock_winrate_ranking.md" style="background:#10b981; color:#000; font-weight:750; border-color:#10b981;">🟢 Chatgpt Scanner</button>
     <span class="spinner" id="generate-spinner"></span>
@@ -4002,7 +4002,7 @@
       deployMobileBtn.textContent = '⏳ 手機版發布中...';
       if (statusEl) {
         statusEl.style.display = 'inline-block';
-        statusEl.innerHTML = '📱 正在執行「發布手機版.bat」全自動匯出 73 檔個股並部署至 Cloudflare...';
+        statusEl.innerHTML = '📱 正在執行「發布手機版.bat」全自動匯出目前全部個股並部署至 Cloudflare...';
       }
       if (spinnerEl) spinnerEl.style.display = 'inline-block';
 
@@ -4019,7 +4019,7 @@
               deployMobileBtn.className = 'btn success';
               deployMobileBtn.textContent = '✅ 發布成功';
               if (statusEl) {
-                statusEl.innerHTML = '✅ 73 檔手機個股分析中心已發布上線！<a href="https://stock2-mobile.lilis0501.workers.dev/" target="_blank" style="color:#38bdf8; text-decoration:underline; font-weight:bold; margin-left:8px;">開啟手機版網址 🔗</a>';
+                statusEl.innerHTML = '✅ 全個股手機分析中心已發布上線！<a href="https://stock2-mobile.lilis0501.workers.dev/" target="_blank" style="color:#38bdf8; text-decoration:underline; font-weight:bold; margin-left:8px;">開啟手機版網址 🔗</a>';
               }
             } else {
               deployMobileBtn.className = 'btn danger';
@@ -4758,8 +4758,8 @@
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
-  // 類股分類不用 data.js 裡 AI 寫的 group 欄位(那是查產業類別填的，跟使用者自己在
-  // reports/ 底下手動整理的資料夾分類是兩回事)。改成直接照 reports/ 正下面那一層
+  // 類股分類直接使用 reports/ 底下由使用者整理的資料夾，不採用其他推測分類。
+  // 改成直接照 reports/ 正下面那一層
   // 資料夾名稱分類——只看第一層，子資料夾(例如 CPO/光纖磊晶片)一律算在 CPO 底下，
   // 不再往下細分，這樣分類才是使用者自己排的，不是我猜的。
   function buildCodeToTopFolderMap(){

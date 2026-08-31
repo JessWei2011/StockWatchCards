@@ -4,7 +4,9 @@
     "code": "3362",
     "name": "先進光",
     "group": "光學",
-    "date": "2026-08-28"
+    "market": "TWO",
+    "date": "2026-08-28",
+    "isStarred": false
   },
   "latestAnalysis": {
     "date": "2026-08-28",

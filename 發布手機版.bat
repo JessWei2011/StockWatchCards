@@ -1,10 +1,10 @@
 @echo off
 setlocal
 chcp 65001 >nul
-title Stock2 手機版發布工具 (73 檔個股)
+title Stock2 全個股手機版發布工具
 
 echo ===================================================
-echo     Stock2 73 檔手機個股分析中心 - 一鍵發布作業
+echo     Stock2 全個股手機分析中心 - 一鍵發布作業
 echo ===================================================
 echo.
 
@@ -23,7 +23,7 @@ echo [1/3] 正在執行全個股快照資料匯出 export_mobile_site.py ...
 if errorlevel 1 goto EXPORT_FAIL
 
 echo.
-echo [2/3] 正在驗證手機版必要靜態檔案與 73 檔目錄...
+echo [2/3] 正在驗證手機版必要靜態檔案與個股目錄...
 if not exist "%MOBILE_DIR%\public\data\index.json" (
     echo [錯誤] 找不到 %MOBILE_DIR%\public\data\index.json
     goto FAIL
@@ -41,9 +41,9 @@ if not exist "%MOBILE_DIR%\public\app.js" (
     goto FAIL
 )
 
-"%PY_EXE%" -c "import json, sys, pathlib; p = pathlib.Path(r'%MOBILE_DIR%\public\data'); idx = json.loads((p/'index.json').read_text(encoding='utf-8')); stocks = [d for d in (p/'stocks').iterdir() if d.is_dir()]; cnt = idx.get('count', len(idx.get('stocks', []))); print(f'[OK] 索引確認：{cnt} 檔個股，磁碟目錄：{len(stocks)} 個。'); sys.exit(0 if cnt >= 73 and len(stocks) >= 73 else 1)"
+"%PY_EXE%" -c "import json, sys, pathlib; p = pathlib.Path(r'%MOBILE_DIR%\public\data'); idx = json.loads((p/'index.json').read_text(encoding='utf-8')); stocks = [d for d in (p/'stocks').iterdir() if d.is_dir()]; cnt = idx.get('count', len(idx.get('stocks', []))); print(f'[OK] 索引確認：{cnt} 檔個股，磁碟目錄：{len(stocks)} 個。'); sys.exit(0 if cnt > 0 and cnt == len(stocks) else 1)"
 if errorlevel 1 (
-    echo [錯誤] 個股數量不足 73 檔，終止發布！
+    echo [錯誤] 個股索引與輸出目錄數量不一致，終止發布！
     goto FAIL
 )
 echo [OK] 靜態檔案與全個股資料完整性檢查通過。
@@ -58,7 +58,7 @@ if errorlevel 1 goto DEPLOY_FAIL
 cd /d "%PROJECT_ROOT%"
 echo.
 echo ===================================================
-echo [成功] 73 檔手機個股分析中心已成功發布上線！
+echo [成功] 全個股手機分析中心已成功發布上線！
 echo 網址: https://stock2-mobile.lilis0501.workers.dev/
 echo ===================================================
 echo.

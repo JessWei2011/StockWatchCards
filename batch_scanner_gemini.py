@@ -4,7 +4,7 @@ r"""
 ========================================================================================
 ⚠️ 【架構防衝突聲明 / Architecture Warning for All AI Assistants】：
 1. 本檔案為【Gemini 專屬的主控掃描引擎】，專職維護：
-   - 📄 73 檔個股詳細分析報告：`reports/**/{code}_{name}_4階段技術分析報告.md` (全權由此腳本產生與更新)
+- 📄 全市場個股詳細分析報告：`reports/**/{code}_{name}_4階段技術分析報告.md` (全權由此腳本產生與更新)
    - 📊 Gemini 專屬雙軌總排行榜：`stock_winrate_ranking_gemini.md`
    - 🎯 突破觀察池：`breakout_watchlist_gemini.md`
 2. 請其他 AI 助手（包括 ChatGPT / Claude 等）切勿修改本檔案，亦切勿搶奪個股 .md 的生成權！

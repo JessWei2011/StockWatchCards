@@ -1,6 +1,6 @@
 # 🔗 AI 股市型態視覺教學介面 (pattern_viewer) 整合說明指南
 
-本文件記錄了 `pattern_viewer` 模組在獨立開發、測試完成且確認零 Bug 後，如何順暢、無縫整合回 `StockWatchCards` 主專案 (`reports_manager.html` / `render.js` / `STOCK_CARDS`) 的標準步驟與介面規範。
+本文件記錄了 `pattern_viewer` 模組如何整合進 `reports_manager.html`，並以 HTML 個股報表與 Markdown 分析為資料來源。
 
 ---
 
@@ -9,7 +9,7 @@
 1. **命名空間隔離 (Namespace Isolation)**：
    - 所有的 JS 模組均封裝在全域命名空間 `window.PatternParser`、`window.PatternEngine` 與 `window.PatternChart` 中，完全不與主專案全域變數產生衝突。
 2. **標準化 Data-Driven API**：
-   - 不管是現有的 `data.js` 的 `STOCK_CARDS`，或是 Python 產出的 HTML 報告，只要經過 `PatternParser` 或傳入標準物件即可驅動渲染。
+   - HTML 報告由 `PatternParser` 轉成圖表序列；Markdown 分析由 `/api/cards` 轉成標準卡片物件。
 
 ---
 
@@ -29,7 +29,7 @@
 
 ### 方案 B：在卡片背面點擊「查看 K線圖形教學」彈出 Modal 視窗
 
-在 `render.js` 繪製卡片時，於背面加一顆按鈕：
+在 `reports_manager.html` 繪製卡片時，於背面加一顆按鈕：
 ```javascript
 // render.js 卡片背面元件
 `<button onclick="openPatternModal('${card.code}', '${card.name}')">🎓 查看圖像化型態教學</button>`
@@ -44,7 +44,7 @@ function openPatternModal(code, name) {
 }
 ```
 
-### 方案 C：將 `pattern_viewer` 的 JS/CSS 檔案直接引入 `index.html`
+### 方案 C：將 `pattern_viewer` 的 JS/CSS 檔案直接引入 `reports_manager.html`
 
 只需在 `index.html` 的 `<head>` 與 `<body>` 引入：
 ```html

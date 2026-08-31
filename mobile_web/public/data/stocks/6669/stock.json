@@ -4,7 +4,9 @@
     "code": "6669",
     "name": "緯穎",
     "group": "伺服器",
-    "date": "2026-08-28"
+    "market": "TW",
+    "date": "2026-08-28",
+    "isStarred": false
   },
   "latestAnalysis": {
     "date": "2026-08-28",

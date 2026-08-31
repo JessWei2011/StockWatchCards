@@ -4,7 +4,9 @@
     "code": "6147",
     "name": "頎邦",
     "group": "封測",
-    "date": "2026-08-28"
+    "market": "TWO",
+    "date": "2026-08-28",
+    "isStarred": false
   },
   "latestAnalysis": {
     "date": "2026-08-28",

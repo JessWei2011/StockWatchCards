@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "publishedAt": "2026-08-31T01:34:41+08:00",
+  "publishedAt": "2026-08-31T11:29:15+08:00",
   "defaultCode": "3324",
-  "count": 74,
+  "count": 76,
   "stocks": [
     {
       "code": "2049",
@@ -13,7 +13,8 @@
       "current": "354.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "2059",
@@ -24,7 +25,8 @@
       "current": "14300.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "57%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "2301",
@@ -35,7 +37,8 @@
       "current": "317.50",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
-      "pattern": "歷史/波段新高爆量突破 (Breakout)"
+      "pattern": "歷史/波段新高爆量突破 (Breakout)",
+      "isStarred": false
     },
     {
       "code": "2308",
@@ -46,7 +49,8 @@
       "current": "1830.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "2324",
@@ -57,7 +61,8 @@
       "current": "39.70",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "2327",
@@ -68,7 +73,8 @@
       "current": "597.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "2330",
@@ -78,8 +84,9 @@
       "analysisDate": "2026-08-28",
       "current": "2420.00",
       "decision": "觀望 / 逢低佈局",
-      "winRate": "45%",
-      "pattern": "正統大層級杯柄型態 (帶量突破頸線)"
+      "winRate": "53%",
+      "pattern": "正統大層級杯柄型態 (帶量突破頸線)",
+      "isStarred": true
     },
     {
       "code": "2344",
@@ -90,7 +97,8 @@
       "current": "181.50",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "2357",
@@ -101,7 +109,8 @@
       "current": "965.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "57%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "2368",
@@ -112,7 +121,8 @@
       "current": "1130.00",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "91%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "2377",
@@ -123,7 +133,8 @@
       "current": "145.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "2395",
@@ -134,7 +145,8 @@
       "current": "669.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "2408",
@@ -145,7 +157,8 @@
       "current": "540.00",
       "decision": "買入 (多頭順勢)",
       "winRate": "63%",
-      "pattern": "創歷史/波段新高 (High Breakout)"
+      "pattern": "創歷史/波段新高 (High Breakout)",
+      "isStarred": false
     },
     {
       "code": "2426",
@@ -156,7 +169,8 @@
       "current": "96.10",
       "decision": "買入 (多頭順勢)",
       "winRate": "68%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "2454",
@@ -167,7 +181,8 @@
       "current": "3985.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "55%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "2455",
@@ -178,7 +193,8 @@
       "current": "434.00",
       "decision": "買入 (多頭順勢)",
       "winRate": "68%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "2478",
@@ -189,7 +205,8 @@
       "current": "129.50",
       "decision": "觀望 / 逢低佈局",
       "winRate": "46%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "2486",
@@ -200,7 +217,8 @@
       "current": "261.00",
       "decision": "買入 (多頭順勢)",
       "winRate": "66%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "2492",
@@ -211,7 +229,8 @@
       "current": "313.50",
       "decision": "買入 (多頭順勢)",
       "winRate": "77%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "3008",
@@ -222,7 +241,8 @@
       "current": "7065.00",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
-      "pattern": "歷史/波段新高爆量突破 (Breakout)"
+      "pattern": "歷史/波段新高爆量突破 (Breakout)",
+      "isStarred": false
     },
     {
       "code": "3017",
@@ -233,7 +253,8 @@
       "current": "3360.00",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "87%",
-      "pattern": "創歷史/波段新高 (High Breakout)"
+      "pattern": "創歷史/波段新高 (High Breakout)",
+      "isStarred": false
     },
     {
       "code": "3026",
@@ -244,7 +265,8 @@
       "current": "742.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "57%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "3034",
@@ -255,7 +277,8 @@
       "current": "545.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "55%",
-      "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)"
+      "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
+      "isStarred": false
     },
     {
       "code": "3037",
@@ -266,7 +289,8 @@
       "current": "1110.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "53%",
-      "pattern": "歷史/波段新高爆量突破 (Breakout)"
+      "pattern": "歷史/波段新高爆量突破 (Breakout)",
+      "isStarred": false
     },
     {
       "code": "3081",
@@ -277,7 +301,20 @@
       "current": "3305.00",
       "decision": "買入 (多頭順勢)",
       "winRate": "68%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
+    },
+    {
+      "code": "3105",
+      "name": "穩懋",
+      "group": "低軌衛星",
+      "market": "TWO",
+      "analysisDate": "2026-08-28",
+      "current": "439.00",
+      "decision": "強烈買入 (動能爆發)",
+      "winRate": "82%",
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "3189",
@@ -288,7 +325,8 @@
       "current": "899.00",
       "decision": "買入 (多頭順勢)",
       "winRate": "61%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "3231",
@@ -299,7 +337,8 @@
       "current": "178.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "3234",
@@ -310,7 +349,8 @@
       "current": "181.50",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
-      "pattern": "創歷史/波段新高 (High Breakout)"
+      "pattern": "創歷史/波段新高 (High Breakout)",
+      "isStarred": false
     },
     {
       "code": "3324",
@@ -321,7 +361,8 @@
       "current": "1140.00",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": true
     },
     {
       "code": "3362",
@@ -332,7 +373,8 @@
       "current": "199.50",
       "decision": "買入 (多頭順勢)",
       "winRate": "64%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "3363",
@@ -343,7 +385,20 @@
       "current": "701.00",
       "decision": "買入 (多頭順勢)",
       "winRate": "71%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
+    },
+    {
+      "code": "3374",
+      "name": "精材",
+      "group": "封測",
+      "market": "TWO",
+      "analysisDate": "2026-08-28",
+      "current": "386.00",
+      "decision": "強烈買入 (動能爆發)",
+      "winRate": "95%",
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "3406",
@@ -354,7 +409,8 @@
       "current": "917.00",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
-      "pattern": "歷史/波段新高爆量突破 (Breakout)"
+      "pattern": "歷史/波段新高爆量突破 (Breakout)",
+      "isStarred": false
     },
     {
       "code": "3441",
@@ -365,7 +421,8 @@
       "current": "130.00",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
-      "pattern": "歷史/波段新高爆量突破 (Breakout)"
+      "pattern": "歷史/波段新高爆量突破 (Breakout)",
+      "isStarred": false
     },
     {
       "code": "3443",
@@ -376,7 +433,8 @@
       "current": "6015.00",
       "decision": "買入 (多頭順勢)",
       "winRate": "62%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "3450",
@@ -387,7 +445,8 @@
       "current": "635.00",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
-      "pattern": "歷史/波段新高爆量突破 (Breakout)"
+      "pattern": "歷史/波段新高爆量突破 (Breakout)",
+      "isStarred": false
     },
     {
       "code": "3491",
@@ -398,7 +457,8 @@
       "current": "1510.00",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "81%",
-      "pattern": "雙重底 W底形成突破 (Double Bottom)"
+      "pattern": "雙重底 W底形成突破 (Double Bottom)",
+      "isStarred": false
     },
     {
       "code": "3532",
@@ -409,7 +469,8 @@
       "current": "399.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "3624",
@@ -420,7 +481,8 @@
       "current": "91.80",
       "decision": "觀望 / 逢低佈局",
       "winRate": "46%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "3653",
@@ -431,7 +493,8 @@
       "current": "5785.00",
       "decision": "買入 (多頭順勢)",
       "winRate": "61%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "3693",
@@ -442,7 +505,8 @@
       "current": "587.00",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "4931",
@@ -453,7 +517,8 @@
       "current": "272.50",
       "decision": "買入 (多頭順勢)",
       "winRate": "66%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "4958",
@@ -464,7 +529,8 @@
       "current": "480.50",
       "decision": "買入 (多頭順勢)",
       "winRate": "59%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "5328",
@@ -475,7 +541,8 @@
       "current": "63.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "50%",
-      "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)"
+      "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
+      "isStarred": false
     },
     {
       "code": "5483",
@@ -486,7 +553,8 @@
       "current": "183.50",
       "decision": "觀望 / 逢低佈局",
       "winRate": "53%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "5536",
@@ -497,7 +565,8 @@
       "current": "871.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "6147",
@@ -508,7 +577,8 @@
       "current": "182.50",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "6155",
@@ -519,7 +589,8 @@
       "current": "59.20",
       "decision": "觀望 / 逢低佈局",
       "winRate": "46%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "6173",
@@ -530,7 +601,8 @@
       "current": "239.00",
       "decision": "買入 (多頭順勢)",
       "winRate": "74%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "6182",
@@ -541,7 +613,8 @@
       "current": "110.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "46%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "6187",
@@ -552,7 +625,8 @@
       "current": "1365.00",
       "decision": "買入 (多頭順勢)",
       "winRate": "62%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "6207",
@@ -563,7 +637,8 @@
       "current": "111.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "53%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "6213",
@@ -574,7 +649,8 @@
       "current": "582.00",
       "decision": "買入 (多頭順勢)",
       "winRate": "59%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "6214",
@@ -585,7 +661,8 @@
       "current": "181.00",
       "decision": "買入 (多頭順勢)",
       "winRate": "61%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "6217",
@@ -596,7 +673,8 @@
       "current": "175.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "6223",
@@ -607,7 +685,8 @@
       "current": "5030.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)"
+      "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
+      "isStarred": false
     },
     {
       "code": "6226",
@@ -618,7 +697,8 @@
       "current": "34.00",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
-      "pattern": "創歷史/波段新高 (High Breakout)"
+      "pattern": "創歷史/波段新高 (High Breakout)",
+      "isStarred": false
     },
     {
       "code": "6239",
@@ -629,7 +709,8 @@
       "current": "287.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "53%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "6265",
@@ -640,7 +721,8 @@
       "current": "57.10",
       "decision": "觀望 / 逢低佈局",
       "winRate": "48%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "6274",
@@ -651,7 +733,8 @@
       "current": "1490.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "6449",
@@ -662,7 +745,8 @@
       "current": "237.00",
       "decision": "買入 (多頭順勢)",
       "winRate": "61%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "6488",
@@ -673,7 +757,8 @@
       "current": "972.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "6515",
@@ -684,7 +769,8 @@
       "current": "6250.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "46%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "6531",
@@ -695,7 +781,8 @@
       "current": "895.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "6584",
@@ -706,7 +793,8 @@
       "current": "682.00",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "6669",
@@ -717,7 +805,8 @@
       "current": "7200.00",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
-      "pattern": "歷史/波段新高爆量突破 (Breakout)"
+      "pattern": "歷史/波段新高爆量突破 (Breakout)",
+      "isStarred": false
     },
     {
       "code": "6781",
@@ -728,7 +817,8 @@
       "current": "1130.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "53%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "6805",
@@ -739,7 +829,8 @@
       "current": "2345.00",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
-      "pattern": "歷史/波段新高爆量突破 (Breakout)"
+      "pattern": "歷史/波段新高爆量突破 (Breakout)",
+      "isStarred": false
     },
     {
       "code": "8021",
@@ -750,7 +841,8 @@
       "current": "454.00",
       "decision": "買入 (多頭順勢)",
       "winRate": "76%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "8039",
@@ -761,7 +853,8 @@
       "current": "343.50",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
-      "pattern": "歷史/波段新高爆量突破 (Breakout)"
+      "pattern": "歷史/波段新高爆量突破 (Breakout)",
+      "isStarred": false
     },
     {
       "code": "8046",
@@ -772,7 +865,8 @@
       "current": "1240.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "54%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "8150",
@@ -783,7 +877,8 @@
       "current": "90.50",
       "decision": "買入 (多頭順勢)",
       "winRate": "63%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "8227",
@@ -794,7 +889,8 @@
       "current": "161.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "46%",
-      "pattern": "高檔盤整/區間震盪"
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
     },
     {
       "code": "8358",
@@ -805,7 +901,8 @@
       "current": "543.00",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "79%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     },
     {
       "code": "8996",
@@ -816,7 +913,8 @@
       "current": "1265.00",
       "decision": "觀望 / 逢低佈局",
       "winRate": "52%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)"
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
     }
   ]
 }

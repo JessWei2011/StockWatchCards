@@ -4,7 +4,9 @@
     "code": "6805",
     "name": "富世達",
     "group": "散熱",
-    "date": "2026-08-28"
+    "market": "TW",
+    "date": "2026-08-28",
+    "isStarred": false
   },
   "latestAnalysis": {
     "date": "2026-08-28",

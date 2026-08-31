@@ -4,7 +4,9 @@
     "code": "6781",
     "name": "AES-KY",
     "group": "電力",
-    "date": "2026-08-28"
+    "market": "TW",
+    "date": "2026-08-28",
+    "isStarred": false
   },
   "latestAnalysis": {
     "date": "2026-08-28",

@@ -11,10 +11,6 @@
 !CHATGPT_PROJECT_INSTRUCTIONS.md
 
 # Web app and source scripts
-!index.html
-!style.css
-!data.js
-!render.js
 !render-shared.js
 !stock_report_generator.py
 !batch_scanner.py
@@ -27,7 +23,6 @@
 !watchlist.json
 !breakout_watchlist.md
 !breakout_watchlist_gemini.md
-!clone-stockwatchcards.bat
 !控制台.pyw
 !啟動控制台.bat
 !設定開機啟動.bat
@@ -38,7 +33,6 @@
 !reports_manager.html
 !reports_manager_server.py
 !reports_manager.bat
-!空手範例.html
 
 # Pattern viewer app
 !pattern_viewer/
@@ -64,7 +58,6 @@ margin_data.db
 *.lnk
 
 # Mobile web app
-!IPHONE_STOCK_CENTER_IMPLEMENTATION_PLAN.txt
 !export_mobile_site.py
 !發布手機版.bat
 !mobile_web/

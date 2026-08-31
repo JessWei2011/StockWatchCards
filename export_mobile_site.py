@@ -17,13 +17,11 @@ from zoneinfo import ZoneInfo
 
 ROOT_DIR = Path(__file__).resolve().parent
 REPORTS_DIR = ROOT_DIR / "reports"
-DATA_JS_FILE = ROOT_DIR / "data.js"
 WATCHLIST_FILE = ROOT_DIR / "watchlist.json"
 PUBLIC_DIR = ROOT_DIR / "mobile_web" / "public"
 OUTPUT_DIR = PUBLIC_DIR / "data"
 DEFAULT_CODE = "3324"
 
-STOCK_CARDS_RE = re.compile(r"const\s+STOCK_CARDS\s*=\s*(\[.*\])\s*;?\s*$", re.S)
 REPORT_RE = re.compile(r"^(\d+)_(.+?)\((TW|TWO)\)(.*?)\.html$", re.I)
 
 
@@ -36,23 +34,6 @@ def load_watchlist() -> set[str]:
         return set(str(c).strip() for c in (starred or []) if str(c).strip())
     except Exception:
         return set()
-
-
-def load_latest_cards() -> dict[str, dict]:
-    text = DATA_JS_FILE.read_text(encoding="utf-8")
-    match = STOCK_CARDS_RE.search(text)
-    if not match:
-        raise RuntimeError("data.js 中找不到 STOCK_CARDS 陣列")
-
-    cards = json.loads(match.group(1))
-    latest: dict[str, dict] = {}
-    for card in cards:
-        code = str(card.get("code") or "").strip()
-        if not code:
-            continue
-        if code not in latest or str(card.get("date") or "") >= str(latest[code].get("date") or ""):
-            latest[code] = card
-    return latest
 
 
 def discover_latest_reports() -> dict[str, dict]:
@@ -185,7 +166,6 @@ def parse_latest_analysis(text: str, report_path: Path) -> dict:
 
 
 def main() -> None:
-    cards = load_latest_cards()
     reports = discover_latest_reports()
     analyses = discover_latest_analyses()
     missing_analyses = sorted(set(reports) - set(analyses))
@@ -195,6 +175,10 @@ def main() -> None:
     stocks_dir = OUTPUT_DIR / "stocks"
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     stocks_dir.mkdir(parents=True, exist_ok=True)
+    active_codes = set(reports)
+    for existing_dir in stocks_dir.iterdir():
+        if existing_dir.is_dir() and existing_dir.name not in active_codes:
+            shutil.rmtree(existing_dir)
 
     now = datetime.now(ZoneInfo("Asia/Taipei")).isoformat(timespec="seconds")
     watchlist = load_watchlist()
@@ -210,14 +194,23 @@ def main() -> None:
             raise RuntimeError(f"{code} 四階段分析內容過短，停止匯出")
 
         latest_analysis = parse_latest_analysis(analysis_text, report_path)
-        card = dict(cards.get(code) or {})
-        card.update({
+        required_summary = ("date", "current", "decision", "winRate", "pattern", "action")
+        missing_summary = [
+            field for field in required_summary
+            if not str(latest_analysis.get(field) or "").strip()
+        ]
+        if missing_summary:
+            raise RuntimeError(
+                f"{code} Markdown 分析缺少手機摘要欄位：{', '.join(missing_summary)}"
+            )
+        card = {
             "code": code,
             "name": report_info["name"],
             "group": report_info["group"],
-            "date": latest_analysis.get("date") or str(card.get("date") or ""),
+            "market": report_info["market"],
+            "date": latest_analysis.get("date") or "",
             "isStarred": code in watchlist,
-        })
+        }
         stock_payload = {
             "version": 2,
             "stock": card,
@@ -237,22 +230,13 @@ def main() -> None:
             "name": report_info["name"],
             "group": report_info["group"],
             "market": report_info["market"],
-            "analysisDate": latest_analysis.get("date") or card.get("date") or "",
-            "current": latest_analysis.get("current") or card.get("current") or "",
-            "decision": latest_analysis.get("decision") or card.get("decision") or "",
-            "winRate": latest_analysis.get("winRate") or card.get("winRate") or "",
-            "pattern": latest_analysis.get("pattern") or card.get("pattern") or "",
+            "analysisDate": latest_analysis.get("date") or "",
+            "current": latest_analysis.get("current") or "",
+            "decision": latest_analysis.get("decision") or "",
+            "winRate": latest_analysis.get("winRate") or "",
+            "pattern": latest_analysis.get("pattern") or "",
             "isStarred": code in watchlist,
         })
-
-    (OUTPUT_DIR / "watchlist.json").write_text(
-        json.dumps({
-            "version": 1,
-            "updatedAt": now,
-            "starred": list(watchlist),
-        }, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
 
     (OUTPUT_DIR / "index.json").write_text(
         json.dumps({
@@ -264,12 +248,6 @@ def main() -> None:
         }, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-
-    # Keep the legacy 3324 paths for compatibility with any older deployed HTML.
-    default_dir = stocks_dir / (DEFAULT_CODE if DEFAULT_CODE in reports else stock_index[0]["code"])
-    shutil.copyfile(default_dir / "stock.json", OUTPUT_DIR / "stock.json")
-    shutil.copyfile(default_dir / "report.html", OUTPUT_DIR / "report.html")
-    shutil.copyfile(default_dir / "analysis.md", OUTPUT_DIR / "analysis.md")
 
     default_entry = next(item for item in stock_index if item["code"] == (DEFAULT_CODE if DEFAULT_CODE in reports else stock_index[0]["code"]))
     manifest = {
@@ -286,7 +264,7 @@ def main() -> None:
         encoding="utf-8",
     )
 
-    required = ["index.json", "stock.json", "report.html", "analysis.md", "manifest.json"]
+    required = ["index.json", "manifest.json"]
     for filename in required:
         target = OUTPUT_DIR / filename
         if not target.is_file() or target.stat().st_size == 0:

@@ -1,7 +1,5 @@
-// 從 render.js 抽出的純渲染邏輯，給 index.html(StockWatchCards) 跟 reports_manager.html
-// (檔案系統) 共用──兩邊都要把同一張 AI 分析卡片畫成一樣的正/反面樣式，抽成共用檔才不用
-// 兩邊各維護一份，改規則時也只要改一個地方。這裡的函式全部是純函式(只回傳 HTML 字串或
-// 操作固定 id 的彈窗 DOM)，不依賴 STOCK_CARDS 這個全域變數，呼叫端自己傳卡片物件進來。
+// reports_manager.html 使用的卡片純渲染邏輯。這裡的函式全部是純函式（只回傳 HTML 字串或
+// 操作固定 id 的彈窗 DOM），呼叫端直接傳入由 Markdown 解析出的卡片物件。
 
 function getScoreColorCat(winRate){
   const score = Number(winRate) || 0;
@@ -202,9 +200,8 @@ function backFaceHtml(c){
       </div>`;
 }
 
-// --- 通用放大檢視彈窗：兩個頁面共用同一套邏輯，只要頁面裡有對應 id 的元素即可 ---
-// (#zoomModal / #zoomStageInner / #zoomFlipBtn / #zoomCloseBtn，見 index.html 或
-// reports_manager.html 裡的 markup)
+// --- 通用放大檢視彈窗 ---
+// 需要 #zoomModal / #zoomStageInner / #zoomFlipBtn / #zoomCloseBtn。
 const ZoomModal = (() => {
   let state = { card: null, face: 'front' };
 

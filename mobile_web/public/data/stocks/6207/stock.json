@@ -4,7 +4,9 @@
     "code": "6207",
     "name": "雷科",
     "group": "被動元件",
-    "date": "2026-08-28"
+    "market": "TWO",
+    "date": "2026-08-28",
+    "isStarred": false
   },
   "latestAnalysis": {
     "date": "2026-08-28",

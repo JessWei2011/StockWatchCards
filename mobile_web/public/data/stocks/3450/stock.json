@@ -4,7 +4,9 @@
     "code": "3450",
     "name": "聯鈞",
     "group": "CPO",
-    "date": "2026-08-28"
+    "market": "TW",
+    "date": "2026-08-28",
+    "isStarred": false
   },
   "latestAnalysis": {
     "date": "2026-08-28",

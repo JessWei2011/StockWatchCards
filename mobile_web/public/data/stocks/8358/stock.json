@@ -4,7 +4,9 @@
     "code": "8358",
     "name": "金居",
     "group": "載板",
-    "date": "2026-08-28"
+    "market": "TWO",
+    "date": "2026-08-28",
+    "isStarred": false
   },
   "latestAnalysis": {
     "date": "2026-08-28",

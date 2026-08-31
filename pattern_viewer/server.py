@@ -22,6 +22,8 @@ DEFAULT_PORT = 8888
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DIRECTORY = os.path.dirname(SCRIPT_DIR)
 REPORTS_DIR = os.path.join(DIRECTORY, 'reports')
+sys.path.insert(0, DIRECTORY)
+from reports_manager_server import read_stock_cards
 
 # Matches e.g. "3034_聯詠(TW).html" or "2059_川湖(TW)(處置期間0810-0814).html"
 REPORT_FILENAME_RE = re.compile(r'^(\d{4,6})_(.+?)\((TW|TWO)\)')
@@ -59,6 +61,17 @@ class CORSHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/api/reports-index':
             payload = json.dumps(build_reports_index()).encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Content-Length', str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+            return
+        if self.path == '/api/cards':
+            payload = json.dumps(
+                {'ok': True, 'cards': read_stock_cards()},
+                ensure_ascii=False,
+            ).encode('utf-8')
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.send_header('Content-Length', str(len(payload)))

@@ -53,8 +53,7 @@
     }
 
     async loadSources() {
-      const fallbackCards = typeof STOCK_CARDS !== 'undefined' ? STOCK_CARDS : [];
-      let cards = fallbackCards;
+      let cards = [];
 
       console.log(`[PatternViewer Debug] 🚀 loadSources: 請求 ${this.options.reportsIndexUrl} 與 ${this.options.cardsUrl}`);
       try {

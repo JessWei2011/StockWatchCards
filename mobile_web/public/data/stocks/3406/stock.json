@@ -4,7 +4,9 @@
     "code": "3406",
     "name": "玉晶光",
     "group": "光學",
-    "date": "2026-08-28"
+    "market": "TW",
+    "date": "2026-08-28",
+    "isStarred": false
   },
   "latestAnalysis": {
     "date": "2026-08-28",
