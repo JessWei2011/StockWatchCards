@@ -4,10 +4,12 @@
   const state = {
     card: null,
     manifest: null,
+    rankings: null,
     stockIndex: [],
     currentCode: '',
     chartData: null,
     chart: null,
+    view: 'ranking',
     period: 20,
     showMa: true,
     showBoll: true
@@ -57,8 +59,7 @@
     const card = state.card;
     const summary = card.latestAnalysis || card;
     const manifest = state.manifest;
-    setText('#stockCode', card.code);
-    setText('#stockName', card.name);
+    setText('#topbarTitle', `${card.code} ${card.name}`);
     setText('#analysisDate', `分析 ${summary.date || manifest.analysisDate}`);
     setText('#winRate', String(summary.winRate || '—').includes('%') ? summary.winRate : `${summary.winRate}%`);
     setText('#decisionTitle', summary.decision);
@@ -73,6 +74,37 @@
     setText('#pickerCurrentStock', `${card.code} ${card.name}`);
     document.title = `${card.code} ${card.name}｜手機個股分析中心`;
     $('#stockChart').setAttribute('aria-label', `${card.name} K 線、成交量與技術指標互動圖`);
+  }
+
+  function renderRankings() {
+    const rankings = state.rankings;
+    if (!rankings?.boards?.length) throw new Error('四大榜單資料為空');
+    setText('#rankingDate', `資料截止日：${rankings.scanDate || '—'}`);
+    $('#rankingList').innerHTML = rankings.boards.map(board => `
+      <section class="ranking-board ${escapeHtml(board.tone)}" aria-labelledby="board-${escapeHtml(board.id)}">
+        <h3 id="board-${escapeHtml(board.id)}">${escapeHtml(board.title)}</h3>
+        <div class="ranking-board-items">
+          ${board.items.slice(0, 10).map(item => `<button type="button" class="ranking-item" data-code="${escapeHtml(item.code)}" aria-label="查看 ${escapeHtml(item.code)} ${escapeHtml(item.name)} 的個股快照">
+            <span class="ranking-position">${escapeHtml(item.rank)}</span>
+            <span class="ranking-name">${escapeHtml(item.code)} ${escapeHtml(item.name)}</span>
+            <span class="ranking-price">${escapeHtml(formatNumber(item.price))}</span>
+          </button>`).join('')}
+        </div>
+      </section>`).join('');
+  }
+
+  function showRanking({ replaceHistory = false } = {}) {
+    state.view = 'ranking';
+    $('#rankingDashboard').hidden = false;
+    setText('#topbarTitle', '雙 AI 四大榜單');
+    setText('#analysisDate', `截止 ${state.rankings?.scanDate || '—'}`);
+    document.title = '手機雙 AI 四大榜單快照';
+    if (replaceHistory) {
+      const url = new URL(location.href);
+      url.searchParams.delete('code');
+      history.replaceState({}, '', url);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function renderStockList(query = '') {
@@ -363,6 +395,7 @@
     $('#fullscreenButton').addEventListener('click', toggleFullscreenChart);
     $('#fullscreenCloseButton').addEventListener('click', toggleFullscreenChart);
     $('#stockPickerButton').addEventListener('click', openStockPicker);
+    $('#rankingReturnButton').addEventListener('click', () => showRanking({ replaceHistory: true }));
     $('#stockPickerClose').addEventListener('click', closeStockPicker);
     $('#stockPickerOverlay').addEventListener('click', event => {
       if (event.target === $('#stockPickerOverlay')) closeStockPicker();
@@ -374,12 +407,17 @@
       closeStockPicker();
       loadStock(button.dataset.code, { pushHistory: true });
     });
+    $('#rankingList').addEventListener('click', event => {
+      const button = event.target.closest('button[data-code]');
+      if (button) loadStock(button.dataset.code, { pushHistory: true });
+    });
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape' && !$('#stockPickerOverlay').hidden) closeStockPicker();
     });
     window.addEventListener('popstate', () => {
       const code = new URLSearchParams(location.search).get('code');
       if (code && code !== state.currentCode) loadStock(code, { pushHistory: false });
+      else if (!code) showRanking();
     });
     window.addEventListener('resize', () => state.chart?.resize());
   }
@@ -477,6 +515,8 @@
         state.chart = null;
       }
       renderCard();
+      state.view = 'detail';
+      $('#stockDetailView').hidden = false;
       renderSignalGrid();
       renderInstitutionCards();
       renderIndicatorGrid();
@@ -493,6 +533,9 @@
         url.searchParams.set('code', selected.code);
         history.replaceState({ code: selected.code }, '', url);
       }
+      if (options.focusDetail !== false) {
+        $('#stockDetailView').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     } catch (error) {
       showError(error);
       setText('#pickerCurrentStock', `${selected.code} ${selected.name}`);
@@ -504,20 +547,24 @@
   async function start() {
     try {
       if (!window.echarts) throw new Error('ECharts 圖表元件未載入');
-      const [indexPayload, manifest] = await Promise.all([
+      const [indexPayload, manifest, rankings] = await Promise.all([
         fetchJson('./data/index.json'),
-        fetchJson('./data/manifest.json')
+        fetchJson('./data/manifest.json'),
+        fetchJson('./data/rankings.json')
       ]);
       state.stockIndex = Array.isArray(indexPayload.stocks) ? indexPayload.stocks : [];
       state.manifest = manifest;
+      state.rankings = rankings;
       if (!state.stockIndex.length) throw new Error('個股索引為空');
       setupControls();
       renderStockList();
+      renderRankings();
       const requestedCode = new URLSearchParams(location.search).get('code');
       const initialCode = state.stockIndex.some(item => item.code === requestedCode)
         ? requestedCode
         : indexPayload.defaultCode || state.stockIndex[0].code;
-      await loadStock(initialCode, { pushHistory: false });
+      await loadStock(initialCode, { pushHistory: false, focusDetail: Boolean(requestedCode) });
+      if (!requestedCode) showRanking({ replaceHistory: true });
     } catch (error) {
       showError(error);
     }

@@ -21,6 +21,10 @@ WATCHLIST_FILE = ROOT_DIR / "watchlist.json"
 PUBLIC_DIR = ROOT_DIR / "mobile_web" / "public"
 OUTPUT_DIR = PUBLIC_DIR / "data"
 DEFAULT_CODE = "3324"
+RANKING_SOURCES = {
+    "gemini": ROOT_DIR / "stock_winrate_ranking_gemini.md",
+    "chatgpt": ROOT_DIR / "stock_winrate_ranking.md",
+}
 
 REPORT_RE = re.compile(r"^(\d+)_(.+?)\((TW|TWO)\)(.*?)\.html$", re.I)
 
@@ -165,6 +169,82 @@ def parse_latest_analysis(text: str, report_path: Path) -> dict:
     }
 
 
+def _clean_ranking_value(value: str) -> str:
+    return re.sub(r"[*`]", "", value or "").strip()
+
+
+def parse_dual_track_ranking(text: str, source: str) -> tuple[str, dict[str, list[dict]]]:
+    """Parse the scanner's two Top 10 markdown tables for the mobile snapshot."""
+    tracks = {"momentum": [], "defensive": []}
+    current_track = ""
+    scan_date = ""
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        date_match = re.search(r"資料截止日[：:]\s*([0-9/-]+)", line)
+        if date_match:
+            scan_date = date_match.group(1)
+        if "暴漲動能型" in line or "攻擊型" in line or "攻擊榜" in line:
+            current_track = "momentum"
+            continue
+        if "穩健防守型" in line or "穩健型" in line or "穩健榜" in line:
+            current_track = "defensive"
+            continue
+        if not (current_track and line.startswith("|") and line.endswith("|")):
+            continue
+
+        cells = [_clean_ranking_value(cell) for cell in line.split("|")[1:-1]]
+        if len(cells) < 5 or "排名" in cells[0] or all(re.fullmatch(r":?-+:?", cell) for cell in cells):
+            continue
+        code = cells[1]
+        if not re.fullmatch(r"\d{4,6}", code):
+            continue
+        tracks[current_track].append({
+            "rank": cells[0],
+            "code": code,
+            "name": cells[2],
+            "price": cells[4],
+        })
+
+    missing = [track for track, items in tracks.items() if not items]
+    if missing:
+        raise RuntimeError(f"{source} 排行榜缺少區段：{', '.join(missing)}")
+    return scan_date, tracks
+
+
+def export_four_rankings() -> None:
+    parsed: dict[str, dict[str, list[dict]]] = {}
+    scan_dates: list[str] = []
+    for source, path in RANKING_SOURCES.items():
+        if not path.is_file():
+            raise RuntimeError(f"找不到 {source} 排行榜：{path.name}")
+        scan_date, tracks = parse_dual_track_ranking(path.read_text(encoding="utf-8"), source)
+        parsed[source] = tracks
+        if scan_date:
+            scan_dates.append(scan_date)
+
+    boards = [
+        ("gemini-momentum", "Gemini 暴漲動能 TOP 10", "gemini-momentum", parsed["gemini"]["momentum"]),
+        ("gemini-defensive", "Gemini 穩健防守 TOP 10", "gemini-defensive", parsed["gemini"]["defensive"]),
+        ("chatgpt-momentum", "ChatGPT 攻擊型 TOP 10", "chatgpt-momentum", parsed["chatgpt"]["momentum"]),
+        ("chatgpt-defensive", "ChatGPT 穩健型 TOP 10", "chatgpt-defensive", parsed["chatgpt"]["defensive"]),
+    ]
+    payload = {
+        "version": 1,
+        "scanDate": scan_dates[0] if scan_dates else "",
+        "boards": [
+            {"id": board_id, "title": title, "tone": tone, "items": items[:10]}
+            for board_id, title, tone, items in boards
+        ],
+    }
+    (OUTPUT_DIR / "rankings.json").write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> None:
     reports = discover_latest_reports()
     analyses = discover_latest_analyses()
@@ -248,6 +328,7 @@ def main() -> None:
         }, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+    export_four_rankings()
 
     default_entry = next(item for item in stock_index if item["code"] == (DEFAULT_CODE if DEFAULT_CODE in reports else stock_index[0]["code"]))
     manifest = {
@@ -264,7 +345,7 @@ def main() -> None:
         encoding="utf-8",
     )
 
-    required = ["index.json", "manifest.json"]
+    required = ["index.json", "manifest.json", "rankings.json"]
     for filename in required:
         target = OUTPUT_DIR / filename
         if not target.is_file() or target.stat().st_size == 0:

@@ -1,0 +1,274 @@
+{
+  "version": 1,
+  "scanDate": "08/31",
+  "boards": [
+    {
+      "id": "gemini-momentum",
+      "title": "Gemini 暴漲動能 TOP 10",
+      "tone": "gemini-momentum",
+      "items": [
+        {
+          "rank": "1",
+          "code": "3406",
+          "name": "玉晶光",
+          "price": "1005.00"
+        },
+        {
+          "rank": "2",
+          "code": "2455",
+          "name": "全新",
+          "price": "477.00"
+        },
+        {
+          "rank": "3",
+          "code": "3324",
+          "name": "雙鴻",
+          "price": "1250.00"
+        },
+        {
+          "rank": "4",
+          "code": "3374",
+          "name": "精材",
+          "price": "422.50"
+        },
+        {
+          "rank": "5",
+          "code": "3008",
+          "name": "大立光",
+          "price": "7650.00"
+        },
+        {
+          "rank": "6",
+          "code": "3450",
+          "name": "聯鈞",
+          "price": "646.00"
+        },
+        {
+          "rank": "7",
+          "code": "3234",
+          "name": "光環 (處置)",
+          "price": "185.00"
+        },
+        {
+          "rank": "8",
+          "code": "3081",
+          "name": "聯亞",
+          "price": "3530.00"
+        },
+        {
+          "rank": "9",
+          "code": "6226",
+          "name": "光鼎",
+          "price": "31.60"
+        },
+        {
+          "rank": "10",
+          "code": "3441",
+          "name": "聯一光 (處置)",
+          "price": "136.00"
+        }
+      ]
+    },
+    {
+      "id": "gemini-defensive",
+      "title": "Gemini 穩健防守 TOP 10",
+      "tone": "gemini-defensive",
+      "items": [
+        {
+          "rank": "1",
+          "code": "6531",
+          "name": "愛普",
+          "price": "927.00"
+        },
+        {
+          "rank": "2",
+          "code": "2455",
+          "name": "全新",
+          "price": "477.00"
+        },
+        {
+          "rank": "3",
+          "code": "2344",
+          "name": "華邦電",
+          "price": "182.50"
+        },
+        {
+          "rank": "4",
+          "code": "3406",
+          "name": "玉晶光",
+          "price": "1005.00"
+        },
+        {
+          "rank": "5",
+          "code": "3374",
+          "name": "精材",
+          "price": "422.50"
+        },
+        {
+          "rank": "6",
+          "code": "3324",
+          "name": "雙鴻",
+          "price": "1250.00"
+        },
+        {
+          "rank": "7",
+          "code": "3450",
+          "name": "聯鈞",
+          "price": "646.00"
+        },
+        {
+          "rank": "8",
+          "code": "2357",
+          "name": "華碩",
+          "price": "999.00"
+        },
+        {
+          "rank": "9",
+          "code": "2308",
+          "name": "台達電",
+          "price": "1840.00"
+        },
+        {
+          "rank": "10",
+          "code": "6781",
+          "name": "Advanced Energy Solution Holding Co., Ltd",
+          "price": "1125.00"
+        }
+      ]
+    },
+    {
+      "id": "chatgpt-momentum",
+      "title": "ChatGPT 攻擊型 TOP 10",
+      "tone": "chatgpt-momentum",
+      "items": [
+        {
+          "rank": "1",
+          "code": "3406",
+          "name": "玉晶光",
+          "price": "1005.00"
+        },
+        {
+          "rank": "2",
+          "code": "3324",
+          "name": "雙鴻",
+          "price": "1250.00"
+        },
+        {
+          "rank": "3",
+          "code": "2455",
+          "name": "全新",
+          "price": "477.00"
+        },
+        {
+          "rank": "4",
+          "code": "3450",
+          "name": "聯鈞",
+          "price": "646.00"
+        },
+        {
+          "rank": "5",
+          "code": "3008",
+          "name": "大立光",
+          "price": "7650.00"
+        },
+        {
+          "rank": "6",
+          "code": "6214",
+          "name": "精誠",
+          "price": "183.50"
+        },
+        {
+          "rank": "7",
+          "code": "2357",
+          "name": "華碩",
+          "price": "999.00"
+        },
+        {
+          "rank": "8",
+          "code": "2395",
+          "name": "研華",
+          "price": "677.00"
+        },
+        {
+          "rank": "9",
+          "code": "4931",
+          "name": "新盛力",
+          "price": "259.00"
+        },
+        {
+          "rank": "10",
+          "code": "8227",
+          "name": "巨有科技",
+          "price": "156.50"
+        }
+      ]
+    },
+    {
+      "id": "chatgpt-defensive",
+      "title": "ChatGPT 穩健型 TOP 10",
+      "tone": "chatgpt-defensive",
+      "items": [
+        {
+          "rank": "1",
+          "code": "6531",
+          "name": "愛普",
+          "price": "927.00"
+        },
+        {
+          "rank": "2",
+          "code": "3324",
+          "name": "雙鴻",
+          "price": "1250.00"
+        },
+        {
+          "rank": "3",
+          "code": "2357",
+          "name": "華碩",
+          "price": "999.00"
+        },
+        {
+          "rank": "4",
+          "code": "3450",
+          "name": "聯鈞",
+          "price": "646.00"
+        },
+        {
+          "rank": "5",
+          "code": "6214",
+          "name": "精誠",
+          "price": "183.50"
+        },
+        {
+          "rank": "6",
+          "code": "2455",
+          "name": "全新",
+          "price": "477.00"
+        },
+        {
+          "rank": "7",
+          "code": "3034",
+          "name": "聯詠",
+          "price": "540.00"
+        },
+        {
+          "rank": "8",
+          "code": "4958",
+          "name": "臻鼎-KY",
+          "price": "500.00"
+        },
+        {
+          "rank": "9",
+          "code": "2377",
+          "name": "微星",
+          "price": "155.00"
+        },
+        {
+          "rank": "10",
+          "code": "3374",
+          "name": "精材",
+          "price": "422.50"
+        }
+      ]
+    }
+  ]
+}

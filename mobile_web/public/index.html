@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1020">
-  <meta name="description" content="手機個股分析中心：個股線型、指標、法人與四階段分析快照">
-  <title>手機個股分析中心</title>
-  <link rel="stylesheet" href="./style.css?v=20260829-6">
+  <meta name="description" content="手機雙 AI 四大榜單快照：Gemini 與 ChatGPT 的攻擊、穩健 Top 10">
+  <title>手機雙 AI 四大榜單快照</title>
+  <link rel="stylesheet" href="./style.css?v=20260831-3">
 </head>
 <body>
   <header class="topbar">
     <div>
       <div class="eyebrow">STOCK2 MOBILE</div>
-      <h1><span id="stockCode">3324</span> <span id="stockName">雙鴻</span></h1>
+      <h1 id="topbarTitle">雙 AI 四大榜單</h1>
     </div>
     <div class="freshness" aria-label="資料更新狀態">
       <span class="status-dot"></span>
@@ -23,6 +23,18 @@
   <main class="page-shell">
     <div id="errorBanner" class="error-banner" role="alert" hidden></div>
 
+    <section class="ranking-dashboard" id="rankingDashboard" aria-labelledby="rankingTitle">
+      <div class="ranking-intro">
+        <span class="section-kicker">MARKET SNAPSHOT</span>
+        <h2 id="rankingTitle">雙 AI 四大榜單全景一覽</h2>
+        <p>Gemini 與 ChatGPT 分別以攻擊、穩健邏輯選出 Top 10；點選個股可查看完整分析。</p>
+        <span class="ranking-date" id="rankingDate">資料截止日：—</span>
+      </div>
+      <div class="four-ranking-grid" id="rankingList" aria-label="雙 AI 四大排行榜"></div>
+    </section>
+
+    <section id="stockDetailView" hidden>
+    <button type="button" class="ranking-return-button" id="rankingReturnButton">← 返回四大榜單</button>
     <button type="button" class="stock-picker-button" id="stockPickerButton" aria-haspopup="dialog">
       <span><span class="picker-label">目前個股</span><strong id="pickerCurrentStock">3324 雙鴻</strong></span>
       <span class="picker-action">搜尋／切換⌄</span>
@@ -159,6 +171,7 @@
       <p>本頁為電腦端最後一次手動發布的研究快照，不是即時行情。</p>
       <p id="publishedAt">發布時間：—</p>
     </footer>
+    </section>
   </main>
 
   <div class="stock-picker-overlay" id="stockPickerOverlay" hidden>
@@ -179,6 +192,6 @@
 
   <script src="./vendor/echarts.min.js?v=5.4.3"></script>
   <script src="./modules/parser.js?v=20260829-3"></script>
-  <script src="./app.js?v=20260829-5"></script>
+  <script src="./app.js?v=20260831-3"></script>
 </body>
 </html>
