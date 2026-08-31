@@ -3755,7 +3755,8 @@
     const starBtn = code ? `
       <button type="button" class="tree-star-btn ${isStarred ? 'active' : ''}" data-code="${escapeHtml(code)}" title="${isStarred ? '已標注重點關注 (點擊取消)' : '標注重點關注'}">★</button>` : '';
 
-    item.innerHTML = `${starBtn}<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(r.name || r.base)}">${escapeHtml(r.name || r.base)}</span><span class="tree-stat-pills">${quickActions}${winPill}${rrPill}${pePill}</span>`;
+    const displayName = (window.STOCK_NAMES_MAP && window.STOCK_NAMES_MAP[code]) || r.name || r.base;
+    item.innerHTML = `${starBtn}<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span><span class="tree-stat-pills">${quickActions}${winPill}${rrPill}${pePill}</span>`;
     item.addEventListener('click', () => openPatternForStock(code));
 
     const starBtnEl = item.querySelector('.tree-star-btn');

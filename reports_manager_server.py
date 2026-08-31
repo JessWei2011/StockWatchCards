@@ -55,11 +55,19 @@ TRACKED_FILENAME_RE = re.compile(r'^([0-9A-Za-z]{2,6})_(.+?)\((TW|TWO)\)')
 FORBIDDEN_NAME_CHARS = set('\\/:*?"<>|')
 STOCK_NAME_DICT_PATH = ROOT_DIR / "stock_name_dict.json"
 STOCK_NAME_DICT = {}
-if STOCK_NAME_DICT_PATH.exists():
-    try:
-        STOCK_NAME_DICT = json.loads(STOCK_NAME_DICT_PATH.read_text(encoding="utf-8"))
-    except Exception:
-        pass
+def reload_stock_name_dict():
+    global STOCK_NAME_DICT
+    if STOCK_NAME_DICT_PATH.exists():
+        try:
+            STOCK_NAME_DICT = json.loads(STOCK_NAME_DICT_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+reload_stock_name_dict()
+
+def get_stock_name(code, default=None):
+    if not code:
+        return default
+    return STOCK_NAME_DICT.get(str(code), default)
 
 
 def read_watchlist():
@@ -465,7 +473,7 @@ def list_folder(path):
             chart_name = base + "_chart.png"
             m = TRACKED_FILENAME_RE.match(entry)
             code = m.group(1) if m else None
-            name = STOCK_NAME_DICT.get(code, m.group(2)) if (m and code) else (m.group(2) if m else None)
+            name = get_stock_name(code, m.group(2)) if (m and code) else (m.group(2) if m else None)
             reports.append({
                 "base": base,
                 "code": code,
@@ -494,7 +502,7 @@ def list_reports_recursive(path):
             m = TRACKED_FILENAME_RE.match(fn)
             if m:
                 code = m.group(1)
-                name = STOCK_NAME_DICT.get(code, m.group(2))
+                name = get_stock_name(code, m.group(2))
                 reports.append({"base": base, "code": code, "name": name})
     return reports
 
@@ -528,7 +536,7 @@ def build_reports_index():
                 continue
 
             code, raw_name, market = match.groups()
-            name = STOCK_NAME_DICT.get(code, raw_name)
+            name = get_stock_name(code, raw_name)
             html_path = directory / filename
             relative_path = html_path.relative_to(REPORTS_DIR).as_posix()
             chart_path = html_path.with_name(html_path.stem + "_chart.png")
