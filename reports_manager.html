@@ -363,13 +363,34 @@
     box-sizing:border-box; white-space:nowrap;
   }
   .spinner{
-    width:15px; height:15px; border-radius:50%;
-    border:2px solid var(--border); border-top-color:var(--accent);
-    animation:spin 0.7s linear infinite; display:none;
+    width:18px; height:18px; border-radius:50%;
+    border:2.5px solid rgba(56,189,248,0.2); border-top-color:#38bdf8;
+    border-right-color:#818cf8;
+    animation:spin 0.65s linear infinite; display:none; flex-shrink:0;
+    box-shadow:0 0 10px rgba(56,189,248,0.45);
+    vertical-align:middle;
   }
   .spinner.active{ display:inline-block; }
   @keyframes spin{ to{ transform:rotate(360deg); } }
-  .generate-status{ font-size:13px; color:var(--text-dim); }
+  .btn-spin-icon{
+    display:inline-block; font-size:15px;
+    animation:gear-spin 1.4s linear infinite;
+  }
+  @keyframes gear-spin{
+    0%{ transform:rotate(0deg); }
+    100%{ transform:rotate(360deg); }
+  }
+  .pulse-dot-live{
+    display:inline-block; width:9px; height:9px; border-radius:50%;
+    background:#22c55e; box-shadow:0 0 8px #22c55e;
+    margin-right:6px; vertical-align:middle;
+    animation:pulse-live 0.8s infinite alternate ease-in-out;
+  }
+  @keyframes pulse-live{
+    0%{ transform:scale(0.85); opacity:0.6; }
+    100%{ transform:scale(1.25); opacity:1; }
+  }
+  .generate-status{ font-size:13.5px; color:var(--text-dim); display:inline-flex; align-items:center; flex-wrap:wrap; }
   .generate-status.error{ color:var(--danger); white-space:pre-line; }
 
   /* ── 個股分析中心主工作區：卡片管理與線形教學使用完全不同的版型 ── */
@@ -4412,13 +4433,32 @@
   }
 
   // ── 產生/更新報表 ──
-  const GENERATE_POLL_MS = 1500;
+  const GENERATE_POLL_MS = 1000;
   let generatePolling = false;
+  let generateStartTime = 0;
+  let generateTickInterval = null;
 
   function setGenerateUI(running){
-    document.getElementById('generate-btn').disabled = running;
-    document.getElementById('generate-input').disabled = running;
-    document.getElementById('generate-spinner').classList.toggle('active', running);
+    const btn = document.getElementById('generate-btn');
+    const input = document.getElementById('generate-input');
+    const spinner = document.getElementById('generate-spinner');
+    
+    if (btn) {
+      btn.disabled = running;
+      if (running) {
+        btn.innerHTML = '<span class="btn-spin-icon">⚙️</span> 處理中...';
+        btn.style.background = 'rgba(245,158,11,0.22)';
+        btn.style.borderColor = '#f59e0b';
+        btn.style.color = '#fde047';
+      } else {
+        btn.innerHTML = '🚀 產生/更新報表';
+        btn.style.background = '';
+        btn.style.borderColor = '';
+        btn.style.color = '';
+      }
+    }
+    if (input) input.disabled = running;
+    if (spinner) spinner.classList.toggle('active', running);
   }
 
   async function startGenerate(overrideInput){
@@ -4426,8 +4466,10 @@
     const raw = (overrideInput !== undefined ? overrideInput : document.getElementById('generate-input').value).trim();
     if (!raw) return;
 
+    generateStartTime = Date.now();
     statusEl.classList.remove('error');
-    statusEl.textContent = '⏳ 啟動中...';
+    statusEl.innerHTML = '<span class="pulse-dot-live"></span><span style="color:#67e8f9; font-weight:800;">[啟動中...]</span> 正在連線伺服器建立工作排程...';
+    
     const { ok, data } = await api('POST', '/api/generate', { input: raw });
     if (!ok) {
       statusEl.classList.add('error');
@@ -4442,6 +4484,7 @@
     if (generatePolling) return;
     generatePolling = true;
     const statusEl = document.getElementById('generate-status');
+    if (!generateStartTime) generateStartTime = Date.now();
 
     while (true) {
       let data;
@@ -4454,26 +4497,38 @@
       }
 
       const { progress, done, results } = data;
+      const elapsedSec = Math.max(1, Math.floor((Date.now() - generateStartTime) / 1000));
+      const btn = document.getElementById('generate-btn');
+      if (btn && btn.disabled) {
+        btn.innerHTML = `<span class="btn-spin-icon">⚙️</span> 處理中 (${elapsedSec}s)...`;
+      }
+
       if (!done) {
         statusEl.classList.remove('error');
-        statusEl.textContent = progress.total > 1
-          ? `處理中... 進度 ${progress.i}/${progress.total}：${progress.ticker}`
-          : (progress.ticker ? `處理中... ${progress.ticker}` : '處理中...');
+        if (progress.total > 1) {
+          const pct = Math.round((progress.i / progress.total) * 100);
+          statusEl.innerHTML = `<span class="pulse-dot-live"></span><span style="color:#67e8f9; font-weight:800;">[處理中 ${progress.i}/${progress.total} (${pct}%)]</span> 正在分析 <strong style="color:#fde047; margin:0 4px;">${escapeHtml(progress.ticker || '')}</strong> <span style="color:var(--text-dim); margin-left:6px;">(已耗時 ${elapsedSec} 秒)</span>`;
+        } else if (progress.ticker) {
+          statusEl.innerHTML = `<span class="pulse-dot-live"></span><span style="color:#67e8f9; font-weight:800;">[處理中]</span> 正在分析 <strong style="color:#fde047; margin:0 4px;">${escapeHtml(progress.ticker)}</strong> <span style="color:var(--text-dim); margin-left:6px;">(已耗時 ${elapsedSec} 秒)</span>`;
+        } else {
+          statusEl.innerHTML = `<span class="pulse-dot-live"></span><span style="color:#67e8f9; font-weight:800;">[連線處理中...]</span> 正在向證券交易所請求最新日 K 線與技術指標 <span style="color:var(--text-dim); margin-left:6px;">(已耗時 ${elapsedSec} 秒)</span>`;
+        }
         await new Promise(r => setTimeout(r, GENERATE_POLL_MS));
         continue;
       }
 
+      const totalSec = Math.max(1, Math.floor((Date.now() - generateStartTime) / 1000));
       const failed = results.filter(r => !r.ok);
       if (failed.length) {
         statusEl.classList.add('error');
-        statusEl.textContent = `⚠️ 完成 ${results.length - failed.length}/${results.length} 檔，以下失敗：\n` +
+        statusEl.textContent = `⚠️ 完成 ${results.length - failed.length}/${results.length} 檔 (耗時 ${totalSec}s)，以下失敗：\n` +
           failed.map(r => `❌ ${r.ticker}${r.reason ? '（' + r.reason + '）' : ''}`).join('\n');
       } else if (results.length) {
         statusEl.classList.remove('error');
-        statusEl.textContent = `✅ 完成，共更新 ${results.length} 檔`;
+        statusEl.innerHTML = `<span style="color:#4ade80; font-weight:850;">✅ 完成！共更新 ${results.length} 檔個股報表</span> <span style="color:var(--text-dim); margin-left:6px;">(總耗時 ${totalSec} 秒)</span>`;
       } else {
         statusEl.classList.remove('error');
-        statusEl.textContent = '完成（沒有符合的股票被處理，請確認輸入的代號/名稱）';
+        statusEl.innerHTML = `<span style="color:#94a3b8;">完成（沒有符合的股票被處理，請確認輸入的代號/名稱）</span> <span style="color:var(--text-dim); margin-left:6px;">(耗時 ${totalSec} 秒)</span>`;
       }
       break;
     }
