@@ -547,7 +547,25 @@ def detect_volume_tags(df: pd.DataFrame) -> list:
             if cur_vol < cur_v20 * 0.65 and not is_up:
                 tags.append("⚠️ 量價頂背離 (無量虛漲拉高出貨)")
 
-    # 6. 量均線黃金/死亡交叉
+    # 6. 前高天量套牢壓力牆 vs 滾量吞噬前高天量
+    if len(df) >= 25 and cur_v20 is not None:
+        lookback_df = df.iloc[-35:-2] if len(df) >= 35 else df.iloc[:-2]
+        if len(lookback_df) >= 5:
+            past_v20_series = df['volume'].rolling(20).mean()
+            peak_vol_idx = lookback_df['volume'].idxmax()
+            peak_vol = float(df['volume'].loc[peak_vol_idx])
+            peak_v20 = float(past_v20_series.loc[peak_vol_idx]) if pd.notna(past_v20_series.loc[peak_vol_idx]) else cur_v20
+            peak_high = float(df['high'].loc[peak_vol_idx])
+            cur_price = float(close_s.iloc[-1])
+
+            if peak_vol >= peak_v20 * 1.8:
+                if cur_price >= peak_high * 0.970 and cur_price <= peak_high * 1.025:
+                    if cur_vol < peak_vol * 0.65:
+                        tags.append("⚠️ 臨前高天量阻力牆 (量能不足防壓回)")
+                    elif cur_vol >= peak_vol * 0.90 and is_up:
+                        tags.append("🔥 滾量吞噬前高天量 (實質換手突破)")
+
+    # 7. 量均線黃金/死亡交叉
     if cur_v5 is not None and cur_v20 is not None and prev_v5 is not None and prev_v20 is not None:
         if prev_v5 <= prev_v20 and cur_v5 > cur_v20:
             tags.append("✨ 量能黃金交叉 (攻擊量增溫)")

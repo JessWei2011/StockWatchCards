@@ -4483,9 +4483,9 @@
       if (parts.length) {
         return parts.map(label => {
           let tone = 'neutral';
-          if (/天量|倒貨|頂背離|死亡交叉|死叉|退潮/.test(label)) tone = 'positive';
+          if (/天量|倒貨|頂背離|死亡交叉|死叉|退潮|阻力牆|防壓回/.test(label)) tone = 'positive';
           else if (/突破|黃金交叉|金叉|窒息量|洗淨/.test(label)) tone = 'mixed';
-          else if (/滾量|量價齊揚|主升/.test(label)) tone = 'negative';
+          else if (/滾量|量價齊揚|主升|吞噬/.test(label)) tone = 'negative';
           else if (/溫和|增量|放量/.test(label)) tone = 'cyan';
           return { label, tone, title: `VOL 標籤：${label}` };
         });

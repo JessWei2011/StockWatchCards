@@ -531,11 +531,11 @@
           const parts = volTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
           statVolTags.innerHTML = parts.map(t => {
             let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
-            if (/天量|倒貨|頂背離|死亡交叉|死叉|退潮/.test(t)) {
+            if (/天量|倒貨|頂背離|死亡交叉|死叉|退潮|阻力牆|防壓回/.test(t)) {
               style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
             } else if (/突破|黃金交叉|金叉|窒息量|洗淨/.test(t)) {
               style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
-            } else if (/滾量|量價齊揚|主升/.test(t)) {
+            } else if (/滾量|量價齊揚|主升|吞噬/.test(t)) {
               style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
             } else if (/溫和|增量/.test(t)) {
               style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
