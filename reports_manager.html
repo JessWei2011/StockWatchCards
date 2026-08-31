@@ -795,6 +795,44 @@
     border-color: #38bdf8;
     box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
   }
+
+  .server-status-group{
+    display:inline-flex; align-items:center; gap:6px; margin-left:auto;
+    padding:3px 8px; background:rgba(0,0,0,0.35); border:1px solid var(--border);
+    border-radius:8px; user-select:none;
+  }
+  .server-status-pill{
+    display:inline-flex; align-items:center; gap:6px; padding:3px 8px;
+    border-radius:6px; font-size:12.5px; font-weight:750; white-space:nowrap;
+    transition:all .2s ease; cursor:default;
+  }
+  .server-status-pill .status-dot{
+    width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0;
+  }
+  .server-status-pill.online{
+    background:rgba(34,197,94,0.14); color:#86efac; border:1px solid rgba(34,197,94,0.35);
+  }
+  .server-status-pill.online .status-dot{
+    background:#22c55e; box-shadow:0 0 8px #22c55e;
+    animation:pulse-srv-dot 2s infinite;
+  }
+  .server-status-pill.offline{
+    background:rgba(100,116,139,0.15); color:#94a3b8; border:1px solid rgba(100,116,139,0.3);
+  }
+  .server-status-pill.offline .status-dot{
+    background:#64748b;
+  }
+  .server-status-pill.error{
+    background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.4);
+  }
+  .server-status-pill.error .status-dot{
+    background:#ef4444; box-shadow:0 0 8px #ef4444;
+  }
+  @keyframes pulse-srv-dot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.25); opacity: 0.7; }
+  }
+
 </style>
 <link rel="stylesheet" href="pattern_viewer/css/viewer.css?v=73">
 </head>
@@ -807,7 +845,17 @@
       <input type="number" id="display-scale" min="100" max="200" step="1" value="100" inputmode="numeric" aria-label="全域顯示大小">
       <span aria-hidden="true">%</span>
     </label>
-    <button class="btn danger" id="shutdown-server-btn" title="關閉本機伺服器進程並關掉這個分頁">🔴 關閉伺服器</button>
+        <div class="server-status-group" id="server-status-group" title="伺服器連線狀態 (每5秒自動偵測，點擊可立即重測)">
+      <div class="server-status-pill online" id="srv-status-8935" title="【個股中心核心伺服器 Port 8935】連線中 (包含個股分析、專業看盤、排行榜與整合總經)">
+        <span class="status-dot"></span>
+        <span class="status-text">個股 8935: 在線</span>
+      </div>
+      <div class="server-status-pill offline" id="srv-status-8934" title="【獨立總經追蹤器 Port 8934】離線 (總經功能已由 8935 整合接管，若需獨立啟動可透過「控制台」)">
+        <span class="status-dot"></span>
+        <span class="status-text">總經 8934: 離線</span>
+      </div>
+    </div>
+    <button class="btn danger" id="shutdown-server-btn"  title="關閉本機伺服器進程並關掉這個分頁">🔴 關閉伺服器</button>
   </header>
   <nav class="app-tabs" aria-label="主要工作區">
     <button type="button" class="app-tab active" data-workspace="reports">🗂️ 報表管理</button>
@@ -3242,6 +3290,53 @@
   // 統一入口的首頁固定是檔案管理；個股分析只在使用者主動選取後開啟。
   activateWorkspace('reports');
   loadWinrateMap();
+
+  async function updateServersStatus(){
+    try {
+      const resp = await fetch('/api/servers-status', { cache: 'no-store' });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      if (data && data.ok) {
+        // 8935
+        const el8935 = document.getElementById('srv-status-8935');
+        if (el8935) {
+          el8935.className = 'server-status-pill online';
+          el8935.querySelector('.status-text').textContent = '個股 8935: 在線';
+          el8935.title = '【個股中心核心伺服器】在線運作中 (Port 8935)';
+        }
+        // 8934
+        const el8934 = document.getElementById('srv-status-8934');
+        if (el8934) {
+          const is8934Online = !!data.servers?.['8934']?.online;
+          el8934.className = `server-status-pill ${is8934Online ? 'online' : 'offline'}`;
+          el8934.querySelector('.status-text').textContent = `總經 8934: ${is8934Online ? '在線' : '離線'}`;
+          el8934.title = is8934Online
+            ? '【獨立總經追蹤器】在線運作中 (Port 8934)'
+            : '【獨立總經追蹤器】離線 (總經功能已由 8935 整合接管)';
+        }
+      }
+    } catch (e) {
+      const el8935 = document.getElementById('srv-status-8935');
+      if (el8935) {
+        el8935.className = 'server-status-pill error';
+        el8935.querySelector('.status-text').textContent = '個股 8935: 斷線 🔴';
+        el8935.title = '【個股中心伺服器】已中斷連線！請執行 reports_manager.bat 啟動伺服器';
+      }
+      const el8934 = document.getElementById('srv-status-8934');
+      if (el8934) {
+        el8934.className = 'server-status-pill offline';
+        el8934.querySelector('.status-text').textContent = '總經 8934: 未知';
+      }
+    }
+  }
+
+  document.getElementById('server-status-group')?.addEventListener('click', () => {
+    updateServersStatus();
+  });
+
+  updateServersStatus();
+  setInterval(updateServersStatus, 5000);
+
 </script>
 <script>
   let tree = null;

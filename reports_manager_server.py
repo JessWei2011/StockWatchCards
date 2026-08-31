@@ -989,6 +989,22 @@ class Handler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/watchlist":
             self._json(200, {"ok": True, **read_watchlist()})
             return
+        if parsed.path == "/api/servers-status":
+            import socket
+            def check_port(port):
+                try:
+                    with socket.create_connection(("127.0.0.1", port), timeout=0.15):
+                        return True
+                except OSError:
+                    return False
+            self._json(200, {
+                "ok": True,
+                "servers": {
+                    "8935": {"name": "個股中心", "port": 8935, "online": True, "desc": "個股/看盤/榜單/總經"},
+                    "8934": {"name": "總經資訊", "port": 8934, "online": check_port(8934), "desc": "獨立總經追蹤器"}
+                }
+            })
+            return
         if parsed.path == "/api/reports-index":
             # 保持原 PatternViewer API 的裸陣列格式，第二階段元件化前即可直接換用
             # reports_manager_server.py，不必同步修改舊介面。
