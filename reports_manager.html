@@ -832,6 +832,34 @@
     50% { transform: scale(1.25); opacity: 0.7; }
   }
 
+
+  /* ── 雙 AI 四大榜單跨榜評級徽章 (A1, A2, B1, B2, C1, C2) ── */
+  .ranking-tier-badge{
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:900; line-height:1; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding:2px 5px; border-radius:4px; flex-shrink:0; letter-spacing:0.4px;
+  }
+  .ranking-tier-badge.tier-a{
+    background:linear-gradient(135deg, #ef4444, #f59e0b);
+    color:#ffffff; border:1px solid #fde047;
+    box-shadow:0 0 6px rgba(239,68,68,0.6);
+    animation:pulse-tier-a 2.2s infinite ease-in-out;
+  }
+  .ranking-tier-badge.tier-b{
+    background:linear-gradient(135deg, #0284c7, #38bdf8);
+    color:#ffffff; border:1px solid #7dd3fc;
+    box-shadow:0 0 6px rgba(56,189,248,0.5);
+  }
+  .ranking-tier-badge.tier-c{
+    background:linear-gradient(135deg, #059669, #10b981);
+    color:#ffffff; border:1px solid #6ee7b7;
+    box-shadow:0 0 5px rgba(16,185,129,0.4);
+  }
+  @keyframes pulse-tier-a{
+    0%, 100%{ transform:scale(1); }
+    50%{ transform:scale(1.08); }
+  }
+
 </style>
 <link rel="stylesheet" href="pattern_viewer/css/viewer.css?v=73">
 </head>
@@ -3035,6 +3063,77 @@
     const cMomo = winrateParsedData.chatgpt?.momentumItems || [];
     const cDef = winrateParsedData.chatgpt?.defensiveItems || [];
 
+    // 計算四大榜單 (TOP 10) 的跨榜重疊統計與等級 (A1, A2, B1, B2, C1, C2...)
+    const fourLists = [
+      gMomo.slice(0, 10),
+      gDef.slice(0, 10),
+      cMomo.slice(0, 10),
+      cDef.slice(0, 10)
+    ];
+
+    const stockCrossStats = {};
+    fourLists.forEach((list, listIdx) => {
+      list.forEach((it, idx) => {
+        const code = it.code;
+        if (!code) return;
+        if (!stockCrossStats[code]) {
+          stockCrossStats[code] = {
+            code,
+            name: it.name,
+            ranks: {},
+            count: 0,
+            rankSum: 0,
+            minRank: 99
+          };
+        }
+        const rankVal = parseInt(it.rank) || (idx + 1);
+        stockCrossStats[code].ranks[listIdx] = rankVal;
+        stockCrossStats[code].count += 1;
+        stockCrossStats[code].rankSum += rankVal;
+        if (rankVal < stockCrossStats[code].minRank) {
+          stockCrossStats[code].minRank = rankVal;
+        }
+      });
+    });
+
+    const tierA = Object.values(stockCrossStats).filter(s => s.count === 4);
+    const tierB = Object.values(stockCrossStats).filter(s => s.count === 3);
+    const tierC = Object.values(stockCrossStats).filter(s => s.count === 2);
+
+    const sortFn = (a, b) => (a.rankSum - b.rankSum) || (a.minRank - b.minRank) || a.code.localeCompare(b.code);
+    tierA.sort(sortFn);
+    tierB.sort(sortFn);
+    tierC.sort(sortFn);
+
+    const tierBadgesMap = {};
+    tierA.forEach((s, idx) => {
+      tierBadgesMap[s.code] = {
+        label: `A${idx + 1}`,
+        tier: 'a',
+        count: 4,
+        rankSum: s.rankSum,
+        title: `4 榜全中 (A${idx + 1})：四榜名次加總 ${s.rankSum}`
+      };
+    });
+    tierB.forEach((s, idx) => {
+      tierBadgesMap[s.code] = {
+        label: `B${idx + 1}`,
+        tier: 'b',
+        count: 3,
+        rankSum: s.rankSum,
+        title: `3 榜上榜 (B${idx + 1})：名次加總 ${s.rankSum}`
+      };
+    });
+    tierC.forEach((s, idx) => {
+      tierBadgesMap[s.code] = {
+        label: `C${idx + 1}`,
+        tier: 'c',
+        count: 2,
+        rankSum: s.rankSum,
+        title: `2 榜上榜 (C${idx + 1})：名次加總 ${s.rankSum}`
+      };
+    });
+
     function renderMiniOverviewCol(titleText, icon, colorTheme, items, src, track){
       const isCur = (winrateRankingSource === src && winrateActiveTrack === track);
       return `
@@ -3047,8 +3146,9 @@
           <div style="display:flex; flex-direction:column; gap:4px;">
             ${items.length === 0 ? '<div style="color:var(--text-dim); font-size:15px; padding:10px; text-align:center;">無資料</div>' : items.slice(0, 10).map((it, idx) => `
               <div style="display:flex; align-items:center; justify-content:space-between; padding:4px 7px; border-radius:6px; background:rgba(255,255,255,0.035); font-size:15px; cursor:pointer; transition:all .15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.background='rgba(255,255,255,0.035)';" onclick="openPatternForStock('${escapeHtml(it.code)}')">
-                <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;">
+                <div style="display:flex; align-items:center; gap:5px; min-width:0; overflow:hidden;">
                   <span style="font-weight:900; color:var(--text-dim); width:18px; font-size:14px; text-align:right;">${idx + 1}</span>
+                  ${tierBadgesMap[it.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[it.code].tier}" title="${escapeHtml(tierBadgesMap[it.code].title)}">${tierBadgesMap[it.code].label}</span>` : ''}
                   <span style="font-weight:850; color:#93c5fd; font-family:monospace; font-size:15px;">${escapeHtml(it.code)}</span>
                   <span style="font-weight:800; color:#ffffff; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</span>
                 </div>
@@ -3150,7 +3250,7 @@
                 return `
                   <tr data-stock-code="${escapeHtml(item.code)}" title="點擊直接開啟 ${escapeHtml(item.name)} (${escapeHtml(item.code)}) 的專業看盤">
                     <td style="text-align:center;"><span class="rank-badge-num ${badgeClass}">${escapeHtml(item.rank)}</span></td>
-                    <td><span class="rank-stock-link"><span class="stock-code">${escapeHtml(item.code)}</span></span></td>
+                    <td><span class="rank-stock-link">${tierBadgesMap[item.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[item.code].tier}" title="${escapeHtml(tierBadgesMap[item.code].title)}">${tierBadgesMap[item.code].label}</span>` : ''}<span class="stock-code">${escapeHtml(item.code)}</span></span></td>
                     <td><span class="rank-stock-link"><span class="stock-name">${escapeHtml(item.name)}</span></span></td>
                     <td style="text-align:center;"><span class="tag-pill" style="font-size:14px; padding:3px 7px; white-space:nowrap;">${escapeHtml(item.category)}</span></td>
                     <td style="text-align:right; font-weight:850; color:#fff;">${escapeHtml(item.price)}</td>
