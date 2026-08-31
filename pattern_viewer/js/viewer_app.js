@@ -17,6 +17,7 @@
         cardsUrl: '/api/cards',
         reportsBaseUrl: '/reports/',
         initialCode: '',
+        getStarredCodes: null,
         ...options
       };
       this.cards = [];
@@ -29,6 +30,7 @@
       this.destroyed = false;
       this.eventController = new AbortController();
       this.resizeObserver = null;
+      this.stockCandidates = [];
     }
 
     q(selector) {
@@ -110,6 +112,8 @@
       const select = this.q('#stockSelect');
       if (!select) return;
 
+      const selectedCode = String(this.currentCode || select.value || this.options.initialCode || '').trim();
+
       const availableMap = new Map(this.reportsIndex.map(item => [String(item.code), item]));
       const candidatesByCode = new Map();
 
@@ -135,17 +139,20 @@
       });
 
       const candidates = Array.from(candidatesByCode.values());
+      this.stockCandidates = candidates;
+      const starredCodes = this.getStarredCodeSet();
       const groups = {};
-      candidates.forEach(card => {
+      candidates.filter(card => !starredCodes.has(String(card.code))).forEach(card => {
         const group = card.group || '未分類';
         (groups[group] = groups[group] || []).push(card);
       });
 
       select.innerHTML = '';
-      Object.keys(groups).sort((a, b) => a.localeCompare(b, 'zh-Hant')).forEach(group => {
+      const appendGroup = (label, cards) => {
+        if (!cards.length) return;
         const optgroup = document.createElement('optgroup');
-        optgroup.label = group;
-        groups[group]
+        optgroup.label = label;
+        cards
           .sort((a, b) => (b.winRate || 0) - (a.winRate || 0))
           .forEach(card => {
             const option = document.createElement('option');
@@ -156,14 +163,103 @@
             optgroup.appendChild(option);
           });
         select.appendChild(optgroup);
+      };
+
+      appendGroup('⭐ 重點', candidates.filter(card => starredCodes.has(String(card.code))));
+      Object.keys(groups).sort((a, b) => a.localeCompare(b, 'zh-Hant')).forEach(group => {
+        appendGroup(group, groups[group]);
       });
+
+      const suggestions = this.q('#stockSearchSuggestions');
+      if (suggestions) {
+        suggestions.innerHTML = '';
+        candidates
+          .slice()
+          .sort((a, b) => String(a.code).localeCompare(String(b.code)))
+          .forEach(card => {
+            const option = document.createElement('option');
+            option.value = `${card.code} ${card.name || ''}`.trim();
+            suggestions.appendChild(option);
+          });
+      }
+
+      if (selectedCode && Array.from(select.options).some(option => option.value === selectedCode)) {
+        select.value = selectedCode;
+      }
+      this.syncStockControls(selectedCode || select.value, { updateSearch: !!this.currentCode });
+    }
+
+    getStarredCodeSet() {
+      try {
+        const source = typeof this.options.getStarredCodes === 'function'
+          ? this.options.getStarredCodes()
+          : JSON.parse(localStorage.getItem('stockCardsWatchlist') || '[]');
+        return new Set(Array.from(source || []).map(code => String(code).trim()).filter(Boolean));
+      } catch (_error) {
+        return new Set();
+      }
+    }
+
+    findStockCode(query) {
+      const raw = String(query || '').trim();
+      if (!raw) return '';
+      const codeMatch = raw.match(/\d{4,6}/);
+      if (codeMatch && this.stockCandidates.some(card => String(card.code) === codeMatch[0])) {
+        return codeMatch[0];
+      }
+      const normalized = raw.toLocaleLowerCase('zh-Hant').replace(/\s+/g, '');
+      const exact = this.stockCandidates.find(card =>
+        String(card.name || '').toLocaleLowerCase('zh-Hant').replace(/\s+/g, '') === normalized
+      );
+      if (exact) return String(exact.code);
+      const partial = this.stockCandidates.find(card => {
+        const name = String(card.name || '').toLocaleLowerCase('zh-Hant').replace(/\s+/g, '');
+        return name.includes(normalized) || normalized.includes(name);
+      });
+      return partial ? String(partial.code) : '';
+    }
+
+    syncStockControls(code, { updateSearch = true } = {}) {
+      const normalizedCode = String(code || '').trim();
+      if (!normalizedCode) return;
+      const select = this.q('#stockSelect');
+      if (select && Array.from(select.options).some(option => option.value === normalizedCode)) {
+        select.value = normalizedCode;
+      }
+      if (updateSearch) {
+        const search = this.q('#stockSearchInput');
+        const stock = this.stockCandidates.find(card => String(card.code) === normalizedCode);
+        if (search) search.value = stock ? `${normalizedCode} ${stock.name || ''}`.trim() : normalizedCode;
+      }
+    }
+
+    async submitStockSearch() {
+      const search = this.q('#stockSearchInput');
+      if (!search) return false;
+      const code = this.findStockCode(search.value);
+      if (!code) {
+        search.setCustomValidity('找不到這個股號或股名，請從建議清單選擇。');
+        search.reportValidity();
+        return false;
+      }
+      search.setCustomValidity('');
+      if (code === this.currentCode && this.currentStockData) {
+        this.syncStockControls(code);
+        return true;
+      }
+      return this.loadStock(code);
     }
 
     async loadStock(code) {
       const normalizedCode = String(code || '').trim();
+      if (!normalizedCode) return false;
       const requestId = ++this.requestSerial;
       const isStockChange = this.currentCode !== normalizedCode;
       this.currentCode = normalizedCode;
+      this.syncStockControls(normalizedCode);
+      this.root.dispatchEvent(new CustomEvent('patternviewer:stockchange', {
+        detail: { code: normalizedCode }
+      }));
       if (isStockChange) {
         const toggleMa = this.q('#toggleMa');
         if (toggleMa) toggleMa.checked = true;
@@ -240,6 +336,7 @@
       }
 
       this.currentStockData = parsed;
+      this.syncStockControls(normalizedCode);
       this.updateAiCardBox(normalizedCode);
       try {
         this.updateUI();
@@ -593,6 +690,27 @@
       const stockSelect = this.q('#stockSelect');
       if (stockSelect) stockSelect.addEventListener('change', event => this.loadStock(event.target.value), { signal });
 
+      const stockSearch = this.q('#stockSearchInput');
+      if (stockSearch) {
+        stockSearch.addEventListener('input', () => {
+          stockSearch.setCustomValidity('');
+          const value = stockSearch.value.trim();
+          const pickedSuggestion = this.stockCandidates.some(card =>
+            `${card.code} ${card.name || ''}`.trim() === value
+          );
+          if (pickedSuggestion) this.submitStockSearch();
+        }, { signal });
+        stockSearch.addEventListener('keydown', event => {
+          if (event.key !== 'Enter') return;
+          event.preventDefault();
+          this.submitStockSearch();
+        }, { signal });
+      }
+      const stockSearchButton = this.q('#stockSearchBtn');
+      if (stockSearchButton) {
+        stockSearchButton.addEventListener('click', () => this.submitStockSearch(), { signal });
+      }
+
       const viewToggle = this.q('#viewToggleContainer');
       if (viewToggle) {
         viewToggle.addEventListener('click', event => {
@@ -766,6 +884,11 @@
     },
     refresh(options) {
       return activeInstance ? activeInstance.refresh(options) : Promise.resolve(false);
+    },
+    refreshStockSelect() {
+      if (!activeInstance) return false;
+      activeInstance.populateStockSelect();
+      return true;
     },
     resize() {
       if (activeInstance) activeInstance.resize();

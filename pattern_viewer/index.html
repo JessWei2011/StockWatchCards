@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI 股市型態視覺教學與 K線圖形介面</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="css/viewer.css?v=72">
+  <link rel="stylesheet" href="css/viewer.css?v=74">
   <script src="js/vendor/echarts.min.js"></script>
   <script>if(typeof echarts==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"><\/script>');}</script>
 </head>
@@ -24,6 +24,11 @@
           <span>🎯</span> 空手進場口訣
         </button>
         <label for="stockSelect" style="font-weight:700; color:#93c5fd;">🎯 選擇看盤個股：</label>
+        <div class="stock-search-wrap">
+          <input type="search" id="stockSearchInput" class="stock-search-input" list="stockSearchSuggestions" placeholder="輸入股號或股名" autocomplete="off" aria-label="輸入股號或股名">
+          <datalist id="stockSearchSuggestions"></datalist>
+          <button type="button" id="stockSearchBtn" class="stock-search-btn">前往</button>
+        </div>
         <select id="stockSelect" class="stock-selector"></select>
       </div>
     </header>
@@ -1206,7 +1211,7 @@
   <script src="js/parser.js?v=68"></script>
   <script src="js/pattern_engine.js?v=68"></script>
   <script src="js/chart_engine.js?v=78"></script>
-  <script src="js/viewer_app.js?v=78"></script>
+  <script src="js/viewer_app.js?v=79"></script>
   <script>
     window.openKlineCheatSheetModal = function() {
       const modal = document.getElementById('klineCheatSheetModal');

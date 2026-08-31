@@ -58,7 +58,7 @@
 }
 
 .pattern-viewer .brand { gap: 12px; }
-.pattern-viewer .controls-bar { gap: 12px; }
+.pattern-viewer .controls-bar { gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .pattern-viewer .controls-bar label { font-size: 0.85rem; color: var(--pv-muted); }
 
 .pattern-viewer .brand-icon {
@@ -105,6 +105,43 @@
   outline: none;
   cursor: pointer;
 }
+
+.pattern-viewer .stock-search-wrap {
+  display: inline-flex;
+  align-items: stretch;
+  min-width: 230px;
+}
+
+.pattern-viewer .stock-search-input {
+  width: 190px;
+  min-width: 0;
+  background: var(--pv-panel);
+  color: var(--pv-text);
+  border: 1px solid var(--pv-border);
+  border-right: 0;
+  padding: 8px 10px;
+  border-radius: 6px 0 0 6px;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.pattern-viewer .stock-search-input:hover,
+.pattern-viewer .stock-search-input:focus {
+  border-color: var(--pv-blue);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+
+.pattern-viewer .stock-search-btn {
+  border: 1px solid var(--pv-blue);
+  border-radius: 0 6px 6px 0;
+  padding: 0 12px;
+  background: #1d4ed8;
+  color: #fff;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.pattern-viewer .stock-search-btn:hover { background: #2563eb; }
 
 .pattern-viewer .stock-selector:hover,
 .pattern-viewer .stock-selector:focus {
@@ -505,6 +542,8 @@
     flex-direction: column;
   }
   .pattern-viewer .controls-bar { align-items: stretch; flex-direction: column; }
+  .pattern-viewer .stock-search-wrap { width: 100%; min-width: 0; }
+  .pattern-viewer .stock-search-input { width: 100%; }
   .pattern-viewer .stock-selector { width: 100%; max-width: none; min-width: 0; }
   .pattern-viewer .main-container { padding: 12px; }
   .pattern-viewer .sidebar { grid-template-columns: 1fr; }
