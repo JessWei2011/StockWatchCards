@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "publishedAt": "2026-08-31T18:25:30+08:00",
+  "publishedAt": "2026-08-31T19:23:42+08:00",
   "defaultCode": "3324",
-  "count": 77,
+  "count": 87,
   "stocks": [
     {
       "code": "2049",
@@ -101,6 +101,18 @@
       "isStarred": false
     },
     {
+      "code": "2356",
+      "name": "英業達",
+      "group": "reports",
+      "market": "TW",
+      "analysisDate": "2026-08-31",
+      "current": "66.70",
+      "decision": "買入 (多頭順勢)",
+      "winRate": "76%",
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
+    },
+    {
       "code": "2357",
       "name": "華碩",
       "group": "工業電腦",
@@ -133,6 +145,18 @@
       "current": "155.00",
       "decision": "強烈買入 (動能爆發)",
       "winRate": "86%",
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
+    },
+    {
+      "code": "2383",
+      "name": "台光電",
+      "group": "reports",
+      "market": "TW",
+      "analysisDate": "2026-08-31",
+      "current": "5485.00",
+      "decision": "觀望 / 逢低佈局",
+      "winRate": "45%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": false
     },
@@ -209,6 +233,18 @@
       "isStarred": false
     },
     {
+      "code": "2481",
+      "name": "強茂",
+      "group": "reports",
+      "market": "TW",
+      "analysisDate": "2026-08-31",
+      "current": "151.00",
+      "decision": "買入 (多頭順勢)",
+      "winRate": "67%",
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
+    },
+    {
       "code": "2486",
       "name": "一詮",
       "group": "散熱",
@@ -230,6 +266,18 @@
       "decision": "觀望 / 逢低佈局",
       "winRate": "46%",
       "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
+    },
+    {
+      "code": "3006",
+      "name": "晶豪科",
+      "group": "reports",
+      "market": "TW",
+      "analysisDate": "2026-08-31",
+      "current": "292.50",
+      "decision": "強烈買入 (動能爆發)",
+      "winRate": "95%",
+      "pattern": "歷史/波段新高爆量突破 (Breakout)",
       "isStarred": false
     },
     {
@@ -521,6 +569,18 @@
       "isStarred": false
     },
     {
+      "code": "4938",
+      "name": "和碩",
+      "group": "reports",
+      "market": "TW",
+      "analysisDate": "2026-08-31",
+      "current": "91.10",
+      "decision": "強烈買入 (動能爆發)",
+      "winRate": "79%",
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
+    },
+    {
       "code": "4958",
       "name": "臻鼎-KY",
       "group": "載板",
@@ -533,6 +593,18 @@
       "isStarred": false
     },
     {
+      "code": "5289",
+      "name": "宜鼎",
+      "group": "reports",
+      "market": "TWO",
+      "analysisDate": "2026-08-31",
+      "current": "1450.00",
+      "decision": "觀望 / 逢低佈局",
+      "winRate": "45%",
+      "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
+      "isStarred": false
+    },
+    {
       "code": "5328",
       "name": "華容",
       "group": "被動元件",
@@ -542,6 +614,30 @@
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
       "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
+      "isStarred": false
+    },
+    {
+      "code": "5386",
+      "name": "青雲",
+      "group": "reports",
+      "market": "TWO",
+      "analysisDate": "2026-08-31",
+      "current": "280.00",
+      "decision": "買入 (多頭順勢)",
+      "winRate": "67%",
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
+    },
+    {
+      "code": "5425",
+      "name": "台半",
+      "group": "reports",
+      "market": "TWO",
+      "analysisDate": "2026-08-31",
+      "current": "94.80",
+      "decision": "觀望 / 逢低佈局",
+      "winRate": "45%",
+      "pattern": "高檔盤整/區間震盪",
       "isStarred": false
     },
     {
@@ -822,7 +918,7 @@
     },
     {
       "code": "6781",
-      "name": "Advanced Energy Solution Holding Co., Ltd",
+      "name": "AES-KY",
       "group": "電力",
       "market": "TW",
       "analysisDate": "2026-08-31",
@@ -834,7 +930,7 @@
     },
     {
       "code": "6805",
-      "name": "Fositek Corp",
+      "name": "富世達",
       "group": "散熱",
       "market": "TW",
       "analysisDate": "2026-08-31",
@@ -902,6 +998,30 @@
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
       "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
+    },
+    {
+      "code": "8261",
+      "name": "富鼎",
+      "group": "reports",
+      "market": "TW",
+      "analysisDate": "2026-08-31",
+      "current": "178.50",
+      "decision": "觀望 / 逢低佈局",
+      "winRate": "45%",
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
+    },
+    {
+      "code": "8299",
+      "name": "群聯",
+      "group": "reports",
+      "market": "TWO",
+      "analysisDate": "2026-08-31",
+      "current": "2165.00",
+      "decision": "買入 (多頭順勢)",
+      "winRate": "65%",
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": false
     },
     {

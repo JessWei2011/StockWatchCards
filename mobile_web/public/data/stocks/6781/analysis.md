@@ -1,7 +1,7 @@
-# 📈 Advanced Energy Solution Holding Co., Ltd (6781.TW) 專業技術分析報告
+# 📈 AES-KY (6781.TW) 專業技術分析報告
 
 ### 【輸入數據】
-- **股票代號**：6781.TW（Advanced Energy Solution Holding Co., Ltd）
+- **股票代號**：6781.TW（AES-KY）
 - **分析日期**：08/31
 - **當前價格**：1125.00 元
 - **技術數據摘要**：
@@ -66,7 +66,7 @@
 
 ## 第四階段：技術分析儀表板（交易計劃）
 
-【股票代號】：6781.TW (Advanced Energy Solution Holding Co., Ltd)
+【股票代號】：6781.TW (AES-KY)
 - **分析日期**：08/31
 - **當前價格**：1125.00 元
 

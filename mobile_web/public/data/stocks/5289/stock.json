@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "stock": {
+    "code": "5289",
+    "name": "宜鼎",
+    "group": "reports",
+    "market": "TWO",
+    "date": "2026-08-31",
+    "isStarred": false
+  },
+  "latestAnalysis": {
+    "date": "2026-08-31",
+    "current": "1450.00",
+    "decision": "觀望 / 逢低佈局",
+    "winRate": "45%",
+    "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
+    "confidence": "完全確認",
+    "entry": "1421.00",
+    "stop": "1347.20",
+    "resist": "1962.7",
+    "target": "2840.82",
+    "bullish": [
+      "K線：🚨 跌破20MA月線 (生命線失守)、⚡ 5MA死叉10MA (短線轉弱)",
+      "成交量：📉 縮量沉澱整理",
+      "RSI：RSI(14): 50.4 多空平衡",
+      "MACD：📈 MACD 多頭推升收斂 (紅柱縮小整理)",
+      "KD：📉 KD 空方弱勢回檔",
+      "籌碼：📉 法人籌碼退潮 (連日調節)"
+    ],
+    "bearish": [
+      "風控停損：1347.20 元"
+    ],
+    "action": "交易方向：做多；建議評級：觀望 / 逢低佈局；策略：右側突破跟隨；目標價：2840.82 元；停損：1347.20 元。"
+  }
+}
