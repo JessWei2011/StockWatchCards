@@ -134,7 +134,7 @@
   }
   .tree-quick-actions{ display:inline-flex; align-items:center; gap:4px; flex-shrink:0; }
   .tree-quick-btn{
-    width:95px; height:19px; padding:0; border-radius:5px; cursor:pointer;
+    width:62px; height:19px; padding:0; border-radius:5px; cursor:pointer;
     display:inline-flex; align-items:center; justify-content:center;
     background:rgba(255,255,255,.05); border:1px solid var(--border); font-size:11px;
     transition: background 0.15s, border-color 0.15s;
@@ -142,7 +142,7 @@
   .tree-quick-btn.pattern{ border-color:rgba(56,189,248,.45); }
   .tree-quick-btn.report{ border-color:rgba(196,181,253,.45); }
   .tree-quick-btn.delete{
-    width:24px; color:#fca5a5; border-color:rgba(248,113,113,.5);
+    width:22px; color:#fca5a5; border-color:rgba(248,113,113,.5);
   }
   .tree-quick-btn.delete:hover{
     color:#fff; background:rgba(239,68,68,.3); border-color:#f87171;
@@ -157,12 +157,17 @@
   }
   .tree-stat-pill.winrate{ width:40px; color:#fca5a5; border:1px solid rgba(239,68,68,.4); background:rgba(239,68,68,.14); }
   .tree-stat-pill.winrate.high{ color:#f87171; border:1px solid rgba(239,68,68,.65); background:rgba(239,68,68,.25); }
-  .tree-stat-pill.price{ min-width:48px; padding:0 5px; font-weight:850; }
+  .tree-stat-pill.change{ min-width:48px; padding:0 4px; font-weight:850; }
+  .tree-stat-pill.change.up{ color:#fca5a5; border:1px solid rgba(239,68,68,.45); background:rgba(239,68,68,.18); }
+  .tree-stat-pill.change.down{ color:#86efac; border:1px solid rgba(34,197,94,.45); background:rgba(34,197,94,.18); }
+  .tree-stat-pill.change.flat{ color:#cbd5e1; border:1px solid rgba(148,163,184,.3); background:rgba(148,163,184,.1); }
+  .tree-stat-pill.price{ min-width:46px; padding:0 4px; font-weight:850; }
   .tree-stat-pill.price.up{ color:#fca5a5; border:1px solid rgba(239,68,68,.45); background:rgba(239,68,68,.18); }
   .tree-stat-pill.price.down{ color:#86efac; border:1px solid rgba(34,197,94,.45); background:rgba(34,197,94,.18); }
   .tree-stat-pill.price.flat{ color:#cbd5e1; border:1px solid rgba(148,163,184,.3); background:rgba(148,163,184,.1); }
   .tree-stat-pill.pe{ width:56px; color:#c4b5fd; border:1px solid rgba(168,85,247,.4); background:rgba(168,85,247,.14); }
-  .tree-stat-pill.missing.price-missing{ min-width:48px; }
+  .tree-stat-pill.missing.change-missing{ min-width:48px; }
+  .tree-stat-pill.missing.price-missing{ min-width:46px; }
   .tree-stat-pill.missing.pe-missing{ width:56px; }
   .tree-stat-pill.missing{ width:28px; color:var(--text-dim); border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); }
   .tree-actions button{
@@ -3860,24 +3865,37 @@
       peVal = parseFloat(peVal).toFixed(3);
     }
 
-    // 最新收盤價與當日漲跌幅 (台股標準：紅色漲，綠色跌)
+    // 最新收盤價與當日漲跌百分比 (台股標準：紅色漲，綠色跌)
     let priceVal = null;
     let priceCls = 'flat';
     let priceTitle = '尚無最新收盤價資料';
+    let changeVal = null;
+    let changeCls = 'flat';
+    let changeTitle = '尚無最新漲跌幅資料';
+
     if (hasNumber(card.price)) {
       const p = Number(card.price);
       priceVal = p >= 1000 ? p.toFixed(0) : (p >= 100 ? p.toFixed(1) : p.toFixed(2));
       const chg = hasNumber(card.change) ? Number(card.change) : null;
       const pct = hasNumber(card.changePct) ? Number(card.changePct) : null;
-      if (chg !== null && chg > 0) {
+      if (pct !== null && pct > 0) {
+        changeCls = 'up';
         priceCls = 'up';
-        priceTitle = `收盤價：${p} 元 (▲ +${chg} / +${pct !== null ? pct.toFixed(2) : '0.00'}%)`;
-      } else if (chg !== null && chg < 0) {
+        changeVal = `+${pct.toFixed(pct >= 10 ? 1 : 2)}%`;
+        changeTitle = `當日漲跌：▲ +${chg !== null ? chg : ''} (+${pct.toFixed(2)}%)`;
+        priceTitle = `最新收盤價：${p} 元 (▲ +${chg !== null ? chg : ''} / +${pct.toFixed(2)}%)`;
+      } else if (pct !== null && pct < 0) {
+        changeCls = 'down';
         priceCls = 'down';
-        priceTitle = `收盤價：${p} 元 (▼ ${chg} / ${pct !== null ? pct.toFixed(2) : '0.00'}%)`;
+        changeVal = `${pct.toFixed(pct <= -10 ? 1 : 2)}%`;
+        changeTitle = `當日漲跌：▼ ${chg !== null ? chg : ''} (${pct.toFixed(2)}%)`;
+        priceTitle = `最新收盤價：${p} 元 (▼ ${chg !== null ? chg : ''} / ${pct.toFixed(2)}%)`;
       } else {
+        changeCls = 'flat';
         priceCls = 'flat';
-        priceTitle = `收盤價：${p} 元 (平盤 0.00%)`;
+        changeVal = '0.00%';
+        changeTitle = `當日漲跌：平盤 0.00%`;
+        priceTitle = `最新收盤價：${p} 元 (平盤 0.00%)`;
       }
     }
 
@@ -3887,6 +3905,10 @@
     const winPill = winRateVal
       ? `<span class="tree-stat-pill winrate ${parseFloat(winRateVal)>=60 ? 'high' : ''}" title="${escapeHtml(winRateTitle)}">${escapeHtml(winRateVal)}</span>`
       : `<span class="tree-stat-pill missing" title="${escapeHtml(winRateTitle)}">—</span>`;
+
+    const changePill = changeVal
+      ? `<span class="tree-stat-pill change ${changeCls}" title="${escapeHtml(changeTitle)}">${escapeHtml(changeVal)}</span>`
+      : `<span class="tree-stat-pill missing change-missing" title="${escapeHtml(changeTitle)}">—</span>`;
 
     const pricePill = priceVal
       ? `<span class="tree-stat-pill price ${priceCls}" title="${escapeHtml(priceTitle)}">${escapeHtml(priceVal)}</span>`
@@ -3907,7 +3929,7 @@
       <button type="button" class="tree-star-btn ${isStarred ? 'active' : ''}" data-code="${escapeHtml(code)}" title="${isStarred ? '已標注重點關注 (點擊取消)' : '標注重點關注'}">★</button>` : '';
 
     const displayName = (window.STOCK_NAMES_MAP && window.STOCK_NAMES_MAP[code]) || r.name || r.base;
-    item.innerHTML = `${starBtn}<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span><span class="tree-stat-pills">${quickActions}${winPill}${pricePill}${pePill}</span>`;
+    item.innerHTML = `${starBtn}<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span><span class="tree-stat-pills">${quickActions}${winPill}${changePill}${pricePill}${pePill}</span>`;
     item.addEventListener('click', () => openPatternForStock(code));
 
     const starBtnEl = item.querySelector('.tree-star-btn');
