@@ -84,7 +84,9 @@ window.ChartEngine = {
     const stockKey = `${stockData.title}|${total}`;
     const isSameStock = this._lastStockKey === stockKey;
     const showShortMa = displayToggles.showMa !== false;
+    const showBoll = displayToggles.showBoll !== false;
     const maToggleChanged = isSameStock && this._lastShowMa !== null && this._lastShowMa !== showShortMa;
+    const bollToggleChanged = isSameStock && this._lastShowBoll !== null && this._lastShowBoll !== showBoll;
     let zoomStart, zoomEnd;
     let prevLegendSelected = null;
     if (isSameStock) {
@@ -103,6 +105,7 @@ window.ChartEngine = {
     }
     this._lastStockKey = stockKey;
     this._lastShowMa = showShortMa;
+    this._lastShowBoll = showBoll;
 
     const {
       dates,
@@ -244,7 +247,7 @@ window.ChartEngine = {
           'D值': true
           }, isSameStock ? (prevLegendSelected || {}) : {});
 
-          // 換股一律套用統一預設；同股只有按下「均線」總開關時才覆寫短均線。
+          // 換股一律套用統一預設；同股只有按下「均線」或「BOLL」開關時覆寫。
           if (!isSameStock || maToggleChanged) {
             selected['K線'] = true;
             selected['MA5'] = showShortMa;
@@ -254,6 +257,10 @@ window.ChartEngine = {
               selected['MA60'] = false;
               selected['MA120'] = false;
             }
+          }
+          if (!isSameStock || bollToggleChanged) {
+            selected['BOLL上軌'] = showBoll;
+            selected['BOLL下軌'] = showBoll;
           }
           return selected;
         })()
