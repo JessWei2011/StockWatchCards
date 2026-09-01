@@ -2,34 +2,34 @@
   "version": 2,
   "stock": {
     "code": "3006",
-    "name": "晶豪科",
-    "group": "reports",
+    "name": "Elite Semiconductor Microelectronics Technology Inc",
+    "group": "記憶體",
     "market": "TW",
-    "date": "2026-08-31",
+    "date": "2026-09-01",
     "isStarred": false
   },
   "latestAnalysis": {
-    "date": "2026-08-31",
-    "current": "292.50",
-    "decision": "強烈買入 (動能爆發)",
-    "winRate": "95%",
+    "date": "2026-09-01",
+    "current": "278.50",
+    "decision": "買入 (多頭順勢)",
+    "winRate": "68%",
     "pattern": "歷史/波段新高爆量突破 (Breakout)",
     "confidence": "完全確認",
-    "entry": "292.50",
+    "entry": "272.93",
     "stop": "236.00",
-    "resist": "293.5",
-    "target": "402.89",
+    "resist": "299.0",
+    "target": "411.78",
     "bullish": [
-      "K線：🔥 突破波段整理箱頂 (實質表態)、✨ 突破站上5MA (短線點火轉強)、💡 回測上升月線有守 (回檔第一買點)",
-      "成交量：🔥 帶量突破換手",
-      "RSI：✨ RSI 短線黃金交叉",
-      "MACD：🚀 MACD 零軸上強勢多頭 (紅柱連續放大)",
+      "K線：📈 站穩10MA (短多結構穩固)",
+      "成交量：📈 買盤溫和增量",
+      "RSI：⚡ RSI 短線死亡交叉",
+      "MACD：📈 MACD 多頭推升收斂 (紅柱縮小整理)",
       "KD：📈 KD 多方強勢推進",
       "籌碼：🛡️ 外資月度重倉防守 (近20日淨買佔優)"
     ],
     "bearish": [
       "風控停損：236.00 元"
     ],
-    "action": "交易方向：做多；建議評級：強烈買入 (動能爆發)；策略：右側突破跟隨；目標價：402.89 元；停損：236.00 元。"
+    "action": "交易方向：做多；建議評級：買入 (多頭順勢)；策略：右側突破跟隨；目標價：411.78 元；停損：236.00 元。"
   }
 }

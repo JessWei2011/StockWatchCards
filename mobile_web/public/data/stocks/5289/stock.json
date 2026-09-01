@@ -3,13 +3,13 @@
   "stock": {
     "code": "5289",
     "name": "宜鼎",
-    "group": "reports",
+    "group": "記憶體",
     "market": "TWO",
-    "date": "2026-08-31",
+    "date": "2026-09-01",
     "isStarred": false
   },
   "latestAnalysis": {
-    "date": "2026-08-31",
+    "date": "2026-09-01",
     "current": "1450.00",
     "decision": "觀望 / 逢低佈局",
     "winRate": "45%",
@@ -20,7 +20,7 @@
     "resist": "1962.7",
     "target": "2840.82",
     "bullish": [
-      "K線：🚨 跌破20MA月線 (生命線失守)、⚡ 5MA死叉10MA (短線轉弱)",
+      "K線：⚠️ 失守所有短均線 (短中線偏空)、💎 短中期均線糾纏 (壓縮蓄勢)",
       "成交量：📉 縮量沉澱整理",
       "RSI：RSI(14): 50.4 多空平衡",
       "MACD：📈 MACD 多頭推升收斂 (紅柱縮小整理)",

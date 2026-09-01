@@ -723,10 +723,15 @@ deploy_mobile_job = _new_deploy_mobile_job()
 
 def _run_deploy_mobile():
     global deploy_mobile_job
+    node_paths = [
+        r"C:\Users\User\AppData\Local\OpenAI\Codex\runtimes\cua_node\415ffebf3d576e9b\bin",
+        r"C:\Users\User\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin"
+    ]
+    augmented_path = ";".join(node_paths) + ";" + os.environ.get("PATH", "")
     child_env = {
         **os.environ,
         "PYTHONIOENCODING": "utf-8",
-        "PATH": r"C:\Users\User\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin;" + os.environ.get("PATH", "")
+        "PATH": augmented_path
     }
     try:
         proc = subprocess.Popen(

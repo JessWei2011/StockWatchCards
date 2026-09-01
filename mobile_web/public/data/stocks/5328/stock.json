@@ -5,27 +5,27 @@
     "name": "華容",
     "group": "被動元件",
     "market": "TWO",
-    "date": "2026-08-31",
+    "date": "2026-09-01",
     "isStarred": false
   },
   "latestAnalysis": {
-    "date": "2026-08-31",
-    "current": "62.10",
+    "date": "2026-09-01",
+    "current": "62.30",
     "decision": "觀望 / 逢低佈局",
-    "winRate": "45%",
+    "winRate": "50%",
     "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
     "confidence": "完全確認",
-    "entry": "60.86",
+    "entry": "61.05",
     "stop": "58.70",
     "resist": "88.8",
     "target": "131.07",
     "bullish": [
-      "K線：⚠️ 跌破10MA (失守雙均線)、✨ 5MA金叉10MA (短線轉強)",
+      "K線：✨ 突破站上5MA (短線點火轉強)、⚡ 5MA死叉10MA (短線轉弱)、⚠️ 5MA轉俯角 (下彎轉弱)",
       "成交量：💎 價跌量急縮窒息量 (主力洗盤完畢)",
-      "RSI：⚡ RSI 短線死亡交叉",
+      "RSI：RSI(14): 48.1 多空平衡",
       "MACD：💡 MACD 綠柱收斂 (空方力道減弱/低檔醞釀)",
       "KD：⚪ KD 多空中性震盪",
-      "籌碼：⚪ 法人中性換手 (多空互見)"
+      "籌碼：📉 法人籌碼退潮 (連日調節)"
     ],
     "bearish": [
       "風控停損：58.70 元"

@@ -24,6 +24,13 @@ if not defined PY_EXE (
     goto FAIL
 )
 
+if exist "%LOCALAPPDATA%\OpenAI\Codex\runtimes\cua_node\415ffebf3d576e9b\bin" (
+    set "PATH=%LOCALAPPDATA%\OpenAI\Codex\runtimes\cua_node\415ffebf3d576e9b\bin;%PATH%"
+)
+if exist "%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin" (
+    set "PATH=%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin;%PATH%"
+)
+
 echo [1/3] 正在執行全個股快照資料匯出 export_mobile_site.py ...
 "%PY_EXE%" "%PROJECT_ROOT%export_mobile_site.py"
 if errorlevel 1 goto EXPORT_FAIL
