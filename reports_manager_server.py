@@ -628,13 +628,47 @@ def _report_pe(report_text):
         return None
 
 
+def _report_recent_kline_summary(report_text):
+    """擷取最後兩筆 K 線收盤價，計算當日漲跌幅 (change, changePct)。"""
+    rows = []
+    for table_html in re.findall(r"<table[^>]*>(.*?)</table>", report_text, re.I | re.S):
+        header_text = _cell_text(table_html[:1000])
+        if not all(label in header_text for label in ("日期", "開", "高", "低", "收", "量")):
+            continue
+        for row_html in re.findall(r"<tr[^>]*>(.*?)</tr>", table_html, re.I | re.S):
+            cells = [_cell_text(cell) for cell in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row_html, re.I | re.S)]
+            if len(cells) < 5 or not re.fullmatch(r"\d{2}/\d{2}", cells[0]):
+                continue
+            try:
+                rows.append((cells[0], float(cells[4].replace(",", ""))))
+            except ValueError:
+                continue
+        if rows:
+            break
+    if not rows:
+        return {"price": None, "prevPrice": None, "change": None, "changePct": None}
+    last_price = rows[-1][1]
+    prev_price = rows[-2][1] if len(rows) >= 2 else None
+    change = round(last_price - prev_price, 2) if prev_price is not None else 0.0
+    change_pct = round((change / prev_price) * 100, 2) if (prev_price and prev_price > 0) else 0.0
+    return {
+        "price": last_price,
+        "prevPrice": prev_price,
+        "change": change,
+        "changePct": change_pct
+    }
+
+
 def attach_report_flows(cards_by_code):
-    """將最新報表的基本面、法人與融資券資料附加到卡片 API。"""
+    """將最新報表的基本面、法人、收盤價與融資券資料附加到卡片 API。"""
     reports_by_code = {item["code"]: item for item in build_reports_index()}
     for code, card in cards_by_code.items():
         report = reports_by_code.get(code)
         if not report:
             card["pe"] = None
+            card["price"] = float(card.get("current")) if card.get("current") else None
+            card["change"] = None
+            card["changePct"] = None
             card["institutionalFlow"] = []
             card["marginFlow"] = []
             continue
@@ -642,10 +676,18 @@ def attach_report_flows(cards_by_code):
             report_text = (REPORTS_DIR / report["path"]).read_text(encoding="utf-8")
         except (OSError, UnicodeError):
             card["pe"] = None
+            card["price"] = float(card.get("current")) if card.get("current") else None
+            card["change"] = None
+            card["changePct"] = None
             card["institutionalFlow"] = []
             card["marginFlow"] = []
             continue
         card["pe"] = _report_pe(report_text)
+        kline_sum = _report_recent_kline_summary(report_text)
+        card["price"] = kline_sum["price"] if kline_sum["price"] is not None else (float(card.get("current")) if card.get("current") else None)
+        card["change"] = kline_sum["change"]
+        card["changePct"] = kline_sum["changePct"]
+
         institutional = _report_table_rows(
             report_text, "三大法人", ("foreign", "trust", "dealer", "total")
         )[:15]

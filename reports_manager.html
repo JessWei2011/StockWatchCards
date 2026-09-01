@@ -157,8 +157,12 @@
   }
   .tree-stat-pill.winrate{ width:40px; color:#fca5a5; border:1px solid rgba(239,68,68,.4); background:rgba(239,68,68,.14); }
   .tree-stat-pill.winrate.high{ color:#f87171; border:1px solid rgba(239,68,68,.65); background:rgba(239,68,68,.25); }
-  .tree-stat-pill.rr{ width:42px; color:#93c5fd; border:1px solid rgba(59,130,246,.4); background:rgba(59,130,246,.14); }
+  .tree-stat-pill.price{ min-width:48px; padding:0 5px; font-weight:850; }
+  .tree-stat-pill.price.up{ color:#fca5a5; border:1px solid rgba(239,68,68,.45); background:rgba(239,68,68,.18); }
+  .tree-stat-pill.price.down{ color:#86efac; border:1px solid rgba(34,197,94,.45); background:rgba(34,197,94,.18); }
+  .tree-stat-pill.price.flat{ color:#cbd5e1; border:1px solid rgba(148,163,184,.3); background:rgba(148,163,184,.1); }
   .tree-stat-pill.pe{ width:56px; color:#c4b5fd; border:1px solid rgba(168,85,247,.4); background:rgba(168,85,247,.14); }
+  .tree-stat-pill.missing.price-missing{ min-width:48px; }
   .tree-stat-pill.missing.pe-missing{ width:56px; }
   .tree-stat-pill.missing{ width:28px; color:var(--text-dim); border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); }
   .tree-actions button{
@@ -3846,32 +3850,47 @@
     // 排行榜未載入或不含該股時，仍能穩定顯示勝率與 R/R。
     const hasNumber = value => value !== null && value !== '' && Number.isFinite(Number(value));
     let winRateVal = hasNumber(card.winRate) ? String(card.winRate) : null;
-    let rrVal = hasNumber(card.rr) ? String(card.rr) : null;
     let peVal = hasNumber(card.pe) ? String(card.pe) : null;
     if (!winRateVal && stat.winRate) winRateVal = stat.winRate.replace(/[%`*]/g, '');
-    if (!rrVal && stat.rr) rrVal = stat.rr.replace(/[`*]/g, '');
 
     if (winRateVal && !isNaN(parseFloat(winRateVal))) {
       winRateVal = parseFloat(winRateVal).toFixed(1);
-    }
-    if (rrVal && !isNaN(parseFloat(rrVal))) {
-      rrVal = parseFloat(rrVal).toFixed(2);
     }
     if (peVal && !isNaN(parseFloat(peVal))) {
       peVal = parseFloat(peVal).toFixed(3);
     }
 
+    // 最新收盤價與當日漲跌幅 (台股標準：紅色漲，綠色跌)
+    let priceVal = null;
+    let priceCls = 'flat';
+    let priceTitle = '尚無最新收盤價資料';
+    if (hasNumber(card.price)) {
+      const p = Number(card.price);
+      priceVal = p >= 1000 ? p.toFixed(0) : (p >= 100 ? p.toFixed(1) : p.toFixed(2));
+      const chg = hasNumber(card.change) ? Number(card.change) : null;
+      const pct = hasNumber(card.changePct) ? Number(card.changePct) : null;
+      if (chg !== null && chg > 0) {
+        priceCls = 'up';
+        priceTitle = `收盤價：${p} 元 (▲ +${chg} / +${pct !== null ? pct.toFixed(2) : '0.00'}%)`;
+      } else if (chg !== null && chg < 0) {
+        priceCls = 'down';
+        priceTitle = `收盤價：${p} 元 (▼ ${chg} / ${pct !== null ? pct.toFixed(2) : '0.00'}%)`;
+      } else {
+        priceCls = 'flat';
+        priceTitle = `收盤價：${p} 元 (平盤 0.00%)`;
+      }
+    }
+
     const winRateTitle = winRateVal ? `預期勝率：${winRateVal}%` : `尚未進行勝率掃描`;
-    const rrTitle = rrVal ? `風險報酬比 (R/R)：${rrVal}` : `尚未計算風報比`;
     const peTitle = peVal ? `本益比 (PE)：${peVal} 倍` : `尚無本益比資料`;
 
     const winPill = winRateVal
       ? `<span class="tree-stat-pill winrate ${parseFloat(winRateVal)>=60 ? 'high' : ''}" title="${escapeHtml(winRateTitle)}">${escapeHtml(winRateVal)}</span>`
       : `<span class="tree-stat-pill missing" title="${escapeHtml(winRateTitle)}">—</span>`;
 
-    const rrPill = rrVal
-      ? `<span class="tree-stat-pill rr" title="${escapeHtml(rrTitle)}">${escapeHtml(rrVal)}</span>`
-      : `<span class="tree-stat-pill missing" title="${escapeHtml(rrTitle)}">—</span>`;
+    const pricePill = priceVal
+      ? `<span class="tree-stat-pill price ${priceCls}" title="${escapeHtml(priceTitle)}">${escapeHtml(priceVal)}</span>`
+      : `<span class="tree-stat-pill missing price-missing" title="${escapeHtml(priceTitle)}">—</span>`;
 
     const pePill = peVal
       ? `<span class="tree-stat-pill pe" title="${escapeHtml(peTitle)}">${escapeHtml(peVal)}</span>`
@@ -3888,7 +3907,7 @@
       <button type="button" class="tree-star-btn ${isStarred ? 'active' : ''}" data-code="${escapeHtml(code)}" title="${isStarred ? '已標注重點關注 (點擊取消)' : '標注重點關注'}">★</button>` : '';
 
     const displayName = (window.STOCK_NAMES_MAP && window.STOCK_NAMES_MAP[code]) || r.name || r.base;
-    item.innerHTML = `${starBtn}<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span><span class="tree-stat-pills">${quickActions}${winPill}${rrPill}${pePill}</span>`;
+    item.innerHTML = `${starBtn}<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span><span class="tree-stat-pills">${quickActions}${winPill}${pricePill}${pePill}</span>`;
     item.addEventListener('click', () => openPatternForStock(code));
 
     const starBtnEl = item.querySelector('.tree-star-btn');
