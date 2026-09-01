@@ -459,11 +459,11 @@ window.ChartEngine = {
           markLine: {
             symbol: 'none',
             data: [
-              { yAxis: 80, lineStyle: { color: '#ef4444', type: 'dashed', width: 1 }, label: { show: true, position: 'insideStartTop', formatter: '80 極度過熱' } },
+              { yAxis: 80, lineStyle: { color: '#ef4444', type: 'dashed', width: 1 }, label: { show: false } },
               { yAxis: 70, lineStyle: { color: 'rgba(239, 68, 68, 0.5)', type: 'dotted', width: 1 }, label: { show: false } },
               { yAxis: 50, lineStyle: { color: 'rgba(148, 163, 184, 0.35)', type: 'dashed', width: 1 }, label: { show: false } },
               { yAxis: 30, lineStyle: { color: 'rgba(16, 185, 129, 0.5)', type: 'dotted', width: 1 }, label: { show: false } },
-              { yAxis: 20, lineStyle: { color: '#10b981', type: 'dashed', width: 1 }, label: { show: true, position: 'insideStartBottom', formatter: '20 極度超跌' } }
+              { yAxis: 20, lineStyle: { color: '#10b981', type: 'dashed', width: 1 }, label: { show: false } }
             ]
           }
         },
@@ -598,7 +598,99 @@ window.ChartEngine = {
       console.error('[ChartEngine Debug] ❌ setOption 拋出異常:', err);
     }
 
-    // 同步十字游標焦點至右側「🎯 游標焦點即時數據看板」
+    // Helper: 更新圖表各 Pane 左上角懸浮數值 HTML 覆蓋層 (零亂碼、高清晰)
+    const updateInChartHUD = (idx) => {
+      if (!this.chartInstance || this.chartInstance.isDisposed() || !stockData || !stockData.dates) return;
+      if (idx < 0 || idx >= stockData.dates.length) return;
+
+      const chartDom = this.chartInstance.getDom();
+      if (!chartDom) return;
+
+      // 確保 chartDom 為 relative 定位以容納 overlay
+      if (getComputedStyle(chartDom).position === 'static') {
+        chartDom.style.position = 'relative';
+      }
+
+      let overlay = chartDom.querySelector('.echart-in-chart-hud-container');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'echart-in-chart-hud-container';
+        overlay.style.position = 'absolute';
+        overlay.style.inset = '0';
+        overlay.style.pointerEvents = 'none';
+        overlay.style.zIndex = '5';
+        overlay.innerHTML = `
+          <div id="ichud-pane-0" style="position:absolute; left:6.2%; top:7.2%; font-size:12.5px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#cbd5e1; white-space:nowrap; text-shadow:0 1px 3px rgba(0,0,0,0.8); line-height:1.2;"></div>
+          <div id="ichud-pane-1" style="position:absolute; left:6.2%; top:45.2%; font-size:12.5px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#cbd5e1; white-space:nowrap; text-shadow:0 1px 3px rgba(0,0,0,0.8); line-height:1.2;"></div>
+          <div id="ichud-pane-2" style="position:absolute; left:6.2%; top:58.2%; font-size:12.5px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#cbd5e1; white-space:nowrap; text-shadow:0 1px 3px rgba(0,0,0,0.8); line-height:1.2;"></div>
+          <div id="ichud-pane-3" style="position:absolute; left:6.2%; top:71.2%; font-size:12.5px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#cbd5e1; white-space:nowrap; text-shadow:0 1px 3px rgba(0,0,0,0.8); line-height:1.2;"></div>
+          <div id="ichud-pane-4" style="position:absolute; left:6.2%; top:84.2%; font-size:12.5px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#cbd5e1; white-space:nowrap; text-shadow:0 1px 3px rgba(0,0,0,0.8); line-height:1.2;"></div>
+        `;
+        chartDom.appendChild(overlay);
+      }
+
+      const d = stockData.dates[idx];
+      const c = stockData.candles && stockData.candles[idx];
+      const elP0 = overlay.querySelector('#ichud-pane-0');
+      const elP1 = overlay.querySelector('#ichud-pane-1');
+      const elP2 = overlay.querySelector('#ichud-pane-2');
+      const elP3 = overlay.querySelector('#ichud-pane-3');
+      const elP4 = overlay.querySelector('#ichud-pane-4');
+
+      // Pane 0: K線與均線
+      if (elP0 && c) {
+        const o = c[0], cl = c[1], l = c[2], h = c[3];
+        const prevCl = idx > 0 && stockData.candles[idx - 1] ? stockData.candles[idx - 1][1] : o;
+        const diff = cl - prevCl;
+        const pct = prevCl ? (diff / prevCl * 100) : 0;
+        const upColor = '#ef4444';
+        const downColor = '#10b981';
+        const color = diff >= 0 ? upColor : downColor;
+        const sign = diff >= 0 ? '+' : '';
+
+        const m5 = stockData.ma5 && stockData.ma5[idx] != null ? `<span style="color:#f59e0b; font-weight:bold;">${Number(stockData.ma5[idx]).toFixed(2)}</span>` : '—';
+        const m10 = stockData.ma10 && stockData.ma10[idx] != null ? `<span style="color:#3b82f6; font-weight:bold;">${Number(stockData.ma10[idx]).toFixed(2)}</span>` : '—';
+        const m20 = stockData.ma20 && stockData.ma20[idx] != null ? `<span style="color:#ec4899; font-weight:bold;">${Number(stockData.ma20[idx]).toFixed(2)}</span>` : '—';
+        const m60 = stockData.ma60 && stockData.ma60[idx] != null ? `<span style="color:#10b981; font-weight:bold;">${Number(stockData.ma60[idx]).toFixed(2)}</span>` : '—';
+        const m120 = stockData.ma120 && stockData.ma120[idx] != null ? `<span style="color:#8b5cf6; font-weight:bold;">${Number(stockData.ma120[idx]).toFixed(2)}</span>` : '—';
+
+        elP0.innerHTML = `<span style="color:#38bdf8; font-weight:bold;">${d}</span> <span style="color:#94a3b8;">開:</span><span style="font-weight:bold;">${o.toFixed(2)}</span> <span style="color:#94a3b8;">高:</span><span style="font-weight:bold;">${h.toFixed(2)}</span> <span style="color:#94a3b8;">低:</span><span style="font-weight:bold;">${l.toFixed(2)}</span> <span style="color:#94a3b8;">收:</span><span style="color:${color}; font-weight:bold;">${cl.toFixed(2)}</span> <span style="color:#94a3b8;">漲跌:</span><span style="color:${color}; font-weight:bold;">${sign}${diff.toFixed(2)} (${sign}${pct.toFixed(2)}%)</span> <span style="color:rgba(255,255,255,0.25); margin:0 4px;">|</span> <span style="color:#94a3b8;">MA5:</span>${m5} <span style="color:#94a3b8;">MA10:</span>${m10} <span style="color:#94a3b8;">MA20:</span>${m20} <span style="color:#94a3b8;">MA60:</span>${m60} <span style="color:#94a3b8;">MA120:</span>${m120}`;
+      }
+
+      // Pane 1: 成交量與量均線
+      if (elP1) {
+        const v = stockData.volumes && stockData.volumes[idx];
+        const mv5Val = stockData.vma5 && stockData.vma5[idx] != null ? `<span style="color:#38bdf8; font-weight:bold;">${Number(stockData.vma5[idx]).toLocaleString()}</span>` : '—';
+        const mv20Val = stockData.vma20 && stockData.vma20[idx] != null ? `<span style="color:#f59e0b; font-weight:bold;">${Number(stockData.vma20[idx]).toLocaleString()}</span>` : '—';
+        elP1.innerHTML = `<span style="color:#94a3b8;">成交量:</span> <span style="color:#38bdf8; font-weight:bold;">${v != null ? Number(v).toLocaleString() + ' 張' : '—'}</span> <span style="color:rgba(255,255,255,0.25); margin:0 4px;">|</span> <span style="color:#94a3b8;">MV5:</span>${mv5Val} <span style="color:#94a3b8;">MV20:</span>${mv20Val}`;
+      }
+
+      // Pane 2: RSI
+      if (elP2) {
+        const r6Val = stockData.rsi6 && stockData.rsi6[idx] != null ? `<span style="color:#38bdf8; font-weight:bold;">${Number(stockData.rsi6[idx]).toFixed(2)}</span>` : '—';
+        const r12Val = stockData.rsi12 && stockData.rsi12[idx] != null ? `<span style="color:#f59e0b; font-weight:bold;">${Number(stockData.rsi12[idx]).toFixed(2)}</span>` : '—';
+        elP2.innerHTML = `<span style="color:#94a3b8;">RSI(6):</span>${r6Val} <span style="color:#94a3b8; margin-left:8px;">RSI(12):</span>${r12Val}`;
+      }
+
+      // Pane 3: MACD
+      if (elP3) {
+        const difVal = stockData.dif && stockData.dif[idx] != null ? `<span style="color:#38bdf8; font-weight:bold;">${Number(stockData.dif[idx]).toFixed(2)}</span>` : '—';
+        const macdVal = stockData.macdSignal && stockData.macdSignal[idx] != null ? `<span style="color:#f59e0b; font-weight:bold;">${Number(stockData.macdSignal[idx]).toFixed(2)}</span>` : '—';
+        const hist = stockData.macdHist && stockData.macdHist[idx];
+        const histColor = (hist != null && hist >= 0) ? '#ef4444' : '#10b981';
+        const histVal = hist != null ? `<span style="color:${histColor}; font-weight:bold;">${Number(hist).toFixed(2)}</span>` : '—';
+        elP3.innerHTML = `<span style="color:#94a3b8;">DIF快線:</span>${difVal} <span style="color:#94a3b8; margin-left:8px;">MACD慢線:</span>${macdVal} <span style="color:#94a3b8; margin-left:8px;">OSC柱體:</span>${histVal}`;
+      }
+
+      // Pane 4: KD
+      if (elP4) {
+        const kVal = stockData.kList && stockData.kList[idx] != null ? `<span style="color:#38bdf8; font-weight:bold;">${Number(stockData.kList[idx]).toFixed(2)}</span>` : '—';
+        const dVal = stockData.dList && stockData.dList[idx] != null ? `<span style="color:#f59e0b; font-weight:bold;">${Number(stockData.dList[idx]).toFixed(2)}</span>` : '—';
+        elP4.innerHTML = `<span style="color:#94a3b8;">K(9,3):</span>${kVal} <span style="color:#94a3b8; margin-left:8px;">D(9,3):</span>${dVal}`;
+      }
+    };
+
+    // 同步十字游標焦點至圖表內頂部 HUD 及右側「🎯 游標焦點即時數據看板」
     if (this._axisPointerHandler) {
       this.chartInstance.off('updateAxisPointer', this._axisPointerHandler);
     }
@@ -608,6 +700,7 @@ window.ChartEngine = {
         if (axisInfo && axisInfo.value != null) {
           const dataIndex = typeof axisInfo.value === 'number' ? axisInfo.value : dates.indexOf(axisInfo.value);
           if (dataIndex >= 0 && dataIndex < dates.length) {
+            updateInChartHUD(dataIndex);
             if (window.updateFocusHUD) window.updateFocusHUD(dataIndex, stockData);
             if (window.parent && window.parent.updateFocusHUD) window.parent.updateFocusHUD(dataIndex, stockData);
           }
@@ -619,6 +712,7 @@ window.ChartEngine = {
     // 預設呈現最新收盤日數據
     if (dates && dates.length) {
       const lastIdx = dates.length - 1;
+      updateInChartHUD(lastIdx);
       if (window.updateFocusHUD) window.updateFocusHUD(lastIdx, stockData);
       if (window.parent && window.parent.updateFocusHUD) window.parent.updateFocusHUD(lastIdx, stockData);
     }
@@ -630,6 +724,7 @@ window.ChartEngine = {
         chartDom.addEventListener('mouseleave', () => {
           if (this.currentStockData && this.currentStockData.dates && this.currentStockData.dates.length) {
             const lastIdx = this.currentStockData.dates.length - 1;
+            updateInChartHUD(lastIdx);
             if (window.updateFocusHUD) window.updateFocusHUD(lastIdx, this.currentStockData);
             if (window.parent && window.parent.updateFocusHUD) window.parent.updateFocusHUD(lastIdx, this.currentStockData);
           }
