@@ -692,6 +692,19 @@
 
       const stockSearch = this.q('#stockSearchInput');
       if (stockSearch) {
+        stockSearch.addEventListener('focus', () => {
+          stockSearch.value = '';
+          stockSearch.setCustomValidity('');
+        }, { signal });
+        stockSearch.addEventListener('click', () => {
+          stockSearch.value = '';
+          stockSearch.setCustomValidity('');
+        }, { signal });
+        stockSearch.addEventListener('blur', () => {
+          if (!stockSearch.value.trim() && this.activeStock) {
+            stockSearch.value = `${this.activeStock.code} ${this.activeStock.name || ''}`.trim();
+          }
+        }, { signal });
         stockSearch.addEventListener('input', () => {
           stockSearch.setCustomValidity('');
           const value = stockSearch.value.trim();
