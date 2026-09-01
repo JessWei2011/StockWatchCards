@@ -3600,26 +3600,20 @@
 
   async function syncWatchlistFromServer(){
     try {
-      const res = await fetch('/api/watchlist');
+      const res = await fetch('/api/watchlist', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data && data.ok && Array.isArray(data.starred)) {
-          const localSet = getStarredStocks();
-          if (data.starred.length > 0) {
-            starredStocksCache = new Set(data.starred.map(String));
-            localStorage.setItem(STARRED_KEY, JSON.stringify(Array.from(starredStocksCache)));
-          } else if (localSet.size > 0) {
-            await pushWatchlistToServer(Array.from(localSet));
-          } else {
-            starredStocksCache = new Set();
-          }
+          starredStocksCache = new Set(data.starred.map(String));
+          localStorage.setItem(STARRED_KEY, JSON.stringify(Array.from(starredStocksCache)));
           updatePatternStarButton();
-          return;
+          return starredStocksCache;
         }
       }
     } catch(e) {
       console.warn('無法從伺服器載入 watchlist.json，使用本地快取', e);
     }
+    return getStarredStocks();
   }
 
   async function pushWatchlistToServer(list){
@@ -5223,7 +5217,10 @@ ${macroJsonText()}`;
   applyPanelWidths();
   setupResizer(document.getElementById('resizer-left'), document.querySelector('.sidebar'), 'sidebar', true);
 
-  loadTree().then(() => loadCards()).then(loadList);
+  syncWatchlistFromServer()
+    .then(() => loadTree())
+    .then(() => loadCards())
+    .then(loadList);
   loadMarketInstBreakdown();
 </script>
 </body>
