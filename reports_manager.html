@@ -2687,7 +2687,7 @@
     }
   });
 
-  async function activateWorkspace(name){
+  async function activateWorkspace(name, { pushHistory = true } = {}){
     const target = ['pattern', 'ranking', 'analysis'].includes(name) ? name : 'reports';
     window.activeWorkspaceName = target;
     document.querySelectorAll('.app-tab').forEach(button => {
@@ -2700,6 +2700,10 @@
     document.getElementById('ranking-workspace').hidden = target !== 'ranking';
     document.getElementById('analysis-workspace').hidden = target !== 'analysis';
     document.getElementById('breadcrumb').style.visibility = target === 'reports' ? '' : 'hidden';
+
+    if (pushHistory && typeof syncBrowserHistory === 'function') {
+      syncBrowserHistory(target, (target === 'pattern' || target === 'analysis') ? selectedStockCode : null);
+    }
     if (target === 'pattern') {
       if (!patternViewerInitialized) {
         patternViewerInitialized = true;
@@ -3646,8 +3650,72 @@
     }
   }
 
-  async function switchToStockAnalysis(code){
+  // ── 瀏覽器上一頁 / 下一頁 (HTML5 History API & URL Hash 支援) ──
+  function parseLocationHash(){
+    const hash = window.location.hash.replace(/^#/, '').trim();
+    if (!hash) return { workspace: 'reports', code: null };
+    const [workspacePart, queryPart] = hash.split('?');
+    const workspace = ['pattern', 'ranking', 'analysis', 'reports'].includes(workspacePart) ? workspacePart : 'reports';
+    let code = null;
+    if (queryPart) {
+      const params = new URLSearchParams(queryPart);
+      code = params.get('code') || null;
+    }
+    return { workspace, code };
+  }
+
+  function getRouteHash(workspace, code){
+    const ws = ['pattern', 'ranking', 'analysis'].includes(workspace) ? workspace : 'reports';
+    if (ws === 'reports') return '#reports';
+    if (ws === 'ranking') return '#ranking';
+    if (code) return `#${ws}?code=${encodeURIComponent(code)}`;
+    return `#${ws}`;
+  }
+
+  let isApplyingRouteFromPopState = false;
+
+  function syncBrowserHistory(workspace, code, { replace = false } = {}){
+    if (isApplyingRouteFromPopState) return;
+    const targetWs = ['pattern', 'ranking', 'analysis'].includes(workspace) ? workspace : 'reports';
+    const targetCode = code ? String(code).trim() : null;
+    const targetHash = getRouteHash(targetWs, targetCode);
+    const stateObj = { workspace: targetWs, code: targetCode };
+
+    if (replace || window.location.hash === targetHash) {
+      history.replaceState(stateObj, '', targetHash);
+    } else {
+      history.pushState(stateObj, '', targetHash);
+    }
+  }
+
+  window.addEventListener('popstate', async (event) => {
+    isApplyingRouteFromPopState = true;
+    try {
+      let state = event.state;
+      if (!state || !state.workspace) {
+        state = parseLocationHash();
+      }
+      const ws = state.workspace || 'reports';
+      const code = state.code || null;
+      if (code) {
+        if (ws === 'pattern') {
+          await openPatternForStock(code, { pushHistory: false });
+        } else if (ws === 'analysis') {
+          await switchToStockAnalysis(code, { pushHistory: false });
+        } else {
+          await activateWorkspace(ws, { pushHistory: false });
+        }
+      } else {
+        await activateWorkspace(ws, { pushHistory: false });
+      }
+    } finally {
+      isApplyingRouteFromPopState = false;
+    }
+  });
+
+  async function switchToStockAnalysis(code, { pushHistory = true } = {}){
     await selectStockGlobal(code, { switchWorkspace: 'analysis' });
+    if (pushHistory) syncBrowserHistory('analysis', code);
   }
 
   async function focusAiResult(code){
@@ -3655,8 +3723,9 @@
     return true;
   }
 
-  async function openPatternForStock(code){
+  async function openPatternForStock(code, { pushHistory = true } = {}){
     await selectStockGlobal(code, { switchWorkspace: 'pattern' });
+    if (pushHistory) syncBrowserHistory('pattern', code);
     if (typeof updatePatternInstitutionalSummary === 'function') {
       updatePatternInstitutionalSummary(code);
     }
@@ -3680,10 +3749,24 @@
   }
 
   document.querySelectorAll('.app-tab').forEach(button => {
-    button.addEventListener('click', () => activateWorkspace(button.dataset.workspace));
+    button.addEventListener('click', () => activateWorkspace(button.dataset.workspace, { pushHistory: true }));
   });
-  // 統一入口的首頁固定是檔案管理；個股分析只在使用者主動選取後開啟。
-  activateWorkspace('reports');
+
+  // 初始路由解析 (支援重整/直接輸入網址/上一頁/下一頁)
+  const initialRoute = parseLocationHash();
+  if (initialRoute.workspace === 'pattern' && initialRoute.code) {
+    openPatternForStock(initialRoute.code, { pushHistory: false });
+    syncBrowserHistory('pattern', initialRoute.code, { replace: true });
+  } else if (initialRoute.workspace === 'analysis' && initialRoute.code) {
+    switchToStockAnalysis(initialRoute.code, { pushHistory: false });
+    syncBrowserHistory('analysis', initialRoute.code, { replace: true });
+  } else if (initialRoute.workspace !== 'reports') {
+    activateWorkspace(initialRoute.workspace, { pushHistory: false });
+    syncBrowserHistory(initialRoute.workspace, null, { replace: true });
+  } else {
+    activateWorkspace('reports', { pushHistory: false });
+    syncBrowserHistory('reports', null, { replace: true });
+  }
   loadWinrateMap();
 
   async function updateServersStatus(){
@@ -3904,6 +3987,9 @@
     patternStockSelect.addEventListener('change', event => {
       selectedStockCode = String(event.target.value || '').trim() || selectedStockCode;
       updatePatternStarButton(event.target.value);
+      if (window.activeWorkspaceName === 'pattern' && selectedStockCode && typeof syncBrowserHistory === 'function') {
+        syncBrowserHistory('pattern', selectedStockCode);
+      }
     });
   }
 
@@ -3914,6 +4000,9 @@
       if (!code) return;
       selectedStockCode = code;
       updatePatternStarButton(code);
+      if (window.activeWorkspaceName === 'pattern' && selectedStockCode && typeof syncBrowserHistory === 'function') {
+        syncBrowserHistory('pattern', selectedStockCode);
+      }
     });
   }
 
