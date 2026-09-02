@@ -3,7 +3,7 @@
   "stock": {
     "code": "3665",
     "name": "貿聯-KY",
-    "group": "reports",
+    "group": "連接線器",
     "market": "TW",
     "date": "2026-09-01",
     "isStarred": false
@@ -11,8 +11,8 @@
   "latestAnalysis": {
     "date": "2026-09-01",
     "current": "2315.00",
-    "decision": "買入 (多頭順勢)",
-    "winRate": "64%",
+    "decision": "觀望 / 逢低佈局",
+    "winRate": "57%",
     "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
     "confidence": "完全確認",
     "entry": "2268.70",
@@ -30,6 +30,6 @@
     "bearish": [
       "風控停損：1930.00 元"
     ],
-    "action": "交易方向：做多；建議評級：買入 (多頭順勢)；策略：右側突破跟隨；目標價：4065.21 元；停損：1930.00 元。"
+    "action": "交易方向：做多；建議評級：觀望 / 逢低佈局；策略：右側突破跟隨；目標價：4065.21 元；停損：1930.00 元。"
   }
 }

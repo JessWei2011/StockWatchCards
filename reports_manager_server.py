@@ -21,6 +21,7 @@ import subprocess
 import sys
 import threading
 import time
+import datetime
 from http.server import SimpleHTTPRequestHandler
 from pathlib import Path
 from socketserver import ThreadingTCPServer
@@ -958,6 +959,260 @@ def fetch_institutional_breakdown():
     return {"date": date_str, "rows": rows}, None
 
 
+DISPOSAL_NOTICE_LOCK = threading.Lock()
+DISPOSAL_NOTICE_CACHE = {"timestamp": 0, "data": None}
+DISPOSAL_NOTICE_TTL = 300  # 5 分鐘快取
+
+
+def _parse_roc_date_str(s):
+    if not s:
+        return ""
+    s = str(s).strip().replace("*", "")
+    m = re.match(r"(\d{2,3})[/-]?(\d{1,2})[/-]?(\d{1,2})", s)
+    if m:
+        roc_y, m_val, d_val = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        return f"{roc_y + 1911}-{m_val:02d}-{d_val:02d}"
+    m8 = re.match(r"(\d{3})(\d{2})(\d{2})", s)
+    if m8:
+        roc_y, m_val, d_val = int(m8.group(1)), int(m8.group(2)), int(m8.group(3))
+        return f"{roc_y + 1911}-{m_val:02d}-{d_val:02d}"
+    m_ad = re.match(r"(\d{4})[/-](\d{1,2})[/-](\d{1,2})", s)
+    if m_ad:
+        return f"{int(m_ad.group(1))}-{int(m_ad.group(2)):02d}-{int(m_ad.group(3)):02d}"
+    return s
+
+
+def _is_common_stock(code, name):
+    """過濾只保留台股現股（排除 CB 可轉換公司債、權證等衍生商品）。"""
+    code = str(code).strip()
+    name = str(name).strip()
+    # 權證 (6碼數字)
+    if len(code) == 6 and code.isdigit():
+        return False
+    # 可轉債 (5碼數字，且通常為第 5 碼為發行期數)
+    if len(code) == 5 and code.isdigit():
+        return False
+    # 排除超過 5 碼之衍生商品
+    if len(code) > 5:
+        return False
+    # 排除名稱中明確包含權證或公司債關鍵字
+    if re.search(r"(?:購\d{2}|售\d{2}|牛\d{2}|熊\d{2}|認購|認售|權證|公司債|可轉債|\bCB\b)", name):
+        return False
+    # 排除代碼非4碼且名稱結尾為中文數字（如 華星光三、一詮七、先進光一）
+    if len(code) != 4 and re.search(r"[一二三四五六七八九十]$", name):
+        return False
+    # 台股現股代碼為 4 碼數字，或特別股 4碼+英文（如 2881A）
+    return bool(re.match(r"^\d{4}[A-Za-z]?$", code))
+
+
+def fetch_disposal_and_notice_data(force_refresh=False):
+    """即時爬取證交所(TWSE)與櫃買中心(TPEx)的處置有價證券與注意股票（僅保留現股）。"""
+    global DISPOSAL_NOTICE_CACHE
+    now = time.time()
+    with DISPOSAL_NOTICE_LOCK:
+        if not force_refresh and DISPOSAL_NOTICE_CACHE["data"] and (now - DISPOSAL_NOTICE_CACHE["timestamp"] < DISPOSAL_NOTICE_TTL):
+            return DISPOSAL_NOTICE_CACHE["data"], None
+
+    today_str = datetime.date.today().strftime("%Y-%m-%d")
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+
+    disposals = []
+    notices = []
+    stock_map = {}
+
+    # 1. 上市處置 (TWSE)
+    try:
+        r = requests.get("https://openapi.twse.com.tw/v1/announcement/punish", headers=headers, timeout=5)
+        if r.status_code == 200:
+            for row in r.json():
+                code = str(row.get("Code", "")).strip()
+                name = str(row.get("Name", "")).strip()
+                if not code or not _is_common_stock(code, name):
+                    continue
+                pub_date = _parse_roc_date_str(row.get("Date", ""))
+                period_raw = str(row.get("DispositionPeriod", "")).strip()
+                p_parts = re.split(r"[～~\-至]", period_raw)
+                start_d = _parse_roc_date_str(p_parts[0]) if len(p_parts) > 0 else ""
+                end_d = _parse_roc_date_str(p_parts[1]) if len(p_parts) > 1 else ""
+                measures = str(row.get("DispositionMeasures", "")).strip()
+                reasons = str(row.get("ReasonsOfDisposition", "")).strip()
+
+                if start_d and start_d > today_str:
+                    status = "upcoming"
+                    status_label = "🚨 明日處置"
+                elif start_d and end_d and start_d <= today_str <= end_d:
+                    status = "active"
+                    status_label = "🔒 處置中"
+                else:
+                    status = "ended"
+                    status_label = "✅ 處置結束"
+
+                item = {
+                    "market": "TWSE",
+                    "code": code,
+                    "name": name,
+                    "pub_date": pub_date,
+                    "start_date": start_d,
+                    "end_date": end_d,
+                    "period_raw": period_raw,
+                    "status": status,
+                    "status_label": status_label,
+                    "measures": measures,
+                    "reasons": reasons,
+                    "count": str(row.get("NumberOfAnnouncement", "1"))
+                }
+                disposals.append(item)
+                stock_map[code] = {
+                    "type": "disposal",
+                    "code": code,
+                    "name": name,
+                    "status": status,
+                    "status_label": status_label,
+                    "start_date": start_d,
+                    "end_date": end_d,
+                    "period_raw": period_raw,
+                    "measures": measures,
+                    "reasons": reasons,
+                    "market": "TWSE"
+                }
+    except Exception as e:
+        print(f"[Warn] Fetch TWSE Punish Error: {e}", file=sys.stderr)
+
+    # 2. 上櫃處置 (TPEx)
+    try:
+        r = requests.get("https://www.tpex.org.tw/www/zh-tw/bulletin/disposal/disp?response=json", headers=headers, timeout=5)
+        if r.status_code == 200:
+            d = r.json()
+            if "tables" in d and d["tables"]:
+                for row in d["tables"][0].get("data", []):
+                    if len(row) < 6:
+                        continue
+                    pub_date = _parse_roc_date_str(row[1])
+                    code_m = re.search(r"\b\d{4,6}\b", str(row[2]))
+                    code = code_m.group(0) if code_m else str(row[2]).strip()
+                    name_m = re.match(r"^[^\(<]+", str(row[3]))
+                    name = name_m.group(0).strip() if name_m else str(row[3]).strip()
+                    if not code or not _is_common_stock(code, name):
+                        continue
+                    count = str(row[4])
+                    period_raw = str(row[5]).strip()
+                    p_parts = re.split(r"[～~\-至]", period_raw)
+                    start_d = _parse_roc_date_str(p_parts[0]) if len(p_parts) > 0 else ""
+                    end_d = _parse_roc_date_str(p_parts[1]) if len(p_parts) > 1 else ""
+                    reasons = str(row[6]).strip() if len(row) > 6 else ""
+                    measures = str(row[7]).strip() if len(row) > 7 else ""
+
+                    if start_d and start_d > today_str:
+                        status = "upcoming"
+                        status_label = "🚨 明日處置"
+                    elif start_d and end_d and start_d <= today_str <= end_d:
+                        status = "active"
+                        status_label = "🔒 處置中"
+                    else:
+                        status = "ended"
+                        status_label = "✅ 處置結束"
+
+                    item = {
+                        "market": "TPEx",
+                        "code": code,
+                        "name": name,
+                        "pub_date": pub_date,
+                        "start_date": start_d,
+                        "end_date": end_d,
+                        "period_raw": period_raw,
+                        "status": status,
+                        "status_label": status_label,
+                        "measures": measures,
+                        "reasons": reasons,
+                        "count": count
+                    }
+                    disposals.append(item)
+                    stock_map[code] = {
+                        "type": "disposal",
+                        "code": code,
+                        "name": name,
+                        "status": status,
+                        "status_label": status_label,
+                        "start_date": start_d,
+                        "end_date": end_d,
+                        "period_raw": period_raw,
+                        "measures": measures,
+                        "reasons": reasons,
+                        "market": "TPEx"
+                    }
+    except Exception as e:
+        print(f"[Warn] Fetch TPEx Punish Error: {e}", file=sys.stderr)
+
+    # 3. 上市注意 (TWSE)
+    try:
+        r = requests.get("https://openapi.twse.com.tw/v1/announcement/notice", headers=headers, timeout=5)
+        if r.status_code == 200:
+            for row in r.json():
+                code = str(row.get("Code", "")).strip()
+                name = str(row.get("Name", "")).strip()
+                if not code or not _is_common_stock(code, name):
+                    continue
+                info = str(row.get("NoticeInformation", "")).strip()
+                notices.append({"market": "TWSE", "code": code, "name": name, "info": info, "count": "1"})
+                if code not in stock_map:
+                    stock_map[code] = {
+                        "type": "notice",
+                        "code": code,
+                        "name": name,
+                        "status": "notice",
+                        "status_label": "👀 注意股",
+                        "info": info,
+                        "count": "1",
+                        "market": "TWSE"
+                    }
+    except Exception as e:
+        print(f"[Warn] Fetch TWSE Notice Error: {e}", file=sys.stderr)
+
+    # 4. 上櫃注意 (TPEx)
+    try:
+        r = requests.get("https://www.tpex.org.tw/www/zh-tw/bulletin/attention/history?response=json", headers=headers, timeout=5)
+        if r.status_code == 200:
+            d = r.json()
+            if "tables" in d and d["tables"]:
+                for row in d["tables"][0].get("data", []):
+                    if len(row) < 5:
+                        continue
+                    code_m = re.search(r"\b\d{4,6}\b", str(row[1]))
+                    code = code_m.group(0) if code_m else str(row[1]).strip()
+                    name_m = re.match(r"^[^\(<]+", str(row[2]))
+                    name = name_m.group(0).strip() if name_m else str(row[2]).strip()
+                    if not code or not _is_common_stock(code, name):
+                        continue
+                    count = str(row[3])
+                    info = str(row[4]).strip()
+                    notices.append({"market": "TPEx", "code": code, "name": name, "count": count, "info": info})
+                    if code not in stock_map:
+                        stock_map[code] = {
+                            "type": "notice",
+                            "code": code,
+                            "name": name,
+                            "status": "notice",
+                            "status_label": f"👀 注意股(累積{count}次)" if count and count.isdigit() and int(count) > 1 else "👀 注意股",
+                            "info": info,
+                            "count": count,
+                            "market": "TPEx"
+                        }
+    except Exception as e:
+        print(f"[Warn] Fetch TPEx Notice Error: {e}", file=sys.stderr)
+
+    result = {
+        "updated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "today": today_str,
+        "disposals": disposals,
+        "notices": notices,
+        "map": stock_map
+    }
+    with DISPOSAL_NOTICE_LOCK:
+        DISPOSAL_NOTICE_CACHE["timestamp"] = now
+        DISPOSAL_NOTICE_CACHE["data"] = result
+    return result, None
+
+
 class Handler(SimpleHTTPRequestHandler):
     def end_headers(self):
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
@@ -995,6 +1250,15 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json(200, {"ok": True, "data": data})
             else:
                 self._json(502, {"ok": False, "error": error})
+            return
+        if parsed.path == "/api/disposal-notice":
+            qs = parse_qs(parsed.query)
+            force = qs.get("refresh", ["0"])[0] == "1"
+            data, error = fetch_disposal_and_notice_data(force_refresh=force)
+            if data is not None:
+                self._json(200, {"ok": True, "data": data})
+            else:
+                self._json(502, {"ok": False, "error": error or "無法取得處置/注意資訊"})
             return
         if parsed.path == "/api/tree":
             self._json(200, {"ok": True, "tree": build_tree()})

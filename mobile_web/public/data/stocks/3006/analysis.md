@@ -1,7 +1,7 @@
-# 📈 Elite Semiconductor Microelectronics Technology Inc (3006.TW) 專業技術分析報告
+# 📈 晶豪科 (3006.TW) 專業技術分析報告
 
 ### 【輸入數據】
-- **股票代號**：3006.TW（Elite Semiconductor Microelectronics Technology Inc）
+- **股票代號**：3006.TW（晶豪科）
 - **分析日期**：09/01
 - **當前價格**：278.50 元
 - **技術數據摘要**：
@@ -66,7 +66,7 @@
 
 ## 第四階段：技術分析儀表板（交易計劃）
 
-【股票代號】：3006.TW (Elite Semiconductor Microelectronics Technology Inc)
+【股票代號】：3006.TW (晶豪科)
 - **分析日期**：09/01
 - **當前價格**：278.50 元
 

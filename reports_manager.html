@@ -134,13 +134,11 @@
   }
   .tree-quick-actions{ display:inline-flex; align-items:center; gap:4px; flex-shrink:0; }
   .tree-quick-btn{
-    width:62px; height:19px; padding:0; border-radius:5px; cursor:pointer;
+    height:19px; padding:0; border-radius:5px; cursor:pointer;
     display:inline-flex; align-items:center; justify-content:center;
     background:rgba(255,255,255,.05); border:1px solid var(--border); font-size:11px;
     transition: background 0.15s, border-color 0.15s;
   }
-  .tree-quick-btn.pattern{ border-color:rgba(56,189,248,.45); }
-  .tree-quick-btn.report{ border-color:rgba(196,181,253,.45); }
   .tree-quick-btn.delete{
     width:22px; color:#fca5a5; border-color:rgba(248,113,113,.5);
   }
@@ -166,10 +164,11 @@
   .tree-stat-pill.price.down{ color:#86efac; border:1px solid rgba(34,197,94,.45); background:rgba(34,197,94,.18); }
   .tree-stat-pill.price.flat{ color:#cbd5e1; border:1px solid rgba(148,163,184,.3); background:rgba(148,163,184,.1); }
   .tree-stat-pill.pe{ width:56px; color:#c4b5fd; border:1px solid rgba(168,85,247,.4); background:rgba(168,85,247,.14); }
+  .tree-stat-pill.missing.winrate-missing{ width:40px; }
   .tree-stat-pill.missing.change-missing{ min-width:48px; }
   .tree-stat-pill.missing.price-missing{ min-width:46px; }
   .tree-stat-pill.missing.pe-missing{ width:56px; }
-  .tree-stat-pill.missing{ width:28px; color:var(--text-dim); border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); }
+  .tree-stat-pill.missing{ color:var(--text-dim); border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); }
   .tree-actions button{
     background:none; border:none; color:inherit; opacity:0.7; cursor:pointer; font-size:12px; padding:2px 4px;
   }
@@ -577,6 +576,7 @@
   .market-inst-card{
     background:#11161c; border:1px solid rgba(71,85,105,.55); border-radius:12px;
     padding:18px 24px; margin-bottom:20px; box-shadow:0 5px 16px rgba(0,0,0,0.25);
+    transition:background .2s, border-color .2s, opacity .2s;
   }
   .market-inst-header{
     display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
@@ -607,7 +607,7 @@
     min-width:0; background:linear-gradient(145deg,#111c2a,#0c1420); border:1px solid rgba(56,189,248,.26); border-radius:10px;
     padding:14px 16px; box-shadow:inset 0 1px rgba(255,255,255,.025), 0 8px 20px rgba(2,12,27,.2);
     display:flex; flex-direction:column; justify-content:space-between;
-    transition:border-color .15s, background .15s;
+    transition:border-color .15s, background .15s, opacity .15s, filter .15s;
   }
   .market-inst-cell:hover{ background:linear-gradient(145deg,#142236,#0e1928); border-color:rgba(103,232,249,.58); }
   .market-inst-cell.total{
@@ -628,6 +628,171 @@
   .market-inst-cell-net.flat{ color:#94a3b8; }
   .market-inst-loading{ padding:18px; text-align:center; color:var(--text-dim); font-size:18px; }
   .market-inst-error{ padding:18px; text-align:center; color:var(--danger); font-size:18px; }
+
+  /* ── 非最新數據時暗色/沈穩色調 ── */
+  .market-inst-card.stale{
+    background:#0d1117; border-color:rgba(71,85,105,.3); box-shadow:none;
+  }
+  .market-inst-card.stale .market-inst-title{ color:#94a3b8; }
+  .market-inst-card.stale .market-inst-header{ border-bottom-color:rgba(71,85,105,.22); }
+  .market-inst-card.stale .market-inst-date-badge{
+    background:rgba(148,163,184,.12); color:#94a3b8; border-color:rgba(148,163,184,.25);
+  }
+  .market-inst-card.stale .market-inst-cell{
+    background:linear-gradient(145deg,#0e1520,#080d14);
+    border-color:rgba(71,85,105,.22);
+    box-shadow:none;
+    opacity:0.68;
+    filter:saturate(0.55);
+  }
+  .market-inst-card.stale .market-inst-cell:hover{
+    background:linear-gradient(145deg,#121a26,#0b111a);
+    border-color:rgba(71,85,105,.4);
+    opacity:0.88;
+  }
+  .market-inst-card.stale .market-inst-cell.total{
+    background:linear-gradient(145deg,#16140b,#0c0b06);
+    border-color:rgba(161,120,20,.25);
+    box-shadow:none;
+  }
+  .market-inst-card.stale .market-inst-cell-name{ color:#7e8b9b; }
+  .market-inst-card.stale .market-inst-cell.total .market-inst-cell-name{ color:#9e7f2c; }
+  .market-inst-card.stale .market-inst-cell.total .total-badge{
+    background:#664d13 !important; color:#cbd5e1 !important;
+  }
+  .market-inst-card.stale .market-inst-cell-net.buy{ color:#dc6868; }
+  .market-inst-card.stale .market-inst-cell-net.sell{ color:#3da865; }
+  .market-inst-card.stale .market-inst-cell-net.flat{ color:#64748b; }
+
+  /* ── 處置與注意股票預警中心 ── */
+  .disposal-warning-card{
+    background:#11161c; border:1px solid rgba(239,68,68,.4); border-radius:12px;
+    padding:16px 24px; margin-bottom:20px; box-shadow:0 5px 16px rgba(0,0,0,0.25);
+    transition:padding .2s;
+  }
+  .disposal-warning-card.collapsed .disposal-warning-header{
+    margin-bottom:0; padding-bottom:0; border-bottom:none;
+  }
+  .disposal-warning-header{
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
+    margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid rgba(71,85,105,.35);
+  }
+  .disposal-warning-title{
+    display:flex; align-items:center; gap:10px; font-size:21px; font-weight:800; color:#f8fafc;
+  }
+  .disposal-warning-title .icon{ font-size:24px; }
+  .disposal-warning-badge{
+    font-size:15px; font-weight:700; padding:3px 12px; border-radius:7px;
+  }
+  .disposal-warning-badge.alert{
+    background:rgba(239,68,68,.18); color:#fca5a5; border:1px solid rgba(239,68,68,.4);
+  }
+  .disposal-warning-badge.normal{
+    background:rgba(56,189,248,.15); color:#7dd3fc; border:1px solid rgba(56,189,248,.35);
+  }
+  .disposal-warning-actions{ display:flex; align-items:center; gap:12px; }
+  .disposal-warning-status{ font-size:17px; color:var(--text-dim); }
+  .disposal-refresh-btn{
+    height:40px; padding:0 15px; font-size:16px; font-weight:700; border-radius:8px;
+    background:rgba(255,255,255,.06); border:1px solid var(--border); color:var(--text); cursor:pointer;
+  }
+  .disposal-refresh-btn:hover{ background:var(--hover); color:#fff; }
+  .disposal-warning-tabs{
+    display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;
+  }
+  .disposal-tab-btn{
+    padding:6px 14px; font-size:15px; font-weight:700; border-radius:7px;
+    background:rgba(255,255,255,.05); border:1px solid var(--border); color:var(--text-dim);
+    cursor:pointer; transition:all .15s;
+  }
+  .disposal-tab-btn:hover{ background:var(--hover); color:#fff; }
+  .disposal-tab-btn.active{
+    background:rgba(239,68,68,.22); color:#fca5a5; border-color:rgba(239,68,68,.6);
+  }
+  .disposal-items-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px;
+  }
+  .disposal-item-card{
+    background:linear-gradient(145deg,#161b22,#0d1117);
+    border:1px solid rgba(71,85,105,.4); border-radius:10px;
+    padding:12px 14px; display:flex; flex-direction:column; justify-content:space-between;
+    cursor:pointer; transition:transform .15s, border-color .15s; min-height:95px;
+  }
+  .disposal-item-card:hover{
+    transform:translateY(-2px); border-color:#f87171;
+  }
+  .disposal-item-card.upcoming{
+    border-color:rgba(239,68,68,.6); background:linear-gradient(145deg,#231418,#140b0e);
+    box-shadow:0 0 10px rgba(239,68,68,.15);
+  }
+  .disposal-item-card.active{
+    border-color:rgba(234,179,8,.5); background:linear-gradient(145deg,#201b10,#131008);
+  }
+  .disposal-item-card.notice{
+    border-color:rgba(56,189,248,.35); background:linear-gradient(145deg,#0e1824,#091018);
+  }
+  .disposal-item-top{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;
+  }
+  .disposal-item-stock{
+    font-size:17px; font-weight:850; color:#f8fafc; display:flex; align-items:center; gap:6px;
+  }
+  .disposal-item-stock .stock-market{
+    font-size:11px; background:rgba(255,255,255,.08); color:#94a3b8; padding:1px 5px; border-radius:3px;
+  }
+  .disposal-item-pill{
+    font-size:12px; font-weight:800; padding:2px 8px; border-radius:5px; white-space:nowrap;
+  }
+  .disposal-item-pill.upcoming{
+    background:#ef4444; color:#fff; animation:pulse-warning 1.8s infinite;
+  }
+  .disposal-item-pill.active{
+    background:#eab308; color:#000;
+  }
+  .disposal-item-pill.notice{
+    background:#38bdf8; color:#000;
+  }
+  .disposal-item-period{
+    font-size:13.5px; color:#cbd5e1; font-weight:600; margin-bottom:4px;
+  }
+  .disposal-item-desc{
+    font-size:12.5px; color:#94a3b8; line-height:1.4; max-height:38px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  }
+  .disposal-empty-msg{
+    text-align:center; padding:20px; color:var(--text-dim); font-size:16px;
+  }
+  .disposal-warning-loading{
+    padding:18px; text-align:center; color:var(--text-dim); font-size:18px;
+  }
+  .disposal-warning-error{
+    padding:18px; text-align:center; color:var(--danger); font-size:18px;
+  }
+  @keyframes pulse-warning {
+    0%, 100% { opacity:1; }
+    50% { opacity:0.65; }
+  }
+
+  /* ── 樹狀清單與卡片上的處置標籤 ── */
+  .stock-disposal-badge{
+    display:inline-flex; align-items:center; font-size:11px; font-weight:800; padding:1px 5px;
+    border-radius:4px; margin-left:5px; vertical-align:middle; line-height:1.2; white-space:nowrap;
+  }
+  .stock-disposal-badge.upcoming{
+    background:#ef4444; color:#fff; border:1px solid #f87171;
+  }
+  .stock-disposal-badge.active{
+    background:#ca8a04; color:#fff; border:1px solid #eab308;
+  }
+  .stock-disposal-badge.notice{
+    background:#0284c7; color:#fff; border:1px solid #38bdf8;
+  }
+  .card-disp-tag{
+    position:absolute; bottom:8px; right:8px; font-size:11px; font-weight:800; padding:2px 6px;
+    border-radius:4px; z-index:2;
+  }
+  .card-disp-tag.upcoming{ background:#ef4444; color:#fff; }
+  .card-disp-tag.active{ background:#ca8a04; color:#fff; }
+  .card-disp-tag.notice{ background:#0284c7; color:#fff; }
 
   /* ── 總經數據中心（移植自獨立 macro tracker 的紅框區） ── */
   .macro-panel{ margin-top:20px; color:#f8fafc; }
@@ -1000,6 +1165,25 @@
         </div>
         <div class="market-inst-body" id="market-inst-body">
           <div class="market-inst-loading">⏳ 正在連線台灣證券交易所取得大盤三大法人數據...</div>
+        </div>
+      </div>
+
+      <!-- 🚨 處置與注意股票即時預警看板 -->
+      <div class="disposal-warning-card collapsed" id="disposal-warning-card">
+        <div class="disposal-warning-header">
+          <div class="disposal-warning-title">
+            <span class="icon">🚨</span>
+            <span class="title-text">處置與注意股票預警中心</span>
+            <span class="disposal-warning-badge normal" id="disposal-warning-badge">連線證交所/櫃買中...</span>
+          </div>
+          <div class="disposal-warning-actions">
+            <span class="disposal-warning-status" id="disposal-warning-status"></span>
+            <button type="button" class="btn" id="disposal-toggle-btn">📖 展開預警看板</button>
+            <button type="button" class="btn disposal-refresh-btn" id="disposal-refresh-btn" title="向證交所與櫃買中心重新整理最新處置與注意公告">🔄 即時重整</button>
+          </div>
+        </div>
+        <div class="disposal-warning-body" id="disposal-warning-body" hidden>
+          <div class="disposal-warning-loading">⏳ 正在連線台灣證券交易所與櫃買中心取得處置及注意股票資料...</div>
         </div>
       </div>
 
@@ -3904,7 +4088,7 @@
 
     const winPill = winRateVal
       ? `<span class="tree-stat-pill winrate ${parseFloat(winRateVal)>=60 ? 'high' : ''}" title="${escapeHtml(winRateTitle)}">${escapeHtml(winRateVal)}</span>`
-      : `<span class="tree-stat-pill missing" title="${escapeHtml(winRateTitle)}">—</span>`;
+      : `<span class="tree-stat-pill missing winrate-missing" title="${escapeHtml(winRateTitle)}">—</span>`;
 
     const changePill = changeVal
       ? `<span class="tree-stat-pill change ${changeCls}" title="${escapeHtml(changeTitle)}">${escapeHtml(changeVal)}</span>`
@@ -3920,16 +4104,26 @@
 
     const quickActions = code ? `
       <span class="tree-quick-actions">
-        <button type="button" class="tree-quick-btn pattern" data-action="pattern" title="開啟 ${escapeHtml(r.name || code)} 的專業看盤">📈</button>
-        <button type="button" class="tree-quick-btn report" data-action="report" title="開啟 ${escapeHtml(r.name || code)} 的分析報告">📑</button>
         <button type="button" class="tree-quick-btn delete" data-action="delete" title="刪除 ${escapeHtml(r.name || code)} 的 HTML 與 Markdown 報表" aria-label="刪除 ${escapeHtml(r.name || code)}">🗑️</button>
       </span>` : '';
 
     const starBtn = code ? `
       <button type="button" class="tree-star-btn ${isStarred ? 'active' : ''}" data-code="${escapeHtml(code)}" title="${isStarred ? '已標注重點關注 (點擊取消)' : '標注重點關注'}">★</button>` : '';
 
+    const dispInfo = window.DISPOSAL_NOTICE_MAP && window.DISPOSAL_NOTICE_MAP[code];
+    let dispBadge = '';
+    if (dispInfo) {
+      if (dispInfo.type === 'disposal' && dispInfo.status === 'upcoming') {
+        dispBadge = `<span class="stock-disposal-badge upcoming" title="🚨 已公告明日進處置 (${escapeHtml(dispInfo.period_raw || '')})">明日處置</span>`;
+      } else if (dispInfo.type === 'disposal' && dispInfo.status === 'active') {
+        dispBadge = `<span class="stock-disposal-badge active" title="🔒 處置中 (${escapeHtml(dispInfo.period_raw || '')})">處置中</span>`;
+      } else if (dispInfo.type === 'notice') {
+        dispBadge = `<span class="stock-disposal-badge notice" title="👀 注意股票 (${escapeHtml(dispInfo.info || '')})">注意</span>`;
+      }
+    }
+
     const displayName = (window.STOCK_NAMES_MAP && window.STOCK_NAMES_MAP[code]) || r.name || r.base;
-    item.innerHTML = `${starBtn}<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span><span class="tree-stat-pills">${quickActions}${winPill}${changePill}${pricePill}${pePill}</span>`;
+    item.innerHTML = `${starBtn}<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>${dispBadge}<span class="tree-stat-pills">${quickActions}${winPill}${changePill}${pricePill}${pePill}</span>`;
     item.addEventListener('click', () => openPatternForStock(code));
 
     const starBtnEl = item.querySelector('.tree-star-btn');
@@ -3946,9 +4140,7 @@
     item.querySelectorAll('.tree-quick-btn').forEach(button => {
       button.addEventListener('click', event => {
         event.stopPropagation();
-        if (button.dataset.action === 'pattern') openPatternForStock(code);
-        else if (button.dataset.action === 'report') switchToStockAnalysis(code);
-        else if (button.dataset.action === 'delete') openReportDeleteModal(code, r.name || r.base || code);
+        if (button.dataset.action === 'delete') openReportDeleteModal(code, r.name || r.base || code);
       });
       button.addEventListener('mousedown', event => event.stopPropagation());
       button.addEventListener('dragstart', event => event.preventDefault());
@@ -4023,9 +4215,21 @@
       const badge = aiCard
         ? `<div class="card-badge badge-${getScoreColorCat(aiCard.winRate)}" title="點擊進入整合分析與型態教學">🎯 ${escapeHtml(String(aiCard.winRate))}</div>`
         : '';
+      const dispInfo = r.code ? (window.DISPOSAL_NOTICE_MAP && window.DISPOSAL_NOTICE_MAP[r.code]) : null;
+      let cardDispBadge = '';
+      if (dispInfo) {
+        if (dispInfo.type === 'disposal' && dispInfo.status === 'upcoming') {
+          cardDispBadge = `<span class="card-disp-tag upcoming" title="🚨 明日進處置 (${escapeHtml(dispInfo.period_raw || '')})">🚨 明日處置</span>`;
+        } else if (dispInfo.type === 'disposal' && dispInfo.status === 'active') {
+          cardDispBadge = `<span class="card-disp-tag active" title="🔒 處置中 (${escapeHtml(dispInfo.period_raw || '')})">🔒 處置中</span>`;
+        } else if (dispInfo.type === 'notice') {
+          cardDispBadge = `<span class="card-disp-tag notice" title="👀 注意股票 (${escapeHtml(dispInfo.info || '')})">👀 注意</span>`;
+        }
+      }
       card.innerHTML = `
         <input type="checkbox" class="select-box" draggable="false">
         ${badge}
+        ${cardDispBadge}
         ${thumb}
         <div class="code" style="cursor:pointer;" title="開啟 ${escapeHtml(r.name || r.code)} 的專業看盤" onclick="event.stopPropagation(); openPatternForStock('${escapeHtml(r.code)}');">${escapeHtml(r.code || '')}</div>
         <div class="name" style="cursor:pointer;" title="開啟 ${escapeHtml(r.name || r.base)} 的專業看盤" onclick="event.stopPropagation(); openPatternForStock('${escapeHtml(r.code)}');">${escapeHtml(r.name || r.base)}</div>
@@ -5192,6 +5396,31 @@ ${macroJsonText()}`;
   });
 
   // ── 大盤三大法人買賣金額明細 ──
+  function getExpectedMarketInstDate(){
+    const now = new Date();
+    const day = now.getDay(); // 0: 週日, 1: 週一, ..., 6: 週六
+    const hour = now.getHours();
+    // 證交所通常於交易日下午 14:45 ~ 15:00 公布當日三大法人買賣金額明細
+    const isPastReleaseTime = hour >= 15;
+
+    let target = new Date(now);
+    if (day === 0) { // 週日：最新應為上週五
+      target.setDate(target.getDate() - 2);
+    } else if (day === 6) { // 週六：最新應為週五
+      target.setDate(target.getDate() - 1);
+    } else if (day === 1) { // 週一
+      if (!isPastReleaseTime) {
+        target.setDate(target.getDate() - 3); // 盤後公布前，最新應為上週五
+      }
+    } else { // 週二至週五
+      if (!isPastReleaseTime) {
+        target.setDate(target.getDate() - 1); // 盤後公布前，最新應為前一交易日
+      }
+    }
+    const pad = n => String(n).padStart(2, '0');
+    return `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())}`;
+  }
+
   function formatMarketYi(v, withSign){
     if (v === null || v === undefined || isNaN(v)) return '—';
     const sign = withSign && v > 0 ? '+' : '';
@@ -5199,6 +5428,7 @@ ${macroJsonText()}`;
   }
 
   async function loadMarketInstBreakdown(){
+    const cardEl = document.getElementById('market-inst-card');
     const bodyEl = document.getElementById('market-inst-body');
     const badgeEl = document.getElementById('market-inst-date-badge');
     const statusEl = document.getElementById('market-inst-status');
@@ -5215,10 +5445,11 @@ ${macroJsonText()}`;
       }
 
       const { date: dataDate, rows } = json.data;
-      const today = todayDateStr();
-      const isStale = dataDate !== today;
-      badgeEl.textContent = dataDate ? `資料日期：${dataDate}` : '日期未知';
+      const expectedDate = getExpectedMarketInstDate();
+      const isStale = !dataDate || (dataDate < expectedDate);
+      badgeEl.textContent = dataDate ? `資料日期：${dataDate}${isStale ? ' (非最新)' : ' (最新)'}` : '日期未知';
       badgeEl.classList.toggle('stale', isStale);
+      if (cardEl) cardEl.classList.toggle('stale', isStale);
       statusEl.textContent = `查詢時間 ${new Date().toLocaleTimeString('zh-TW', { hour12: false })}`;
 
       let cellsHtml = '';
@@ -5233,7 +5464,7 @@ ${macroJsonText()}`;
           <div class="market-inst-cell ${isTotal ? 'total' : ''}">
             <div class="market-inst-cell-name">
               <span>${escapeHtml(displayLabel)}</span>
-              ${isTotal ? '<span style="font-size:11px; background:#eab308; color:#000; padding:1px 6px; border-radius:4px; font-weight:800;">大盤合計</span>' : ''}
+              ${isTotal ? '<span class="total-badge" style="font-size:11px; background:#eab308; color:#000; padding:1px 6px; border-radius:4px; font-weight:800;">大盤合計</span>' : ''}
             </div>
             <div class="market-inst-cell-net ${netCls}">
               <span>${netIcon}</span>
@@ -5255,6 +5486,197 @@ ${macroJsonText()}`;
     marketRefreshBtn.addEventListener('click', () => loadMarketInstBreakdown());
   }
 
+  // ── 處置與注意股票預警中心 ──
+  let disposalNoticeData = null;
+  let activeDisposalTab = 'all';
+  let disposalWarningExpanded = false; // 預設收起
+  window.DISPOSAL_NOTICE_MAP = {};
+
+  function isCommonStock(code, name){
+    code = String(code || '').trim();
+    name = String(name || '').trim();
+    if (code.length === 6 && /^\d+$/.test(code)) return false;
+    if (code.length === 5 && /^\d+$/.test(code)) return false;
+    if (code.length > 5) return false;
+    if (/(?:購\d{2}|售\d{2}|牛\d{2}|熊\d{2}|認購|認售|權證|公司債|可轉債|\bCB\b)/.test(name)) return false;
+    if (code.length !== 4 && /[一二三四五六七八九十]$/.test(name)) return false;
+    return /^\d{4}[A-Za-z]?$/.test(code);
+  }
+
+  async function loadDisposalNoticeData(forceRefresh = false){
+    const bodyEl = document.getElementById('disposal-warning-body');
+    const badgeEl = document.getElementById('disposal-warning-badge');
+    const statusEl = document.getElementById('disposal-warning-status');
+    const cardEl = document.getElementById('disposal-warning-card');
+    if (!bodyEl) return;
+
+    if (forceRefresh && statusEl) statusEl.textContent = '⏳ 正在查詢最新處置與注意公告...';
+    try {
+      const resp = await fetch(`/api/disposal-notice${forceRefresh ? '?refresh=1' : ''}`);
+      const json = await resp.json();
+      if (!json.ok || !json.data) {
+        bodyEl.innerHTML = `<div class="disposal-warning-error">❌ ${escapeHtml(json.error || '無法取得處置/注意公告數據')}</div>`;
+        if (statusEl) statusEl.textContent = '';
+        return;
+      }
+
+      const rawDisposals = json.data.disposals || [];
+      const rawNotices = json.data.notices || [];
+      const disposals = rawDisposals.filter(d => isCommonStock(d.code, d.name));
+      const notices = rawNotices.filter(n => isCommonStock(n.code, n.name));
+      const filteredMap = {};
+      Object.keys(json.data.map || {}).forEach(k => {
+        const item = json.data.map[k];
+        if (isCommonStock(k, item?.name)) {
+          filteredMap[k] = item;
+        }
+      });
+
+      disposalNoticeData = { ...json.data, disposals, notices, map: filteredMap };
+      window.DISPOSAL_NOTICE_MAP = filteredMap;
+
+      const upcomingCount = disposals.filter(d => d.status === 'upcoming').length;
+      const activeCount = disposals.filter(d => d.status === 'active').length;
+      const noticeCount = notices.length;
+
+      if (badgeEl) {
+        if (upcomingCount > 0) {
+          badgeEl.className = 'disposal-warning-badge alert';
+          badgeEl.textContent = `🚨 ${upcomingCount} 檔明日進處置 / ${activeCount} 檔處置中`;
+        } else {
+          badgeEl.className = 'disposal-warning-badge normal';
+          badgeEl.textContent = `共 ${activeCount} 檔處置中 / ${noticeCount} 檔注意股`;
+        }
+      }
+
+      if (statusEl) {
+        statusEl.textContent = `公告查詢時間 ${disposalNoticeData.updated_at.slice(11)}`;
+      }
+
+      renderDisposalWarningPanel();
+      if (tree) renderTree();
+      if (typeof loadList === 'function') loadList();
+    } catch (err) {
+      bodyEl.innerHTML = `<div class="disposal-warning-error">❌ 連線失敗: ${escapeHtml(err.message)}</div>`;
+      if (statusEl) statusEl.textContent = '';
+    }
+  }
+
+  function setDisposalWarningExpanded(expanded){
+    disposalWarningExpanded = expanded;
+    const cardEl = document.getElementById('disposal-warning-card');
+    const bodyEl = document.getElementById('disposal-warning-body');
+    const toggleBtn = document.getElementById('disposal-toggle-btn');
+    if (cardEl) cardEl.classList.toggle('collapsed', !expanded);
+    if (bodyEl) bodyEl.hidden = !expanded;
+    if (toggleBtn) toggleBtn.textContent = expanded ? '📕 收合預警看板' : '📖 展開預警看板';
+  }
+
+  function renderDisposalWarningPanel(){
+    const bodyEl = document.getElementById('disposal-warning-body');
+    if (!bodyEl || !disposalNoticeData) return;
+
+    const { disposals = [], notices = [] } = disposalNoticeData;
+    const upcomingList = disposals.filter(d => d.status === 'upcoming');
+    const activeList = disposals.filter(d => d.status === 'active');
+
+    let itemsToShow = [];
+    if (activeDisposalTab === 'upcoming') {
+      itemsToShow = upcomingList;
+    } else if (activeDisposalTab === 'active') {
+      itemsToShow = activeList;
+    } else if (activeDisposalTab === 'notice') {
+      itemsToShow = notices;
+    } else {
+      itemsToShow = [...upcomingList, ...activeList, ...notices];
+    }
+
+    const tabsHtml = `
+      <div class="disposal-warning-tabs">
+        <button type="button" class="disposal-tab-btn ${activeDisposalTab==='all'?'active':''}" data-tab="all">🔥 全部 (${upcomingList.length + activeList.length + notices.length})</button>
+        <button type="button" class="disposal-tab-btn ${activeDisposalTab==='upcoming'?'active':''}" data-tab="upcoming">🚨 明日進處置 (${upcomingList.length})</button>
+        <button type="button" class="disposal-tab-btn ${activeDisposalTab==='active'?'active':''}" data-tab="active">🔒 處置中 (${activeList.length})</button>
+        <button type="button" class="disposal-tab-btn ${activeDisposalTab==='notice'?'active':''}" data-tab="notice">👀 注意股票 (${notices.length})</button>
+      </div>
+    `;
+
+    if (!itemsToShow.length) {
+      bodyEl.innerHTML = `${tabsHtml}<div class="disposal-empty-msg">🎉 目前無符合條件之標的</div>`;
+      bindDisposalTabEvents();
+      return;
+    }
+
+    let cardsHtml = '';
+    itemsToShow.forEach(item => {
+      const isNotice = !item.status;
+      const code = item.code;
+      const name = item.name;
+      const market = item.market || '';
+
+      if (isNotice) {
+        cardsHtml += `
+          <div class="disposal-item-card notice" onclick="openPatternForStock('${escapeHtml(code)}')">
+            <div class="disposal-item-top">
+              <div class="disposal-item-stock">
+                <span class="stock-code">${escapeHtml(code)}</span>
+                <span class="stock-name">${escapeHtml(name)}</span>
+                <span class="stock-market">${escapeHtml(market)}</span>
+              </div>
+              <span class="disposal-item-pill notice">${item.count && item.count !== '1' ? '累積 '+item.count+' 次注意' : '注意股'}</span>
+            </div>
+            <div class="disposal-item-desc" title="${escapeHtml(item.info || '')}">${escapeHtml(item.info || '注意股票交易資訊異常')}</div>
+          </div>
+        `;
+      } else {
+        const isUpcoming = item.status === 'upcoming';
+        const pillCls = isUpcoming ? 'upcoming' : 'active';
+        const cardCls = isUpcoming ? 'upcoming' : 'active';
+        const periodText = (item.start_date && item.end_date) ? `${item.start_date.slice(5)} ~ ${item.end_date.slice(5)}` : (item.period_raw || '處置中');
+        const countText = item.count && item.count !== '1' ? ` (第${item.count}次)` : '';
+        const measuresSummary = item.measures ? item.measures.replace(/\\n/g, ' ') : (item.reasons || '');
+
+        cardsHtml += `
+          <div class="disposal-item-card ${cardCls}" onclick="openPatternForStock('${escapeHtml(code)}')">
+            <div class="disposal-item-top">
+              <div class="disposal-item-stock">
+                <span class="stock-code">${escapeHtml(code)}</span>
+                <span class="stock-name">${escapeHtml(name)}</span>
+                <span class="stock-market">${escapeHtml(market)}</span>
+              </div>
+              <span class="disposal-item-pill ${pillCls}">${isUpcoming ? '🚨 明日進處置' : '🔒 處置中'}${countText}</span>
+            </div>
+            <div class="disposal-item-period">📅 處置期間：${escapeHtml(periodText)}</div>
+            <div class="disposal-item-desc" title="${escapeHtml(measuresSummary)}">${escapeHtml(measuresSummary || '分盤撮合、預收款券管制')}</div>
+          </div>
+        `;
+      }
+    });
+
+    bodyEl.innerHTML = `${tabsHtml}<div class="disposal-items-grid">${cardsHtml}</div>`;
+    bindDisposalTabEvents();
+  }
+
+  function bindDisposalTabEvents(){
+    document.querySelectorAll('.disposal-tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        activeDisposalTab = e.currentTarget.dataset.tab;
+        renderDisposalWarningPanel();
+      });
+    });
+  }
+
+  const disposalToggleBtn = document.getElementById('disposal-toggle-btn');
+  if (disposalToggleBtn) {
+    disposalToggleBtn.addEventListener('click', () => {
+      setDisposalWarningExpanded(!disposalWarningExpanded);
+    });
+  }
+
+  const disposalRefreshBtn = document.getElementById('disposal-refresh-btn');
+  if (disposalRefreshBtn) {
+    disposalRefreshBtn.addEventListener('click', () => loadDisposalNoticeData(true));
+  }
+
   applyPanelWidths();
   setupResizer(document.getElementById('resizer-left'), document.querySelector('.sidebar'), 'sidebar', true);
 
@@ -5263,6 +5685,7 @@ ${macroJsonText()}`;
     .then(() => loadCards())
     .then(loadList);
   loadMarketInstBreakdown();
+  loadDisposalNoticeData();
 </script>
 </body>
 </html>

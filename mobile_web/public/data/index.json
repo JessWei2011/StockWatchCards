@@ -1,13 +1,13 @@
 {
   "version": 2,
-  "publishedAt": "2026-09-01T21:31:54+08:00",
+  "publishedAt": "2026-09-02T17:34:06+08:00",
   "defaultCode": "3324",
-  "count": 94,
+  "count": 96,
   "stocks": [
     {
       "code": "1815",
       "name": "富喬",
-      "group": "reports",
+      "group": "PCB材料",
       "market": "TWO",
       "analysisDate": "2026-09-01",
       "current": "129.00",
@@ -43,7 +43,7 @@
     {
       "code": "2301",
       "name": "光寶科",
-      "group": "電力",
+      "group": "電源供應",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "300.50",
@@ -55,7 +55,7 @@
     {
       "code": "2308",
       "name": "台達電",
-      "group": "電力",
+      "group": "電源供應",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "1865.00",
@@ -115,7 +115,7 @@
     {
       "code": "2345",
       "name": "智邦",
-      "group": "reports",
+      "group": "網通",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "2205.00",
@@ -151,7 +151,7 @@
     {
       "code": "2368",
       "name": "金像電",
-      "group": "載板",
+      "group": "PCB材料",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "1225.00",
@@ -175,7 +175,7 @@
     {
       "code": "2383",
       "name": "台光電",
-      "group": "載板",
+      "group": "PCB材料",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "5640.00",
@@ -294,7 +294,7 @@
     },
     {
       "code": "3006",
-      "name": "Elite Semiconductor Microelectronics Technology Inc",
+      "name": "晶豪科",
       "group": "記憶體",
       "market": "TW",
       "analysisDate": "2026-09-01",
@@ -367,7 +367,7 @@
     {
       "code": "3055",
       "name": "蔚華科",
-      "group": "reports",
+      "group": "設備",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "129.50",
@@ -494,7 +494,7 @@
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
       "pattern": "歷史/波段新高爆量突破 (Breakout)",
-      "isStarred": false
+      "isStarred": true
     },
     {
       "code": "3441",
@@ -506,7 +506,7 @@
       "decision": "強烈買入 (動能爆發)",
       "winRate": "81%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
-      "isStarred": true
+      "isStarred": false
     },
     {
       "code": "3443",
@@ -557,6 +557,18 @@
       "isStarred": false
     },
     {
+      "code": "3545",
+      "name": "敦泰",
+      "group": "IC設計",
+      "market": "TW",
+      "analysisDate": "2026-09-01",
+      "current": "49.90",
+      "decision": "買入 (多頭順勢)",
+      "winRate": "68%",
+      "pattern": "高檔旗形箱型整理 (Flag / Consolidation)",
+      "isStarred": false
+    },
+    {
       "code": "3624",
       "name": "光頡",
       "group": "被動元件",
@@ -583,7 +595,7 @@
     {
       "code": "3661",
       "name": "世芯-KY",
-      "group": "reports",
+      "group": "IC設計",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "4275.00",
@@ -595,19 +607,19 @@
     {
       "code": "3665",
       "name": "貿聯-KY",
-      "group": "reports",
+      "group": "連接線器",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "2315.00",
-      "decision": "買入 (多頭順勢)",
-      "winRate": "64%",
+      "decision": "觀望 / 逢低佈局",
+      "winRate": "57%",
       "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
       "isStarred": false
     },
     {
       "code": "3693",
       "name": "營邦",
-      "group": "工業電腦",
+      "group": "伺服器",
       "market": "TWO",
       "analysisDate": "2026-09-01",
       "current": "624.00",
@@ -619,7 +631,7 @@
     {
       "code": "4919",
       "name": "新唐",
-      "group": "reports",
+      "group": "IC設計",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "124.00",
@@ -631,7 +643,7 @@
     {
       "code": "4931",
       "name": "新盛力",
-      "group": "電力",
+      "group": "儲能BMS",
       "market": "TWO",
       "analysisDate": "2026-09-01",
       "current": "260.50",
@@ -642,7 +654,7 @@
     },
     {
       "code": "4938",
-      "name": "Pegatron Corporation",
+      "name": "和碩",
       "group": "電子代工",
       "market": "TW",
       "analysisDate": "2026-09-01",
@@ -655,7 +667,7 @@
     {
       "code": "4958",
       "name": "臻鼎-KY",
-      "group": "載板",
+      "group": "PCB材料",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "535.00",
@@ -674,6 +686,18 @@
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
       "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
+      "isStarred": false
+    },
+    {
+      "code": "5309",
+      "name": "系統電",
+      "group": "儲能BMS",
+      "market": "TWO",
+      "analysisDate": "2026-09-01",
+      "current": "53.50",
+      "decision": "觀望 / 逢低佈局",
+      "winRate": "45%",
+      "pattern": "高檔盤整/區間震盪",
       "isStarred": false
     },
     {
@@ -792,7 +816,7 @@
       "analysisDate": "2026-09-01",
       "current": "1375.00",
       "decision": "買入 (多頭順勢)",
-      "winRate": "61%",
+      "winRate": "67%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": false
     },
@@ -811,7 +835,7 @@
     {
       "code": "6213",
       "name": "聯茂",
-      "group": "載板",
+      "group": "PCB材料",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "550.00",
@@ -883,7 +907,7 @@
     {
       "code": "6274",
       "name": "台燿",
-      "group": "載板",
+      "group": "PCB材料",
       "market": "TWO",
       "analysisDate": "2026-09-01",
       "current": "1450.00",
@@ -979,7 +1003,7 @@
     {
       "code": "6683",
       "name": "雍智科技",
-      "group": "reports",
+      "group": "探針",
       "market": "TWO",
       "analysisDate": "2026-09-01",
       "current": "1330.00",
@@ -991,7 +1015,7 @@
     {
       "code": "6781",
       "name": "AES-KY",
-      "group": "電力",
+      "group": "儲能BMS",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "1155.00",
@@ -1003,19 +1027,19 @@
     {
       "code": "6805",
       "name": "富世達",
-      "group": "散熱",
+      "group": "軸承摺疊",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "2285.00",
-      "decision": "強烈買入 (動能爆發)",
-      "winRate": "78%",
+      "decision": "買入 (多頭順勢)",
+      "winRate": "71%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": false
     },
     {
       "code": "7769",
       "name": "鴻勁",
-      "group": "reports",
+      "group": "設備",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "5870.00",
@@ -1027,7 +1051,7 @@
     {
       "code": "8021",
       "name": "尖點",
-      "group": "載板",
+      "group": "PCB材料",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "450.00",
@@ -1039,7 +1063,7 @@
     {
       "code": "8039",
       "name": "台虹",
-      "group": "載板",
+      "group": "PCB材料",
       "market": "TW",
       "analysisDate": "2026-09-01",
       "current": "319.00",
@@ -1111,7 +1135,7 @@
     {
       "code": "8358",
       "name": "金居",
-      "group": "載板",
+      "group": "PCB材料",
       "market": "TWO",
       "analysisDate": "2026-09-01",
       "current": "526.00",
