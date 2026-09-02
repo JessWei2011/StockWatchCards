@@ -336,7 +336,15 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.pattern-viewer .chart-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .pattern-viewer .chart-title-group h2 { font-size: 1.1rem; }
+.pattern-viewer .chart-disposal-badge { display: inline-flex; align-items: center; border: 1px solid transparent; border-radius: 5px; font-size: 0.8rem; font-weight: 800; line-height: 1.2; padding: 3px 8px; white-space: nowrap; }
+.pattern-viewer .chart-disposal-badge[hidden] { display: none; }
+.pattern-viewer .chart-disposal-badge.upcoming { background: #ef4444; border-color: #f87171; color: #fff; animation: pv-pulse-warning 1.8s infinite; }
+.pattern-viewer .chart-disposal-badge.active { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+.pattern-viewer .chart-disposal-badge.notice { background: #e0f2fe; border-color: #38bdf8; color: #0369a1; }
+
+@keyframes pv-pulse-warning { 50% { opacity: 0.65; } }
 .pattern-viewer .chart-toggles { display: flex; align-items: center; gap: 12px; font-size: 0.82rem; }
 .pattern-viewer .toggle-label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; white-space: nowrap; }
 .pattern-viewer .toggle-label input { accent-color: var(--pv-blue); }

@@ -419,7 +419,7 @@
   #pattern-workspace .pattern-viewer{ min-height:100%; }
   #ranking-workspace{ overflow-y:auto; overflow-x:hidden; background:#0f1117; font-size:16px; }
   #ranking-workspace[hidden]{ display:none !important; }
-  .ranking-shell{ width:80%; max-width:1380px; margin:0 auto; padding:10px 0 36px; box-sizing:border-box; }
+  .ranking-shell{ width:92%; max-width:1920px; margin:0 auto; padding:10px 0 36px; box-sizing:border-box; }
   .ranking-detail-toolbar{
     display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px 10px;
     margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid var(--border);
@@ -1318,91 +1318,6 @@
             </div>
           </div>
 
-          <!-- 即時十字游標數據看板 -->
-          <div class="card focus-hud-card" style="margin-top:10px; background:#141721; border:1px solid rgba(59,130,246,0.35); border-radius:8px; padding:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:10px;">
-              <span style="font-weight:800; color:#60a5fa; font-size:17px;">🎯 游標焦點即時數據</span>
-              <span id="hudFocusDate" style="font-size:15px; color:#38bdf8; font-weight:750; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); padding:3px 9px; border-radius:4px;">最新收盤</span>
-            </div>
-
-            <div style="display:flex; flex-direction:column; gap:8px; font-size:16px;">
-              <!-- 1. 價格與量能 -->
-              <div style="background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                  <span style="color:#94a3b8; font-size:16px;">開盤／收盤</span>
-                  <span id="hudOpenClose" style="font-weight:800; color:#f8fafc; font-size:16.5px;">— / —</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                  <span style="color:#94a3b8; font-size:16px;">最高／最低</span>
-                  <span id="hudHighLow" style="font-weight:800; color:#f8fafc; font-size:16.5px;">— / —</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                  <span style="color:#94a3b8; font-size:16px;">當日漲跌</span>
-                  <span id="hudChange" style="font-weight:800; font-size:16.5px;">—</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                  <span style="color:#94a3b8; font-size:16px;">成交量</span>
-                  <span id="hudVolume" style="font-weight:800; color:#38bdf8; font-size:16.5px;">—</span>
-                </div>
-                <div style="display:flex; justify-content:space-between;">
-                  <span style="color:#94a3b8; font-size:15.5px;">量均線</span>
-                  <span id="hudVolMa" style="font-weight:800; font-size:15.5px; color:#cbd5e1;">—</span>
-                </div>
-              </div>
-
-              <!-- 2. 均線數據 -->
-              <div style="background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
-                <div style="font-weight:800; color:#fde047; margin-bottom:6px; font-size:16px;">📈 均線 (MA)</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; font-size:16px;">
-                  <div><span style="color:#94a3b8;">MA5:</span> <span id="hudMa5" style="font-weight:800; color:#f59e0b; font-size:16px;">—</span></div>
-                  <div><span style="color:#94a3b8;">MA10:</span> <span id="hudMa10" style="font-weight:800; color:#38bdf8; font-size:16px;">—</span></div>
-                  <div><span style="color:#94a3b8;">MA20:</span> <span id="hudMa20" style="font-weight:800; color:#ec4899; font-size:16px;">—</span></div>
-                  <div><span style="color:#94a3b8;">MA60:</span> <span id="hudMa60" style="font-weight:800; color:#8b5cf6; font-size:16px;">—</span></div>
-                </div>
-              </div>
-
-              <!-- 3. RSI 雙線 -->
-              <div style="background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
-                <div style="font-weight:800; color:#38bdf8; margin-bottom:5px; font-size:16px;">📊 RSI 雙軌 (數值)</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; font-size:16px;">
-                  <div><span style="color:#38bdf8;">RSI(6):</span> <span id="hudRsi6" style="font-weight:800; color:#bae6fd; font-size:16.5px;">—</span></div>
-                  <div><span style="color:#f59e0b;">RSI(12):</span> <span id="hudRsi12" style="font-weight:800; color:#fed7aa; font-size:16.5px;">—</span></div>
-                </div>
-              </div>
-
-              <!-- 4. MACD 雙線與柱體 -->
-              <div style="background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
-                <div style="font-weight:800; color:#c084fc; margin-bottom:5px; font-size:16px;">🌊 MACD (雙線與柱體)</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; font-size:16px; margin-bottom:5px;">
-                  <div><span style="color:#38bdf8;">DIF:</span> <span id="hudMacdDif" style="font-weight:800; color:#bae6fd; font-size:16px;">—</span></div>
-                  <div><span style="color:#f59e0b;">MACD:</span> <span id="hudMacdSignal" style="font-weight:800; color:#fed7aa; font-size:16px;">—</span></div>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:16px;">
-                  <span style="color:#94a3b8;">OSC 柱體:</span>
-                  <span id="hudMacdHist" style="font-weight:800; font-size:16.5px;">—</span>
-                </div>
-              </div>
-
-              <!-- 5. KD 指標 -->
-              <div style="background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
-                <div style="font-weight:800; color:#fde047; margin-bottom:5px; font-size:16px;">⚡ KD 雙軌 (數值)</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; font-size:16px;">
-                  <div><span style="color:#38bdf8;">K值:</span> <span id="hudK" style="font-weight:800; color:#bae6fd; font-size:16px;">—</span></div>
-                  <div><span style="color:#f59e0b;">D值:</span> <span id="hudD" style="font-weight:800; color:#fed7aa; font-size:16px;">—</span></div>
-                </div>
-              </div>
-
-              <!-- 5. 布林通道 -->
-              <div style="background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.06);">
-                <div style="font-weight:800; color:#a78bfa; margin-bottom:5px; font-size:16px;">🌐 布林通道 (BOLL)</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; font-size:16px;">
-                  <div><span style="color:#94a3b8;">BOLL上軌:</span> <span id="hudBollUp" style="font-weight:800; color:#f472b6; font-size:16px;">—</span></div>
-                  <div><span style="color:#94a3b8;">BOLL下軌:</span> <span id="hudBollLow" style="font-weight:800; color:#34d399; font-size:16px;">—</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <button type="button" class="btn" onclick="openKlineCheatSheetModal()" style="margin-top:10px; width:100%; padding:10px 12px; font-size:15.5px; font-weight:750; background:rgba(59,130,246,0.12); color:#60a5fa; border:1px solid rgba(59,130,246,0.35); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
             <span>📈</span> K線指標與均線型態速查表
           </button>
@@ -1431,7 +1346,10 @@
         <main class="chart-viewport">
           <div class="chart-header">
             <div class="chart-title-group">
-              <h2 id="chartTitle">K線 / RSI / MACD / KD / 成交量圖</h2>
+              <div class="chart-title-row">
+                <h2 id="chartTitle">K線 / RSI / MACD / KD / 成交量圖</h2>
+                <span id="chartDisposalBadge" class="chart-disposal-badge" hidden></span>
+              </div>
               <div class="chart-sub-info">滑鼠移動十字光標可跨圖表同步連動觀察數值</div>
             </div>
             <div class="chart-toggles">
@@ -3189,6 +3107,71 @@
     return Number.isFinite(value) ? value : null;
   }
 
+  function splitReportTags(value){
+    return String(value || '').replace(/[*`]/g, '').split(/[、,]/).map(tag => tag.trim()).filter(Boolean);
+  }
+
+  let reportTagCardsByCode = {};
+
+  function reportTagTone(group, tag){
+    if (group === 'kline') {
+      if (/多頭|上彎|仰角|噴出|金叉|站上|重回/.test(tag)) return 'green';
+      if (/空頭|下彎|俯角|探底|死叉|跌破|失守/.test(tag)) return 'red';
+      if (/糾纏|整理|糾結|蓄勢/.test(tag)) return 'gold';
+    } else if (group === 'vol') {
+      if (/天量|倒貨|頂背離|死亡交叉|退潮/.test(tag)) return 'red';
+      if (/突破|黃金交叉|窒息量|洗淨/.test(tag)) return 'gold';
+      if (/滾量|量價齊揚|主升/.test(tag)) return 'green';
+    } else if (group === 'macd') {
+      if (/死亡交叉|死叉|翻綠|頂背離|轉弱/.test(tag)) return 'red';
+      if (/金叉|黃金交叉|翻紅|底背離|反彈|起漲/.test(tag)) return 'gold';
+      if (/零軸上強勢多頭|多頭發散|強勢攻擊/.test(tag)) return 'green';
+    } else if (group === 'rsi') {
+      if (/過熱|超買|頂背離|死亡交叉/.test(tag)) return 'red';
+      if (/超跌|底背離|黃金交叉/.test(tag)) return 'gold';
+      if (/鈍化/.test(tag)) return 'green';
+    } else if (group === 'kd') {
+      if (/死亡交叉|死叉|頂背離|超買|轉弱/.test(tag)) return 'red';
+      if (/金叉|黃金交叉|超賣|底背離|買點|轉強/.test(tag)) return 'gold';
+      if (/鈍化|軋空/.test(tag)) return 'green';
+    } else if (group === 'chip') {
+      if (/倒貨|結帳|資增法賣|退潮|賣超|沉陷|警示/.test(tag)) return 'red';
+      if (/由賣轉買|護盤|對作|接刀|吃貨|避險|點火|起漲/.test(tag)) return 'gold';
+      if (/大買|總攻擊|認養|鎖碼|資減法買|主升|狂拉/.test(tag)) return 'green';
+    }
+    return 'neutral';
+  }
+
+  function buildReportTagLeaderboard(){
+    const groups = [
+      ['kline', 'klineTags'], ['vol', 'volTags'], ['macd', 'macdTags'],
+      ['rsi', 'rsiTags'], ['kd', 'kdTags'], ['chip', 'chipTags']
+    ];
+    const cards = Object.keys(window.cardsByCode || {}).length ? window.cardsByCode : reportTagCardsByCode;
+    return Object.values(cards).map(card => {
+      let gold = 0;
+      let green = 0;
+      groups.forEach(([group, field]) => {
+        const value = field === 'kline' ? (card.klineTags || card.technicalTags) : card[field];
+        splitReportTags(value).forEach(tag => {
+          const tone = reportTagTone(group, tag);
+          if (tone === 'gold') gold += 1;
+          if (tone === 'green') green += 1;
+        });
+      });
+      return {
+        code: String(card.code || ''),
+        name: String(card.name || STOCK_NAMES_MAP[String(card.code || '')] || ''),
+        group: String(card.group || '未分類'),
+        gold,
+        green,
+        total: gold + green
+      };
+    }).filter(item => item.code && item.total > 0)
+      .sort((a, b) => b.total - a.total || b.green - a.green || b.gold - a.gold || a.code.localeCompare(b.code))
+      .slice(0, 10);
+  }
+
   window.winrateMapByCode = {};
   let winrateRankingSource = 'gemini'; // 'gemini' | 'chatgpt'
   let winrateActiveTrack = 'momentum';
@@ -3204,6 +3187,11 @@
     if (!container) return;
     container.innerHTML = '<div class="analysis-empty">⏳ 正在載入雙 AI 排行榜資料...</div>';
     try {
+      // 標籤排行直接使用 reports/ 解析出的卡片資料；首次直接開啟排行榜時需先載入。
+      if (!Object.keys(window.cardsByCode || {}).length && !Object.keys(reportTagCardsByCode).length) {
+        const cardsRes = await fetch('/api/cards').then(response => response.json()).catch(() => null);
+        if (cardsRes?.ok) reportTagCardsByCode = cardsRes.cards || {};
+      }
       // 同時取得 Gemini 與 ChatGPT 兩份資料，以便上方呈現 4 榜總覽
       const [resG, resC] = await Promise.all([
         fetch('/api/winrate-ranking-report?source=gemini').then(r => r.json()).catch(() => null),
@@ -3322,6 +3310,7 @@
     const { title, scanDate, momentumItems, defensiveItems, source } = currentData;
     const isMomo = winrateActiveTrack === 'momentum';
     const activeItems = isMomo ? momentumItems : defensiveItems;
+    const tagLeaderboard = buildReportTagLeaderboard();
 
     const filtered = activeItems.filter(item => {
       if (winrateSearchQuery) {
@@ -3417,7 +3406,7 @@
     function renderMiniOverviewCol(titleText, icon, colorTheme, items, src, track){
       const isCur = (winrateRankingSource === src && winrateActiveTrack === track);
       return `
-        <div style="flex:1; min-width:220px; background:rgba(0,0,0,0.4); border:2px solid ${isCur ? colorTheme : 'rgba(255,255,255,0.12)'}; border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; box-shadow:${isCur ? `0 0 16px ${colorTheme}44` : 'none'};">
+        <div style="flex:1; min-width:200px; background:rgba(0,0,0,0.4); border:2px solid ${isCur ? colorTheme : 'rgba(255,255,255,0.12)'}; border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; box-shadow:${isCur ? `0 0 16px ${colorTheme}44` : 'none'};">
           <div style="text-align:center; border-bottom:1.5px solid rgba(255,255,255,0.12); padding-bottom:6px; cursor:pointer;" onclick="winrateRankingSource='${src}'; winrateActiveTrack='${track}'; renderWinrateRankingUI();">
             <span style="font-weight:900; font-size:16.5px; color:${colorTheme}; white-space:nowrap; letter-spacing:0.3px;">
               ${escapeHtml(titleText)}
@@ -3441,6 +3430,30 @@
       `;
     }
 
+    function renderTagLeaderboardOverview(items){
+      return `
+        <div style="flex:1.2; min-width:280px; background:linear-gradient(135deg, rgba(234,179,8,0.13), rgba(34,197,94,0.10)); border:2px solid rgba(250,204,21,0.42); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; box-shadow:0 0 14px rgba(250,204,21,0.12);">
+          <div style="text-align:center; border-bottom:1.5px solid rgba(255,255,255,0.12); padding-bottom:6px;">
+            <span style="font-weight:900; font-size:16.5px; color:#fde047; white-space:nowrap; letter-spacing:0.3px;">✨ 報告亮金＋翠綠標籤 TOP 10</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            ${items.length === 0 ? '<div style="color:var(--text-dim); font-size:15px; padding:10px; text-align:center;">尚無可統計的報告標籤</div>' : items.map((item, idx) => `
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; padding:4px 7px; border-radius:6px; background:rgba(255,255,255,0.045); font-size:15px; cursor:pointer; transition:all .15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.11)';" onmouseout="this.style.background='rgba(255,255,255,0.045)';" onclick="openPatternForStock('${escapeHtml(item.code)}')">
+                <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;">
+                  <span style="font-weight:900; color:${idx < 3 ? '#facc15' : 'var(--text-dim)'}; width:18px; font-size:14px; text-align:right;">${idx + 1}</span>
+                  <span style="font-weight:850; color:#93c5fd; font-family:monospace; font-size:15px;">${escapeHtml(item.code)}</span>
+                  <span style="font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(item.name)}</span>
+                  ${tierBadgesMap[item.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[item.code].tier}" title="${escapeHtml(tierBadgesMap[item.code].title)}">${tierBadgesMap[item.code].label}</span>` : ''}
+                </div>
+                <div style="display:flex; align-items:center; gap:7px; flex-shrink:0; font-size:13.5px; font-weight:900;">
+                  <span style="color:#fde047;">${item.gold}</span><span style="color:#86efac;">${item.green}</span><span style="color:#fff; min-width:18px; text-align:right;">${item.total}</span>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
     let html = `
       <div class="ranking-card">
         <!-- 🚀 4 榜全景總覽 (Master Overview) 一覽無遺 -->
@@ -3458,6 +3471,7 @@
             ${renderMiniOverviewCol('Gemini 穩健防守 TOP 10', '🛡️', '#4ade80', gDef, 'gemini', 'defensive')}
             ${renderMiniOverviewCol('ChatGPT 攻擊型 TOP 10', '⚡', '#f97316', cMomo, 'chatgpt', 'momentum')}
             ${renderMiniOverviewCol('ChatGPT 穩健型 TOP 10', '🌱', '#38bdf8', cDef, 'chatgpt', 'defensive')}
+            ${renderTagLeaderboardOverview(tagLeaderboard)}
           </div>
         </div>
 
@@ -5623,6 +5637,9 @@ ${macroJsonText()}`;
 
       disposalNoticeData = { ...json.data, disposals, notices, map: filteredMap };
       window.DISPOSAL_NOTICE_MAP = filteredMap;
+      if (window.PatternViewer && typeof window.PatternViewer.refreshDisposalBadge === 'function') {
+        window.PatternViewer.refreshDisposalBadge();
+      }
 
       const upcomingCount = disposals.filter(d => d.status === 'upcoming').length;
       const activeCount = disposals.filter(d => d.status === 'active').length;

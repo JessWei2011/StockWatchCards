@@ -697,7 +697,7 @@ window.ChartEngine = {
       }
     };
 
-    // 同步十字游標焦點至圖表內頂部 HUD 及右側「🎯 游標焦點即時數據看板」
+    // 同步十字游標焦點至圖表內頂部 HUD
     if (this._axisPointerHandler) {
       this.chartInstance.off('updateAxisPointer', this._axisPointerHandler);
     }
@@ -708,8 +708,6 @@ window.ChartEngine = {
           const dataIndex = typeof axisInfo.value === 'number' ? axisInfo.value : dates.indexOf(axisInfo.value);
           if (dataIndex >= 0 && dataIndex < dates.length) {
             updateInChartHUD(dataIndex);
-            if (window.updateFocusHUD) window.updateFocusHUD(dataIndex, stockData);
-            if (window.parent && window.parent.updateFocusHUD) window.parent.updateFocusHUD(dataIndex, stockData);
           }
         }
       }
@@ -720,8 +718,6 @@ window.ChartEngine = {
     if (dates && dates.length) {
       const lastIdx = dates.length - 1;
       updateInChartHUD(lastIdx);
-      if (window.updateFocusHUD) window.updateFocusHUD(lastIdx, stockData);
-      if (window.parent && window.parent.updateFocusHUD) window.parent.updateFocusHUD(lastIdx, stockData);
     }
 
     if (!this._hudMouseLeaveBound) {
@@ -732,8 +728,6 @@ window.ChartEngine = {
           if (this.currentStockData && this.currentStockData.dates && this.currentStockData.dates.length) {
             const lastIdx = this.currentStockData.dates.length - 1;
             updateInChartHUD(lastIdx);
-            if (window.updateFocusHUD) window.updateFocusHUD(lastIdx, this.currentStockData);
-            if (window.parent && window.parent.updateFocusHUD) window.parent.updateFocusHUD(lastIdx, this.currentStockData);
           }
         });
       }

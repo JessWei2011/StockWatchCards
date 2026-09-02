@@ -423,6 +423,7 @@
 
       const chartTitle = this.q('#chartTitle');
       if (chartTitle) chartTitle.textContent = `${this.currentStockData.title} — K線 / RSI / MACD / KD / 成交量圖`;
+      this.updateDisposalBadge();
 
       const cardStockName = this.q('#cardStockName');
       if (cardStockName) cardStockName.textContent = this.currentStockData.title;
@@ -663,9 +664,6 @@
           if (patternInstContainer) patternInstContainer.style.display = 'none';
         }
       }
-      if (this.currentStockData && this.currentStockData.dates && this.currentStockData.dates.length) {
-        window.updateFocusHUD(this.currentStockData.dates.length - 1, this.currentStockData);
-      }
       requestAnimationFrame(() => this.resize());
     }
 
@@ -752,6 +750,36 @@
       }
     }
 
+    updateDisposalBadge() {
+      const badge = this.q('#chartDisposalBadge');
+      if (!badge) return;
+
+      const code = String(this.currentCode || '').split('.')[0].trim();
+      const noticeMap = window.DISPOSAL_NOTICE_MAP || (window.parent && window.parent.DISPOSAL_NOTICE_MAP) || {};
+      const info = noticeMap[code];
+
+      badge.hidden = true;
+      badge.className = 'chart-disposal-badge';
+      badge.textContent = '';
+      badge.title = '';
+      if (!info) return;
+
+      if (info.type === 'disposal' && info.status === 'upcoming') {
+        badge.classList.add('upcoming');
+        badge.textContent = '🚨 明日進處置';
+        badge.title = info.period_raw ? `已公告明日進處置（${info.period_raw}）` : '已公告明日進處置';
+      } else if (info.type === 'disposal' && info.status === 'active') {
+        badge.classList.add('active');
+        badge.textContent = '🔒 處置中';
+        badge.title = info.period_raw ? `目前處置中（${info.period_raw}）` : '目前處置中';
+      } else {
+        badge.classList.add('notice');
+        badge.textContent = '👀 注意股票';
+        badge.title = info.info || '注意股票公告';
+      }
+      badge.hidden = false;
+    }
+
     observeSize() {
       if (typeof ResizeObserver === 'undefined') return;
       this.resizeObserver = new ResizeObserver(() => this.resize());
@@ -771,119 +799,6 @@
     }
   }
 
-  window.updateFocusHUD = function(idx, stockData) {
-    if (!stockData || !stockData.dates || idx < 0 || idx >= stockData.dates.length) return;
-    
-    const date = stockData.dates[idx];
-    const isLatest = (idx === stockData.dates.length - 1);
-    const dateEl = document.getElementById('hudFocusDate');
-    if (dateEl) {
-      dateEl.textContent = isLatest ? `${date} (最新收盤)` : `📅 ${date}`;
-      dateEl.style.color = isLatest ? '#38bdf8' : '#fbbf24';
-      dateEl.style.borderColor = isLatest ? 'rgba(56,189,248,0.35)' : 'rgba(251,191,36,0.4)';
-    }
-
-    const candle = stockData.candles && stockData.candles[idx]; // [open, close, lowest, highest]
-    if (candle) {
-      const open = candle[0];
-      const close = candle[1];
-      const low = candle[2];
-      const high = candle[3];
-      const prevClose = idx > 0 && stockData.candles[idx - 1] ? stockData.candles[idx - 1][1] : open;
-      const diff = close - prevClose;
-      const pct = prevClose ? (diff / prevClose * 100) : 0;
-      const isUp = diff >= 0;
-      const color = isUp ? '#ef4444' : '#10b981';
-
-      const ocEl = document.getElementById('hudOpenClose');
-      if (ocEl) {
-        const oColor = open >= prevClose ? '#ef4444' : '#10b981';
-        ocEl.innerHTML = `<span style="color:${oColor}">${open.toFixed(2)}</span> ／ <span style="color:${color}; font-weight:800;">${close.toFixed(2)}</span>`;
-      }
-
-      const hlEl = document.getElementById('hudHighLow');
-      if (hlEl) {
-        hlEl.innerHTML = `<span style="color:#ef4444">${high.toFixed(2)}</span> ／ <span style="color:#10b981">${low.toFixed(2)}</span>`;
-      }
-
-      const chgEl = document.getElementById('hudChange');
-      if (chgEl) {
-        chgEl.style.color = color;
-        chgEl.textContent = `${isUp ? '+' : ''}${diff.toFixed(2)} (${isUp ? '+' : ''}${pct.toFixed(2)}%)`;
-      }
-    }
-
-    // Volume & Volume Moving Averages
-    const vol = stockData.volumes && stockData.volumes[idx];
-    const volEl = document.getElementById('hudVolume');
-    if (volEl) {
-      if (vol != null && !isNaN(vol)) {
-        volEl.textContent = `${Number(vol).toLocaleString()} 張`;
-      } else {
-        volEl.textContent = '—';
-      }
-    }
-
-    const v5 = stockData.vma5 && stockData.vma5[idx];
-    const v20 = stockData.vma20 && stockData.vma20[idx];
-    const volMaEl = document.getElementById('hudVolMa');
-    if (volMaEl) {
-      const s5 = (v5 != null && !isNaN(v5)) ? `${Number(v5).toLocaleString()}` : '—';
-      const s20 = (v20 != null && !isNaN(v20)) ? `${Number(v20).toLocaleString()}` : '—';
-      volMaEl.innerHTML = `<span style="color:#38bdf8;">MV5:</span> <span style="font-weight:800; color:#bae6fd;">${s5}</span> ／ <span style="color:#f59e0b;">MV20:</span> <span style="font-weight:800; color:#fed7aa;">${s20}</span>`;
-    }
-
-    // Helper
-    const setVal = (id, val, color) => {
-      const el = document.getElementById(id);
-      if (el) {
-        if (val != null && !isNaN(val)) {
-          el.textContent = Number(val).toFixed(2);
-          if (color) el.style.color = color;
-        } else {
-          el.textContent = '—';
-        }
-      }
-    };
-
-    // MAs
-    setVal('hudMa5', stockData.ma5 && stockData.ma5[idx], '#f59e0b');
-    setVal('hudMa10', stockData.ma10 && stockData.ma10[idx], '#38bdf8');
-    setVal('hudMa20', stockData.ma20 && stockData.ma20[idx], '#ec4899');
-    setVal('hudMa60', stockData.ma60 && stockData.ma60[idx], '#8b5cf6');
-
-    // RSI
-    const r6 = stockData.rsi6 && stockData.rsi6[idx];
-    const r12 = stockData.rsi12 && stockData.rsi12[idx];
-    const rsiVal = r6 != null ? r6 : (stockData.rsi && stockData.rsi[idx]);
-    setVal('hudRsi6', r6, '#bae6fd');
-    setVal('hudRsi12', r12, '#fed7aa');
-
-    // MACD
-    setVal('hudMacdDif', stockData.dif && stockData.dif[idx], '#bae6fd');
-    setVal('hudMacdSignal', stockData.macdSignal && stockData.macdSignal[idx], '#fed7aa');
-    const macd = stockData.macdHist && stockData.macdHist[idx];
-    const macdEl = document.getElementById('hudMacdHist');
-    if (macdEl) {
-      if (macd != null && !isNaN(macd)) {
-        macdEl.textContent = `${macd > 0 ? '+' : ''}${macd.toFixed(2)}`;
-        macdEl.style.color = macd >= 0 ? '#ef4444' : '#10b981';
-      } else {
-        macdEl.textContent = '—';
-        macdEl.style.color = '#cbd5e1';
-      }
-    }
-
-    // KD
-    setVal('hudK', stockData.kList && stockData.kList[idx], '#bae6fd');
-    setVal('hudD', stockData.dList && stockData.dList[idx], '#fed7aa');
-
-    // BOLL
-    setVal('hudBollUp', stockData.bollUpper && stockData.bollUpper[idx], '#f472b6');
-    setVal('hudBollMid', stockData.bollMid && stockData.bollMid[idx], '#e2e8f0');
-    setVal('hudBollLow', stockData.bollLower && stockData.bollLower[idx], '#34d399');
-  };
-
   let activeInstance = null;
   window.PatternViewer = {
     async init(root = '.pattern-viewer', options = {}) {
@@ -901,6 +816,11 @@
     refreshStockSelect() {
       if (!activeInstance) return false;
       activeInstance.populateStockSelect();
+      return true;
+    },
+    refreshDisposalBadge() {
+      if (!activeInstance) return false;
+      activeInstance.updateDisposalBadge();
       return true;
     },
     resize() {
