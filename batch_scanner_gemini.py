@@ -434,14 +434,7 @@ def detect_rsi_tags(close_series: pd.Series) -> list:
     
     tags = []
     
-    # 1. 鈍化型態 (近 3 日 RSI 6 持續極端)
-    if len(rsi6) >= 3:
-        if (rsi6.iloc[-3:] >= 80).all():
-            tags.append("🚀 RSI(6) 連續高檔鈍化 (強勢主升波)")
-        elif (rsi6.iloc[-3:] <= 20).all():
-            tags.append("❄️ RSI(6) 連續低檔鈍化 (空方沉陷)")
-
-    # 2. 雙線交叉 (RSI 6 與 RSI 14)
+    # 1. 雙線交叉 (RSI 6 與 RSI 14)
     if len(rsi6) >= 2:
         prev_rsi6 = float(rsi6.iloc[-2])
         prev_rsi14 = float(rsi14.iloc[-2])
@@ -455,6 +448,13 @@ def detect_rsi_tags(close_series: pd.Series) -> list:
                 tags.append("⚡ RSI 高檔死叉 (獲利回吐)")
             else:
                 tags.append("⚡ RSI 短線死亡交叉")
+
+    # 2. 鈍化型態 (近 3 日 RSI 6 持續極端，且多空方向未破位)
+    if len(rsi6) >= 3:
+        if (rsi6.iloc[-3:] >= 80).all() and cur_rsi6 >= cur_rsi14:
+            tags.append("🚀 RSI(6) 連續高檔鈍化 (強勢主升波)")
+        elif (rsi6.iloc[-3:] <= 20).all() and cur_rsi6 <= cur_rsi14:
+            tags.append("❄️ RSI(6) 連續低檔鈍化 (空方沉陷)")
 
     # 3. 嚴謹頂/底背離型態 (尋找同波段明確雙峰與轉折)
     if len(close_series) >= 25:
@@ -565,12 +565,14 @@ def detect_volume_tags(df: pd.DataFrame) -> list:
                     elif cur_vol >= peak_vol * 0.90 and is_up:
                         tags.append("🔥 滾量吞噬前高天量 (實質換手突破)")
 
-    # 7. 量均線黃金/死亡交叉
+    # 量均線黃金/死亡交叉 (若無短線強勢攻擊量時才做退潮警戒判讀)
     if cur_v5 is not None and cur_v20 is not None and prev_v5 is not None and prev_v20 is not None:
         if prev_v5 <= prev_v20 and cur_v5 > cur_v20:
-            tags.append("✨ 量能黃金交叉 (攻擊量增溫)")
+            if not any("量" in t for t in tags):
+                tags.append("✨ 量能黃金交叉 (攻擊量增溫)")
         elif prev_v5 >= prev_v20 and cur_v5 < cur_v20:
-            tags.append("⚡ 量能死亡交叉 (退潮警戒)")
+            if not any(("滾量" in t or "帶量" in t or "突破" in t) for t in tags):
+                tags.append("⚡ 量能死亡交叉 (退潮警戒)")
 
     # 常態 (綜合 20日均量 與 昨日成交量)
     if not tags:
@@ -727,6 +729,7 @@ def detect_kd_tags(high_s: pd.Series, low_s: pd.Series, close_s: pd.Series) -> l
     cur_d = float(d_s.iloc[-1])
     prev_k = float(k_s.iloc[-2]) if len(k_s) >= 2 else cur_k
     prev_d = float(d_s.iloc[-2]) if len(d_s) >= 2 else cur_d
+    is_up = float(close_s.iloc[-1]) >= float(close_s.iloc[-2]) if len(close_s) >= 2 else True
     
     tags = []
     
@@ -740,15 +743,21 @@ def detect_kd_tags(high_s: pd.Series, low_s: pd.Series, close_s: pd.Series) -> l
             tags.append("✨ KD 黃金交叉 (短線轉強)")
     elif prev_k >= prev_d and cur_k < cur_d:
         if cur_k >= 80:
-            tags.append("⚡ KD 80以上超買死亡交叉 (高檔轉弱見頂)")
+            if not is_up:
+                tags.append("⚡ KD 80以上超買死亡交叉 (高檔轉弱見頂)")
+            else:
+                tags.append("⚠️ KD 80以上高檔分歧 (極高檔換手震盪)")
         else:
-            tags.append("⚡ KD 死亡交叉 (短線修正)")
+            if not is_up:
+                tags.append("⚡ KD 死亡交叉 (短線修正)")
+            else:
+                tags.append("⚠️ KD 短線走平收斂 (震盪整理)")
 
-    # 2. 鈍化型態 (連續 3 日維持極值)
+    # 2. 鈍化型態 (連續 3 日維持極值，且多空方向未破位)
     if len(k_s) >= 3:
-        if (k_s.iloc[-3:] >= 80).all():
+        if (k_s.iloc[-3:] >= 80).all() and (cur_k >= cur_d or is_up):
             tags.append("🚀 KD 高檔強勢鈍化 (K值連3日>80軋空)")
-        elif (k_s.iloc[-3:] <= 20).all():
+        elif (k_s.iloc[-3:] <= 20).all() and (cur_k <= cur_d or not is_up):
             tags.append("❄️ KD 低檔弱勢鈍化 (空方沉陷)")
 
     # 3. 嚴謹頂/底背離判定 (25 日波峰波谷識別 + 交叉確認)

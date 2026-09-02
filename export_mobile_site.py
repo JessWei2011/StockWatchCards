@@ -133,12 +133,27 @@ def parse_latest_analysis(text: str, report_path: Path) -> dict:
         ("籌碼", r"籌碼標籤\*{0,2}[：:]\s*([^\r\n]+)"),
     ]
     bullish = []
+    bearish = []
+
+    def _is_bearish_tag(t: str) -> bool:
+        bearish_keywords = ['⚡', '🚨', '⚠️', '❄️', '📉', '死亡交叉', '死叉', '頂背離', '倒貨', '出貨', '退潮', '警戒', '空方', '了結', '弱勢', '賣超']
+        return any(k in t for k in bearish_keywords)
+
     for label, regex in tag_patterns:
         value = _md_value(text, regex)
         if value:
-            bullish.append(f"{label}：{value}")
-
-    bearish = []
+            sub_tags = [t.strip() for t in re.split(r'[、,]', value) if t.strip()]
+            b_list = []
+            bear_list = []
+            for t in sub_tags:
+                if _is_bearish_tag(t):
+                    bear_list.append(t)
+                else:
+                    b_list.append(t)
+            if b_list:
+                bullish.append(f'{label}：{"、".join(b_list)}')
+            if bear_list:
+                bearish.append(f'{label}：{"、".join(bear_list)}')
     if invalid_point:
         bearish.append(f"技術無效點：{invalid_point}")
     if stop_text:
