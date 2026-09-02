@@ -163,11 +163,11 @@
   .tree-stat-pill.price.up{ color:#fca5a5; border:1px solid rgba(239,68,68,.45); background:rgba(239,68,68,.18); }
   .tree-stat-pill.price.down{ color:#86efac; border:1px solid rgba(34,197,94,.45); background:rgba(34,197,94,.18); }
   .tree-stat-pill.price.flat{ color:#cbd5e1; border:1px solid rgba(148,163,184,.3); background:rgba(148,163,184,.1); }
-  .tree-stat-pill.pe{ width:56px; color:#c4b5fd; border:1px solid rgba(168,85,247,.4); background:rgba(168,85,247,.14); }
+  .tree-stat-pill.pe{ width:38px; min-width:38px; padding:0 3px; color:#c4b5fd; border:1px solid rgba(168,85,247,.4); background:rgba(168,85,247,.14); }
   .tree-stat-pill.missing.winrate-missing{ width:40px; }
   .tree-stat-pill.missing.change-missing{ min-width:48px; }
   .tree-stat-pill.missing.price-missing{ min-width:46px; }
-  .tree-stat-pill.missing.pe-missing{ width:56px; }
+  .tree-stat-pill.missing.pe-missing{ width:38px; }
   .tree-stat-pill.missing{ color:var(--text-dim); border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); }
   .tree-actions button{
     background:none; border:none; color:inherit; opacity:0.7; cursor:pointer; font-size:12px; padding:2px 4px;
@@ -4149,7 +4149,7 @@
       winRateVal = parseFloat(winRateVal).toFixed(1);
     }
     if (peVal && !isNaN(parseFloat(peVal))) {
-      peVal = parseFloat(peVal).toFixed(3);
+      peVal = parseFloat(peVal).toFixed(1);
     }
 
     // 最新收盤價與當日漲跌百分比 (台股標準：紅色漲，綠色跌)

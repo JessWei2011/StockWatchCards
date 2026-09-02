@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "publishedAt": "2026-09-02T20:39:33+08:00",
+  "publishedAt": "2026-09-02T22:29:39+08:00",
   "defaultCode": "3324",
-  "count": 87,
+  "count": 88,
   "stocks": [
     {
       "code": "1815",
@@ -518,6 +518,18 @@
       "decision": "觀望 / 逢低佈局",
       "winRate": "45%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
+    },
+    {
+      "code": "3545",
+      "name": "敦泰",
+      "group": "reports",
+      "market": "TW",
+      "analysisDate": "2026-09-02",
+      "current": "52.50",
+      "decision": "強烈買入 (動能爆發)",
+      "winRate": "86%",
+      "pattern": "高檔旗形箱型整理 (Flag / Consolidation)",
       "isStarred": false
     },
     {
