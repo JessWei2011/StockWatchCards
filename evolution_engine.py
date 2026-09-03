@@ -84,12 +84,14 @@ def calculate_evolution_score(stock_info):
     trust_buy_days = sum(x['trust'] > 0 for x in inst)
     trailing_pe = stock_info.get('trailing_pe')
 
-    # K棒收盤強度
+    # K棒收盤強度與開高走低幅度
+    open_p = float(kline[-1].get('open', price))
+    intraday_pct = (price - open_p) / prev_close * 100
     bar_range = max(high_s.iloc[-1] - low_s.iloc[-1], 1e-9)
     close_loc = (price - low_s.iloc[-1]) / bar_range
 
     # =========================================================================
-    # 🛑 【硬性排除一票否決規則】（防止踩雷）
+    # 🛑 【硬性排除一票否決規則】（防止踩雷與做頭套牢）
     # =========================================================================
     # 1. 處置股一律否決（撮合分盤無流動性，逆風必成重災區）
     if is_disposal:
@@ -109,27 +111,36 @@ def calculate_evolution_score(stock_info):
         if vol_s.iloc[-1] >= past_max_vol * 1.5 and today_pct < -3.0 and close_loc < 0.20:
             return None
 
+    # 5. 【重大進化】開高走低長黑倒貨收最低一票否決（如華碩衝高千元失敗殺至全日低，短線套牢賣壓沉重）
+    if intraday_pct < -2.2 and close_loc < 0.30:
+        return None
+
     # =========================================================================
     # 🎯 【起漲期望值評分引擎】 (基準分 50 分)
     # =========================================================================
     score = 50.0
     reasons = []
 
-    # 1. 發動點：初升段均線突破與加速 (權重最高)
-    if 0.5 <= s5 <= 3.8 and price >= ma5.iloc[-1]:
-        score += 24.0
-        reasons.append(f"5MA剛起步翻揚(+{s5:.2f}%)")
-    elif s5 > 3.8:
-        score += 15.0
-        reasons.append(f"5MA極速推進(+{s5:.2f}%)")
-    elif price >= ma5.iloc[-1] and s5 >= 0:
-        score += 12.0
-        reasons.append("站上5MA攻擊線")
+    # 1. 發動點：初升段均線突破與加速 (站穩 5MA 為起漲核心防線)
+    if price >= ma5.iloc[-1]:
+        if 0.5 <= s5 <= 3.8:
+            score += 30.0
+            reasons.append(f"5MA剛起步翻揚(+{s5:.2f}%)")
+        elif s5 > 3.8:
+            score += 20.0
+            reasons.append(f"5MA極速推進(+{s5:.2f}%)")
+        else:
+            score += 18.0
+            reasons.append("站上5MA攻擊線")
+    else:
+        # 跌破 5MA：短線修正中，重扣 25 分！
+        score -= 25.0
+        reasons.append("跌破5MA拉回修正中(-25分)")
 
     # 2. 成本防禦墊：月線健康推升且乖離適中 (甜蜜區間 1.0% ~ 9.5%)
     if 1.0 <= bias_20 <= 9.5 and s20 > 0.3:
         score += 26.0
-        reasons.append(f"脫離月線發動甜蜜區(乖離+{bias_20:.1f}%)")
+        reasons.append(f"脫離月線甜蜜區(乖離+{bias_20:.1f}%)")
     elif 0 <= bias_20 < 1.0 and s20 >= 0:
         score += 18.0
         reasons.append("緊貼上升月線起漲點")
@@ -143,9 +154,12 @@ def calculate_evolution_score(stock_info):
     if 1.15 <= vol_ratio <= 3.2 and today_pct >= -1.0:
         score += 20.0
         reasons.append(f"量能實質換手推進({vol_ratio:.1f}x)")
-    elif 0.8 <= vol_ratio < 1.15:
+    elif 0.75 <= vol_ratio < 1.15:
         score += 10.0
         reasons.append("常態量溫和消化")
+    elif vol_ratio < 0.75:
+        score -= 5.0
+        reasons.append("量縮動能稍弱")
     elif vol_ratio > 3.5 and close_loc < 0.35:
         score -= 20.0
         reasons.append("爆量滯漲警示")
@@ -155,32 +169,40 @@ def calculate_evolution_score(stock_info):
         score += 18.0
         reasons.append(f"投信作帳認養({trust_buy_days}/5日)")
     elif inst_buy_days >= 3:
-        score += 12.0
+        score += 10.0
         reasons.append(f"法人波段回補({inst_buy_days}/5日)")
 
-    # 5. RSI/KD 攻擊黃金通道 (RSI 55 ~ 72 最具性價比)
-    if 56.0 <= rsi14 <= 72.0:
-        score += 16.0
-        reasons.append(f"RSI黃金推進區({rsi14:.1f})")
-    elif 72.0 < rsi14 <= 78.0:
-        score += 8.0
-        reasons.append(f"RSI強勢主升({rsi14:.1f})")
-    elif rsi14 > 78.0:
-        score -= 10.0
-        reasons.append(f"RSI過熱警示({rsi14:.1f})")
+    # 5. RSI/KD 攻擊黃金通道與死叉折返
+    d_val = float(d_s.iloc[-1])
+    if k_val < d_val and (k_s.iloc[-2] >= d_s.iloc[-2] or k_val < d_val - 1.0):
+        score -= 20.0
+        reasons.append("⚡KD死叉修正中(-20分)")
+    elif k_val > d_val:
+        score += 10.0
+        reasons.append("KD多頭金叉推進")
+
+    if 56.0 <= rsi14 <= 74.0:
+        score += 12.0
+        reasons.append(f"RSI多頭通道({rsi14:.1f})")
+    elif rsi14 > 74.0:
+        score -= 8.0
+        reasons.append(f"RSI高檔過熱微扣({rsi14:.1f})")
 
     # 6. 估值與基本面安全邊際
     if trailing_pe is not None and 0 < trailing_pe <= 28.0:
-        score += 12.0
+        score += 8.0
         reasons.append(f"PE合理兼具保護({trailing_pe:.1f}倍)")
 
-    # 7. 當日收盤抗跌強度加分 (今日實戰反饋：逆勢收紅代表主力特強)
+    # 7. 當日收盤抗跌強度加分 (實戰反饋：逆勢收紅代表主力強勢鎖碼)
     if today_pct > 1.0:
-        score += 15.0
+        score += 16.0
         reasons.append(f"盤面逆勢抗跌(+{today_pct:.1f}%)")
-    elif today_pct >= -0.5:
+    elif today_pct >= 0:
         score += 8.0
-        reasons.append("大盤回檔守穩平盤")
+        reasons.append("平盤抗跌守穩")
+    elif today_pct < -2.5:
+        score -= 15.0
+        reasons.append(f"單日重挫拉回({today_pct:.1f}%)")
 
     # 關鍵停損與目標價
     stop_loss = round(float(ma20.iloc[-1]) * 0.985, 2)
@@ -217,7 +239,7 @@ def generate_evolution_log(top10_list, as_of_date):
     if log_file.exists():
         existing_content = log_file.read_text(encoding="utf-8", errors="ignore")
 
-    today_review_section = f"""## 📅 【實戰覆盤檢討書】— {as_of_date} 盤後反思與演化記錄
+    today_review_section = f"""## 📅 【實戰覆盤檢討書】— {as_of_date} 盤後反思與重大演化記錄
 
 ### 一、今日市場殘酷驗證（雙榜實測覆盤）
 * **大盤背景**：今日中小型電子股遭逢廣泛獲利了結賣壓，多檔熱門股收全日最低點。
@@ -228,19 +250,35 @@ def generate_evolution_log(top10_list, as_of_date):
   * **亮點標的**：`2481 強茂` 逆勢大漲 **`+5.41%`**、`3231 緯創` 逆勢上揚 **`+1.62%`**、`6214 精誠` 平盤防守。
   * **成功基因**：強茂月乖離僅 9.2%，剛放量突破 5MA 攻擊線，處於初升段起漲點，下檔有上升月線強烈支撐。
 
-### 二、演算法今日四大進化指令（已注入引擎）
-1. 🔒 **處置股流動性折價**：處置股全面一票否決，嚴禁選入起漲榜。
-2. 🚫 **過熱正乖離硬門檻**：月乖離超過 16% 或短線噴出過度者一票否決，拒當最後一隻老鼠。
-3. 🎯 **鎖定「起漲甜蜜點」**：優先挑選 5MA 剛翻揚 (s5: 0.5%~3.8%) 且月乖離在 1%~9.5% 之間、法人連買之標的。
-4. 💎 **抗跌強度加成**：在盤面大跌日能逆勢收紅收穩之個股，代表特定主力買盤強勢鎖碼，給予實戰加分。
+---
+
+### 二、核心個案深度檢討：【華碩 (2357) 假突破踩雷與演算法重大升級】
+* **走勢真相解剖**：
+  * 華碩早盤開 1020 元衝高至 1025 元（挑戰千元大關失敗），隨後遭猛烈獲利了結賣壓一路摜壓至 971 元收全日最低，單日重挫 **-3.86%**（實體黑K高達 **-4.8%**）。
+  * 終場實質跌破 5MA（991 元），日線 KD 出現死叉（K=74.0 / D=74.2）。這是一根標準的**高檔做頭倒貨假突破黑K**，短線處於回檔下壓期，**絕非起漲點**！
+* **模型盲點反思**：
+  * 舊評分模型過度看重「投信連買 5 日」(+18分) 與「低PE 14倍」(+12分)，且因月線仍在下檔守穩(+26分)，對「跌破 5MA」與「當日大黑K」缺乏硬性防線，導致其偷渡至第 4 名。
+* **本次進化鐵律**：
+  1. 🚫 **開高走低長黑一票否決**：實體跌幅 > 2.2% 且收全日低檔 30% 區間者，代表主力拉高出貨，一票否決！
+  2. ⚠️ **跌破 5MA 重扣 25 分**：短期攻擊線失守代表處於下壓修正期，喪失立即起漲優勢。
+  3. ⚡ **動態死叉折返重扣 20 分**：KD / RSI 死叉向下修正給予嚴格扣分。
 
 ---
 
-### 三、明日最新【AI 獨有實戰勝率榜 TOP 10】出爐
+### 三、演算法今日四大進化鐵律（已全面注入引擎）
+1. 🔒 **處置股流動性折價**：處置股全面一票否決，嚴禁選入起漲榜。
+2. 🚫 **過熱正乖離硬門檻**：月乖離超過 16% 或短線噴出過度者一票否決，拒當最後一隻老鼠。
+3. 📉 **長黑摜壓做頭一票否決**：開高走低大黑K一票否決，徹底杜絕華碩型假突破。
+4. 🎯 **鎖定「真起漲發動點」**：嚴格篩選站穩 5MA、剛放量換手、月線甜蜜區、逆勢收紅之實戰標的。
+
+---
+
+### 四、最新修正【AI 獨有實戰勝率榜 TOP 10】出爐
 > 唯一目標：起漲賺錢、勝率高、風報比優異。
 
 | 名次 | 代號 | 股票名稱 | 類群 | 收盤價 | 今日漲跌 | 5MA斜率 | 月乖離 | 實戰評分 | 核心起漲優勢 | 建議防守點 | 目標價 (R/R) |
 |:---:|:---:|:---|:---|---:|---:|---:|---:|---:|:---|---:|---:|
+
 """
     for i, r in enumerate(top10_list, 1):
         feat = "；".join(r['reasons'][:3])
@@ -248,12 +286,18 @@ def generate_evolution_log(top10_list, as_of_date):
 
     today_review_section += "\n---\n"
 
+    target_date_header = f"## 📅 【實戰覆盤檢討書】— {as_of_date}"
+    sections = re.split(r'\n(?=## 📅 【實戰覆盤檢討書】— )', existing_content)
+    other_sections = []
+    for s in sections:
+        if target_date_header not in s and "## 📅 【實戰覆盤檢討書】" in s:
+            other_sections.append(s.strip())
+
     header = "# 📖 AI 量化實戰每日覆盤與自我進化日記\n\n> 累積實戰經驗、天天反思漏洞、動態校準因子，打造實戰勝率最高的起漲決策體系。\n\n"
-    if "# 📖 AI 量化實戰每日覆盤與自我進化日記" in existing_content:
-        rest = existing_content.replace("# 📖 AI 量化實戰每日覆盤與自我進化日記", "").replace("> 累積實戰經驗、天天反思漏洞、動態校準因子，打造實戰勝率最高的起漲決策體系。", "").strip()
-        new_content = f"{header}{today_review_section}\n{rest}"
+    if other_sections:
+        new_content = f"{header}{today_review_section}\n\n" + "\n\n".join(other_sections) + "\n"
     else:
-        new_content = f"{header}{today_review_section}"
+        new_content = f"{header}{today_review_section}\n"
 
     log_file.write_text(new_content, encoding="utf-8")
     print(f"📝 每日覆盤檢討書已更新至：{log_file.name}")
