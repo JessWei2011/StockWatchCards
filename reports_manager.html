@@ -3466,12 +3466,48 @@
     }
   }
 
+  let _evolutionPollingTimer = null;
   function triggerScannerRun(source){
     if (source === 'evolution') {
-      fetch('/api/batch-scanner-evolution', { method: 'POST' }).then(() => {
-        alert('👑 AI 獨有實戰勝率進化引擎已在背景啟動！約 2~3 秒後自動載入最新榜單！');
-        setTimeout(() => loadWinrateRankingReport('evolution'), 2500);
-      });
+      const btn = document.querySelector('.ranking-refresh-action button:last-child');
+      const originalText = btn ? btn.innerHTML : '🔄 重新執行 AI 進化';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ AI 進化中 (Gemini 審核中...)';
+        btn.style.opacity = '0.75';
+      }
+
+      fetch('/api/batch-scanner-evolution', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.ok) {
+            alert(data.error || '啟動失敗');
+            if (btn) { btn.disabled = false; btn.innerHTML = originalText; btn.style.opacity = '1'; }
+            return;
+          }
+          
+          if (_evolutionPollingTimer) clearInterval(_evolutionPollingTimer);
+          _evolutionPollingTimer = setInterval(async () => {
+            try {
+              const st = await fetch('/api/batch-scanner-evolution/status').then(r => r.json());
+              if (st && st.ok) {
+                if (st.done) {
+                  clearInterval(_evolutionPollingTimer);
+                  _evolutionPollingTimer = null;
+                  if (btn) { btn.disabled = false; btn.innerHTML = originalText; btn.style.opacity = '1'; }
+                  loadWinrateRankingReport('evolution');
+                  alert('👑 【AI 獨有實戰勝率進化完成！】\n已全面結合 Gemini 3.5 Flash 審核，榜單與覆盤日記已同步更新！');
+                }
+              }
+            } catch(e) {
+              console.error(e);
+            }
+          }, 2000);
+        })
+        .catch(err => {
+          alert('請求失敗: ' + err.message);
+          if (btn) { btn.disabled = false; btn.innerHTML = originalText; btn.style.opacity = '1'; }
+        });
     } else if (source === 'gemini') {
       fetch('/api/batch-scanner-gemini', { method: 'POST' }).then(() => {
         alert('🚀 Gemini 掃描器已在背景啟動，約 3~5 秒後請點擊重新整理！');
@@ -3558,18 +3594,34 @@ ${escapeHtml(res.content)}
           const rawCode = cells[1].replace(/[*`]/g, '').trim();
           const rawName = cells[2].replace(/[*`]/g, '').trim();
           const resolvedName = STOCK_NAMES_MAP[rawCode] || (rawName.includes('Advanced Energy') ? 'AES-KY' : (rawName.includes('Fositek') ? '富世達' : rawName));
-          const item = {
-            rank: cells[0].replace(/[*`]/g, '').trim(),
-            code: rawCode,
-            name: resolvedName,
-            category: (cells[3] || '').replace(/[*`]/g, '').trim(),
-            price: (cells[4] || '').replace(/[*`]/g, '').trim(),
-            slope: (cells[5] || '').replace(/[*`]/g, '').trim(),
-            metric: (cells[6] || '').replace(/[*`]/g, '').trim(),
-            volOrChip: (cells[7] || '').replace(/[*`]/g, '').trim(),
-            score: (cells[8] || '').replace(/[*`]/g, '').trim(),
-            feature: (cells[9] || cells[8] || '').replace(/[*`]/g, '').trim(),
-          };
+          let item;
+          if (cells.length === 8) {
+            item = {
+              rank: cells[0].replace(/[*`]/g, '').trim(),
+              code: rawCode,
+              name: resolvedName,
+              category: (cells[3] || '').replace(/[*`]/g, '').trim(),
+              price: (cells[4] || '').replace(/[*`]/g, '').trim(),
+              changePct: (cells[5] || '').replace(/[*`]/g, '').trim(),
+              score: (cells[6] || '').replace(/[*`]/g, '').trim(),
+              feature: (cells.slice(7).join(' ｜ ') || '').replace(/[*`]/g, '').replace(/[💎⚠️]?【風報比[^】]*】/g, '').trim(),
+              isCompact: true
+            };
+          } else {
+            item = {
+              rank: cells[0].replace(/[*`]/g, '').trim(),
+              code: rawCode,
+              name: resolvedName,
+              category: (cells[3] || '').replace(/[*`]/g, '').trim(),
+              price: (cells[4] || '').replace(/[*`]/g, '').trim(),
+              slope: (cells[5] || '').replace(/[*`]/g, '').trim(),
+              metric: (cells[6] || '').replace(/[*`]/g, '').trim(),
+              volOrChip: (cells[7] || '').replace(/[*`]/g, '').trim(),
+              score: (cells[8] || '').replace(/[*`]/g, '').trim(),
+              feature: (cells.slice(9).join(' ｜ ') || cells[8] || '').replace(/[*`]/g, '').replace(/[💎⚠️]?【風報比[^】]*】/g, '').trim(),
+              isCompact: false
+            };
+          }
 
           if (currentSection === 'momentum') {
             momentumItems.push(item);
@@ -3809,21 +3861,34 @@ ${escapeHtml(res.content)}
         <div class="ranking-table-wrap">
           <table class="ranking-full-table">
             <thead>
-              <tr>
-                <th style="width:44px; text-align:center;">名次</th>
-                <th style="width:105px;">代號</th>
-                <th style="width:100px;">股票名稱</th>
-                <th style="width:90px; text-align:center;">類群/路徑</th>
-                <th style="width:85px; text-align:right;">收盤價</th>
-                <th style="width:90px; text-align:center;">${isMomo ? '5MA斜率' : '20MA斜率'}</th>
-                <th style="width:90px; text-align:center;">${isMomo ? 'RSI(14)' : '月乖離率'}</th>
-                <th style="width:95px; text-align:center;">${isMomo ? '成交量比' : '法人買超'}</th>
-                <th style="width:85px; text-align:center;">${isMomo ? '動能評分' : '穩健評分'}</th>
-                <th style="min-width:220px;">核心多空與型態特徵</th>
-              </tr>
+              ${filtered[0]?.isCompact ? `
+                <tr>
+                  <th style="width:44px; text-align:center;">名次</th>
+                  <th style="width:105px;">代號</th>
+                  <th style="width:100px;">股票名稱</th>
+                  <th style="width:90px; text-align:center;">類群/路徑</th>
+                  <th style="width:85px; text-align:right;">收盤價</th>
+                  <th style="width:90px; text-align:center;">今日漲跌</th>
+                  <th style="width:85px; text-align:center;">實戰評分</th>
+                  <th style="min-width:320px;">核心基本面與起漲特徵</th>
+                </tr>
+              ` : `
+                <tr>
+                  <th style="width:44px; text-align:center;">名次</th>
+                  <th style="width:105px;">代號</th>
+                  <th style="width:100px;">股票名稱</th>
+                  <th style="width:90px; text-align:center;">類群/路徑</th>
+                  <th style="width:85px; text-align:right;">收盤價</th>
+                  <th style="width:90px; text-align:center;">${isMomo ? '5MA斜率' : '20MA斜率'}</th>
+                  <th style="width:90px; text-align:center;">${isMomo ? 'RSI(14)' : '月乖離率'}</th>
+                  <th style="width:95px; text-align:center;">${isMomo ? '成交量比' : '法人買超'}</th>
+                  <th style="width:85px; text-align:center;">${isMomo ? '動能評分' : '穩健評分'}</th>
+                  <th style="min-width:220px;">核心多空與型態特徵</th>
+                </tr>
+              `}
             </thead>
             <tbody>
-              ${filtered.length === 0 ? `<tr><td colspan="10" style="text-align:center; padding:24px; color:var(--text-dim); font-size:16px;">無符合條件的股票。</td></tr>` : ''}
+              ${filtered.length === 0 ? `<tr><td colspan="${filtered[0]?.isCompact ? 8 : 10}" style="text-align:center; padding:24px; color:var(--text-dim); font-size:16px;">無符合條件的股票。</td></tr>` : ''}
               ${filtered.map((item, idx) => {
                 const rankNum = parseInt(item.rank) || (idx + 1);
                 let badgeClass = 'normal';
@@ -3834,6 +3899,23 @@ ${escapeHtml(res.content)}
                 const scoreVal = parseFloat(item.score) || 0;
                 let scoreClass = 'high';
                 if (scoreVal < 100) scoreClass = 'medium';
+
+                if (item.isCompact) {
+                  const pctVal = parseFloat(item.changePct) || 0;
+                  const pctColor = pctVal > 0 ? '#ef4444' : (pctVal < 0 ? '#22c55e' : '#e2e8f0');
+                  return `
+                    <tr data-stock-code="${escapeHtml(item.code)}" title="點擊直接開啟 ${escapeHtml(item.name)} (${escapeHtml(item.code)}) 的專業看盤">
+                      <td style="text-align:center;"><span class="rank-badge-num ${badgeClass}">${escapeHtml(item.rank)}</span></td>
+                      <td><span class="rank-stock-link"><button type="button" class="ranking-star-btn ${isStockStarred(item.code) ? 'active' : ''}" data-code="${escapeHtml(item.code)}" aria-label="${isStockStarred(item.code) ? '從重點清單移除' : '加入重點清單'}" aria-pressed="${isStockStarred(item.code)}" title="${isStockStarred(item.code) ? '已加入重點（點擊取消）' : '加入重點清單'}">★</button><span class="stock-code ${getStockMarketClass(item.code)}" title="[${getStockMarketLabel(item.code)}] ${escapeHtml(item.code)}">${escapeHtml(item.code)}</span></span></td>
+                      <td><span class="rank-stock-link"><span class="stock-name">${escapeHtml(item.name)}</span>${tierBadgesMap[item.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[item.code].tier}" title="${escapeHtml(tierBadgesMap[item.code].title)}">${tierBadgesMap[item.code].label}</span>` : ''}</span></td>
+                      <td style="text-align:center;"><span class="tag-pill" style="font-size:14px; padding:3px 7px; white-space:nowrap;">${escapeHtml(item.category)}</span></td>
+                      <td style="text-align:right; font-weight:850; color:#fff;">${escapeHtml(item.price)}</td>
+                      <td style="text-align:center; color:${pctColor}; font-weight:850;">${escapeHtml(item.changePct)}</td>
+                      <td style="text-align:center;"><span class="rank-score-pill ${scoreClass}">${escapeHtml(item.score)}</span></td>
+                      <td style="white-space:normal; line-height:1.55;"><span style="font-size:15px; color:#f8fafc; font-weight:500;">${escapeHtml(item.feature)}</span></td>
+                    </tr>
+                  `;
+                }
 
                 return `
                   <tr data-stock-code="${escapeHtml(item.code)}" title="點擊直接開啟 ${escapeHtml(item.name)} (${escapeHtml(item.code)}) 的專業看盤">

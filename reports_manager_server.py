@@ -755,6 +755,41 @@ BATCH_SCANNER_GEMINI_SCRIPT = ROOT_DIR / "batch_scanner_gemini.py"
 BATCH_SCANNER_GEMINI_LOCK = threading.Lock()
 batch_scanner_gemini_job = _new_batch_scanner_job()
 
+EVOLUTION_ENGINE_SCRIPT = ROOT_DIR / "evolution_engine.py"
+EVOLUTION_ENGINE_LOCK = threading.Lock()
+evolution_engine_job = _new_batch_scanner_job()
+
+def _run_evolution_engine():
+    global evolution_engine_job
+    child_env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+    rc = -1
+    try:
+        proc = subprocess.Popen(
+            [sys.executable, str(EVOLUTION_ENGINE_SCRIPT)],
+            cwd=ROOT_DIR,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=child_env,
+        )
+        for raw_line in proc.stdout:
+            with EVOLUTION_ENGINE_LOCK:
+                evolution_engine_job["lines"].append(raw_line.rstrip("\n"))
+        proc.wait()
+        rc = proc.returncode
+    except Exception as e:
+        with EVOLUTION_ENGINE_LOCK:
+            evolution_engine_job["lines"].append(f"❌ 執行 AI 進化失敗: {e}")
+        rc = -1
+    finally:
+        with EVOLUTION_ENGINE_LOCK:
+            evolution_engine_job["running"] = False
+            evolution_engine_job["done"] = True
+            evolution_engine_job["returncode"] = rc
+
 DEPLOY_MOBILE_BAT = ROOT_DIR / "發布手機版.bat"
 DEPLOY_MOBILE_LOCK = threading.Lock()
 
@@ -1336,6 +1371,10 @@ class Handler(SimpleHTTPRequestHandler):
             with BATCH_SCANNER_GEMINI_LOCK:
                 self._json(200, {"ok": True, **batch_scanner_gemini_job})
             return
+        if parsed.path == "/api/batch-scanner-evolution/status":
+            with EVOLUTION_ENGINE_LOCK:
+                self._json(200, {"ok": True, **evolution_engine_job})
+            return
         if parsed.path == "/api/deploy-mobile/status":
             with DEPLOY_MOBILE_LOCK:
                 self._json(200, {"ok": True, **deploy_mobile_job})
@@ -1488,14 +1527,18 @@ class Handler(SimpleHTTPRequestHandler):
             return
 
         if parsed.path == "/api/batch-scanner-evolution":
-            def _run_evolution():
-                try:
-                    subprocess.run(["py", "-3.11", str(ROOT_DIR / "evolution_engine.py")], check=True)
-                except Exception as e:
-                    print(f"Evolution engine error: {e}")
-            threading.Thread(target=_run_evolution, daemon=True).start()
+            global evolution_engine_job
+            with EVOLUTION_ENGINE_LOCK:
+                if evolution_engine_job["running"]:
+                    self._json(409, {"ok": False, "error": "AI 進化引擎正在執行中，請稍候"})
+                    return
+                evolution_engine_job = _new_batch_scanner_job()
+                evolution_engine_job["running"] = True
+            threading.Thread(target=_run_evolution_engine, daemon=True).start()
             self._json(200, {"ok": True})
             return
+
+        if parsed.path == "/api/deploy-mobile":
             global deploy_mobile_job
             with DEPLOY_MOBILE_LOCK:
                 if deploy_mobile_job["running"]:

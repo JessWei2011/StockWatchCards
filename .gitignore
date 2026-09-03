@@ -24,6 +24,7 @@
 !stock_winrate_ranking_evolution.md
 !evolution_log.md
 !stock_name_dict.json
+!stock_fundamental_cache.json
 !watchlist.json
 !breakout_watchlist.md
 !breakout_watchlist_gemini.md
