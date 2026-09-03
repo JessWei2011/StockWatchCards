@@ -29,7 +29,7 @@ OUTPUT_EVO_MD = ROOT_DIR / "stock_winrate_ranking_evolution.md"
 EVOLUTION_LOG_MD = ROOT_DIR / "evolution_log.md"
 
 sys.path.insert(0, str(ROOT_DIR))
-from batch_scanner_gemini import parse_html_report, calculate_rsi_series, calculate_kdj_series
+from batch_scanner_gemini import parse_html_report, calculate_rsi_series, calculate_kdj_series, detect_kline_tags, detect_volume_tags, detect_macd_tags
 
 def calculate_evolution_score(stock_info):
     """
@@ -69,7 +69,7 @@ def calculate_evolution_score(stock_info):
     vol20 = float(vol_s.rolling(20).mean().iloc[-1]) if n >= 20 else float(vol_s.iloc[-1])
     vol_ratio = float(vol_s.iloc[-1]) / max(vol20, 1.0)
 
-    # 技術指標
+    # 技術指標與全維度專業標籤檢測
     rsi14_series = calculate_rsi_series(close_s, 14)
     rsi14 = float(rsi14_series.iloc[-1])
     k_s, d_s, _ = calculate_kdj_series(high_s, low_s, close_s)
@@ -77,6 +77,11 @@ def calculate_evolution_score(stock_info):
 
     # 處置股判斷
     is_disposal = ('處置' in stock_info.get('name', '')) or ('處置' in stock_info.get('path', ''))
+
+    # 全維度指標標籤檢測 (K線、成交量阻力牆、MACD動能)
+    ktags = detect_kline_tags(df)
+    vtags = detect_volume_tags(df, is_disposal)
+    mtags = detect_macd_tags(close_s)
 
     # 法人籌碼
     inst = stock_info.get('institutions', [])[:5]
@@ -91,7 +96,7 @@ def calculate_evolution_score(stock_info):
     close_loc = (price - low_s.iloc[-1]) / bar_range
 
     # =========================================================================
-    # 🛑 【硬性排除一票否決規則】（防止踩雷與做頭套牢）
+    # 🛑 【硬性排除一票否決規則】（防止踩雷、做頭套牢、假突破誘多）
     # =========================================================================
     # 1. 處置股一律否決（撮合分盤無流動性，逆風必成重災區）
     if is_disposal:
@@ -111,8 +116,16 @@ def calculate_evolution_score(stock_info):
         if vol_s.iloc[-1] >= past_max_vol * 1.5 and today_pct < -3.0 and close_loc < 0.20:
             return None
 
-    # 5. 【重大進化】開高走低長黑倒貨收最低一票否決（如華碩衝高千元失敗殺至全日低，短線套牢賣壓沉重）
+    # 5. 開高走低長黑倒貨收最低一票否決（如華碩衝高千元失敗殺至全日低，短線套牢賣壓沉重）
     if intraday_pct < -2.2 and close_loc < 0.30:
+        return None
+
+    # 6. 【重大進化：精誠案例】假突破誘多出貨 一票否決！
+    if any("假突破" in t or "誘多出貨" in t for t in ktags):
+        return None
+
+    # 7. 【重大進化：精誠案例】臨前高天量阻力牆且量能不足 一票否決！
+    if any("天量阻力牆" in t for t in vtags):
         return None
 
     # =========================================================================
@@ -172,7 +185,7 @@ def calculate_evolution_score(stock_info):
         score += 10.0
         reasons.append(f"法人波段回補({inst_buy_days}/5日)")
 
-    # 5. RSI/KD 攻擊黃金通道與死叉折返
+    # 5. RSI/KD/MACD 攻擊黃金通道與死叉折返
     d_val = float(d_s.iloc[-1])
     if k_val < d_val and (k_s.iloc[-2] >= d_s.iloc[-2] or k_val < d_val - 1.0):
         score -= 20.0
@@ -180,6 +193,18 @@ def calculate_evolution_score(stock_info):
     elif k_val > d_val:
         score += 10.0
         reasons.append("KD多頭金叉推進")
+
+    has_macd_dead = any("死亡交叉" in t for t in mtags)
+    has_macd_green = any("翻綠" in t for t in mtags)
+    if has_macd_dead:
+        score -= 25.0
+        reasons.append("⚡MACD死叉獲利了結(-25分)")
+    elif has_macd_green:
+        score -= 15.0
+        reasons.append("❄️MACD柱體翻綠減弱(-15分)")
+    elif any("二次金叉" in t or "零軸上金叉" in t for t in mtags):
+        score += 12.0
+        reasons.append("🚀MACD強勢金叉推進")
 
     if 56.0 <= rsi14 <= 74.0:
         score += 12.0
@@ -252,12 +277,12 @@ def generate_evolution_log(selected_list, as_of_date):
   * **踩雷名單**：富喬 (-8.40%)、光環 (-7.82%)、聯一光 (-6.81%)、雙鴻 (-5.92%)。
   * **核心痛點**：純追逐 `RSI > 75`、`Blue Sky 創歷史天花板` 與 `處置軋空`。在震盪天，這些高檔持股最擠的標的慘遭主力倒貨踩踏；處置股因分盤撮合更缺乏買盤支撐。
 * **ChatGPT 榜單亮點檢討**：
-  * **亮點標的**：`2481 強茂` 逆勢大漲 **`+5.41%`**、`3231 緯創` 逆勢上揚 **`+1.62%`**、`6214 精誠` 平盤防守。
+  * **亮點標的**：`2481 強茂` 逆勢大漲 **`+5.41%`**、`3231 緯創` 逆勢上揚 **`+1.62%`**。
   * **成功基因**：強茂月乖離僅 9.2%，剛放量突破 5MA 攻擊線，處於初升段起漲點，下檔有上升月線強烈支撐。
 
 ---
 
-### 二、核心個案深度檢討：【華碩 (2357) 假突破踩雷與演算法重大升級】
+### 二、核心個案深度檢討一：【華碩 (2357) 假突破踩雷與演算法重大升級】
 * **走勢真相解剖**：
   * 華碩早盤開 1020 元衝高至 1025 元（挑戰千元大關失敗），隨後遭猛烈獲利了結賣壓一路摜壓至 971 元收全日最低，單日重挫 **-3.86%**（實體黑K高達 **-4.8%**）。
   * 終場實質跌破 5MA（991 元），日線 KD 出現死叉（K=74.0 / D=74.2）。這是一根標準的**高檔做頭倒貨假突破黑K**，短線處於回檔下壓期，**絕非起漲點**！
@@ -266,21 +291,36 @@ def generate_evolution_log(selected_list, as_of_date):
 * **本次進化鐵律**：
   1. 🚫 **開高走低長黑一票否決**：實體跌幅 > 2.2% 且收全日低檔 30% 區間者，代表主力拉高出貨，一票否決！
   2. ⚠️ **跌破 5MA 重扣 25 分**：短期攻擊線失守代表處於下壓修正期，喪失立即起漲優勢。
-  3. ⚡ **動態死叉折返重扣 20 分**：KD / RSI 死叉向下修正給予嚴格扣分。
+
+---
+
+### 三、核心個案深度檢討二：【精誠 (6214) 假突破誘多與全維度標籤連動升級】
+* **走勢真相解剖**：
+  * 精誠 09/03 雖然看似抗跌收平盤（183 元），但盤面充斥著致命的警示信號：
+    1. 🚨 **假突破收長上影線**：盤中衝至 184.5 元碰觸前高即遭摜壓，留下長上影線。
+    2. ⚠️ **臨前高天量阻力牆**：成交量萎縮至僅 0.61 倍（量能嚴重窒息），無力消化前高天量套牢區，屬「量價背離 / 虛漲誘多」。
+    3. ⚡ **MACD 零軸上死亡交叉**：波段動能正式由多轉空，MACD 柱狀體翻綠。
+* **模型盲點反思**：
+  * 先前初版引擎處於「資訊孤島」，只看 5MA 與乖離率，完全忽略了報表中已生成的專業 K 線標籤與量能阻力標籤，導致這檔帶有 4 個紅色警示標籤的假突破標的偷渡進榜。
+* **本次升級鐵律**：
+  1. 🚫 **假突破標籤一票否決**：凡帶有「假突破長上影線 / 誘多出貨」標籤者直接剔除。
+  2. 🚫 **天量阻力牆標籤一票否決**：凡量能不足挑戰前高天量阻力者直接剔除。
+  3. ⚡ **MACD 死叉與柱體翻綠重扣 25 分**。
   4. 💎 **堅持「寧缺毋濫」動態榜單**：如果盤面經過嚴格檢驗後不足 10 檔，有多少合格就列多少檔，絕不為了填滿 10 檔而硬塞次級或回檔股！
 
 ---
 
-### 三、演算法今日五大進化鐵律（已全面注入引擎）
+### 四、演算法今日重大進化鐵律（已全面注入引擎）
 1. 🔒 **處置股流動性折價**：處置股全面一票否決，嚴禁選入起漲榜。
 2. 🚫 **過熱正乖離硬門檻**：月乖離超過 16% 或短線噴出過度者一票否決，拒當最後一隻老鼠。
 3. 📉 **長黑摜壓做頭一票否決**：開高走低大黑K一票否決，徹底杜絕華碩型假突破。
-4. 🎯 **鎖定「真起漲發動點」**：嚴格篩選站穩 5MA、剛放量換手、月線甜蜜區、逆勢收紅之實戰標的。
-5. 💎 **寧缺毋濫・動態呈現**：合格幾檔就列幾檔，不硬湊滿 10 檔，確保入選每一檔皆具備極高勝率！
+4. 🚨 **假突破與天量阻力一票否決**：整合全維度技術標籤，徹底杜絕精誠型誘多虛漲。
+5. 🎯 **鎖定「真起漲發動點」**：嚴格篩選站穩 5MA、剛放量換手、月線甜蜜區、逆勢收紅之實戰標的。
+6. 💎 **寧缺毋濫・動態呈現**：合格幾檔就列幾檔，不硬湊滿 10 檔，確保入選每一檔皆具備極高勝率！
 
 ---
 
-### 四、最新修正{ranking_title}出爐
+### 五、最新修正{ranking_title}出爐
 {ranking_subtitle}
 
 | 名次 | 代號 | 股票名稱 | 類群 | 收盤價 | 今日漲跌 | 5MA斜率 | 月乖離 | 實戰評分 | 核心起漲優勢 | 建議防守點 | 目標價 (R/R) |
