@@ -136,7 +136,7 @@ def parse_latest_analysis(text: str, report_path: Path) -> dict:
     bearish = []
 
     def _is_bearish_tag(t: str) -> bool:
-        bearish_keywords = ['⚡', '🚨', '⚠️', '❄️', '📉', '死亡交叉', '死叉', '頂背離', '倒貨', '出貨', '退潮', '警戒', '空方', '了結', '弱勢', '賣超']
+        bearish_keywords = ['⚡', '🚨', '⚠️', '❄️', '📉', '🔒', '死亡交叉', '死叉', '頂背離', '倒貨', '出貨', '退潮', '警戒', '空方', '了結', '弱勢', '賣超', '處置']
         return any(k in t for k in bearish_keywords)
 
     for label, regex in tag_patterns:

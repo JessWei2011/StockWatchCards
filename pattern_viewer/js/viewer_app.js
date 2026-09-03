@@ -306,12 +306,20 @@
       console.log(`[PatternViewer Debug] reportsIndex 前 5 筆:`, this.reportsIndex.slice(0, 5));
 
       let entry = this.reportsIndex.find(item => String(item.code).trim() === normalizedCode);
+      if (!entry) {
+        console.log(`[PatternViewer Debug] ⚠️ 在現有索引中找不到代號 "${normalizedCode}"，立即向伺服器重新拉取最新索引...`);
+        await this.loadSources();
+        this.populateStockSelect();
+        entry = this.reportsIndex.find(item => String(item.code).trim() === normalizedCode);
+      }
       console.log(`[PatternViewer Debug] 比對代號 "${normalizedCode}" 結果:`, entry);
 
       if (!entry) {
-        console.warn(`[PatternViewer Debug] ❌ 在 reportsIndex 找不到代號 "${normalizedCode}"！`);
+        console.warn(`[PatternViewer Debug] ❌ 重新拉取後仍找不到代號 "${normalizedCode}"！`);
         console.warn(`[PatternViewer Debug] 所有可用的代號清單:`, this.reportsIndex.map(x => x.code));
         this.currentStockData = null;
+        const chartTitle = this.q('#chartTitle');
+        if (chartTitle) chartTitle.innerHTML = `${normalizedCode} — 尚無報表資料`;
         this.updateAiCardBox(normalizedCode);
         this.showEmpty(
           `${normalizedCode} 尚無原始報表`,

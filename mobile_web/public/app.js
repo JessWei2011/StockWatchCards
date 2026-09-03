@@ -27,10 +27,72 @@
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[char]);
 
+  const offlineStorage = {
+    db: null,
+    async init() {
+      if (!window.indexedDB) return false;
+      return new Promise((resolve) => {
+        try {
+          const req = indexedDB.open('Stock2MobileOfflineDB', 1);
+          req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('files')) {
+              db.createObjectStore('files');
+            }
+          };
+          req.onsuccess = (e) => {
+            this.db = e.target.result;
+            resolve(true);
+          };
+          req.onerror = () => resolve(false);
+        } catch(_e) { resolve(false); }
+      });
+    },
+    async get(key) {
+      if (!this.db) {
+        try { return localStorage.getItem('stock2_' + key); } catch(_e) { return null; }
+      }
+      return new Promise((resolve) => {
+        try {
+          const tx = this.db.transaction('files', 'readonly');
+          const store = tx.objectStore('files');
+          const req = store.get(key);
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => resolve(null);
+        } catch(_e) { resolve(null); }
+      });
+    },
+    async set(key, value) {
+      if (!this.db) {
+        try { localStorage.setItem('stock2_' + key, value); } catch(_e) {}
+        return;
+      }
+      return new Promise((resolve) => {
+        try {
+          const tx = this.db.transaction('files', 'readwrite');
+          const store = tx.objectStore('files');
+          const req = store.put(value, key);
+          req.onsuccess = () => resolve(true);
+          req.onerror = () => resolve(false);
+        } catch(_e) { resolve(false); }
+      });
+    }
+  };
+
   async function fetchText(path) {
-    const response = await fetch(path, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`${path} 載入失敗 (${response.status})`);
-    return response.text();
+    try {
+      const response = await fetch(path, { cache: 'no-cache' });
+      if (response.ok) {
+        const text = await response.text();
+        offlineStorage.set(path, text);
+        return text;
+      }
+    } catch (_netErr) {
+      console.warn(`[Offline] 網路請求失敗，嘗試從本機離線快取載入: ${path}`);
+    }
+    const cached = await offlineStorage.get(path);
+    if (cached !== null) return cached;
+    throw new Error(`${path} 載入失敗 (離線且無快取)`);
   }
 
   async function fetchJson(path) {
@@ -565,9 +627,37 @@
         : indexPayload.defaultCode || state.stockIndex[0].code;
       await loadStock(initialCode, { pushHistory: false, focusDetail: Boolean(requestedCode) });
       if (!requestedCode) showRanking({ replaceHistory: true });
+      // 背景非同步快取所有股票，離線出門亦可隨心切換
+      prefetchAllStocks();
     } catch (error) {
       showError(error);
     }
+  }
+
+  async function prefetchAllStocks() {
+    if (!state.stockIndex || !state.stockIndex.length) return;
+    try {
+      await offlineStorage.init();
+      const statusDot = document.querySelector('.status-dot');
+      let cachedCount = 0;
+      for (const item of state.stockIndex) {
+        const code = item.code;
+        const basePath = `./data/stocks/${code}`;
+        try {
+          await Promise.all([
+            fetchText(`${basePath}/stock.json`),
+            fetchText(`${basePath}/report.html`),
+            fetchText(`${basePath}/analysis.md`)
+          ]);
+          cachedCount++;
+        } catch (_e) {}
+      }
+      if (statusDot) {
+        statusDot.title = `已離線快取 ${cachedCount}/${state.stockIndex.length} 檔個股，出門斷網亦可隨心切換`;
+        statusDot.style.background = '#10b981';
+        statusDot.style.boxShadow = '0 0 8px rgba(16,185,129,0.8)';
+      }
+    } catch (_err) {}
   }
 
   document.addEventListener('DOMContentLoaded', start);

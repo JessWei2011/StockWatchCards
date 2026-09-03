@@ -1369,11 +1369,25 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as e:
                 self._json(500, {"ok": False, "error": f"讀取報告失敗: {e}"})
             return
+        if parsed.path == "/api/evolution-log":
+            log_file = ROOT_DIR / "evolution_log.md"
+            if not log_file.exists():
+                self._json(404, {"ok": False, "error": "尚未找到實戰覆盤日記，請先執行「盤後進化」。"})
+                return
+            try:
+                content = log_file.read_text(encoding="utf-8", errors="replace")
+                self._json(200, {"ok": True, "content": content})
+            except Exception as e:
+                self._json(500, {"ok": False, "error": f"讀取覆盤日記失敗: {e}"})
+            return
+
         if parsed.path == "/api/winrate-ranking-report":
             qs = parse_qs(parsed.query)
             source = (qs.get("source") or ["chatgpt"])[0].lower()
             if source == "gemini":
                 ranking_file = ROOT_DIR / "stock_winrate_ranking_gemini.md"
+            elif source in ("evolution", "ai", "exclusive"):
+                ranking_file = ROOT_DIR / "stock_winrate_ranking_evolution.md"
             else:
                 ranking_file = ROOT_DIR / "stock_winrate_ranking.md"
 
@@ -1473,7 +1487,15 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(200, {"ok": True})
             return
 
-        if parsed.path == "/api/deploy-mobile":
+        if parsed.path == "/api/batch-scanner-evolution":
+            def _run_evolution():
+                try:
+                    subprocess.run(["py", "-3.11", str(ROOT_DIR / "evolution_engine.py")], check=True)
+                except Exception as e:
+                    print(f"Evolution engine error: {e}")
+            threading.Thread(target=_run_evolution, daemon=True).start()
+            self._json(200, {"ok": True})
+            return
             global deploy_mobile_job
             with DEPLOY_MOBILE_LOCK:
                 if deploy_mobile_job["running"]:

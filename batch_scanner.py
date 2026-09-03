@@ -1123,7 +1123,7 @@ def detect_rsi_tags(close_series: pd.Series) -> list:
     return tags
 
 
-def detect_volume_tags(df: pd.DataFrame) -> list:
+def detect_volume_tags(df: pd.DataFrame, is_disposal: bool = False) -> list:
     if len(df) < 5:
         return []
     tags = []
@@ -1151,9 +1151,12 @@ def detect_volume_tags(df: pd.DataFrame) -> list:
         if close_s.iloc[-1] >= past20_high and cur_vol >= cur_v20 * 1.8 and is_up:
             tags.append("🔥 帶量長紅突破 (實質攻擊量)")
 
-    # 3. 價跌量急縮窒息量
+    # 3. 價跌量急縮窒息量 (處置股量縮為撮合制度限制，非自然洗盤，不得視為優點)
     if cur_v20 is not None and cur_vol <= cur_v20 * 0.45:
-        tags.append("💎 價跌量急縮窒息量 (主力洗盤完畢)")
+        if is_disposal:
+            tags.append("🔒 處置分盤量縮 (流動性受限/非自然洗盤)")
+        else:
+            tags.append("💎 價跌量急縮窒息量 (主力洗盤完畢)")
 
     # 4. 高檔爆大量倒貨
     if len(df) >= 30 and cur_v20 is not None:
@@ -1181,7 +1184,9 @@ def detect_volume_tags(df: pd.DataFrame) -> list:
 
     # 常態 (綜合 20日均量 與 昨日成交量)
     if not tags:
-        if cur_v20 is not None and cur_vol >= cur_v20 * 1.5:
+        if is_disposal:
+            tags.append("🔒 處置分盤量縮 (流動性受限/非自然洗盤)")
+        elif cur_v20 is not None and cur_vol >= cur_v20 * 1.5:
             tags.append("🔥 帶量突破換手")
         elif cur_v20 is not None and cur_vol >= cur_v20 * 1.2:
             tags.append("📈 買盤溫和增量")
@@ -1641,7 +1646,7 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
         momo_score += 15
         momo_reasons.append("處置分盤籌碼高度鎖定(軋空)")
         
-    if s20 >= 1.0 and 0 <= bias_20 <= 7.0 and vol_ratio <= 0.65:
+    if s20 >= 1.0 and 0 <= bias_20 <= 7.0 and vol_ratio <= 0.65 and not is_disposal:
         momo_score += 25
         momo_reasons.append(f"上升月線+窒息量洗盤完畢(量比{vol_ratio:.2f}x)")
 
@@ -1741,7 +1746,7 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
     # ==========================================
     kline_tags = detect_kline_tags(df)
     rsi_tags = detect_rsi_tags(close_s)
-    vol_tags = detect_volume_tags(df)
+    vol_tags = detect_volume_tags(df, is_disposal=is_disposal)
     macd_tags = detect_macd_tags(close_s)
     kd_tags = detect_kd_tags(pd.Series(high), pd.Series(low), close_s)
 
@@ -1829,11 +1834,15 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
             def_score += 8
             def_reasons.append("量能金叉轉強")
         elif "💎 價跌量急縮窒息量" in vtag:
-            if not any("窒息量" in r for r in momo_reasons):
-                momo_score += 15
-                momo_reasons.append(f"窒息量籌碼沉澱(量比{vol_ratio:.2f}x)")
-            def_score += 15
-            def_reasons.append("窒息量浮額洗淨")
+            if not is_disposal:
+                if not any("窒息量" in r for r in momo_reasons):
+                    momo_score += 15
+                    momo_reasons.append(f"窒息量籌碼沉澱(量比{vol_ratio:.2f}x)")
+                def_score += 15
+                def_reasons.append("窒息量浮額洗淨")
+        elif "🔒 處置分盤量縮" in vtag or "處置分盤" in vtag:
+            # 處置期間量急縮為交易機制受限，非自然洗盤，不予計入洗盤優點加分
+            pass
         elif "🚨 高檔爆歷史天量收黑" in vtag:
             momo_score -= 30
             momo_reasons.append("🚨警示:高檔爆天量收黑(主力出貨倒貨)")

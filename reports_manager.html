@@ -2549,8 +2549,8 @@
                   【今天是不是扣板機的最佳時機？】<br><span style="font-size:13px; color:#94a3b8;">抓最低成本與起漲轉折</span>
                 </td>
                 <td style="padding:14px; color:#86efac; line-height:1.6;">
-                  💡 <strong>買點 A（逢低回測型）</strong>：回測月線/季線支撐時，$K \le 30$ 出現「✨ KD 低檔超賣黃金交叉」，風報比極高！<br>
-                  🚀 <strong>買點 B（突破噴發型）</strong>：突破平台整理區時，$K \ge 70$ 出現「✨ 高檔再金叉」或進入「🚀 高檔強勢鈍化」。
+                  💡 <strong>買點 A（逢低回測型）</strong>：回測月線/季線支撐時，<strong>K ≤ 30</strong> 出現「✨ KD 低檔超賣黃金交叉」，風報比極高！<br>
+                  🚀 <strong>買點 B（突破噴發型）</strong>：突破平台整理區時，<strong>K ≥ 70</strong> 出現「✨ 高檔再金叉」或進入「🚀 高檔強勢鈍化」。
                 </td>
                 <td style="padding:14px; color:#fca5a5; line-height:1.6;">
                   ❌ KD 高檔死叉下彎（拉回中未止跌，切勿急躁接刀）。
@@ -3007,16 +3007,17 @@
         }
       }
       if (!volTags.length) {
+        const isDisposal = /處置/.test(mdText) || (card && (/處置/.test(card.name || '') || /處置/.test(card.path || '') || /處置/.test(card.group || '')));
         const volRatioM = mdText.match(/相對\s*20日均量\s*([0-9.]+)\s*倍/i) || mdText.match(/均量\s*([0-9.]+)\s*倍/i);
         if (volRatioM) {
           const ratio = parseFloat(volRatioM[1]);
           if (ratio >= 2.0) volTags.push(`🚨 爆量長紅 (${ratio.toFixed(2)}x)`);
           else if (ratio >= 1.5) volTags.push(`🔥 帶量攻擊 (${ratio.toFixed(2)}x)`);
           else if (ratio >= 1.0) volTags.push(`📈 買盤溫和增量 (${ratio.toFixed(2)}x)`);
-          else if (ratio <= 0.45) volTags.push(`💎 窒息量洗盤 (${ratio.toFixed(2)}x)`);
-          else volTags.push(`📉 縮量沉澱整理 (${ratio.toFixed(2)}x)`);
+          else if (ratio <= 0.45) volTags.push(isDisposal ? `🔒 處置分盤量縮 (${ratio.toFixed(2)}x)` : `💎 窒息量洗盤 (${ratio.toFixed(2)}x)`);
+          else volTags.push(isDisposal ? `🔒 處置分盤量縮 (${ratio.toFixed(2)}x)` : `📉 縮量沉澱整理 (${ratio.toFixed(2)}x)`);
         }
-        if (/量能萎縮/.test(mdText) && !volTags.length) volTags.push('📉 量能萎縮整理');
+        if (/量能萎縮/.test(mdText) && !volTags.length) volTags.push(isDisposal ? '🔒 處置分盤量縮' : '📉 量能萎縮整理');
         if (/爆量攻擊/.test(mdText) && !volTags.length) volTags.push('🔥 爆量攻擊');
         if (/溫和放量/.test(mdText) && !volTags.length) volTags.push('📈 溫和放量');
       }
@@ -3418,11 +3419,11 @@
   }
 
   window.winrateMapByCode = {};
-  let winrateRankingSource = 'gemini'; // 'gemini' | 'chatgpt'
+  let winrateRankingSource = 'evolution'; // 'evolution' | 'gemini' | 'chatgpt'
   let winrateActiveTrack = 'momentum';
   const STOCK_NAMES_MAP = {"1101": "台泥", "1102": "亞泥", "1216": "統一", "1301": "台塑", "1303": "南亞", "1326": "台化", "1504": "東元", "1513": "中興電", "1514": "亞力", "1519": "華城", "1528": "恩德", "1590": "亞德客-KY", "1815": "富喬", "2029": "盛餘", "2049": "上銀", "2059": "川湖", "2301": "光寶科", "2303": "聯電", "2308": "台達電", "2317": "鴻海", "2324": "仁寶", "2327": "國巨", "2330": "台積電", "2344": "華邦電", "2345": "智邦", "2356": "英業達", "2357": "華碩", "2368": "金像電", "2376": "技嘉", "2377": "微星", "2379": "瑞昱", "2382": "廣達", "2383": "台光電", "2395": "研華", "2408": "南亞科", "2412": "中華電", "2426": "鼎元", "2454": "聯發科", "2455": "全新", "2467": "志聖", "2478": "大毅", "2481": "強茂", "2486": "一詮", "2492": "華新科", "2603": "長榮", "2609": "陽明", "2615": "萬海", "2727": "王品", "2881": "富邦金", "2882": "國泰金", "2891": "中信金", "3006": "晶豪科", "3008": "大立光", "3017": "奇鋐", "3022": "威強電", "3026": "禾伸堂", "3034": "聯詠", "3035": "智原", "3037": "欣興", "3044": "健鼎", "3055": "蔚華科", "3081": "聯亞", "3105": "穩懋", "3163": "波若威", "3189": "景碩", "3231": "緯創", "3234": "光環", "3264": "欣銓", "3324": "雙鴻", "3362": "先進光", "3363": "上詮", "3374": "精材", "3406": "玉晶光", "3441": "聯一光", "3443": "創意", "3450": "聯鈞", "3491": "昇達科", "3529": "力旺", "3532": "台勝科", "3624": "光頡", "3653": "健策", "3661": "世芯-KY", "3665": "貿聯-KY", "3693": "營邦", "3711": "日月光投控", "4760": "勤凱", "4919": "新唐", "4931": "新盛力", "4938": "和碩", "4958": "臻鼎-KY", "4966": "譜瑞-KY", "4977": "眾達-KY", "5269": "祥碩", "5274": "信驊", "5284": "jpp-KY", "5289": "宜鼎", "5309": "系統電", "5328": "華容", "5347": "世界", "5386": "青雲", "5425": "台半", "5483": "中美晶", "5536": "聖暉", "6125": "廣運", "6147": "頎邦", "6155": "鈞寶", "6173": "信昌電", "6182": "合晶", "6187": "萬潤", "6207": "雷科", "6213": "聯茂", "6214": "精誠", "6217": "中探針", "6223": "旺矽", "6226": "光鼎", "6239": "力成", "6265": "方土昶", "6274": "台燿", "6446": "藥華藥", "6449": "鈺邦", "6488": "環球晶", "6515": "穎崴", "6531": "愛普", "6584": "南俊國際", "6669": "緯穎", "6683": "雍智科技", "6781": "AES-KY", "6805": "富世達", "7769": "鴻勁", "8021": "尖點", "8039": "台虹", "8046": "南電", "8069": "元太", "8150": "南茂", "8227": "巨有科技", "8261": "富鼎", "8299": "群聯", "8358": "金居", "8996": "高力"};
  // 'momentum' | 'defensive'
-  let winrateParsedData = { gemini: null, chatgpt: null };
+  let winrateParsedData = { evolution: null, gemini: null, chatgpt: null };
   let winrateFilterDecision = 'all';
   let winrateSearchQuery = '';
 
@@ -3430,29 +3431,31 @@
     if (forcedSource) winrateRankingSource = forcedSource;
     const container = document.getElementById('ranking-content');
     if (!container) return;
-    container.innerHTML = '<div class="analysis-empty">⏳ 正在載入雙 AI 排行榜資料...</div>';
+    container.innerHTML = '<div class="analysis-empty">⏳ 正在載入 AI 排行榜與覆盤資料...</div>';
     try {
       // 標籤排行直接使用 reports/ 解析出的卡片資料；首次直接開啟排行榜時需先載入。
       if (!Object.keys(window.cardsByCode || {}).length && !Object.keys(reportTagCardsByCode).length) {
         const cardsRes = await fetch('/api/cards').then(response => response.json()).catch(() => null);
         if (cardsRes?.ok) reportTagCardsByCode = cardsRes.cards || {};
       }
-      // 同時取得 Gemini 與 ChatGPT 兩份資料，以便上方呈現 4 榜總覽
-      const [resG, resC] = await Promise.all([
+      // 同時取得 Evolution, Gemini 與 ChatGPT 三份資料
+      const [resE, resG, resC] = await Promise.all([
+        fetch('/api/winrate-ranking-report?source=evolution').then(r => r.json()).catch(() => null),
         fetch('/api/winrate-ranking-report?source=gemini').then(r => r.json()).catch(() => null),
         fetch('/api/winrate-ranking-report?source=chatgpt').then(r => r.json()).catch(() => null)
       ]);
 
+      if (resE && resE.ok) winrateParsedData.evolution = parseDualTrackRankingMd(resE.content, 'evolution');
       if (resG && resG.ok) winrateParsedData.gemini = parseDualTrackRankingMd(resG.content, 'gemini');
       if (resC && resC.ok) winrateParsedData.chatgpt = parseDualTrackRankingMd(resC.content, 'chatgpt');
 
-      const currentData = winrateParsedData[winrateRankingSource];
+      const currentData = winrateParsedData[winrateRankingSource] || winrateParsedData.gemini || winrateParsedData.chatgpt;
       if (!currentData) {
         container.innerHTML = `
           <div class="analysis-empty">
             <div style="font-size:32px; margin-bottom:10px;">🏆</div>
-            <div style="font-weight:700; color:#fff; font-size:16px; margin-bottom:6px;">尚無 ${winrateRankingSource === 'gemini' ? 'Gemini' : 'ChatGPT'} 排行榜資料</div>
-            <button type="button" class="btn primary" onclick="triggerScannerRun('${winrateRankingSource}');" style="padding:6px 16px;">🚀 執行 ${winrateRankingSource === 'gemini' ? 'Gemini Scanner' : 'ChatGPT Scanner'} 產生</button>
+            <div style="font-weight:700; color:#fff; font-size:16px; margin-bottom:6px;">尚無排行榜資料</div>
+            <button type="button" class="btn primary" onclick="triggerScannerRun('${winrateRankingSource}');" style="padding:6px 16px;">🚀 執行掃描產生</button>
           </div>
         `;
         return;
@@ -3464,7 +3467,12 @@
   }
 
   function triggerScannerRun(source){
-    if (source === 'gemini') {
+    if (source === 'evolution') {
+      fetch('/api/batch-scanner-evolution', { method: 'POST' }).then(() => {
+        alert('👑 AI 獨有實戰勝率進化引擎已在背景啟動！約 2~3 秒後自動載入最新榜單！');
+        setTimeout(() => loadWinrateRankingReport('evolution'), 2500);
+      });
+    } else if (source === 'gemini') {
       fetch('/api/batch-scanner-gemini', { method: 'POST' }).then(() => {
         alert('🚀 Gemini 掃描器已在背景啟動，約 3~5 秒後請點擊重新整理！');
         setTimeout(() => loadWinrateRankingReport('gemini'), 4000);
@@ -3474,9 +3482,42 @@
     }
   }
 
+  async function showEvolutionLog(){
+    try {
+      const res = await fetch('/api/evolution-log').then(r => r.json());
+      if (!res || !res.ok) {
+        alert(res?.error || '尚無覆盤日記資料');
+        return;
+      }
+      const existing = document.getElementById('evolution-modal');
+      if (existing) existing.remove();
+
+      const modal = document.createElement('div');
+      modal.id = 'evolution-modal';
+      modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.78); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px);';
+      modal.innerHTML = `
+        <div style="background:#11161f; border:2px solid #fbbf24; border-radius:12px; width:92%; max-width:900px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 0 30px rgba(251,191,36,0.35); overflow:hidden;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1.5px solid rgba(255,255,255,0.12); background:rgba(251,191,36,0.08);">
+            <div style="font-size:18px; font-weight:900; color:#fde047; display:flex; align-items:center; gap:8px;">
+              <span>📖</span> AI 量化實戰每日覆盤與自我進化日記 (evolution_log.md)
+            </div>
+            <button type="button" class="btn" onclick="document.getElementById('evolution-modal').remove();" style="padding:4px 12px; font-weight:800; cursor:pointer;">✕ 關閉</button>
+          </div>
+          <div style="padding:18px 22px; overflow-y:auto; font-size:15px; line-height:1.7; color:#e2e8f0; white-space:pre-wrap; font-family:ui-monospace,SFMono-Regular,Consolas,monospace;">
+${escapeHtml(res.content)}
+          </div>
+        </div>
+      `;
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+      document.body.appendChild(modal);
+    } catch(e) {
+      alert('載入覆盤日記失敗: ' + e.message);
+    }
+  }
+
   function parseDualTrackRankingMd(mdText, source){
     const lines = (mdText || '').split(/\r?\n/);
-    let title = source === 'gemini' ? '📊 Gemini 雙軌動能排行榜' : '📊 ChatGPT 雙軌量化排行榜';
+    let title = source === 'evolution' ? '👑 AI 獨有實戰勝率榜' : (source === 'gemini' ? '📊 Gemini 雙軌動能排行榜' : '📊 ChatGPT 雙軌量化排行榜');
     let scanDate = '';
     const momentumItems = [];
     const defensiveItems = [];
@@ -3497,10 +3538,10 @@
         continue;
       }
 
-      if (line.includes('【暴漲動能型') || line.includes('攻擊型') || line.includes('攻擊榜')) {
+      if (line.includes('【暴漲動能型') || line.includes('攻擊型') || line.includes('攻擊榜') || line.includes('實戰勝率榜') || line.includes('起漲榜') || line.includes('AI 獨有')) {
         currentSection = 'momentum';
         continue;
-      } else if (line.includes('【穩健防守型') || line.includes('穩健型') || line.includes('穩健榜')) {
+      } else if (line.includes('【穩健防守型') || line.includes('穩健型') || line.includes('穩健榜') || line.includes('穩健防守輔助序列')) {
         currentSection = 'defensive';
         continue;
       } else if (line.startsWith('## ') && !line.includes('TOP 10') && !line.includes('Top 10')) {
@@ -3570,8 +3611,10 @@
     });
 
     const isGemini = source === 'gemini';
+    const isEvolution = source === 'evolution';
 
-    // 4 大總榜快速對照資料
+    // 5 大總榜快速對照資料
+    const eMomo = winrateParsedData.evolution?.momentumItems || [];
     const gMomo = winrateParsedData.gemini?.momentumItems || [];
     const gDef = winrateParsedData.gemini?.defensiveItems || [];
     const cMomo = winrateParsedData.chatgpt?.momentumItems || [];
@@ -3706,44 +3749,48 @@
         <div style="margin-bottom:16px; background:#11161f; border:1.5px solid rgba(125,180,255,0.3); border-radius:12px; padding:12px 14px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
             <div style="font-size:17px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
-              <span style="font-size:20px;">🏆</span> 雙 AI 四大榜單全景一覽 (點擊股票直接開啟專業看盤)
+              <span style="font-size:20px;">🏆</span> 五大實戰排行榜全景一覽 (點擊股票直接開啟專業看盤)
             </div>
             <div style="font-size:14px; color:var(--text-dim);">
               資料截止日：<strong style="color:#93c5fd; font-size:15px;">${escapeHtml(scanDate || '最新')}</strong>
             </div>
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            ${renderMiniOverviewCol('👑 AI 獨有勝率 TOP 10', '👑', '#fbbf24', eMomo, 'evolution', 'momentum')}
             ${renderMiniOverviewCol('Gemini 暴漲動能 TOP 10', '🚀', '#f87171', gMomo, 'gemini', 'momentum')}
             ${renderMiniOverviewCol('Gemini 穩健防守 TOP 10', '🛡️', '#4ade80', gDef, 'gemini', 'defensive')}
             ${renderMiniOverviewCol('ChatGPT 攻擊型 TOP 10', '⚡', '#f97316', cMomo, 'chatgpt', 'momentum')}
             ${renderMiniOverviewCol('ChatGPT 穩健型 TOP 10', '🌱', '#38bdf8', cDef, 'chatgpt', 'defensive')}
-            ${renderTagLeaderboardOverview(tagLeaderboard)}
           </div>
         </div>
 
-        <!-- 4 榜一鍵直達切換器 (整合為同一行) -->
-        <div class="ranking-detail-toolbar">
-          <div class="ranking-detail-label" style="font-size:16px; font-weight:800; color:var(--text-dim); margin-right:4px;">🤖 詳細報表：</div>
-          <div class="ranking-track-actions">
-            <button type="button" class="btn" style="padding:6px 12px; font-size:16px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${isGemini && isMomo ? '#f87171' : 'var(--border)'}; background:${isGemini && isMomo ? 'rgba(239,68,68,0.22)' : 'var(--card-bg)'}; color:${isGemini && isMomo ? '#fca5a5' : 'var(--text)'};" onclick="winrateRankingSource='gemini'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
-              <span>🚀</span> ✨ Gemini 暴漲進攻
+        <!-- 榜單一鍵直達切換器 (同一排單行緊湊呈現) -->
+        <div class="ranking-detail-toolbar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; gap:6px; margin-bottom:10px;">
+          <div class="ranking-track-actions" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap; overflow-x:auto;">
+            <button type="button" class="btn" style="padding:5px 10px; font-size:14.5px; font-weight:900; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${isEvolution ? '#fbbf24' : 'rgba(250,204,21,0.35)'}; background:${isEvolution ? 'linear-gradient(135deg, rgba(251,191,36,0.25), rgba(168,85,247,0.25))' : 'rgba(251,191,36,0.08)'}; color:${isEvolution ? '#fde047' : '#fef08a'}; box-shadow:${isEvolution ? '0 0 8px rgba(251,191,36,0.35)' : 'none'};" onclick="winrateRankingSource='evolution'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
+              <span>👑</span> AI 獨有起漲榜
+            </button>
+
+            <button type="button" class="btn" style="padding:5px 9px; font-size:14px; font-weight:800; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${isGemini && isMomo ? '#f87171' : 'var(--border)'}; background:${isGemini && isMomo ? 'rgba(239,68,68,0.22)' : 'var(--card-bg)'}; color:${isGemini && isMomo ? '#fca5a5' : 'var(--text)'};" onclick="winrateRankingSource='gemini'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
+              <span>🚀</span> Gemini 暴漲進攻
             </button>
             
-            <button type="button" class="btn" style="padding:6px 12px; font-size:16px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${isGemini && !isMomo ? '#4ade80' : 'var(--border)'}; background:${isGemini && !isMomo ? 'rgba(34,197,94,0.22)' : 'var(--card-bg)'}; color:${isGemini && !isMomo ? '#86efac' : 'var(--text)'};" onclick="winrateRankingSource='gemini'; winrateActiveTrack='defensive'; renderWinrateRankingUI();">
-              <span>🛡️</span> ✨ Gemini 穩健防守
+            <button type="button" class="btn" style="padding:5px 9px; font-size:14px; font-weight:800; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${isGemini && !isMomo ? '#4ade80' : 'var(--border)'}; background:${isGemini && !isMomo ? 'rgba(34,197,94,0.22)' : 'var(--card-bg)'}; color:${isGemini && !isMomo ? '#86efac' : 'var(--text)'};" onclick="winrateRankingSource='gemini'; winrateActiveTrack='defensive'; renderWinrateRankingUI();">
+              <span>🛡️</span> Gemini 穩健防守
             </button>
             
-            <button type="button" class="btn" style="padding:6px 12px; font-size:16px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${!isGemini && isMomo ? '#f97316' : 'var(--border)'}; background:${!isGemini && isMomo ? 'rgba(249,115,22,0.22)' : 'var(--card-bg)'}; color:${!isGemini && isMomo ? '#fdba74' : 'var(--text)'};" onclick="winrateRankingSource='chatgpt'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
-              <span>⚡</span> 🟢 ChatGPT 攻擊型
+            <button type="button" class="btn" style="padding:5px 9px; font-size:14px; font-weight:800; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${!isGemini && !isEvolution && isMomo ? '#f97316' : 'var(--border)'}; background:${!isGemini && !isEvolution && isMomo ? 'rgba(249,115,22,0.22)' : 'var(--card-bg)'}; color:${!isGemini && !isEvolution && isMomo ? '#fdba74' : 'var(--text)'};" onclick="winrateRankingSource='chatgpt'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
+              <span>⚡</span> ChatGPT 攻擊型
             </button>
             
-            <button type="button" class="btn" style="padding:6px 12px; font-size:16px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1.5px solid ${!isGemini && !isMomo ? '#38bdf8' : 'var(--border)'}; background:${!isGemini && !isMomo ? 'rgba(56,189,248,0.22)' : 'var(--card-bg)'}; color:${!isGemini && !isMomo ? '#7dd3fc' : 'var(--text)'};" onclick="winrateRankingSource='chatgpt'; winrateActiveTrack='defensive'; renderWinrateRankingUI();">
-              <span>🌱</span> 🟢 ChatGPT 穩健型
+            <button type="button" class="btn" style="padding:5px 9px; font-size:14px; font-weight:800; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${!isGemini && !isEvolution && !isMomo ? '#38bdf8' : 'var(--border)'}; background:${!isGemini && !isEvolution && !isMomo ? 'rgba(56,189,248,0.22)' : 'var(--card-bg)'}; color:${!isGemini && !isEvolution && !isMomo ? '#7dd3fc' : 'var(--text)'};" onclick="winrateRankingSource='chatgpt'; winrateActiveTrack='defensive'; renderWinrateRankingUI();">
+              <span>🌱</span> ChatGPT 穩健型
             </button>
           </div>
           
-          <div class="ranking-refresh-action" style="display:flex; gap:8px;">
-            <button type="button" class="btn" style="padding:6px 12px; font-size:14.5px; font-weight:750;" onclick="triggerScannerRun('${source}');">🔄 重新執行 ${isGemini ? 'Gemini 掃描' : 'ChatGPT Scanner'}</button>
+          <div class="ranking-refresh-action" style="display:flex; gap:6px; flex-shrink:0;">
+            <button type="button" class="btn" style="padding:5px 10px; font-size:13.5px; font-weight:850; border:1.5px solid #fbbf24; color:#fde047; background:rgba(251,191,36,0.12); white-space:nowrap;" onclick="showEvolutionLog();">📖 覆盤日記</button>
+            <button type="button" class="btn" style="padding:5px 10px; font-size:13.5px; font-weight:750; white-space:nowrap;" onclick="triggerScannerRun('${source}');">🔄 重新執行 ${isEvolution ? 'AI 進化' : (isGemini ? 'Gemini' : 'ChatGPT')}</button>
           </div>
         </div>
 
@@ -4007,7 +4054,12 @@
   }
 
   async function refreshPatternData(){
-    if (patternViewerInitialized) await PatternViewer.refresh();
+    if (patternViewerInitialized && typeof PatternViewer !== 'undefined' && typeof PatternViewer.refresh === 'function') {
+      await PatternViewer.refresh();
+    }
+    if (reportsPatternViewer && typeof reportsPatternViewer.refresh === 'function') {
+      await reportsPatternViewer.refresh();
+    }
   }
 
   async function loadWinrateMap(){
@@ -5213,7 +5265,7 @@
       if (parts.length) {
         return parts.map(label => {
           let tone = 'neutral';
-          if (/天量|倒貨|頂背離|死亡交叉|死叉|退潮|阻力牆|防壓回/.test(label)) tone = 'positive';
+          if (/天量|倒貨|頂背離|死亡交叉|死叉|退潮|阻力牆|防壓回|處置/.test(label)) tone = 'positive';
           else if (/突破|黃金交叉|金叉|窒息量|洗淨/.test(label)) tone = 'mixed';
           else if (/滾量|量價齊揚|主升|吞噬/.test(label)) tone = 'negative';
           else if (/溫和|增量|放量/.test(label)) tone = 'cyan';
@@ -5405,6 +5457,14 @@
     await loadTree();
     await loadList();
     await refreshPatternData();
+
+    // 若有成功產出個股，自動切換至該股票報表
+    try {
+      const firstSuccess = (data && data.results || []).find(r => r.ok && r.ticker);
+      if (firstSuccess) {
+        await selectStockGlobal(firstSuccess.ticker);
+      }
+    } catch (_e) {}
   }
 
   async function updateCategory(path, name){

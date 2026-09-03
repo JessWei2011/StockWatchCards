@@ -5,29 +5,28 @@
     "name": "旺矽",
     "group": "探針",
     "market": "TWO",
-    "date": "2026-09-02",
+    "date": "2026-09-03",
     "isStarred": false
   },
   "latestAnalysis": {
-    "date": "2026-09-02",
-    "current": "5290.00",
+    "date": "2026-09-03",
+    "current": "5045.00",
     "decision": "觀望 / 逢低佈局",
     "winRate": "45%",
-    "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
+    "pattern": "高檔盤整/區間震盪",
     "confidence": "完全確認",
-    "entry": "5184.20",
+    "entry": "4944.10",
     "stop": "4730.00",
     "resist": "7673.8",
     "target": "11169.02",
     "bullish": [
-      "K線：💡 5MA轉仰角 (翻揚轉強)",
       "KD：⚪ KD 多空中性震盪"
     ],
     "bearish": [
-      "K線：⚠️ 跌破10MA (短線轉弱)",
+      "K線：⚠️ 跌破5MA (轉弱回測)",
       "成交量：⚠️ 臨前高天量阻力牆 (量能不足防壓回)",
-      "RSI：RSI(14): 44.3 弱勢整理",
-      "MACD：💡 MACD 綠柱收斂 (空方力道減弱/低檔醞釀)",
+      "RSI：⚡ RSI 短線死亡交叉",
+      "MACD：📉 MACD 空方弱勢整理 (零軸下探底)",
       "籌碼：📉 法人籌碼退潮 (連日調節)",
       "風控停損：4730.00 元"
     ],
