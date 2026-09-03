@@ -226,11 +226,12 @@ def calculate_evolution_score(stock_info):
         'stop_loss': stop_loss,
         'target_price': target_price,
         'rr_ratio': rr_ratio,
+        'above_5ma': bool(price >= ma5.iloc[-1]),
         'date': kline[-1].get('date', '最新')
     }
 
 
-def generate_evolution_log(top10_list, as_of_date):
+def generate_evolution_log(selected_list, as_of_date):
     """
     撰寫並累積每日覆盤檢討書 (evolution_log.md)
     """
@@ -238,6 +239,10 @@ def generate_evolution_log(top10_list, as_of_date):
     existing_content = ""
     if log_file.exists():
         existing_content = log_file.read_text(encoding="utf-8", errors="ignore")
+
+    count = len(selected_list)
+    ranking_title = f"【AI 獨有實戰勝率榜】（嚴選 {count} 檔・寧缺毋濫）" if count < 10 else "【AI 獨有實戰勝率榜 TOP 10】"
+    ranking_subtitle = f"> 實戰鐵律：起漲賺錢、勝率第一。今日大盤逆風，經高規格起漲檢驗僅 {count} 檔完全合格，堅持寧缺毋濫，絕不濫竽充數硬湊 10 檔！" if count < 10 else "> 唯一目標：起漲賺錢、勝率高、風報比優異。"
 
     today_review_section = f"""## 📅 【實戰覆盤檢討書】— {as_of_date} 盤後反思與重大演化記錄
 
@@ -262,25 +267,26 @@ def generate_evolution_log(top10_list, as_of_date):
   1. 🚫 **開高走低長黑一票否決**：實體跌幅 > 2.2% 且收全日低檔 30% 區間者，代表主力拉高出貨，一票否決！
   2. ⚠️ **跌破 5MA 重扣 25 分**：短期攻擊線失守代表處於下壓修正期，喪失立即起漲優勢。
   3. ⚡ **動態死叉折返重扣 20 分**：KD / RSI 死叉向下修正給予嚴格扣分。
+  4. 💎 **堅持「寧缺毋濫」動態榜單**：如果盤面經過嚴格檢驗後不足 10 檔，有多少合格就列多少檔，絕不為了填滿 10 檔而硬塞次級或回檔股！
 
 ---
 
-### 三、演算法今日四大進化鐵律（已全面注入引擎）
+### 三、演算法今日五大進化鐵律（已全面注入引擎）
 1. 🔒 **處置股流動性折價**：處置股全面一票否決，嚴禁選入起漲榜。
 2. 🚫 **過熱正乖離硬門檻**：月乖離超過 16% 或短線噴出過度者一票否決，拒當最後一隻老鼠。
 3. 📉 **長黑摜壓做頭一票否決**：開高走低大黑K一票否決，徹底杜絕華碩型假突破。
 4. 🎯 **鎖定「真起漲發動點」**：嚴格篩選站穩 5MA、剛放量換手、月線甜蜜區、逆勢收紅之實戰標的。
+5. 💎 **寧缺毋濫・動態呈現**：合格幾檔就列幾檔，不硬湊滿 10 檔，確保入選每一檔皆具備極高勝率！
 
 ---
 
-### 四、最新修正【AI 獨有實戰勝率榜 TOP 10】出爐
-> 唯一目標：起漲賺錢、勝率高、風報比優異。
+### 四、最新修正{ranking_title}出爐
+{ranking_subtitle}
 
 | 名次 | 代號 | 股票名稱 | 類群 | 收盤價 | 今日漲跌 | 5MA斜率 | 月乖離 | 實戰評分 | 核心起漲優勢 | 建議防守點 | 目標價 (R/R) |
 |:---:|:---:|:---|:---|---:|---:|---:|---:|---:|:---|---:|---:|
-
 """
-    for i, r in enumerate(top10_list, 1):
+    for i, r in enumerate(selected_list, 1):
         feat = "；".join(r['reasons'][:3])
         today_review_section += f"| **{i}** | `{r['code']}` | **{r['name']}** | {r['category']} | {r['price']:.2f} | **{r['today_pct']:+5.2f}%** | +{r['s5']:.2f}% | +{r['bias_20']:.1f}% | **{r['score']}** | {feat} | {r['stop_loss']:.2f} 元 | {r['target_price']:.2f} 元 ({r['rr_ratio']}x) |\n"
 
@@ -303,31 +309,35 @@ def generate_evolution_log(top10_list, as_of_date):
     print(f"📝 每日覆盤檢討書已更新至：{log_file.name}")
 
 
-def write_evolution_ranking_md(top10_list, as_of_date):
+def write_evolution_ranking_md(selected_list, defensive_list, as_of_date):
     """
-    輸出供網頁看板整合讀取的排行榜 Markdown
+    輸出供網頁看板整合讀取的排行榜 Markdown (支援動態數量，寧缺毋濫)
     """
+    count = len(selected_list)
+    sec_title = f"## 👑 【AI 獨有實戰勝率榜】（嚴選 {count} 檔・寧缺毋濫）" if count < 10 else "## 👑 【AI 獨有實戰勝率榜 TOP 10】（起漲致勝・精準打擊）"
+    sec_sub = f"> 依據今日盤面品質，全市場經高規格起漲檢驗後僅 {count} 檔完全符合標準，堅守「寧缺毋濫」實戰鐵律，不濫竽充數硬湊 10 檔！" if count < 10 else "> 嚴格排除處置流動性陷阱、排除高檔正乖離過熱；專挑剛脫離成本區、均線剛發動突破、下檔支撐堅固、法人護體的實戰起漲標的。"
+
     lines = [
         '# 👑 台股 AI 獨有實戰勝率榜 (AI Self-Evolving Master Watchlist)', '',
         f'> 資料截止日：{as_of_date}。以真實收盤結果為損失函數反饋演化，單一目標：起漲賺錢、勝率高、風報比優異。', '',
         '---', '',
-        '## 👑 【AI 獨有實戰勝率榜 TOP 10】（起漲致勝・精準打擊）',
-        '> 嚴格排除處置流動性陷阱、排除高檔正乖離過熱；專挑剛脫離成本區、均線剛發動突破、下檔支撐堅固、法人護體的實戰起漲標的。', '',
+        sec_title,
+        sec_sub, '',
         '| 排名 | 股票代號 | 股票名稱 | 類群 | 收盤價 | 5MA斜率 | RSI(14) | 成交量比 | 實戰評分 | 核心起漲勝率特徵 |',
         '|:---:|:---:|:---|:---|---:|---:|---:|---:|---:|:---|'
     ]
-    for i, r in enumerate(top10_list, 1):
+    for i, r in enumerate(selected_list, 1):
         feat = "；".join(r['reasons'][:3])
         lines.append(f"| **{i}** | `{r['code']}` | **{r['name']}** | {r['category']} | {r['price']:.2f} | +{r['s5']:.2f}% | {r['rsi14']} | {r['vol_ratio']:.1f}x | **{r['score']}** | {feat} |")
 
     lines.extend([
         '', '---', '',
-        '## 🛡️ 【穩健防守輔助序列 TOP 10】',
+        '## 🛡️ 【穩健防守輔助序列】',
         '> 供大盤重度拉回時搭配參考之超低乖離防守池。', '',
         '| 排名 | 股票代號 | 股票名稱 | 類群 | 收盤價 | 5MA斜率 | 月乖離率 | 法人買超 | 穩健評分 | 核心防守特徵 |',
         '|:---:|:---:|:---|:---|---:|---:|---:|---:|---:|:---|'
     ])
-    for i, r in enumerate(top10_list, 1):
+    for i, r in enumerate(defensive_list, 1):
         feat = f"防守點{r['stop_loss']}元(風報比{r['rr_ratio']}x)；月乖離+{r['bias_20']}%"
         lines.append(f"| **{i}** | `{r['code']}` | **{r['name']}** | {r['category']} | {r['price']:.2f} | +{r['s5']:.2f}% | +{r['bias_20']:.1f}% | 護體 | **{r['score']}** | {feat} |")
 
@@ -364,17 +374,28 @@ def main():
             candidates.append(res)
 
     ranked = sorted(candidates, key=lambda x: x['score'], reverse=True)
-    top10 = ranked[:10]
 
-    print(f"\n📂 解析 {len(unique_infos)} 檔個股，經硬性過熱與處置過濾後，符合起漲條件候選股共 {len(candidates)} 檔。")
-    print("\n👑 【AI 獨有實戰勝率榜 TOP 10】")
+    # 💎 寧缺毋濫實戰規則：分數必須 >= 75.0 且實質站穩 5MA 攻擊線，最高取前 10 檔
+    MIN_SURGE_QUALIFIED_SCORE = 75.0
+    qualified_surge_list = [r for r in ranked if r['score'] >= MIN_SURGE_QUALIFIED_SCORE and r.get('above_5ma', True)][:10]
+    
+    # 若盤面極端惡劣完全無任何達標股，則取前 3 名防守標的
+    if not qualified_surge_list:
+        qualified_surge_list = ranked[:3]
+
+    defensive_pool = ranked[:10]
+
+    count = len(qualified_surge_list)
+    print(f"\n📂 解析 {len(unique_infos)} 檔個股，符合起漲資格候選股共 {len(candidates)} 檔。")
+    print(f"💎 執行「寧缺毋濫」實戰過濾：完全達標（評分>=75 且 站穩5MA）共 {count} 檔（不硬湊滿 10 檔）。")
+    print(f"\n👑 【AI 獨有實戰勝率榜】（嚴選 {count} 檔）")
     print(f"{'名次':<4} {'代號':<6} {'名稱':<8} {'類群':<8} {'收盤價':<9} {'今日漲跌':<10} {'5MA斜率':<10} {'月乖離':<8} {'評分'}")
     print("-" * 75)
-    for i, r in enumerate(top10, 1):
+    for i, r in enumerate(qualified_surge_list, 1):
         print(f"#{i:<3} {r['code']:<6} {r['name']:<8} {r['category']:<8} {r['price']:<9.2f} {r['today_pct']:+6.2f}%    +{r['s5']:<9.2f}% +{r['bias_20']:<7.1f}% {r['score']}")
 
-    write_evolution_ranking_md(top10, as_of_date)
-    generate_evolution_log(top10, as_of_date)
+    write_evolution_ranking_md(qualified_surge_list, defensive_pool, as_of_date)
+    generate_evolution_log(qualified_surge_list, as_of_date)
 
     t_cost = time.perf_counter() - t_start
     print(f"\n⏱️ 運算與覆盤演化總耗時：{t_cost:.2f} 秒")

@@ -3544,7 +3544,7 @@ ${escapeHtml(res.content)}
       } else if (line.includes('【穩健防守型') || line.includes('穩健型') || line.includes('穩健榜') || line.includes('穩健防守輔助序列')) {
         currentSection = 'defensive';
         continue;
-      } else if (line.startsWith('## ') && !line.includes('TOP 10') && !line.includes('Top 10')) {
+      } else if (line.startsWith('## ') && !line.includes('TOP') && !line.includes('Top') && !line.includes('勝率榜') && !line.includes('嚴選')) {
         currentSection = 'other';
         continue;
       }
@@ -3756,7 +3756,7 @@ ${escapeHtml(res.content)}
             </div>
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            ${renderMiniOverviewCol('👑 AI 獨有勝率 TOP 10', '👑', '#fbbf24', eMomo, 'evolution', 'momentum')}
+            ${renderMiniOverviewCol(eMomo.length >= 10 ? '👑 AI 獨有勝率 TOP 10' : `👑 AI 獨有勝率榜 (${eMomo.length}檔嚴選)`, '👑', '#fbbf24', eMomo, 'evolution', 'momentum')}
             ${renderMiniOverviewCol('Gemini 暴漲動能 TOP 10', '🚀', '#f87171', gMomo, 'gemini', 'momentum')}
             ${renderMiniOverviewCol('Gemini 穩健防守 TOP 10', '🛡️', '#4ade80', gDef, 'gemini', 'defensive')}
             ${renderMiniOverviewCol('ChatGPT 攻擊型 TOP 10', '⚡', '#f97316', cMomo, 'chatgpt', 'momentum')}
