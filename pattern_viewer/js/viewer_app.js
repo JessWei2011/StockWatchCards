@@ -34,7 +34,27 @@
     }
 
     q(selector) {
-      return this.root.querySelector(selector);
+      if (!this.root) return null;
+      const aliases = {
+        '#stockSelect': '#stockSelect, .stock-selector',
+        '#stockSearchInput': '#stockSearchInput, .stock-search-input',
+        '#stockSearchSuggestions': '#stockSearchSuggestions, .stock-search-suggestions',
+        '#stockSearchBtn': '#stockSearchBtn, .stock-search-btn',
+        '#toggleMa': '#toggleMa, .toggle-ma',
+        '#toggleBoll': '#toggleBoll, .toggle-boll',
+        '#toggleFullscreenChart': '#toggleFullscreenChart, .btn-fullscreen-toggle',
+        '#chartTitle': '#chartTitle, .chart-title',
+        '#chartDisposalBadge': '#chartDisposalBadge, .chart-disposal-badge',
+        '#patternEmptyState': '#patternEmptyState, .empty-state',
+        '#patternEmptyTitle': '#patternEmptyTitle, .empty-title',
+        '#patternEmptyDetail': '#patternEmptyDetail, .empty-detail',
+        '#echart-main': '#echart-main, .chart-canvas',
+        '#patternInstContainer': '#patternInstContainer, .inst-mini-chart',
+        '#patternInstTableWrapper': '#patternInstTableWrapper, .pattern-inst-table-wrapper',
+        '#patternStarBtn': '#patternStarBtn, .pattern-star-btn'
+      };
+      const resolved = aliases[selector] || selector;
+      return this.root.querySelector(resolved);
     }
 
     async init() {
@@ -674,7 +694,10 @@
     showEmpty(title, detail, destroyChart = true) {
       const chart = this.q('#echart-main');
       const empty = this.q('#patternEmptyState');
-      if (destroyChart) ChartEngine.destroy();
+      if (destroyChart) {
+        if (chart) ChartEngine.destroy(chart);
+        else ChartEngine.destroy();
+      }
       if (chart) chart.hidden = true;
       if (empty) empty.hidden = false;
       const titleEl = this.q('#patternEmptyTitle');
@@ -764,13 +787,19 @@
       badge.title = '';
       if (!info) return;
 
+      const shortPeriod = (typeof window.formatDisposalPeriodShort === 'function')
+        ? window.formatDisposalPeriodShort(info)
+        : ((window.parent && typeof window.parent.formatDisposalPeriodShort === 'function')
+          ? window.parent.formatDisposalPeriodShort(info)
+          : '');
+
       if (info.type === 'disposal' && info.status === 'upcoming') {
         badge.classList.add('upcoming');
-        badge.textContent = '🚨 明日進處置';
+        badge.textContent = shortPeriod ? `🚨 明日進處置 ${shortPeriod}` : '🚨 明日進處置';
         badge.title = info.period_raw ? `已公告明日進處置（${info.period_raw}）` : '已公告明日進處置';
       } else if (info.type === 'disposal' && info.status === 'active') {
         badge.classList.add('active');
-        badge.textContent = '🔒 處置中';
+        badge.textContent = shortPeriod ? `🔒 處置中 ${shortPeriod}` : '🔒 處置中';
         badge.title = info.period_raw ? `目前處置中（${info.period_raw}）` : '目前處置中';
       } else {
         badge.classList.add('notice');
@@ -787,7 +816,9 @@
     }
 
     resize() {
-      ChartEngine.resize();
+      const chart = this.q('#echart-main');
+      if (chart) ChartEngine.resize(chart);
+      else ChartEngine.resize();
     }
 
     destroy() {
@@ -795,12 +826,19 @@
       this.requestSerial += 1;
       this.eventController.abort();
       if (this.resizeObserver) this.resizeObserver.disconnect();
-      ChartEngine.destroy();
+      const chart = this.q('#echart-main');
+      if (chart) ChartEngine.destroy(chart);
+      else ChartEngine.destroy();
     }
   }
 
   let activeInstance = null;
+  window.PatternViewerApp = PatternViewerApp;
   window.PatternViewer = {
+    App: PatternViewerApp,
+    createApp(root, options = {}) {
+      return new PatternViewerApp(root, options);
+    },
     async init(root = '.pattern-viewer', options = {}) {
       if (activeInstance) activeInstance.destroy();
       activeInstance = new PatternViewerApp(root, options);

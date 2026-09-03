@@ -5,9 +5,24 @@
  */
 
 window.ChartEngine = {
-  chartInstance: null,
-  _resizeHandler: null,
-  _lastShowMa: null,
+  instances: new Map(),
+  activeDom: null,
+  _globalResizeBound: false,
+
+  get chartInstance() {
+    if (this.activeDom && this.instances.has(this.activeDom)) {
+      const state = this.instances.get(this.activeDom);
+      if (state && state.chartInstance && !state.chartInstance.isDisposed()) {
+        return state.chartInstance;
+      }
+    }
+    for (const state of this.instances.values()) {
+      if (state.chartInstance && !state.chartInstance.isDisposed()) {
+        return state.chartInstance;
+      }
+    }
+    return null;
+  },
 
   /**
    * Initialize or update the 5-pane chart
@@ -57,20 +72,30 @@ window.ChartEngine = {
       parentWidth: parentW
     });
 
-    if (this.chartInstance && this.chartInstance.getDom() !== dom) {
-      this.destroy();
-    }
-
-    if (!this.chartInstance || this.chartInstance.isDisposed()) {
-      this.chartInstance = echarts.init(dom, 'dark', {
+    this.activeDom = dom;
+    let state = this.instances.get(dom);
+    if (!state || !state.chartInstance || state.chartInstance.isDisposed()) {
+      const chartInstance = echarts.init(dom, 'dark', {
         width: domWidth,
         height: domHeight
       });
-      this._attachZoomFix(dom);
-      this._resizeHandler = () => this.resize();
-      window.addEventListener('resize', this._resizeHandler);
+      const zoomCleanup = this._attachZoomFix(dom);
+      state = {
+        chartInstance,
+        zoomCleanup,
+        lastStockKey: null,
+        lastShowMa: null,
+        lastShowBoll: null,
+        axisPointerHandler: null,
+        hudMouseLeaveBound: false
+      };
+      this.instances.set(dom, state);
+      if (!this._globalResizeBound) {
+        this._globalResizeBound = true;
+        window.addEventListener('resize', () => this.resize());
+      }
     } else {
-      this.chartInstance.resize({
+      state.chartInstance.resize({
         width: domWidth,
         height: domHeight
       });
@@ -82,15 +107,15 @@ window.ChartEngine = {
     const DEFAULT_ZOOM_DAYS = 20;
     const total = stockData.dates.length;
     const stockKey = `${stockData.title}|${total}`;
-    const isSameStock = this._lastStockKey === stockKey;
+    const isSameStock = state.lastStockKey === stockKey;
     const showShortMa = displayToggles.showMa !== false;
     const showBoll = displayToggles.showBoll !== false;
-    const maToggleChanged = isSameStock && this._lastShowMa !== null && this._lastShowMa !== showShortMa;
-    const bollToggleChanged = isSameStock && this._lastShowBoll !== null && this._lastShowBoll !== showBoll;
+    const maToggleChanged = isSameStock && state.lastShowMa !== null && state.lastShowMa !== showShortMa;
+    const bollToggleChanged = isSameStock && state.lastShowBoll !== null && state.lastShowBoll !== showBoll;
     let zoomStart, zoomEnd;
     let prevLegendSelected = null;
     if (isSameStock) {
-      const prevOption = this.chartInstance.getOption();
+      const prevOption = state.chartInstance.getOption();
       const prevZoom = prevOption && prevOption.dataZoom && prevOption.dataZoom[0];
       if (prevZoom) { zoomStart = prevZoom.start; zoomEnd = prevZoom.end; }
       if (prevOption && prevOption.legend && prevOption.legend[0] && prevOption.legend[0].selected) {
@@ -103,9 +128,9 @@ window.ChartEngine = {
         ? Math.max(0, Math.round(((total - DEFAULT_ZOOM_DAYS) / total) * 100))
         : 0;
     }
-    this._lastStockKey = stockKey;
-    this._lastShowMa = showShortMa;
-    this._lastShowBoll = showBoll;
+    state.lastStockKey = stockKey;
+    state.lastShowMa = showShortMa;
+    state.lastShowBoll = showBoll;
 
     const {
       dates,
@@ -528,6 +553,201 @@ window.ChartEngine = {
           yAxisIndex: 4,
           data: kList,
           smooth: true,
+xAxisIndex: 0,
+          yAxisIndex: 0,
+          data: stockData.ma10 || [],
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#3b82f6', width: 1.5 }
+        },
+        // 1.2 MA20 (Grid 0)
+        {
+          name: 'MA20',
+          type: 'line',
+          xAxisIndex: 0,
+          yAxisIndex: 0,
+          data: stockData.ma20 || [],
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#ec4899', width: 1.5 }
+        },
+        // 1.3 MA60 (Grid 0)
+        {
+          name: 'MA60',
+          type: 'line',
+          xAxisIndex: 0,
+          yAxisIndex: 0,
+          data: stockData.ma60 || [],
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#10b981', width: 1.5 }
+        },
+        // 1.4 MA120 (Grid 0)
+        {
+          name: 'MA120',
+          type: 'line',
+          xAxisIndex: 0,
+          yAxisIndex: 0,
+          data: stockData.ma120 || [],
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#8b5cf6', width: 1.5 }
+        },
+        // 2. BOLL Upper (Grid 0)
+        {
+          name: 'BOLL上軌',
+          type: 'line',
+          xAxisIndex: 0,
+          yAxisIndex: 0,
+          data: bollUpper,
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#a855f7', width: 1, type: 'dashed' }
+        },
+        // 3. BOLL Lower (Grid 0)
+        {
+          name: 'BOLL下軌',
+          type: 'line',
+          xAxisIndex: 0,
+          yAxisIndex: 0,
+          data: bollLower,
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#a855f7', width: 1, type: 'dashed' }
+        },
+
+        // 5. Pane 1: Volume (Grid 1)
+        {
+          name: '成交量',
+          type: 'bar',
+          xAxisIndex: 1,
+          yAxisIndex: 1,
+          data: volumes.map((v, i) => {
+            const isUp = candles[i][1] >= candles[i][0];
+            return {
+              value: v,
+              itemStyle: {
+                color: 'transparent',                       // 中空透明
+                borderColor: isUp ? '#ef4444' : '#10b981', // 亮紅 / 翠綠外框
+                borderWidth: 2                              // 粗外框 (2px)
+              }
+            };
+          })
+        },
+        // 5.1 MV5 (5日均量線 - 快線科技藍)
+        {
+          name: 'MV5',
+          type: 'line',
+          xAxisIndex: 1,
+          yAxisIndex: 1,
+          data: vma5,
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#38bdf8', width: 1.5 }
+        },
+        // 5.2 MV20 (20日均量線 - 慢線琥珀黃)
+        {
+          name: 'MV20',
+          type: 'line',
+          xAxisIndex: 1,
+          yAxisIndex: 1,
+          data: vma20,
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#f59e0b', width: 1.5 }
+        },
+
+        // 6. Pane 2: RSI 雙線 (Grid 2) - RSI(6) 短線科技藍 + RSI(12) 長線琥珀黃
+        {
+          name: 'RSI(6)',
+          type: 'line',
+          xAxisIndex: 2,
+          yAxisIndex: 2,
+          data: (rsi6 && rsi6.length) ? rsi6 : rsi,
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#38bdf8', width: 2 }, // 短線科技藍
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(56, 189, 248, 0.12)' },
+              { offset: 1, color: 'rgba(56, 189, 248, 0.0)' }
+            ])
+          }
+        },
+        {
+          name: 'RSI(12)',
+          type: 'line',
+          xAxisIndex: 2,
+          yAxisIndex: 2,
+          data: (rsi12 && rsi12.length) ? rsi12 : rsi,
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#f59e0b', width: 1.8 }, // 長線琥珀黃
+          markLine: {
+            symbol: 'none',
+            data: [
+              { yAxis: 80, lineStyle: { color: '#ef4444', type: 'dashed', width: 1 }, label: { show: false } },
+              { yAxis: 70, lineStyle: { color: 'rgba(239, 68, 68, 0.5)', type: 'dotted', width: 1 }, label: { show: false } },
+              { yAxis: 50, lineStyle: { color: 'rgba(148, 163, 184, 0.35)', type: 'dashed', width: 1 }, label: { show: false } },
+              { yAxis: 30, lineStyle: { color: 'rgba(16, 185, 129, 0.5)', type: 'dotted', width: 1 }, label: { show: false } },
+              { yAxis: 20, lineStyle: { color: '#10b981', type: 'dashed', width: 1 }, label: { show: false } }
+            ]
+          }
+        },
+
+        // 7. Pane 3: MACD (Grid 3) - 柱體 (中空粗框) + DIF快線(藍) + MACD慢線(黃)
+        {
+          name: 'MACD柱體',
+          type: 'bar',
+          xAxisIndex: 3,
+          yAxisIndex: 3,
+          data: (macdHist || []).map(m => {
+            const isUp = m >= 0;
+            return {
+              value: m,
+              itemStyle: {
+                color: 'transparent',
+                borderColor: isUp ? '#ef4444' : '#10b981',
+                borderWidth: 2
+              }
+            };
+          })
+        },
+        {
+          name: 'DIF快線',
+          type: 'line',
+          xAxisIndex: 3,
+          yAxisIndex: 3,
+          data: dif || [],
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#38bdf8', width: 2 }
+        },
+        {
+          name: 'MACD慢線',
+          type: 'line',
+          xAxisIndex: 3,
+          yAxisIndex: 3,
+          data: macdSignal || [],
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { color: '#f59e0b', width: 2 },
+          markLine: {
+            symbol: 'none',
+            data: [
+              { yAxis: 0, lineStyle: { color: 'rgba(255,255,255,0.22)', type: 'dashed', width: 1 } }
+            ]
+          }
+        },
+
+        // 8. Pane 4: KD (Grid 4) - K快線(藍) + D慢線(黃)
+        {
+          name: 'K值',
+          type: 'line',
+          xAxisIndex: 4,
+          yAxisIndex: 4,
+          data: kList,
+          smooth: true,
           showSymbol: false,
           lineStyle: { color: '#38bdf8', width: 2 }
         },
@@ -596,10 +816,10 @@ window.ChartEngine = {
     }
 
     try {
-      this.chartInstance.setOption(option, true);
+      state.chartInstance.setOption(option, true);
       console.log('[ChartEngine Debug] ✅ setOption 成功完成！ECharts 實際尺寸:', {
-        width: this.chartInstance.getWidth(),
-        height: this.chartInstance.getHeight()
+        width: state.chartInstance.getWidth(),
+        height: state.chartInstance.getHeight()
       });
     } catch (err) {
       console.error('[ChartEngine Debug] ❌ setOption 拋出異常:', err);
@@ -607,10 +827,10 @@ window.ChartEngine = {
 
     // Helper: 更新圖表各 Pane 左上角懸浮數值 HTML 覆蓋層 (零亂碼、高清晰)
     const updateInChartHUD = (idx) => {
-      if (!this.chartInstance || this.chartInstance.isDisposed() || !stockData || !stockData.dates) return;
+      if (!state.chartInstance || state.chartInstance.isDisposed() || !stockData || !stockData.dates) return;
       if (idx < 0 || idx >= stockData.dates.length) return;
 
-      const chartDom = this.chartInstance.getDom();
+      const chartDom = state.chartInstance.getDom();
       if (!chartDom) return;
 
       // 確保 chartDom 為 relative 定位以容納 overlay
@@ -698,10 +918,10 @@ window.ChartEngine = {
     };
 
     // 同步十字游標焦點至圖表內頂部 HUD
-    if (this._axisPointerHandler) {
-      this.chartInstance.off('updateAxisPointer', this._axisPointerHandler);
+    if (state.axisPointerHandler) {
+      state.chartInstance.off('updateAxisPointer', state.axisPointerHandler);
     }
-    this._axisPointerHandler = (event) => {
+    state.axisPointerHandler = (event) => {
       if (event.axesInfo && event.axesInfo.length) {
         const axisInfo = event.axesInfo[0];
         if (axisInfo && axisInfo.value != null) {
@@ -712,7 +932,7 @@ window.ChartEngine = {
         }
       }
     };
-    this.chartInstance.on('updateAxisPointer', this._axisPointerHandler);
+    state.chartInstance.on('updateAxisPointer', state.axisPointerHandler);
 
     // 預設呈現最新收盤日數據
     if (dates && dates.length) {
@@ -720,32 +940,24 @@ window.ChartEngine = {
       updateInChartHUD(lastIdx);
     }
 
-    if (!this._hudMouseLeaveBound) {
-      this._hudMouseLeaveBound = true;
-      const chartDom = document.getElementById('echart-main');
-      if (chartDom) {
-        chartDom.addEventListener('mouseleave', () => {
-          if (this.currentStockData && this.currentStockData.dates && this.currentStockData.dates.length) {
-            const lastIdx = this.currentStockData.dates.length - 1;
-            updateInChartHUD(lastIdx);
-          }
-        });
-      }
+    if (!state.hudMouseLeaveBound) {
+      state.hudMouseLeaveBound = true;
+      dom.addEventListener('mouseleave', () => {
+        if (stockData && stockData.dates && stockData.dates.length) {
+          const lastIdx = stockData.dates.length - 1;
+          updateInChartHUD(lastIdx);
+        }
+      });
     }
-    this.currentStockData = stockData;
 
     // 多階段延遲觸發 resize，保證容器切換完成後能正確取得寬高並繪製
-    requestAnimationFrame(() => this.resize());
-    setTimeout(() => this.resize(), 60);
-    setTimeout(() => this.resize(), 200);
+    requestAnimationFrame(() => this.resize(dom));
+    setTimeout(() => this.resize(dom), 60);
+    setTimeout(() => this.resize(dom), 200);
   },
 
   _attachZoomFix(dom) {
-    if (this._zoomFixCleanup) {
-      this._zoomFixCleanup();
-      this._zoomFixCleanup = null;
-    }
-    if (!dom) return;
+    if (!dom) return null;
 
     const events = [
       'pointermove', 'pointerdown', 'pointerup',
@@ -773,8 +985,6 @@ window.ChartEngine = {
         e.zrY = zrY;
       }
 
-      // ECharts (ZRender) requires zrDelta on wheel events to trigger InsideZoom.
-      // When zrX is manually assigned, ZRender skips normalizeEvent, so we must also provide zrDelta.
       if (e.type === 'wheel' || e.type === 'mousewheel' || e.type === 'DOMMouseScroll') {
         let delta = 0;
         if (e.wheelDelta != null && e.wheelDelta !== 0) {
@@ -796,42 +1006,65 @@ window.ChartEngine = {
       dom.addEventListener(evtName, correctCoords, { capture: true });
     });
 
-    this._zoomFixCleanup = () => {
+    return () => {
       events.forEach(evtName => {
         dom.removeEventListener(evtName, correctCoords, { capture: true });
       });
     };
   },
 
-  resize() {
-    if (this.chartInstance && !this.chartInstance.isDisposed()) {
-      const dom = this.chartInstance.getDom();
-      if (dom) {
+  resize(container) {
+    if (container) {
+      const dom = typeof container === 'string' ? document.querySelector(container) : container;
+      const state = dom ? this.instances.get(dom) : null;
+      if (state && state.chartInstance && !state.chartInstance.isDisposed()) {
         const w = dom.clientWidth || (dom.parentElement ? dom.parentElement.clientWidth : 0);
         const h = dom.clientHeight || 650;
         if (w > 0 && h > 0) {
-          this.chartInstance.resize({ width: w, height: h });
-          return;
+          state.chartInstance.resize({ width: w, height: h });
+        } else {
+          state.chartInstance.resize();
         }
       }
-      this.chartInstance.resize();
+      return;
     }
+    this.instances.forEach((state, dom) => {
+      if (state && state.chartInstance && !state.chartInstance.isDisposed()) {
+        if (dom.isConnected && dom.offsetWidth > 0) {
+          const w = dom.clientWidth || (dom.parentElement ? dom.parentElement.clientWidth : 0);
+          const h = dom.clientHeight || 650;
+          if (w > 0 && h > 0) {
+            state.chartInstance.resize({ width: w, height: h });
+          } else {
+            state.chartInstance.resize();
+          }
+        }
+      }
+    });
   },
 
-  destroy() {
-    if (this._zoomFixCleanup) {
-      this._zoomFixCleanup();
-      this._zoomFixCleanup = null;
+  destroy(container) {
+    if (container) {
+      const dom = typeof container === 'string' ? document.querySelector(container) : container;
+      const state = dom ? this.instances.get(dom) : null;
+      if (state) {
+        if (state.zoomCleanup) state.zoomCleanup();
+        if (state.chartInstance && !state.chartInstance.isDisposed()) {
+          state.chartInstance.dispose();
+        }
+        this.instances.delete(dom);
+      }
+      return;
     }
-    if (this._resizeHandler) {
-      window.removeEventListener('resize', this._resizeHandler);
-      this._resizeHandler = null;
-    }
-    if (this.chartInstance && !this.chartInstance.isDisposed()) {
-      this.chartInstance.dispose();
-    }
-    this.chartInstance = null;
-    this._lastStockKey = null;
-    this._lastShowMa = null;
+    this.instances.forEach((state, dom) => {
+      if (state) {
+        if (state.zoomCleanup) state.zoomCleanup();
+        if (state.chartInstance && !state.chartInstance.isDisposed()) {
+          state.chartInstance.dispose();
+        }
+      }
+    });
+    this.instances.clear();
+    this.activeDom = null;
   }
 };

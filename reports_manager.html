@@ -413,10 +413,13 @@
   .app-tab:hover{ color:var(--text); background:var(--hover); }
   .app-tab.active{ color:#08101c; background:var(--accent); border-color:var(--accent); }
   .workspace{ flex:1; min-height:0; }
-  #reports-workspace[hidden], #pattern-workspace[hidden], #ranking-workspace[hidden], #analysis-workspace[hidden]{ display:none !important; }
+  #reports-workspace[hidden], #pattern-workspace[hidden], #ranking-workspace[hidden], #analysis-workspace[hidden], #macro-workspace[hidden]{ display:none !important; }
   #reports-workspace{ display:flex; flex-direction:column; }
+  #macro-workspace{ overflow-y:auto; overflow-x:hidden; padding:20px 28px; display:flex; flex-direction:column; gap:18px; min-width:0; background:#0b0d13; }
+  #macro-workspace .market-inst-card, #macro-workspace .disposal-warning-card, #macro-workspace .macro-panel{ max-width:1800px; width:100%; margin:0 auto; }
   #pattern-workspace{ overflow:auto; background:#0f1117; }
   #pattern-workspace .pattern-viewer{ min-height:100%; }
+  #organizer-panel{ display:none !important; }
   #ranking-workspace{ overflow-y:auto; overflow-x:hidden; background:#0f1117; font-size:16px; }
   #ranking-workspace[hidden]{ display:none !important; }
   .ranking-shell{ width:92%; max-width:1920px; margin:0 auto; padding:10px 0 36px; box-sizing:border-box; }
@@ -579,28 +582,32 @@
   .market-inst-card{
     background:#11161c; border:1px solid rgba(71,85,105,.55); border-radius:12px;
     padding:18px 24px; margin-bottom:20px; box-shadow:0 5px 16px rgba(0,0,0,0.25);
-    transition:background .2s, border-color .2s, opacity .2s;
+    transition:background .3s ease, border-color .3s ease, opacity .3s ease, filter .3s ease;
   }
   .market-inst-header{
     display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
     margin-bottom:15px; padding-bottom:12px; border-bottom:1px solid rgba(71,85,105,.35);
+    transition:border-color .3s ease;
   }
   .market-inst-title{
     display:flex; align-items:center; gap:10px; font-size:21px; font-weight:800; color:#f8fafc;
+    transition:color .3s ease;
   }
   .market-inst-title .icon{ font-size:24px; }
   .market-inst-date-badge{
     font-size:16px; font-weight:700; padding:3px 12px; border-radius:7px;
     background:rgba(96,165,250,.18); color:#93c5fd; border:1px solid rgba(96,165,250,.4);
+    transition:all .3s ease;
   }
   .market-inst-date-badge.stale{
-    background:rgba(148,163,184,.15); color:#94a3b8; border-color:rgba(148,163,184,.3);
+    background:rgba(100,116,139,.12); color:#64748b; border-color:rgba(100,116,139,.25);
   }
   .market-inst-actions{ display:flex; align-items:center; gap:12px; }
   .market-inst-status{ font-size:17px; color:var(--text-dim); }
   .market-refresh-btn{
     height:40px; padding:0 15px; font-size:16px; font-weight:700; border-radius:8px;
     background:rgba(255,255,255,.06); border:1px solid var(--border); color:var(--text); cursor:pointer;
+    transition:all .2s ease;
   }
   .market-refresh-btn:hover{ background:var(--hover); color:#fff; }
   .market-inst-grid{
@@ -610,7 +617,7 @@
     min-width:0; background:linear-gradient(145deg,#111c2a,#0c1420); border:1px solid rgba(56,189,248,.26); border-radius:10px;
     padding:14px 16px; box-shadow:inset 0 1px rgba(255,255,255,.025), 0 8px 20px rgba(2,12,27,.2);
     display:flex; flex-direction:column; justify-content:space-between;
-    transition:border-color .15s, background .15s, opacity .15s, filter .15s;
+    transition:border-color .2s ease, background .2s ease, opacity .3s ease, filter .3s ease, color .3s ease;
   }
   .market-inst-cell:hover{ background:linear-gradient(145deg,#142236,#0e1928); border-color:rgba(103,232,249,.58); }
   .market-inst-cell.total{
@@ -620,11 +627,13 @@
   .market-inst-cell-name{
     font-size:17px; font-weight:850; color:#dbeafe; letter-spacing:.2px;
     display:flex; align-items:center; justify-content:space-between; white-space:nowrap;
+    transition:color .3s ease;
   }
   .market-inst-cell.total .market-inst-cell-name{ color:#fde047; font-weight:850; }
   .market-inst-cell-net{
     margin-top:10px; font-size:24px; font-weight:900; font-family:"Courier New", Courier, monospace;
     display:flex; align-items:center; gap:6px;
+    transition:color .3s ease;
   }
   .market-inst-cell-net.buy{ color:#f87171; }
   .market-inst-cell-net.sell{ color:#4ade80; }
@@ -632,40 +641,41 @@
   .market-inst-loading{ padding:18px; text-align:center; color:var(--text-dim); font-size:18px; }
   .market-inst-error{ padding:18px; text-align:center; color:var(--danger); font-size:18px; }
 
-  /* ── 非最新數據時暗色/沈穩色調 ── */
+  /* ── 非今日明細時：深色調/沉暗色調 ── */
   .market-inst-card.stale{
-    background:#0d1117; border-color:rgba(71,85,105,.3); box-shadow:none;
+    background:#090d12; border-color:rgba(71,85,105,.22); box-shadow:none;
   }
-  .market-inst-card.stale .market-inst-title{ color:#94a3b8; }
-  .market-inst-card.stale .market-inst-header{ border-bottom-color:rgba(71,85,105,.22); }
+  .market-inst-card.stale .market-inst-title{ color:#526071; }
+  .market-inst-card.stale .market-inst-header{ border-bottom-color:rgba(71,85,105,.18); }
   .market-inst-card.stale .market-inst-date-badge{
-    background:rgba(148,163,184,.12); color:#94a3b8; border-color:rgba(148,163,184,.25);
+    background:rgba(100,116,139,.1); color:#64748b; border-color:rgba(100,116,139,.2);
   }
   .market-inst-card.stale .market-inst-cell{
-    background:linear-gradient(145deg,#0e1520,#080d14);
-    border-color:rgba(71,85,105,.22);
+    background:linear-gradient(145deg,#0a0e14,#06080c);
+    border-color:rgba(71,85,105,.18);
     box-shadow:none;
-    opacity:0.68;
-    filter:saturate(0.55);
+    opacity:0.65;
+    filter:saturate(0.42) brightness(0.75);
   }
   .market-inst-card.stale .market-inst-cell:hover{
-    background:linear-gradient(145deg,#121a26,#0b111a);
-    border-color:rgba(71,85,105,.4);
-    opacity:0.88;
+    background:linear-gradient(145deg,#0f141d,#0a0e14);
+    border-color:rgba(71,85,105,.35);
+    opacity:0.85;
+    filter:saturate(0.6) brightness(0.88);
   }
   .market-inst-card.stale .market-inst-cell.total{
-    background:linear-gradient(145deg,#16140b,#0c0b06);
-    border-color:rgba(161,120,20,.25);
+    background:linear-gradient(145deg,#110f07,#070603);
+    border-color:rgba(161,120,20,.18);
     box-shadow:none;
   }
-  .market-inst-card.stale .market-inst-cell-name{ color:#7e8b9b; }
-  .market-inst-card.stale .market-inst-cell.total .market-inst-cell-name{ color:#9e7f2c; }
+  .market-inst-card.stale .market-inst-cell-name{ color:#64748b; }
+  .market-inst-card.stale .market-inst-cell.total .market-inst-cell-name{ color:#856928; }
   .market-inst-card.stale .market-inst-cell.total .total-badge{
-    background:#664d13 !important; color:#cbd5e1 !important;
+    background:#423310 !important; color:#8595a8 !important;
   }
-  .market-inst-card.stale .market-inst-cell-net.buy{ color:#dc6868; }
-  .market-inst-card.stale .market-inst-cell-net.sell{ color:#3da865; }
-  .market-inst-card.stale .market-inst-cell-net.flat{ color:#64748b; }
+  .market-inst-card.stale .market-inst-cell-net.buy{ color:#9b3c3c; }
+  .market-inst-card.stale .market-inst-cell-net.sell{ color:#266e40; }
+  .market-inst-card.stale .market-inst-cell-net.flat{ color:#475569; }
 
   /* ── 處置與注意股票預警中心 ── */
   .disposal-warning-card{
@@ -1130,6 +1140,7 @@
     <button type="button" class="app-tab" data-workspace="pattern">📈 專業看盤</button>
     <button type="button" class="app-tab" data-workspace="ranking">🏆 排行榜</button>
     <button type="button" class="app-tab" data-workspace="analysis">📑 分析報告</button>
+    <button type="button" class="app-tab" data-workspace="macro">🌐 總經分析</button>
   </nav>
   <section class="workspace" id="reports-workspace">
   <div class="generate-bar">
@@ -1137,7 +1148,6 @@
     <button class="btn primary" id="generate-btn">🚀 產生/更新報表</button>
     <button class="btn" id="deploy-mobile-btn" title="執行「發布手機版.bat」全自動匯出目前全部個股快照並發布至 Cloudflare 手機版分析中心" style="background:#0284c7; color:#fff; font-weight:750; border-color:#0284c7;">📱 發布手機版</button>
     <button class="btn primary" id="gemini-scanner-btn" title="呼叫 batch_scanner_gemini.bat 執行 Gemini 雙軌動能掃描並存入 stock_winrate_ranking_gemini.md" style="font-weight:750;">✨ Gemini Scanner</button>
-    <button class="btn" id="macro-update-btn" title="手動呼叫伺服器更新八項總經數據；開啟頁面時不會自動更新">🌐 總經數據更新</button>
     <button class="btn" id="batch-scanner-btn" title="呼叫 batch_scanner.bat 執行 ChatGPT 雙軌量化掃描並存入 stock_winrate_ranking.md" style="background:#10b981; color:#000; font-weight:750; border-color:#10b981;">🟢 Chatgpt Scanner</button>
     <span class="spinner" id="generate-spinner"></span>
     <span class="generate-status" id="generate-status"></span>
@@ -1152,95 +1162,73 @@
       <div id="sidebar-tree"></div>
     </div>
     <div class="resizer" id="resizer-left"></div>
-    <div class="main">
-      <!-- 📊 台股大盤三大法人買賣金額明細看板 -->
-      <div class="market-inst-card" id="market-inst-card">
-        <div class="market-inst-header">
-          <div class="market-inst-title">
-            <span class="icon">📊</span>
-            <span class="title-text">台股大盤三大法人買賣金額明細</span>
-            <span class="market-inst-date-badge" id="market-inst-date-badge">載入中...</span>
+    <div class="main" style="padding:14px 18px; overflow-y:auto; overflow-x:hidden;">
+      <!-- 📈 技術指標看盤終端（嵌入式） -->
+      <div class="pattern-viewer pattern-viewer-embedded" id="reports-pattern-viewer" style="min-height:auto; background:transparent; width:100%; display:flex; flex-direction:column;">
+        <header class="navbar" style="border-radius:10px; margin-bottom:14px; padding:12px 18px;">
+          <div class="brand">
+            <div class="brand-icon">📈</div>
+            <div class="brand-text">
+              <h1>專業看盤・技術指標終端</h1>
+              <p>真實行情驅動：五層 K 線、均線（MA5/10/20/60/120）、布林通道、成交量、RSI、MACD、KD</p>
+            </div>
           </div>
-          <div class="market-inst-actions">
-            <span class="market-inst-status" id="market-inst-status"></span>
-            <button type="button" class="btn market-refresh-btn" id="market-inst-refresh-btn" title="向證交所重新整理大盤法人最新數據">🔄 即時重整</button>
+          <div class="controls-bar" style="display:flex; align-items:center; gap:12px;">
+            <label for="reports-stockSelect" style="font-weight:700; color:#93c5fd;">🎯 選擇看盤個股：</label>
+            <div class="stock-search-wrap">
+              <input type="search" id="reports-stockSearchInput" class="stock-search-input" list="reports-stockSearchSuggestions" placeholder="輸入股號或股名" autocomplete="off" aria-label="輸入股號或股名">
+              <datalist id="reports-stockSearchSuggestions" class="stock-search-suggestions"></datalist>
+              <button type="button" id="reports-stockSearchBtn" class="stock-search-btn">前往</button>
+            </div>
+            <select id="reports-stockSelect" class="stock-selector"></select>
+            <button type="button" id="reports-patternStarBtn" class="pattern-star-btn" aria-label="加入重點清單" aria-pressed="false" title="加入重點清單" disabled>★</button>
           </div>
-        </div>
-        <div class="market-inst-body" id="market-inst-body">
-          <div class="market-inst-loading">⏳ 正在連線台灣證券交易所取得大盤三大法人數據...</div>
-        </div>
+        </header>
+
+        <main class="chart-viewport" style="border-radius:12px;">
+          <div class="chart-header">
+            <div class="chart-title-group">
+              <div class="chart-title-row">
+                <h2 id="reports-chartTitle" class="chart-title">K線 / RSI / MACD / KD / 成交量圖</h2>
+                <span id="reports-chartDisposalBadge" class="chart-disposal-badge" hidden></span>
+              </div>
+              <div class="chart-sub-info">滑鼠移動十字光標可跨圖表同步連動觀察數值</div>
+            </div>
+            <div class="chart-toggles">
+              <label class="toggle-label"><input type="checkbox" id="reports-toggleMa" class="toggle-ma" checked> 均線（MA5 / 10 / 20 / 60 / 120）</label>
+              <label class="toggle-label"><input type="checkbox" id="reports-toggleBoll" class="toggle-boll" checked> 布林通道（BOLL 上/下軌）</label>
+              <button type="button" class="btn-fullscreen-toggle" onclick="toggleChartFullscreen(document.querySelector('#reports-pattern-viewer .chart-viewport'))" title="全螢幕放大看盤">⛶ 全螢幕看盤</button>
+            </div>
+          </div>
+          <div id="reports-patternEmptyState" class="empty-state">
+            <div class="empty-state-icon">📊</div>
+            <h3 id="reports-patternEmptyTitle" class="empty-title">正在讀取報表資料…</h3>
+            <p id="reports-patternEmptyDetail" class="empty-detail">型態線圖只使用真實報表，不會產生模擬行情。</p>
+          </div>
+          <div id="reports-echart-main" class="chart-canvas" hidden></div>
+
+          <!-- 🏛️ 三大法人近15日逐日買賣超概數看板 (放置於 KD 指標下方) -->
+          <div id="reports-patternInstContainer" class="inst-mini-chart" style="display:none; margin-top:16px; margin-bottom:20px; padding:14px 16px; background:#141721; border:1px solid rgba(59,130,246,0.3); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+            <div class="inst-chart-head" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">
+              <span class="rank-detail-label" style="font-weight:800; color:#60a5fa; font-size:17px; display:inline-flex; align-items:center; gap:6px;">
+                <span>🏛️</span> 三大法人近15日逐日買賣超概數
+              </span>
+              <span class="inst-chart-note" style="font-size:12.5px; color:#94a3b8;">日期橫向排列｜<span style="color:#f87171; font-weight:700;">紅色買超</span>・<span style="color:#4ade80; font-weight:700;">綠色賣超</span></span>
+            </div>
+            <div id="reports-patternInstTableWrapper" class="pattern-inst-table-wrapper"></div>
+          </div>
+        </main>
       </div>
 
-      <!-- 🚨 處置與注意股票即時預警看板 -->
-      <div class="disposal-warning-card collapsed" id="disposal-warning-card">
-        <div class="disposal-warning-header">
-          <div class="disposal-warning-title">
-            <span class="icon">🚨</span>
-            <span class="title-text">處置與注意股票預警中心</span>
-            <span class="disposal-warning-badge normal" id="disposal-warning-badge">連線證交所/櫃買中...</span>
-          </div>
-          <div class="disposal-warning-actions">
-            <span class="disposal-warning-status" id="disposal-warning-status"></span>
-            <button type="button" class="btn" id="disposal-toggle-btn">📖 展開預警看板</button>
-            <button type="button" class="btn disposal-refresh-btn" id="disposal-refresh-btn" title="向證交所與櫃買中心重新整理最新處置與注意公告">🔄 即時重整</button>
-          </div>
-        </div>
-        <div class="disposal-warning-body" id="disposal-warning-body" hidden>
-          <div class="disposal-warning-loading">⏳ 正在連線台灣證券交易所與櫃買中心取得處置及注意股票資料...</div>
-        </div>
-      </div>
-
-      <section class="macro-panel" id="macro-panel" aria-label="總經數據中心">
-        <div class="macro-table-card">
-          <div class="macro-table-toolbar">
-            <div>
-              <div class="macro-panel-title">🌐 總經與波動率數據</div>
-              <div class="macro-status" id="macro-status">載入既有資料中…</div>
-            </div>
-            <div class="macro-panel-meta">
-              <span id="macro-count">筆數：0</span>
-              <button type="button" class="btn" id="macro-toggle-history-btn">📖 展開歷史數據</button>
-            </div>
-          </div>
-          <div class="macro-dashboard" id="macro-dashboard">
-            <article class="macro-indicator-card macro-field-vixtwn" data-macro-key="vixtwn"><div class="macro-card-heading"><div><span class="macro-th-label">VIXTWN（台）</span><span class="macro-fresh" id="macro-fresh-vixtwn"></span></div></div><span class="macro-spark" id="macro-spark-vixtwn"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-vixtwn">--</span><span class="macro-num" data-key="vixtwn"></span></div><div class="macro-history-list" id="macro-history-vixtwn" hidden></div></article>
-            <article class="macro-indicator-card macro-field-vix" data-macro-key="vix"><div class="macro-card-heading"><div><span class="macro-th-label">VIX（美）</span><span class="macro-fresh" id="macro-fresh-vix"></span></div></div><span class="macro-spark" id="macro-spark-vix"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-vix">--</span><span class="macro-num" data-key="vix"></span></div><div class="macro-history-list" id="macro-history-vix" hidden></div></article>
-            <article class="macro-indicator-card macro-field-gold" data-macro-key="gold"><div class="macro-card-heading"><div><span class="macro-th-label">現貨黃金 XAU/USD</span><span class="macro-fresh" id="macro-fresh-gold"></span></div></div><span class="macro-spark" id="macro-spark-gold"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-gold">--</span><span class="macro-num" data-key="gold"></span></div><div class="macro-history-list" id="macro-history-gold" hidden></div></article>
-            <article class="macro-indicator-card macro-field-dxy" data-macro-key="dxy"><div class="macro-card-heading"><div><span class="macro-th-label">美元指數 DXY</span><span class="macro-fresh" id="macro-fresh-dxy"></span></div></div><span class="macro-spark" id="macro-spark-dxy"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-dxy">--</span><span class="macro-num" data-key="dxy"></span></div><div class="macro-history-list" id="macro-history-dxy" hidden></div></article>
-            <article class="macro-indicator-card macro-field-oil" data-macro-key="oil"><div class="macro-card-heading"><div><span class="macro-th-label">布蘭特原油 ($)</span><span class="macro-fresh" id="macro-fresh-oil"></span></div></div><span class="macro-spark" id="macro-spark-oil"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-oil">--</span><span class="macro-num" data-key="oil"></span></div><div class="macro-history-list" id="macro-history-oil" hidden></div></article>
-            <article class="macro-indicator-card macro-field-us10y" data-macro-key="us10y"><div class="macro-card-heading"><div><span class="macro-th-label">10年美債 (%)</span><span class="macro-fresh" id="macro-fresh-us10y"></span></div></div><span class="macro-spark" id="macro-spark-us10y"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-us10y">--</span><span class="macro-num" data-key="us10y"></span></div><div class="macro-history-list" id="macro-history-us10y" hidden></div></article>
-            <article class="macro-indicator-card macro-field-us30y" data-macro-key="us30y"><div class="macro-card-heading"><div><span class="macro-th-label">30年美債 (%)</span><span class="macro-fresh" id="macro-fresh-us30y"></span></div></div><span class="macro-spark" id="macro-spark-us30y"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-us30y">--</span><span class="macro-num" data-key="us30y"></span></div><div class="macro-history-list" id="macro-history-us30y" hidden></div></article>
-            <article class="macro-indicator-card macro-field-spread" data-macro-key="spread"><div class="macro-card-heading"><div><span class="macro-th-label">利差 Spread (%)</span><span class="macro-fresh" id="macro-fresh-spread"></span></div></div><span class="macro-spark" id="macro-spark-spread"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-spread">--</span><span class="macro-num" data-key="spread"></span></div><div class="macro-history-list" id="macro-history-spread" hidden></div></article>
-          </div>
-        </div>
-
-        <div class="macro-backup-card">
-          <div class="macro-backup-header">
-            <div>
-              <div class="macro-backup-title">📁 Git 同步檔（macro_data.json）</div>
-              <div class="macro-backup-note">✅ 更新與表格修改只寫入本機 macro_data.json；Git pull / push 維持手動執行</div>
-            </div>
-            <div class="macro-backup-actions">
-              <button type="button" class="btn" id="macro-download-btn">💾 手動下載 macro_data.json</button>
-              <button type="button" class="btn" id="macro-copy-json-btn">📋 複製 JSON</button>
-              <button type="button" class="btn" id="macro-copy-prompt-btn">📝 網頁版分析 Prompt</button>
-            </div>
-          </div>
-          <div class="macro-status" id="macro-copy-status"></div>
-        </div>
-      </section>
-
-      <section class="organizer-panel collapsed" id="organizer-panel" hidden>
+      <!-- 待整理報表 (已依要求取消顯示) -->
+      <section class="organizer-panel collapsed" id="organizer-panel" hidden style="display:none !important;">
         <div class="organizer-heading">
           <h2 id="organizer-title">待整理報表</h2>
           <button type="button" class="btn" id="toggle-organizer-btn">展開整理區</button>
         </div>
         <div class="organizer-body">
           <div class="toolbar-row">
-            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-dim); cursor:pointer;">
-              <input type="checkbox" id="select-all-checkbox"> 全選
-            </label>
-            <span style="color:var(--text-dim); font-size:13px;">💡 把報表拖到左側資料夾即可移動</span>
+            <input type="checkbox" id="select-all-checkbox">
             <div class="selection-bar" id="selection-bar">
               <span id="selection-count"></span>
               <select id="move-target-select"></select>
@@ -1254,6 +1242,86 @@
       </section>
     </div>
   </div>
+  </section>
+
+  <section class="workspace" id="macro-workspace" hidden>
+    <!-- 📊 台股大盤三大法人買賣金額明細看板 -->
+    <div class="market-inst-card" id="market-inst-card">
+      <div class="market-inst-header">
+        <div class="market-inst-title">
+          <span class="icon">📊</span>
+          <span class="title-text">台股大盤三大法人買賣金額明細</span>
+          <span class="market-inst-date-badge" id="market-inst-date-badge">載入中...</span>
+        </div>
+        <div class="market-inst-actions">
+          <span class="market-inst-status" id="market-inst-status"></span>
+          <button type="button" class="btn market-refresh-btn" id="market-inst-refresh-btn" title="向證交所重新整理大盤法人最新數據">🔄 即時重整</button>
+        </div>
+      </div>
+      <div class="market-inst-body" id="market-inst-body">
+        <div class="market-inst-loading">⏳ 正在連線台灣證券交易所取得大盤三大法人數據...</div>
+      </div>
+    </div>
+
+    <!-- 🚨 處置與注意股票即時預警看板 -->
+    <div class="disposal-warning-card collapsed" id="disposal-warning-card">
+      <div class="disposal-warning-header">
+        <div class="disposal-warning-title">
+          <span class="icon">🚨</span>
+          <span class="title-text">處置與注意股票預警中心</span>
+          <span class="disposal-warning-badge normal" id="disposal-warning-badge">連線證交所/櫃買中...</span>
+        </div>
+        <div class="disposal-warning-actions">
+          <span class="disposal-warning-status" id="disposal-warning-status"></span>
+          <button type="button" class="btn" id="disposal-toggle-btn">📖 展開預警看板</button>
+          <button type="button" class="btn disposal-refresh-btn" id="disposal-refresh-btn" title="向證交所與櫃買中心重新整理最新處置與注意公告">🔄 即時重整</button>
+        </div>
+      </div>
+      <div class="disposal-warning-body" id="disposal-warning-body" hidden>
+        <div class="disposal-warning-loading">⏳ 正在連線台灣證券交易所與櫃買中心取得處置及注意股票資料...</div>
+      </div>
+    </div>
+
+    <section class="macro-panel" id="macro-panel" aria-label="總經數據中心">
+      <div class="macro-table-card">
+        <div class="macro-table-toolbar">
+          <div>
+            <div class="macro-panel-title">🌐 總經與波動率數據</div>
+            <div class="macro-status" id="macro-status">載入既有資料中…</div>
+          </div>
+          <div class="macro-panel-meta">
+            <span id="macro-count">筆數：0</span>
+            <button type="button" class="btn" id="macro-update-btn" title="手動呼叫伺服器更新八項總經數據；開啟頁面時不會自動更新">🌐 總經數據更新</button>
+            <button type="button" class="btn" id="macro-toggle-history-btn">📖 展開歷史數據</button>
+          </div>
+        </div>
+        <div class="macro-dashboard" id="macro-dashboard">
+          <article class="macro-indicator-card macro-field-vixtwn" data-macro-key="vixtwn"><div class="macro-card-heading"><div><span class="macro-th-label">VIXTWN（台）</span><span class="macro-fresh" id="macro-fresh-vixtwn"></span></div></div><span class="macro-spark" id="macro-spark-vixtwn"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-vixtwn">--</span><span class="macro-num" data-key="vixtwn"></span></div><div class="macro-history-list" id="macro-history-vixtwn" hidden></div></article>
+          <article class="macro-indicator-card macro-field-vix" data-macro-key="vix"><div class="macro-card-heading"><div><span class="macro-th-label">VIX（美）</span><span class="macro-fresh" id="macro-fresh-vix"></span></div></div><span class="macro-spark" id="macro-spark-vix"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-vix">--</span><span class="macro-num" data-key="vix"></span></div><div class="macro-history-list" id="macro-history-vix" hidden></div></article>
+          <article class="macro-indicator-card macro-field-gold" data-macro-key="gold"><div class="macro-card-heading"><div><span class="macro-th-label">現貨黃金 XAU/USD</span><span class="macro-fresh" id="macro-fresh-gold"></span></div></div><span class="macro-spark" id="macro-spark-gold"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-gold">--</span><span class="macro-num" data-key="gold"></span></div><div class="macro-history-list" id="macro-history-gold" hidden></div></article>
+          <article class="macro-indicator-card macro-field-dxy" data-macro-key="dxy"><div class="macro-card-heading"><div><span class="macro-th-label">美元指數 DXY</span><span class="macro-fresh" id="macro-fresh-dxy"></span></div></div><span class="macro-spark" id="macro-spark-dxy"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-dxy">--</span><span class="macro-num" data-key="dxy"></span></div><div class="macro-history-list" id="macro-history-dxy" hidden></div></article>
+          <article class="macro-indicator-card macro-field-oil" data-macro-key="oil"><div class="macro-card-heading"><div><span class="macro-th-label">布蘭特原油 ($)</span><span class="macro-fresh" id="macro-fresh-oil"></span></div></div><span class="macro-spark" id="macro-spark-oil"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-oil">--</span><span class="macro-num" data-key="oil"></span></div><div class="macro-history-list" id="macro-history-oil" hidden></div></article>
+          <article class="macro-indicator-card macro-field-us10y" data-macro-key="us10y"><div class="macro-card-heading"><div><span class="macro-th-label">10年美債 (%)</span><span class="macro-fresh" id="macro-fresh-us10y"></span></div></div><span class="macro-spark" id="macro-spark-us10y"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-us10y">--</span><span class="macro-num" data-key="us10y"></span></div><div class="macro-history-list" id="macro-history-us10y" hidden></div></article>
+          <article class="macro-indicator-card macro-field-us30y" data-macro-key="us30y"><div class="macro-card-heading"><div><span class="macro-th-label">30年美債 (%)</span><span class="macro-fresh" id="macro-fresh-us30y"></span></div></div><span class="macro-spark" id="macro-spark-us30y"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-us30y">--</span><span class="macro-num" data-key="us30y"></span></div><div class="macro-history-list" id="macro-history-us30y" hidden></div></article>
+          <article class="macro-indicator-card macro-field-spread" data-macro-key="spread"><div class="macro-card-heading"><div><span class="macro-th-label">利差 Spread (%)</span><span class="macro-fresh" id="macro-fresh-spread"></span></div></div><span class="macro-spark" id="macro-spark-spread"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-spread">--</span><span class="macro-num" data-key="spread"></span></div><div class="macro-history-list" id="macro-history-spread" hidden></div></article>
+        </div>
+      </div>
+
+      <div class="macro-backup-card">
+        <div class="macro-backup-header">
+          <div>
+            <div class="macro-backup-title">📁 Git 同步檔（macro_data.json）</div>
+            <div class="macro-backup-note">✅ 更新與表格修改只寫入本機 macro_data.json；Git pull / push 維持手動執行</div>
+          </div>
+          <div class="macro-backup-actions">
+            <button type="button" class="btn" id="macro-download-btn">💾 手動下載 macro_data.json</button>
+            <button type="button" class="btn" id="macro-copy-json-btn">📋 複製 JSON</button>
+            <button type="button" class="btn" id="macro-copy-prompt-btn">📝 網頁版分析 Prompt</button>
+          </div>
+        </div>
+        <div class="macro-status" id="macro-copy-status"></div>
+      </div>
+    </section>
   </section>
 
   <section class="workspace" id="pattern-workspace" hidden>
@@ -2494,9 +2562,13 @@
     }
   });
 
-  window.toggleChartFullscreen = async function(forceState) {
-    const viewport = document.querySelector('#pattern-workspace .chart-viewport') || document.querySelector('.chart-viewport');
-    const btn = document.getElementById('toggleFullscreenChart');
+  window.toggleChartFullscreen = async function(targetViewport, forceState) {
+    let viewport = (targetViewport && targetViewport.nodeType) ? targetViewport : null;
+    if (!viewport) {
+      const activeWs = window.activeWorkspaceName === 'reports' ? '#reports-workspace' : '#pattern-workspace';
+      viewport = document.querySelector(`${activeWs} .chart-viewport`) || document.querySelector('.chart-viewport');
+    }
+    const btn = viewport ? (viewport.querySelector('.btn-fullscreen-toggle') || document.getElementById('toggleFullscreenChart')) : document.getElementById('toggleFullscreenChart');
     if (!viewport) return;
 
     const isNative = document.fullscreenElement === viewport || document.webkitFullscreenElement === viewport;
@@ -2537,6 +2609,7 @@
     const triggerResize = () => {
       if (window.ChartEngine && typeof window.ChartEngine.resize === 'function') window.ChartEngine.resize();
       if (window.PatternViewer && typeof window.PatternViewer.resize === 'function') window.PatternViewer.resize();
+      if (reportsPatternViewer && typeof reportsPatternViewer.resize === 'function') reportsPatternViewer.resize();
       window.dispatchEvent(new Event('resize'));
     };
     triggerResize();
@@ -2545,19 +2618,19 @@
   };
 
   const handleFullscreenSync = () => {
-    const viewport = document.querySelector('#pattern-workspace .chart-viewport') || document.querySelector('.chart-viewport');
-    const btn = document.getElementById('toggleFullscreenChart');
-    const isFs = document.fullscreenElement === viewport || document.webkitFullscreenElement === viewport;
-    if (!isFs && viewport) {
-      viewport.classList.remove('fullscreen');
-    }
-    if (btn) {
-      btn.innerHTML = isFs ? '🗗 還原視窗' : '⛶ 全螢幕看盤';
-      btn.title = isFs ? '退出全螢幕 (Esc)' : '全螢幕放大看盤';
-    }
+    document.querySelectorAll('.chart-viewport').forEach(viewport => {
+      const isFs = document.fullscreenElement === viewport || document.webkitFullscreenElement === viewport;
+      if (!isFs) viewport.classList.remove('fullscreen');
+      const btn = viewport.querySelector('.btn-fullscreen-toggle');
+      if (btn) {
+        btn.innerHTML = isFs ? '🗗 還原視窗' : '⛶ 全螢幕看盤';
+        btn.title = isFs ? '退出全螢幕 (Esc)' : '全螢幕放大看盤';
+      }
+    });
     const triggerResize = () => {
       if (window.ChartEngine && typeof window.ChartEngine.resize === 'function') window.ChartEngine.resize();
       if (window.PatternViewer && typeof window.PatternViewer.resize === 'function') window.PatternViewer.resize();
+      if (reportsPatternViewer && typeof reportsPatternViewer.resize === 'function') reportsPatternViewer.resize();
       window.dispatchEvent(new Event('resize'));
     };
     triggerResize();
@@ -2608,8 +2681,36 @@
     }
   });
 
+  let reportsPatternViewer = null;
+  let reportsPatternViewerInitialized = false;
+
+  async function ensureReportsPatternViewer() {
+    const container = document.getElementById('reports-pattern-viewer');
+    if (!container) return null;
+    if (reportsPatternViewerInitialized && reportsPatternViewer) return reportsPatternViewer;
+    if (!window.PatternViewerApp) return null;
+    reportsPatternViewerInitialized = true;
+    try {
+      reportsPatternViewer = new window.PatternViewerApp(container, {
+        initialCode: selectedStockCode || '',
+        getStarredCodes: () => getStarredStocks()
+      });
+      await reportsPatternViewer.init();
+      const sel = container.querySelector('.stock-selector');
+      if (sel) {
+        sel.addEventListener('change', (e) => {
+          if (e.target.value) selectStockGlobal(e.target.value);
+        });
+      }
+      return reportsPatternViewer;
+    } catch (e) {
+      console.error('報表管理技術線圖初始化失敗', e);
+      return null;
+    }
+  }
+
   async function activateWorkspace(name, { pushHistory = true } = {}){
-    const target = ['pattern', 'ranking', 'analysis'].includes(name) ? name : 'reports';
+    const target = ['pattern', 'ranking', 'analysis', 'macro'].includes(name) ? name : 'reports';
     window.activeWorkspaceName = target;
     document.querySelectorAll('.app-tab').forEach(button => {
       const active = button.dataset.workspace === target;
@@ -2620,10 +2721,25 @@
     document.getElementById('pattern-workspace').hidden = target !== 'pattern';
     document.getElementById('ranking-workspace').hidden = target !== 'ranking';
     document.getElementById('analysis-workspace').hidden = target !== 'analysis';
+    const macroWs = document.getElementById('macro-workspace');
+    if (macroWs) macroWs.hidden = target !== 'macro';
     document.getElementById('breadcrumb').style.visibility = target === 'reports' ? '' : 'hidden';
 
     if (pushHistory && typeof syncBrowserHistory === 'function') {
       syncBrowserHistory(target, (target === 'pattern' || target === 'analysis') ? selectedStockCode : null);
+    }
+    if (target === 'reports') {
+      await ensureReportsPatternViewer();
+      if (selectedStockCode && reportsPatternViewer) {
+        if (reportsPatternViewer.currentCode !== selectedStockCode) {
+          await reportsPatternViewer.loadStock(selectedStockCode);
+        }
+      }
+      if (reportsPatternViewer) {
+        requestAnimationFrame(() => reportsPatternViewer.resize());
+        setTimeout(() => reportsPatternViewer.resize(), 80);
+        setTimeout(() => reportsPatternViewer.resize(), 250);
+      }
     }
     if (target === 'pattern') {
       if (!patternViewerInitialized) {
@@ -2665,6 +2781,11 @@
       }
       if (selectedStockCode) {
         await loadMarkdownReport(selectedStockCode);
+      }
+    }
+    if (target === 'macro') {
+      if (typeof loadMacroData === 'function') {
+        loadMacroData();
       }
     }
   }
@@ -3615,7 +3736,19 @@
     // 1. 同步「📑 分析報告」
     loadMarkdownReport(normalizedCode);
 
-    // 2. 同步「🎓 型態教學」選單與線圖
+    // 2. 同步「🗂️ 報表管理」右側嵌入線圖
+    if (reportsPatternViewer) {
+      try {
+        const select = document.querySelector('#reports-pattern-viewer .stock-selector');
+        if (select) {
+          const opt = Array.from(select.options).find(item => item.value === normalizedCode);
+          if (opt) select.value = normalizedCode;
+        }
+        await reportsPatternViewer.loadStock(normalizedCode);
+      } catch (e) {}
+    }
+
+    // 3. 同步「📈 專業看盤」選單與線圖
     if (typeof PatternViewer !== 'undefined' && typeof PatternViewer.loadStock === 'function') {
       try {
         const select = document.querySelector('#pattern-workspace #stockSelect');
@@ -3624,7 +3757,7 @@
           if (option) select.value = normalizedCode;
         }
         updatePatternStarButton(normalizedCode);
-        if (patternViewerInitialized && switchWorkspace !== 'pattern') {
+        if (patternViewerInitialized && (switchWorkspace === 'pattern' || window.activeWorkspaceName === 'pattern')) {
           await PatternViewer.loadStock(normalizedCode);
         }
       } catch (e) {}
@@ -3673,7 +3806,7 @@
     const hash = window.location.hash.replace(/^#/, '').trim();
     if (!hash) return { workspace: 'reports', code: null };
     const [workspacePart, queryPart] = hash.split('?');
-    const workspace = ['pattern', 'ranking', 'analysis', 'reports'].includes(workspacePart) ? workspacePart : 'reports';
+    const workspace = ['pattern', 'ranking', 'analysis', 'reports', 'macro'].includes(workspacePart) ? workspacePart : 'reports';
     let code = null;
     if (queryPart) {
       const params = new URLSearchParams(queryPart);
@@ -3683,8 +3816,9 @@
   }
 
   function getRouteHash(workspace, code){
-    const ws = ['pattern', 'ranking', 'analysis'].includes(workspace) ? workspace : 'reports';
+    const ws = ['pattern', 'ranking', 'analysis', 'macro'].includes(workspace) ? workspace : 'reports';
     if (ws === 'reports') return '#reports';
+    if (ws === 'macro') return '#macro';
     if (ws === 'ranking') return '#ranking';
     if (code) return `#${ws}?code=${encodeURIComponent(code)}`;
     return `#${ws}`;
@@ -3694,7 +3828,7 @@
 
   function syncBrowserHistory(workspace, code, { replace = false } = {}){
     if (isApplyingRouteFromPopState) return;
-    const targetWs = ['pattern', 'ranking', 'analysis'].includes(workspace) ? workspace : 'reports';
+    const targetWs = ['pattern', 'ranking', 'analysis', 'macro'].includes(workspace) ? workspace : 'reports';
     const targetCode = code ? String(code).trim() : null;
     const targetHash = getRouteHash(targetWs, targetCode);
     const stateObj = { workspace: targetWs, code: targetCode };
@@ -3778,12 +3912,18 @@
   } else if (initialRoute.workspace === 'analysis' && initialRoute.code) {
     switchToStockAnalysis(initialRoute.code, { pushHistory: false });
     syncBrowserHistory('analysis', initialRoute.code, { replace: true });
+  } else if (initialRoute.workspace === 'macro') {
+    activateWorkspace('macro', { pushHistory: false });
+    syncBrowserHistory('macro', null, { replace: true });
   } else if (initialRoute.workspace !== 'reports') {
     activateWorkspace(initialRoute.workspace, { pushHistory: false });
     syncBrowserHistory(initialRoute.workspace, null, { replace: true });
   } else {
     activateWorkspace('reports', { pushHistory: false });
     syncBrowserHistory('reports', null, { replace: true });
+    if (initialRoute.code) {
+      selectStockGlobal(initialRoute.code);
+    }
   }
   loadWinrateMap();
 
@@ -4035,6 +4175,24 @@
     const sidebar = document.getElementById('sidebar-tree');
     sidebar.innerHTML = '';
     sidebar.appendChild(renderNode(tree, true));
+
+    if (!selectedStockCode && tree) {
+      const findFirstCode = (n) => {
+        if (!n) return null;
+        if (n.reports && n.reports.length) return n.reports[0].code;
+        if (n.children && n.children.length) {
+          for (const c of n.children) {
+            const f = findFirstCode(c);
+            if (f) return f;
+          }
+        }
+        return null;
+      };
+      const firstCode = findFirstCode(tree);
+      if (firstCode) {
+        selectStockGlobal(firstCode);
+      }
+    }
   }
 
   function renderNode(node, isRoot){
@@ -4126,6 +4284,40 @@
     }
     return wrap;
   }
+
+  function formatDisposalPeriodShort(dispInfo){
+    if (!dispInfo) return '';
+    const startStr = String(dispInfo.start_date || '').trim();
+    const endStr = String(dispInfo.end_date || '').trim();
+    if (startStr && endStr) {
+      const s = startStr.split('-');
+      const e = endStr.split('-');
+      if (s.length >= 3 && e.length >= 3) {
+        const sm = parseInt(s[1], 10);
+        const sd = parseInt(s[2], 10);
+        const em = parseInt(e[1], 10);
+        const ed = parseInt(e[2], 10);
+        if (!isNaN(sm) && !isNaN(sd) && !isNaN(em) && !isNaN(ed)) {
+          return `${sm}/${sd}~${em}/${ed}`;
+        }
+      }
+    }
+    const raw = String(dispInfo.period_raw || '');
+    if (raw) {
+      const m = raw.match(/(\d{1,2})[/-](\d{1,2})\s*[～~\-至]\s*(?:(?:\d{2,4}[/-])?(\d{1,2})[/-])?(\d{1,2})/);
+      if (m) {
+        const sm = parseInt(m[1], 10);
+        const sd = parseInt(m[2], 10);
+        const em = m[3] ? parseInt(m[3], 10) : sm;
+        const ed = parseInt(m[4], 10);
+        if (!isNaN(sm) && !isNaN(sd) && !isNaN(em) && !isNaN(ed)) {
+          return `${sm}/${sd}~${em}/${ed}`;
+        }
+      }
+    }
+    return '';
+  }
+  window.formatDisposalPeriodShort = formatDisposalPeriodShort;
 
   function renderTreeReport(r, folderPath){
     const code = String(r.code || '').trim();
@@ -4220,10 +4412,13 @@
     const dispInfo = window.DISPOSAL_NOTICE_MAP && window.DISPOSAL_NOTICE_MAP[code];
     let dispBadge = '';
     if (dispInfo) {
+      const shortPeriod = formatDisposalPeriodShort(dispInfo);
       if (dispInfo.type === 'disposal' && dispInfo.status === 'upcoming') {
-        dispBadge = `<span class="stock-disposal-badge upcoming" title="🚨 已公告明日進處置 (${escapeHtml(dispInfo.period_raw || '')})">明日處置</span>`;
+        const text = shortPeriod ? `明日 ${shortPeriod}` : '明日處置';
+        dispBadge = `<span class="stock-disposal-badge upcoming" title="🚨 已公告明日進處置 (${escapeHtml(dispInfo.period_raw || `${dispInfo.start_date || ''}~${dispInfo.end_date || ''}`)})">${escapeHtml(text)}</span>`;
       } else if (dispInfo.type === 'disposal' && dispInfo.status === 'active') {
-        dispBadge = `<span class="stock-disposal-badge active" title="🔒 處置中 (${escapeHtml(dispInfo.period_raw || '')})">處置中</span>`;
+        const text = shortPeriod ? `處置 ${shortPeriod}` : '處置中';
+        dispBadge = `<span class="stock-disposal-badge active" title="🔒 處置中 (${escapeHtml(dispInfo.period_raw || `${dispInfo.start_date || ''}~${dispInfo.end_date || ''}`)})">${escapeHtml(text)}</span>`;
       } else if (dispInfo.type === 'notice') {
         dispBadge = `<span class="stock-disposal-badge notice" title="👀 注意股票 (${escapeHtml(dispInfo.info || '')})">注意</span>`;
       }
@@ -4231,7 +4426,13 @@
 
     const displayName = (window.STOCK_NAMES_MAP && window.STOCK_NAMES_MAP[code]) || r.name || r.base;
     item.innerHTML = `${starBtn}<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>${dispBadge}<span class="tree-stat-pills">${quickActions}${winPill}${changePill}${pricePill}${pePill}</span>`;
-    item.addEventListener('click', () => openPatternForStock(code));
+    item.addEventListener('click', () => {
+      if (window.activeWorkspaceName === 'reports') {
+        selectStockGlobal(code);
+      } else {
+        openPatternForStock(code);
+      }
+    });
 
     const starBtnEl = item.querySelector('.tree-star-btn');
     if (starBtnEl) {
@@ -4325,10 +4526,13 @@
       const dispInfo = r.code ? (window.DISPOSAL_NOTICE_MAP && window.DISPOSAL_NOTICE_MAP[r.code]) : null;
       let cardDispBadge = '';
       if (dispInfo) {
+        const shortPeriod = formatDisposalPeriodShort(dispInfo);
         if (dispInfo.type === 'disposal' && dispInfo.status === 'upcoming') {
-          cardDispBadge = `<span class="card-disp-tag upcoming" title="🚨 明日進處置 (${escapeHtml(dispInfo.period_raw || '')})">🚨 明日處置</span>`;
+          const text = shortPeriod ? `🚨 明日 ${shortPeriod}` : '🚨 明日處置';
+          cardDispBadge = `<span class="card-disp-tag upcoming" title="🚨 明日進處置 (${escapeHtml(dispInfo.period_raw || `${dispInfo.start_date || ''}~${dispInfo.end_date || ''}`)})">${escapeHtml(text)}</span>`;
         } else if (dispInfo.type === 'disposal' && dispInfo.status === 'active') {
-          cardDispBadge = `<span class="card-disp-tag active" title="🔒 處置中 (${escapeHtml(dispInfo.period_raw || '')})">🔒 處置中</span>`;
+          const text = shortPeriod ? `🔒 處置 ${shortPeriod}` : '🔒 處置中';
+          cardDispBadge = `<span class="card-disp-tag active" title="🔒 處置中 (${escapeHtml(dispInfo.period_raw || `${dispInfo.start_date || ''}~${dispInfo.end_date || ''}`)})">${escapeHtml(text)}</span>`;
         } else if (dispInfo.type === 'notice') {
           cardDispBadge = `<span class="card-disp-tag notice" title="👀 注意股票 (${escapeHtml(dispInfo.info || '')})">👀 注意</span>`;
         }
@@ -4895,18 +5099,16 @@
   }
 
   function updatePatternInstitutionalSummary(code){
-    const wrapper = document.getElementById('patternInstTableWrapper');
-    const container = document.getElementById('patternInstContainer');
-    if (!wrapper) return;
     const cleanCode = String(code || '').split('.')[0].trim();
     const card = cardsByCode[cleanCode] || cardsByCode[code] || null;
-    if (card) {
-      wrapper.innerHTML = renderInstitutionSummary(card);
-      if (container) container.style.display = 'block';
-    } else {
-      wrapper.innerHTML = '<div class="inst-chart-empty">尚無法人籌碼資料</div>';
-      if (container) container.style.display = 'block';
-    }
+    const content = card ? renderInstitutionSummary(card) : '<div class="inst-chart-empty">尚無法人籌碼資料</div>';
+
+    document.querySelectorAll('#patternInstTableWrapper, #reports-patternInstTableWrapper, .pattern-inst-table-wrapper').forEach(el => {
+      el.innerHTML = content;
+    });
+    document.querySelectorAll('#patternInstContainer, #reports-patternInstContainer, .inst-mini-chart').forEach(el => {
+      el.style.display = 'block';
+    });
   }
   window.updatePatternInstitutionalSummary = updatePatternInstitutionalSummary;
   window.renderInstitutionSummary = renderInstitutionSummary;
@@ -5503,29 +5705,10 @@ ${macroJsonText()}`;
   });
 
   // ── 大盤三大法人買賣金額明細 ──
-  function getExpectedMarketInstDate(){
+  function getTodayMarketDate(){
     const now = new Date();
-    const day = now.getDay(); // 0: 週日, 1: 週一, ..., 6: 週六
-    const hour = now.getHours();
-    // 證交所通常於交易日下午 14:45 ~ 15:00 公布當日三大法人買賣金額明細
-    const isPastReleaseTime = hour >= 15;
-
-    let target = new Date(now);
-    if (day === 0) { // 週日：最新應為上週五
-      target.setDate(target.getDate() - 2);
-    } else if (day === 6) { // 週六：最新應為週五
-      target.setDate(target.getDate() - 1);
-    } else if (day === 1) { // 週一
-      if (!isPastReleaseTime) {
-        target.setDate(target.getDate() - 3); // 盤後公布前，最新應為上週五
-      }
-    } else { // 週二至週五
-      if (!isPastReleaseTime) {
-        target.setDate(target.getDate() - 1); // 盤後公布前，最新應為前一交易日
-      }
-    }
     const pad = n => String(n).padStart(2, '0');
-    return `${target.getFullYear()}-${pad(target.getMonth() + 1)}-${pad(target.getDate())}`;
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   }
 
   function formatMarketYi(v, withSign){
@@ -5552,9 +5735,10 @@ ${macroJsonText()}`;
       }
 
       const { date: dataDate, rows } = json.data;
-      const expectedDate = getExpectedMarketInstDate();
-      const isStale = !dataDate || (dataDate < expectedDate);
-      badgeEl.textContent = dataDate ? `資料日期：${dataDate}${isStale ? ' (非最新)' : ' (最新)'}` : '日期未知';
+      const todayDate = getTodayMarketDate();
+      const isToday = !!(dataDate && dataDate === todayDate);
+      const isStale = !isToday; // 若不是今天的明細，則為深色調
+      badgeEl.textContent = dataDate ? `資料日期：${dataDate}${isToday ? ' (今日最新)' : ' (非今日)'}` : '日期未知';
       badgeEl.classList.toggle('stale', isStale);
       if (cardEl) cardEl.classList.toggle('stale', isStale);
       statusEl.textContent = `查詢時間 ${new Date().toLocaleTimeString('zh-TW', { hour12: false })}`;
@@ -5643,6 +5827,12 @@ ${macroJsonText()}`;
       window.DISPOSAL_NOTICE_MAP = filteredMap;
       if (window.PatternViewer && typeof window.PatternViewer.refreshDisposalBadge === 'function') {
         window.PatternViewer.refreshDisposalBadge();
+      }
+      if (reportsPatternViewer && typeof reportsPatternViewer.updateDisposalBadge === 'function') {
+        reportsPatternViewer.updateDisposalBadge();
+      }
+      if (tree && typeof renderTree === 'function') {
+        renderTree();
       }
 
       const upcomingCount = disposals.filter(d => d.status === 'upcoming').length;
