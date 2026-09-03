@@ -234,6 +234,14 @@ def calculate_evolution_score(stock_info):
         score += 8.0
         reasons.append(f"法人回補({inst_buy_days}/5日)")
 
+    # G. 實戰流動性與資金佔用折價 (Liquidity Discount)
+    if price >= 5000.0:
+        score -= 18.0 # 超高價千金股滑價與深度風險折價
+    elif price >= 3000.0:
+        score -= 12.0
+    elif price >= 1000.0:
+        score -= 6.0
+
     stop_loss = round(float(ma20.iloc[-1]) * 0.985, 2)
     risk_pct = max((price - stop_loss) / price * 100, 1.0)
     target_price = round(price * (1 + min(max(risk_pct * 2.2, 12.0), 30.0) / 100), 2)
@@ -376,8 +384,12 @@ def generate_ai_evolution_log(top_picks, as_of_date, api_key, model_label):
 基準日期：{as_of_date}（2026年9月初）。
 今日市場客觀事實：
 - 部分熱門股顯著回檔：富喬 (1815) 今日收跌 -8.40%（盤中最低一度觸及 -9.92%）、光環 (3234) 收跌 -7.82%、華碩 (2357) 挑戰千元關卡拉回收長黑。請務必使用真實跌幅數字，嚴禁使用未發生的「跌停」等誇大用詞。
-- 相對抗跌與回測守穩標的：緯創 (+1.62%)、聯發科 (+1.52%)、強茂 (+5.41%)、鴻勁 (+2.80%)、頎邦 (+3.56%)、創意 (-1.61% 量縮守月線)。
-- 重要漏洞反思案例：富世達 (6805) 今日成交量比僅 0.4x，係因列入證交所處置股票分盤撮合導致流動性人為急凍，非市場自然之「籌碼洗淨」或「回測量縮守穩」。系統已自我進化處置股過濾器，剝奪制度性量縮加分並實施流動性折價。
+- 相對抗跌與回測守穩標的：緯創 (+1.62%)、聯發科 (+1.52%)、強茂 (+5.41%)、頎邦 (+3.56%)、創意 (-1.61% 量縮守月線)。
+- 重大漏洞反思與自我進化：
+  1. 處置股識別：富世達 (6805) 因進處置分盤撮合致量縮，非自然籌碼洗淨，已剝奪加分並剔除。
+  2. 數據誠信校準：緯創 (3231) 營收校正為真實單月 861.9 億元，杜絕季度累計三千億極端值混淆。
+  3. 技術面一票否決：鴻勁 (7769) 因均線空頭排列且失守 5MA，雖基本面強但技術面矛盾，貫徹「破5MA一票否決」自起漲榜除名。
+  4. 千金股流動性折價：對股價逾千元、數千元標的引入流動性與資金佔用扣分，平衡資金效率。
 
 今日入選勝率榜標的：
 {stocks_summary}
@@ -385,8 +397,8 @@ def generate_ai_evolution_log(top_picks, as_of_date, api_key, model_label):
 請為實戰覆盤日記 (evolution_log.md) 撰寫客觀冷靜的檢討報告（繁體中文 Markdown）：
 包含：
 1. 【今日市場走勢客觀覆盤】：以精確數據比對回檔個股與抗跌個股，分析資金流向。
-2. 【核心個案深度檢討】：說明系統如何兼顧「放量起漲」與「量縮良性回測月線」兩種買點，並對開高走低長黑採平滑扣分而非粗暴錯殺。
-3. 【演算法多維平衡進化原則】：說明風報比標註、數據誠信與動態嚴選標準。
+2. 【核心個案深度檢討】：詳述富世達處置股量縮、緯創單月真實營收校準、鴻勁破5MA一票否決、千金股流動性折價三大進化案例。
+3. 【演算法多維平衡進化原則】：說明數據誠信、技術面鐵律與資金效率平衡。
 
 請直接輸出 Markdown 內文，禁止誇大渲染，數據嚴格精確。
 """
@@ -470,10 +482,11 @@ def main():
 
     ranked = sorted(candidates, key=lambda x: x['score'], reverse=True)
 
-    # 綜合評分 >= 100 分者進入精選池 (兼顧起漲與回測買點)
-    pre_qualified = [r for r in ranked if r['score'] >= 100.0][:8]
+    # 實戰鐵律一票否決制：起漲勝率榜嚴禁收盤價跌破 5MA 的標的（破 5MA 屬短線回檔或空方型態，一律排除）
+    momentum_candidates = [r for r in ranked if r['above_5ma'] and r['score'] >= 100.0]
+    pre_qualified = momentum_candidates[:8]
     if not pre_qualified:
-        pre_qualified = ranked[:6]
+        pre_qualified = [r for r in ranked if r['above_5ma']][:6]
 
     final_qualified = []
     actual_model_used = model_label
