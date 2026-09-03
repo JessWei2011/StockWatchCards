@@ -29,12 +29,21 @@ OUTPUT_EVO_MD = ROOT_DIR / "stock_winrate_ranking_evolution.md"
 EVOLUTION_LOG_MD = ROOT_DIR / "evolution_log.md"
 
 sys.path.insert(0, str(ROOT_DIR))
-from batch_scanner_gemini import parse_html_report, calculate_rsi_series, calculate_kdj_series, detect_kline_tags, detect_volume_tags, detect_macd_tags
+from batch_scanner_gemini import (
+    parse_html_report,
+    calculate_rsi_series,
+    calculate_kdj_series,
+    detect_kline_tags,
+    detect_volume_tags,
+    detect_macd_tags,
+    recognize_pattern
+)
 
 def calculate_evolution_score(stock_info):
     """
-    獨有起漲模型核心評分算法：
-    以「起漲爆發期望值 = 發動動能 × (1 - 過熱扣分) × 支撐安全度 × 風報比」為核心
+    全維度 AI 起漲模型核心評分算法：
+    全面閱讀【K線幾何形態】、【均線多頭排列】、【成交量能結構】與【MACD/KD動態指標】
+    以「起漲爆發期望值 = 型態突破 × 量能換手 × MACD動能 × 月線安全墊 × 籌碼護體」為核心
     """
     kline = stock_info.get('kline', [])
     if len(kline) < 25:
@@ -44,41 +53,47 @@ def calculate_evolution_score(stock_info):
     close_s = df['close']
     high_s = df['high']
     low_s = df['low']
+    open_s = df['open']
     vol_s = df['volume']
     n = len(df)
 
     price = float(close_s.iloc[-1])
     prev_close = float(close_s.iloc[-2])
     today_pct = (price - prev_close) / prev_close * 100
+    open_p = float(open_s.iloc[-1])
+    intraday_pct = (price - open_p) / prev_close * 100
 
     # 均線計算
     ma5 = close_s.rolling(5).mean()
     ma10 = close_s.rolling(10).mean()
     ma20 = close_s.rolling(20).mean()
-    ma50 = close_s.rolling(50).mean()
+    ma50 = close_s.rolling(50).mean() if n >= 50 else close_s.rolling(25).mean()
 
     s5 = ((ma5.iloc[-1] - ma5.iloc[-2]) / ma5.iloc[-2] * 100) if len(ma5) >= 2 else 0.0
     s10 = ((ma10.iloc[-1] - ma10.iloc[-2]) / ma10.iloc[-2] * 100) if len(ma10) >= 2 else 0.0
-    s20 = ((ma20.iloc[-1] - ma20.iloc[-2]) / ma20.iloc[-2] * 100) if len(ma20) >= 2 else 0.0
+    s20 = ((ma20.iloc[-1] - ma20.iloc[-2]) / ma20.iloc[-2] * 100) if len(ma20) >= 20 else 0.0
 
     # 乖離率
     bias_20 = ((price - ma20.iloc[-1]) / ma20.iloc[-1] * 100) if len(ma20) >= 20 and ma20.iloc[-1] > 0 else 0.0
     bias_5 = ((price - ma5.iloc[-1]) / ma5.iloc[-1] * 100) if len(ma5) >= 5 and ma5.iloc[-1] > 0 else 0.0
 
-    # 成交量
+    # 成交量比
     vol20 = float(vol_s.rolling(20).mean().iloc[-1]) if n >= 20 else float(vol_s.iloc[-1])
     vol_ratio = float(vol_s.iloc[-1]) / max(vol20, 1.0)
 
-    # 技術指標與全維度專業標籤檢測
+    # 技術指標
     rsi14_series = calculate_rsi_series(close_s, 14)
     rsi14 = float(rsi14_series.iloc[-1])
     k_s, d_s, _ = calculate_kdj_series(high_s, low_s, close_s)
     k_val = float(k_s.iloc[-1])
+    d_val = float(d_s.iloc[-1])
 
     # 處置股判斷
     is_disposal = ('處置' in stock_info.get('name', '')) or ('處置' in stock_info.get('path', ''))
 
-    # 全維度指標標籤檢測 (K線、成交量阻力牆、MACD動能)
+    # 全維度指標標籤與幾何線型識別 (全面閱讀 K線、量能、MACD)
+    df_upper = df.rename(columns={'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'})
+    pattern_name, pattern_base_score = recognize_pattern(df_upper)
     ktags = detect_kline_tags(df)
     vtags = detect_volume_tags(df, is_disposal)
     mtags = detect_macd_tags(close_s)
@@ -90,8 +105,6 @@ def calculate_evolution_score(stock_info):
     trailing_pe = stock_info.get('trailing_pe')
 
     # K棒收盤強度與開高走低幅度
-    open_p = float(kline[-1].get('open', price))
-    intraday_pct = (price - open_p) / prev_close * 100
     bar_range = max(high_s.iloc[-1] - low_s.iloc[-1], 1e-9)
     close_loc = (price - low_s.iloc[-1]) / bar_range
 
@@ -120,114 +133,106 @@ def calculate_evolution_score(stock_info):
     if intraday_pct < -2.2 and close_loc < 0.30:
         return None
 
-    # 6. 【重大進化：精誠案例】假突破誘多出貨 一票否決！
+    # 6. 【重大進化】假突破誘多出貨 一票否決！（徹底杜絕精誠型長上影線）
     if any("假突破" in t or "誘多出貨" in t for t in ktags):
         return None
 
-    # 7. 【重大進化：精誠案例】臨前高天量阻力牆且量能不足 一票否決！
+    # 7. 【重大進化】臨前高天量阻力牆且量能不足 一票否決！（徹底杜絕無量虛漲）
     if any("天量阻力牆" in t for t in vtags):
         return None
 
+    # 8. 必須實質站上 5MA（連短期攻擊線都失守者，絕非當前起漲點）
+    if price < ma5.iloc[-1]:
+        return None
+
     # =========================================================================
-    # 🎯 【起漲期望值評分引擎】 (基準分 50 分)
+    # 🎯 【全維度技術讀取評分矩陣】 (基準分 50 分)
     # =========================================================================
     score = 50.0
     reasons = []
 
-    # 1. 發動點：初升段均線突破與加速 (站穩 5MA 為起漲核心防線)
-    if price >= ma5.iloc[-1]:
-        if 0.5 <= s5 <= 3.8:
-            score += 30.0
-            reasons.append(f"5MA剛起步翻揚(+{s5:.2f}%)")
-        elif s5 > 3.8:
-            score += 20.0
-            reasons.append(f"5MA極速推進(+{s5:.2f}%)")
-        else:
-            score += 18.0
-            reasons.append("站上5MA攻擊線")
-    else:
-        # 跌破 5MA：短線修正中，重扣 25 分！
-        score -= 25.0
-        reasons.append("跌破5MA拉回修正中(-25分)")
-
-    # 2. 成本防禦墊：月線健康推升且乖離適中 (甜蜜區間 1.0% ~ 9.5%)
-    if 1.0 <= bias_20 <= 9.5 and s20 > 0.3:
-        score += 26.0
-        reasons.append(f"脫離月線甜蜜區(乖離+{bias_20:.1f}%)")
-    elif 0 <= bias_20 < 1.0 and s20 >= 0:
-        score += 18.0
-        reasons.append("緊貼上升月線起漲點")
-    elif bias_20 > 9.5:
-        # 非線性過熱微扣分
-        penalty = (bias_20 - 9.5) * 2.0
-        score -= penalty
-        reasons.append(f"乖離稍大扣減{penalty:.1f}分")
-
-    # 3. 量能結構：溫和增量或突破換手 (拒絕窒息無量，拒絕失控天量)
-    if 1.15 <= vol_ratio <= 3.2 and today_pct >= -1.0:
+    # A. K線與型態閱讀 (K-Line & Pattern Reading)
+    if any("均線開花" in t for t in ktags):
+        score += 24.0
+        reasons.append("🚀K線: 均線開花多頭發散")
+    elif any("突破站上5MA" in t or "5MA轉仰角" in t for t in ktags):
         score += 20.0
-        reasons.append(f"量能實質換手推進({vol_ratio:.1f}x)")
-    elif 0.75 <= vol_ratio < 1.15:
-        score += 10.0
-        reasons.append("常態量溫和消化")
-    elif vol_ratio < 0.75:
-        score -= 5.0
-        reasons.append("量縮動能稍弱")
-    elif vol_ratio > 3.5 and close_loc < 0.35:
-        score -= 20.0
-        reasons.append("爆量滯漲警示")
+        reasons.append("✨K線: 突破站上5MA翻揚")
+    elif any("站穩5MA" in t for t in ktags):
+        score += 16.0
+        reasons.append("📈K線: 站穩5MA沿線推升")
 
-    # 4. 籌碼護體：投信連買與法人承接
-    if trust_buy_days >= 3:
+    if "杯柄" in pattern_name:
         score += 18.0
+        reasons.append(f"🏆型態: {pattern_name}")
+    elif "VCP" in pattern_name:
+        score += 16.0
+        reasons.append(f"🏆型態: {pattern_name}")
+    elif "新高" in pattern_name or "突破" in pattern_name:
+        score += 14.0
+        reasons.append(f"🏆型態: {pattern_name}")
+    elif "多頭排列" in pattern_name:
+        score += 10.0
+        reasons.append("🏆型態: 階梯推升多頭排列")
+
+    # B. 成交量結構閱讀 (Volume Profile Reading)
+    if any("滾量換手" in t for t in vtags):
+        score += 24.0
+        reasons.append("🚀量能: 滾量換手量價齊揚主升")
+    elif any("帶量長紅" in t or "帶量突破" in t for t in vtags):
+        score += 20.0
+        reasons.append("🔥量能: 帶量突破實質換手")
+    elif any("買盤溫和增量" in t for t in vtags):
+        score += 14.0
+        reasons.append("📈量能: 買盤溫和增量推進")
+    elif vol_ratio >= 1.15:
+        score += 12.0
+        reasons.append(f"量能實質增溫({vol_ratio:.1f}x)")
+
+    # C. MACD 動態指標解讀 (MACD Dynamic Reading)
+    if any("零軸上強勢多頭" in t for t in mtags):
+        score += 22.0
+        reasons.append("🚀MACD: 零軸上強勢多頭(紅柱擴大)")
+    elif any("二次金叉" in t or "零軸上金叉" in t for t in mtags):
+        score += 20.0
+        reasons.append("✨MACD: 零軸上金叉空中加油")
+    elif any("零軸下反彈推進" in t for t in mtags):
+        score += 16.0
+        reasons.append("📈MACD: 零軸下反彈紅柱連續放大")
+    elif any("綠柱收斂" in t for t in mtags):
+        score += 14.0
+        reasons.append("💡MACD: 綠柱收斂空方衰退準備翻多")
+    elif any("死亡交叉" in t for t in mtags):
+        score -= 25.0
+        reasons.append("⚡MACD: 死亡交叉修正中(-25分)")
+    elif any("翻綠" in t for t in mtags):
+        score -= 15.0
+        reasons.append("❄️MACD: 柱體翻綠動能減弱(-15分)")
+
+    # D. 成本防禦墊 (月線甜蜜區)
+    if 1.0 <= bias_20 <= 9.5 and s20 > 0.3:
+        score += 22.0
+        reasons.append(f"月線甜蜜發動區(乖離+{bias_20:.1f}%)")
+    elif 0 <= bias_20 < 1.0 and s20 >= 0:
+        score += 16.0
+        reasons.append("貼近上升月線起漲點")
+    elif bias_20 > 9.5:
+        score -= (bias_20 - 9.5) * 2.0
+
+    # E. 籌碼護體與當日逆勢抗跌
+    if trust_buy_days >= 3:
+        score += 16.0
         reasons.append(f"投信作帳認養({trust_buy_days}/5日)")
     elif inst_buy_days >= 3:
         score += 10.0
         reasons.append(f"法人波段回補({inst_buy_days}/5日)")
 
-    # 5. RSI/KD/MACD 攻擊黃金通道與死叉折返
-    d_val = float(d_s.iloc[-1])
-    if k_val < d_val and (k_s.iloc[-2] >= d_s.iloc[-2] or k_val < d_val - 1.0):
-        score -= 20.0
-        reasons.append("⚡KD死叉修正中(-20分)")
-    elif k_val > d_val:
-        score += 10.0
-        reasons.append("KD多頭金叉推進")
-
-    has_macd_dead = any("死亡交叉" in t for t in mtags)
-    has_macd_green = any("翻綠" in t for t in mtags)
-    if has_macd_dead:
-        score -= 25.0
-        reasons.append("⚡MACD死叉獲利了結(-25分)")
-    elif has_macd_green:
-        score -= 15.0
-        reasons.append("❄️MACD柱體翻綠減弱(-15分)")
-    elif any("二次金叉" in t or "零軸上金叉" in t for t in mtags):
-        score += 12.0
-        reasons.append("🚀MACD強勢金叉推進")
-
-    if 56.0 <= rsi14 <= 74.0:
-        score += 12.0
-        reasons.append(f"RSI多頭通道({rsi14:.1f})")
-    elif rsi14 > 74.0:
-        score -= 8.0
-        reasons.append(f"RSI高檔過熱微扣({rsi14:.1f})")
-
-    # 6. 估值與基本面安全邊際
-    if trailing_pe is not None and 0 < trailing_pe <= 28.0:
-        score += 8.0
-        reasons.append(f"PE合理兼具保護({trailing_pe:.1f}倍)")
-
-    # 7. 當日收盤抗跌強度加分 (實戰反饋：逆勢收紅代表主力強勢鎖碼)
     if today_pct > 1.0:
         score += 16.0
-        reasons.append(f"盤面逆勢抗跌(+{today_pct:.1f}%)")
+        reasons.append(f"逆勢抗跌上揚(+{today_pct:.1f}%)")
     elif today_pct >= 0:
         score += 8.0
         reasons.append("平盤抗跌守穩")
-    elif today_pct < -2.5:
-        score -= 15.0
-        reasons.append(f"單日重挫拉回({today_pct:.1f}%)")
 
     # 關鍵停損與目標價
     stop_loss = round(float(ma20.iloc[-1]) * 0.985, 2)
