@@ -128,6 +128,115 @@
     font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
     font-variant-numeric:tabular-nums; font-size:12.5px;
   }
+  /* ── 上市與上櫃股號顏色（全網頁適用） ── */
+  :root {
+    --market-tw-color: #38bdf8;   /* 上市 (TWSE)：天青藍 */
+    --market-two-color: #c084fc;  /* 上櫃/櫃買 (TPEx)：紫羅蘭 */
+  }
+
+  /* 上市股號 (TWSE) */
+  .market-tw,
+  .code.market-tw,
+  .stock-code.market-tw,
+  .stock-code-tw,
+  span.code.market-tw,
+  div.code.market-tw {
+    color: var(--market-tw-color) !important;
+  }
+
+  /* 上櫃/櫃買股號 (TPEx) */
+  .market-two,
+  .code.market-two,
+  .stock-code.market-two,
+  .stock-code-two,
+  span.code.market-two,
+  div.code.market-two {
+    color: var(--market-two-color) !important;
+  }
+
+  /* 目錄樹微調：文字微光暈、易辨識 */
+  .tree-report-row .code {
+    font-weight: 750;
+    transition: color 0.15s ease;
+  }
+  .tree-report-row .code.market-tw {
+    color: var(--market-tw-color) !important;
+    text-shadow: 0 0 10px rgba(56, 189, 248, 0.28);
+  }
+  .tree-report-row .code.market-two {
+    color: var(--market-two-color) !important;
+    text-shadow: 0 0 10px rgba(192, 132, 252, 0.28);
+  }
+
+  /* 卡片檢視中的股號 */
+  .card .code.market-tw {
+    color: var(--market-tw-color) !important;
+    font-weight: 800;
+  }
+  .card .code.market-two {
+    color: var(--market-two-color) !important;
+    font-weight: 800;
+  }
+
+  /* 市場圖例 (Sidebar Market Legend) */
+  .market-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 750;
+    color: var(--text-dim);
+    user-select: none;
+    padding: 2px 7px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-left: auto;
+  }
+  .market-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: default;
+  }
+  .market-legend-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .market-legend-dot.tw {
+    background: #38bdf8;
+    box-shadow: 0 0 6px rgba(56, 189, 248, 0.85);
+  }
+  .market-legend-dot.two {
+    background: #c084fc;
+    box-shadow: 0 0 6px rgba(192, 132, 252, 0.85);
+  }
+
+  /* 市場小徽章 (Market Badge) */
+  .market-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.2;
+    vertical-align: middle;
+    margin-right: 5px;
+  }
+  .market-badge.market-tw {
+    background: rgba(56, 189, 248, 0.14);
+    color: #38bdf8 !important;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+  }
+  .market-badge.market-two {
+    background: rgba(192, 132, 252, 0.14);
+    color: #c084fc !important;
+    border: 1px solid rgba(192, 132, 252, 0.4);
+  }
   .tree-report-row .name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
   .tree-stat-pills{
     display:inline-flex; align-items:center; justify-content:flex-end; gap:4px; flex-shrink:0; margin-left:auto;
@@ -1158,6 +1267,10 @@
         <button id="expand-all-btn">🔽 全開</button>
         <button id="collapse-all-btn">🔼 全收</button>
         <button id="filter-starred-btn" title="切換：僅顯示重點標注關注股票 / 顯示全部">⭐ 重點</button>
+        <span class="market-legend" title="股號顏色說明：天藍色為上市 (TWSE)，紫色為上櫃/櫃買 (TPEx)">
+          <span class="market-legend-item"><span class="market-legend-dot tw"></span>上市</span>
+          <span class="market-legend-item"><span class="market-legend-dot two"></span>上櫃</span>
+        </span>
       </div>
       <div id="sidebar-tree"></div>
     </div>
@@ -2928,7 +3041,11 @@
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <label style="font-size:13px; font-weight:800; color:#93c5fd;">🎯 切換分析個股：</label>
           <select id="analysis-stock-switcher" class="analysis-stock-select" onchange="switchToStockAnalysis(this.value);">
-            ${sortedCards.map(c => `<option value="${escapeHtml(c.code)}" ${String(c.code) === String(code) ? 'selected' : ''}>${escapeHtml(c.code)} ${escapeHtml(c.name)} (${escapeHtml(c.group || '個股')})</option>`).join('')}
+            ${sortedCards.map(c => {
+              const mkt = getStockMarket(c.code, c);
+              const mktTag = mkt === 'TWO' ? '🟪[上櫃]' : '🟦[上市]';
+              return `<option value="${escapeHtml(c.code)}" ${String(c.code) === String(code) ? 'selected' : ''}>${mktTag} ${escapeHtml(c.code)} ${escapeHtml(c.name)} (${escapeHtml(c.group || '個股')})</option>`;
+            }).join('')}
           </select>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -2939,6 +3056,10 @@
       </div>
     `;
 
+    const anMkt = getStockMarket(code, card);
+    const anMktClass = anMkt === 'TWO' ? 'market-two' : 'market-tw';
+    const anMktLabel = anMkt === 'TWO' ? '上櫃' : '上市';
+
     html += `<div class="analysis-card">`;
 
     // Hero Header
@@ -2947,7 +3068,7 @@
         <div>
           <h2 class="analysis-title">${escapeHtml(cleanTitle)}</h2>
           <div class="analysis-meta-pills" style="margin-top:8px;">
-            <span class="analysis-badge neutral">代號：${escapeHtml(code)}</span>
+            <span class="analysis-badge neutral">代號：<strong class="${anMktClass}" style="font-family:monospace; font-size:15px;">${escapeHtml(code)}</strong> <span class="market-badge ${anMktClass}" style="margin-left:4px;">${anMktLabel}</span></span>
             ${card.group ? `<span class="analysis-badge accent">產業：${escapeHtml(card.group)}</span>` : ''}
             ${date ? `<span class="analysis-badge">日期：${escapeHtml(date)}</span>` : ''}
           </div>
@@ -3542,7 +3663,7 @@
                 <div style="display:flex; align-items:center; gap:5px; min-width:0; overflow:hidden;">
                   <span style="font-weight:900; color:var(--text-dim); width:18px; font-size:14px; text-align:right; flex-shrink:0;">${idx + 1}</span>
                   <button type="button" class="ranking-star-btn overview-star-btn ${isStockStarred(it.code) ? 'active' : ''}" data-code="${escapeHtml(it.code)}" aria-label="${isStockStarred(it.code) ? '從重點清單移除' : '加入重點清單'}" aria-pressed="${isStockStarred(it.code)}" title="${isStockStarred(it.code) ? '已加入重點（點擊取消）' : '加入重點清單'}">★</button>
-                  <span style="font-weight:850; color:#93c5fd; font-family:monospace; font-size:15px; flex-shrink:0;">${escapeHtml(it.code)}</span>
+                  <span class="stock-code ${getStockMarketClass(it.code)}" style="font-weight:850; font-family:monospace; font-size:15px; flex-shrink:0;" title="[${getStockMarketLabel(it.code)}] ${escapeHtml(it.code)}">${escapeHtml(it.code)}</span>
                   <span style="font-weight:800; color:#ffffff; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</span>
                   ${tierBadgesMap[it.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[it.code].tier}" title="${escapeHtml(tierBadgesMap[it.code].title)}">${tierBadgesMap[it.code].label}</span>` : ''}
                 </div>
@@ -3566,7 +3687,7 @@
                 <div style="display:flex; align-items:center; gap:5px; min-width:0; overflow:hidden;">
                   <span style="font-weight:900; color:${idx < 3 ? '#facc15' : 'var(--text-dim)'}; width:18px; font-size:14px; text-align:right; flex-shrink:0;">${idx + 1}</span>
                   <button type="button" class="ranking-star-btn overview-star-btn ${isStockStarred(item.code) ? 'active' : ''}" data-code="${escapeHtml(item.code)}" aria-label="${isStockStarred(item.code) ? '從重點清單移除' : '加入重點清單'}" aria-pressed="${isStockStarred(item.code)}" title="${isStockStarred(item.code) ? '已加入重點（點擊取消）' : '加入重點清單'}">★</button>
-                  <span style="font-weight:850; color:#93c5fd; font-family:monospace; font-size:15px; flex-shrink:0;">${escapeHtml(item.code)}</span>
+                  <span class="stock-code ${getStockMarketClass(item.code)}" style="font-weight:850; font-family:monospace; font-size:15px; flex-shrink:0;" title="[${getStockMarketLabel(item.code)}] ${escapeHtml(item.code)}">${escapeHtml(item.code)}</span>
                   <span style="font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(item.name)}</span>
                   ${tierBadgesMap[item.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[item.code].tier}" title="${escapeHtml(tierBadgesMap[item.code].title)}">${tierBadgesMap[item.code].label}</span>` : ''}
                 </div>
@@ -3670,7 +3791,7 @@
                 return `
                   <tr data-stock-code="${escapeHtml(item.code)}" title="點擊直接開啟 ${escapeHtml(item.name)} (${escapeHtml(item.code)}) 的專業看盤">
                     <td style="text-align:center;"><span class="rank-badge-num ${badgeClass}">${escapeHtml(item.rank)}</span></td>
-                    <td><span class="rank-stock-link"><button type="button" class="ranking-star-btn ${isStockStarred(item.code) ? 'active' : ''}" data-code="${escapeHtml(item.code)}" aria-label="${isStockStarred(item.code) ? '從重點清單移除' : '加入重點清單'}" aria-pressed="${isStockStarred(item.code)}" title="${isStockStarred(item.code) ? '已加入重點（點擊取消）' : '加入重點清單'}">★</button><span class="stock-code">${escapeHtml(item.code)}</span></span></td>
+                    <td><span class="rank-stock-link"><button type="button" class="ranking-star-btn ${isStockStarred(item.code) ? 'active' : ''}" data-code="${escapeHtml(item.code)}" aria-label="${isStockStarred(item.code) ? '從重點清單移除' : '加入重點清單'}" aria-pressed="${isStockStarred(item.code)}" title="${isStockStarred(item.code) ? '已加入重點（點擊取消）' : '加入重點清單'}">★</button><span class="stock-code ${getStockMarketClass(item.code)}" title="[${getStockMarketLabel(item.code)}] ${escapeHtml(item.code)}">${escapeHtml(item.code)}</span></span></td>
                     <td><span class="rank-stock-link"><span class="stock-name">${escapeHtml(item.name)}</span>${tierBadgesMap[item.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[item.code].tier}" title="${escapeHtml(tierBadgesMap[item.code].title)}">${tierBadgesMap[item.code].label}</span>` : ''}</span></td>
                     <td style="text-align:center;"><span class="tag-pill" style="font-size:14px; padding:3px 7px; white-space:nowrap;">${escapeHtml(item.category)}</span></td>
                     <td style="text-align:right; font-weight:850; color:#fff;">${escapeHtml(item.price)}</td>
@@ -4168,6 +4289,7 @@
     await syncWatchlistFromServer();
     const { data } = await api('GET', '/api/tree');
     tree = data.tree;
+    populateMarketMapFromTree(tree);
     renderTree();
   }
 
@@ -4319,6 +4441,54 @@
   }
   window.formatDisposalPeriodShort = formatDisposalPeriodShort;
 
+  window.STOCK_MARKET_MAP = {};
+
+  function getStockMarket(code, fallbackItem = null) {
+    const clean = String(code || '').split('.')[0].trim();
+    if (window.STOCK_MARKET_MAP && window.STOCK_MARKET_MAP[clean]) {
+      return window.STOCK_MARKET_MAP[clean];
+    }
+    if (fallbackItem) {
+      if (fallbackItem.market) return fallbackItem.market;
+      if (fallbackItem.base && fallbackItem.base.includes('(TWO)')) return 'TWO';
+      if (fallbackItem.html && fallbackItem.html.includes('(TWO)')) return 'TWO';
+      if (fallbackItem.name && fallbackItem.name.includes('(TWO)')) return 'TWO';
+      if (fallbackItem.path && fallbackItem.path.includes('(TWO)')) return 'TWO';
+    }
+    if (typeof cardsByCode !== 'undefined' && cardsByCode[clean] && cardsByCode[clean].market) {
+      return cardsByCode[clean].market;
+    }
+    return 'TW';
+  }
+  window.getStockMarket = getStockMarket;
+
+  function getStockMarketClass(code, fallbackItem = null) {
+    const m = getStockMarket(code, fallbackItem);
+    return m === 'TWO' ? 'market-two' : 'market-tw';
+  }
+  window.getStockMarketClass = getStockMarketClass;
+
+  function getStockMarketLabel(code, fallbackItem = null) {
+    const m = getStockMarket(code, fallbackItem);
+    return m === 'TWO' ? '上櫃' : '上市';
+  }
+  window.getStockMarketLabel = getStockMarketLabel;
+
+  function populateMarketMapFromTree(node) {
+    if (!node) return;
+    if (node.reports && Array.isArray(node.reports)) {
+      node.reports.forEach(r => {
+        if (r.code) {
+          const mkt = r.market || (r.base && r.base.includes('(TWO)') ? 'TWO' : 'TW');
+          window.STOCK_MARKET_MAP[r.code] = mkt;
+        }
+      });
+    }
+    if (node.children && Array.isArray(node.children)) {
+      node.children.forEach(c => populateMarketMapFromTree(c));
+    }
+  }
+
   function renderTreeReport(r, folderPath){
     const code = String(r.code || '').trim();
     const isStarred = isStockStarred(code);
@@ -4425,7 +4595,11 @@
     }
 
     const displayName = (window.STOCK_NAMES_MAP && window.STOCK_NAMES_MAP[code]) || r.name || r.base;
-    item.innerHTML = `${starBtn}<span class="code">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>${dispBadge}<span class="tree-stat-pills">${quickActions}${winPill}${changePill}${pricePill}${pePill}</span>`;
+    const market = getStockMarket(code, r);
+    const marketClass = market === 'TWO' ? 'market-two' : 'market-tw';
+    const marketLabel = market === 'TWO' ? '上櫃' : '上市';
+    const marketTitle = `[${marketLabel}] ${code} ${displayName}`;
+    item.innerHTML = `${starBtn}<span class="code ${marketClass}" title="${escapeHtml(marketTitle)}">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>${dispBadge}<span class="tree-stat-pills">${quickActions}${winPill}${changePill}${pricePill}${pePill}</span>`;
     item.addEventListener('click', () => {
       if (window.activeWorkspaceName === 'reports') {
         selectStockGlobal(code);
@@ -4537,12 +4711,15 @@
           cardDispBadge = `<span class="card-disp-tag notice" title="👀 注意股票 (${escapeHtml(dispInfo.info || '')})">👀 注意</span>`;
         }
       }
+      const market = getStockMarket(r.code, r);
+      const marketClass = market === 'TWO' ? 'market-two' : 'market-tw';
+      const marketLabel = market === 'TWO' ? '上櫃' : '上市';
       card.innerHTML = `
         <input type="checkbox" class="select-box" draggable="false">
         ${badge}
         ${cardDispBadge}
         ${thumb}
-        <div class="code" style="cursor:pointer;" title="開啟 ${escapeHtml(r.name || r.code)} 的專業看盤" onclick="event.stopPropagation(); openPatternForStock('${escapeHtml(r.code)}');">${escapeHtml(r.code || '')}</div>
+        <div class="code ${marketClass}" style="cursor:pointer;" title="[${marketLabel}] 開啟 ${escapeHtml(r.name || r.code)} 的專業看盤" onclick="event.stopPropagation(); openPatternForStock('${escapeHtml(r.code)}');">${escapeHtml(r.code || '')}</div>
         <div class="name" style="cursor:pointer;" title="開啟 ${escapeHtml(r.name || r.base)} 的專業看盤" onclick="event.stopPropagation(); openPatternForStock('${escapeHtml(r.code)}');">${escapeHtml(r.name || r.base)}</div>
         ${r.code ? `<button type="button" class="card-pattern-btn">📈 專業看盤</button>` : ''}
       `;
@@ -4980,6 +5157,9 @@
       if (ok) {
         cardsByCode = data.cards || {};
         window.cardsByCode = cardsByCode;
+        Object.values(cardsByCode).forEach(c => {
+          if (c && c.code && c.market) window.STOCK_MARKET_MAP[c.code] = c.market;
+        });
       }
     } catch (e) {}
     if (tree) renderTree();

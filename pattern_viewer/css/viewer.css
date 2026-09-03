@@ -589,3 +589,44 @@
 .pattern-viewer .inst-flow-value.flat { color:#94a3b8; }
 .pattern-viewer .inst-chart-empty { color:#94a3b8; font-size:12px; padding:12px 0; text-align:center; }
 
+/* ── 上市與上櫃股號顏色（全站通用） ── */
+.market-tw,
+.code.market-tw,
+.stock-code.market-tw,
+.stock-code-tw {
+  color: #38bdf8 !important;
+}
+
+.market-two,
+.code.market-two,
+.stock-code.market-two,
+.stock-code-two {
+  color: #c084fc !important;
+}
+
+.market-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.market-badge.market-tw {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+}
+
+.market-badge.market-two {
+  background: rgba(192, 132, 252, 0.15);
+  color: #c084fc !important;
+  border: 1px solid rgba(192, 132, 252, 0.45);
+}
+
+

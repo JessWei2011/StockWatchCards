@@ -356,10 +356,14 @@ def parse_md_report_card(md_path):
     macd_tags_str = m_macd.group(1).strip() if m_macd else ""
     kd_tags_str = m_kd.group(1).strip() if m_kd else ""
 
+    m_mkt = re.search(r'\(([0-9A-Za-z]+)\.(TW|TWO)\)', text)
+    market = m_mkt.group(2) if m_mkt else ("TWO" if "(TWO)" in md_path.name else "TW")
+
     group = md_path.parent.name if md_path.parent != REPORTS_DIR else "未分類"
     return {
         "code": code,
         "name": name,
+        "market": market,
         "group": group,
         "date": m_date.group(1).strip() if m_date else "",
         "current": m_price.group(1).strip() if m_price else "",
@@ -475,10 +479,12 @@ def list_folder(path):
             m = TRACKED_FILENAME_RE.match(entry)
             code = m.group(1) if m else None
             name = get_stock_name(code, m.group(2)) if (m and code) else (m.group(2) if m else None)
+            market = m.group(3) if m else ("TWO" if "(TWO)" in entry else "TW")
             reports.append({
                 "base": base,
                 "code": code,
                 "name": name,
+                "market": market,
                 "html": entry,
                 "chart": chart_name if (path / chart_name).exists() else None,
                 "mtime": full.stat().st_mtime,
@@ -504,7 +510,8 @@ def list_reports_recursive(path):
             if m:
                 code = m.group(1)
                 name = get_stock_name(code, m.group(2))
-                reports.append({"base": base, "code": code, "name": name})
+                market = m.group(3) if m else ("TWO" if "(TWO)" in fn else "TW")
+                reports.append({"base": base, "code": code, "name": name, "market": market})
     return reports
 
 

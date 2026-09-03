@@ -179,7 +179,10 @@
             option.value = card.code;
             const hasRep = availableMap.has(String(card.code));
             const reportMark = hasRep ? '' : '｜尚無報表';
-            option.textContent = `${card.code} ${card.name || ''} (${card.decision || '技術指標'}${reportMark})`;
+            const rep = availableMap.get(String(card.code));
+            const mkt = (rep && rep.market) || (card && card.market) || ((rep && rep.path && rep.path.includes('(TWO)')) ? 'TWO' : 'TW');
+            const mktTag = mkt === 'TWO' ? '🟪[上櫃]' : '🟦[上市]';
+            option.textContent = `${mktTag} ${card.code} ${card.name || ''} (${card.decision || '技術指標'}${reportMark})`;
             optgroup.appendChild(option);
           });
         select.appendChild(optgroup);
@@ -197,8 +200,11 @@
           .slice()
           .sort((a, b) => String(a.code).localeCompare(String(b.code)))
           .forEach(card => {
+            const rep = availableMap.get(String(card.code));
+            const mkt = (rep && rep.market) || (card && card.market) || ((rep && rep.path && rep.path.includes('(TWO)')) ? 'TWO' : 'TW');
+            const mktLabel = mkt === 'TWO' ? '上櫃' : '上市';
             const option = document.createElement('option');
-            option.value = `${card.code} ${card.name || ''}`.trim();
+            option.value = `${card.code} ${card.name || ''} [${mktLabel}]`.trim();
             suggestions.appendChild(option);
           });
       }
@@ -441,8 +447,15 @@
         });
       }
 
+      const code = String(this.currentCode || '').split('.')[0].trim();
+      const rep = (this.reportsIndex || []).find(item => String(item.code) === code);
+      const card = this.cardByCode && this.cardByCode[code];
+      const mkt = (rep && rep.market) || (card && card.market) || (window.STOCK_MARKET_MAP && window.STOCK_MARKET_MAP[code]) || ((rep && rep.path && rep.path.includes('(TWO)')) ? 'TWO' : 'TW');
+      const mktClass = mkt === 'TWO' ? 'market-two' : 'market-tw';
+      const mktLabel = mkt === 'TWO' ? '上櫃' : '上市';
+
       const chartTitle = this.q('#chartTitle');
-      if (chartTitle) chartTitle.textContent = `${this.currentStockData.title} — K線 / RSI / MACD / KD / 成交量圖`;
+      if (chartTitle) chartTitle.innerHTML = `<span class="market-badge ${mktClass}">${mktLabel}</span>${this.currentStockData.title} — K線 / RSI / MACD / KD / 成交量圖`;
       this.updateDisposalBadge();
 
       const cardStockName = this.q('#cardStockName');
