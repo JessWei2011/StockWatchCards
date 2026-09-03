@@ -306,6 +306,7 @@ def audit_stock_with_gemini(candidate, api_key, as_of_date):
             'revenue': item.get('revenue', ''),
             'earnings': item.get('earnings', ''),
             'catalyst': item.get('catalyst', ''),
+            'disposition': item.get('disposition', ''),
             'is_trap': False,
             'confidence_bonus': 10,
             '_used_model': 'Google Search Grounding (Cached)'
@@ -376,6 +377,7 @@ def generate_ai_evolution_log(top_picks, as_of_date, api_key, model_label):
 今日市場客觀事實：
 - 部分熱門股顯著回檔：富喬 (1815) 今日收跌 -8.40%（盤中最低一度觸及 -9.92%）、光環 (3234) 收跌 -7.82%、華碩 (2357) 挑戰千元關卡拉回收長黑。請務必使用真實跌幅數字，嚴禁使用未發生的「跌停」等誇大用詞。
 - 相對抗跌與回測守穩標的：緯創 (+1.62%)、聯發科 (+1.52%)、強茂 (+5.41%)、鴻勁 (+2.80%)、頎邦 (+3.56%)、創意 (-1.61% 量縮守月線)。
+- 重要漏洞反思案例：富世達 (6805) 今日成交量比僅 0.4x，係因列入證交所處置股票分盤撮合導致流動性人為急凍，非市場自然之「籌碼洗淨」或「回測量縮守穩」。系統已自我進化處置股過濾器，剝奪制度性量縮加分並實施流動性折價。
 
 今日入選勝率榜標的：
 {stocks_summary}
@@ -492,6 +494,13 @@ def main():
                 cat_desc = audit.get('catalyst', '').strip()
                 rev_desc = audit.get('revenue', '').strip()
                 earn_desc = audit.get('earnings', '').strip()
+                disp_desc = audit.get('disposition', '').strip()
+
+                # 🚨 處置股流動性校準：處置股量縮係制度性急凍，非籌碼洗淨或回測量縮守穩！
+                if disp_desc:
+                    cand['reasons'] = [r for r in cand['reasons'] if "回測量縮" not in r]
+                    cand['score'] -= 27.0 # 扣回誤判量縮守穩(+12分)並加計流動性折價(-15分)
+                    cand['reasons'].append(f"🚨{disp_desc}")
 
                 fund_parts = []
                 if rev_desc and '待' not in rev_desc:
@@ -506,6 +515,9 @@ def main():
             final_qualified.append(cand)
     else:
         final_qualified = pre_qualified
+
+    # 處置股流動性折價後若低於100分則自起漲榜除名，若在榜亦維持警示
+    final_qualified = [c for c in final_qualified if c['score'] >= 95.0]
 
     final_qualified.sort(key=lambda x: x['score'], reverse=True)
     defensive_pool = sorted(ranked, key=lambda x: (abs(x['bias_20'] - 3.0), -x['score']))[:6]
