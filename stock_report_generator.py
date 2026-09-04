@@ -1340,13 +1340,68 @@ def file_date_str(path):
         return None
 
 def is_report_up_to_date(path, now=None):
-    """判斷報表檔案是否已具備最新交易日的盤後收盤資料"""
+    """
+    判斷個別報表檔案內容是否已真正具備最新交易日的完整資料（K線 + 三大法人）。
+    實體檢查檔案內容中的最新資料日期，而非單純仰賴檔案修改時間 (mtime)：
+    1. K 線表格最新一列日期必須達到目標交易日 (例如 09/04)
+    2. 三大法人表格最新一列日期必須達到目標交易日 (例如 2026-09-04)
+    只有在個股「K 線與法人籌碼皆已完整包含當天資料」時才回傳 True（安全跳過），
+    若法人籌碼因各交易所發布時間差而停留在前一天，則回傳 False，讓 999/ALL 能精準自動補齊！
+    """
     try:
-        mt = os.path.getmtime(path)
+        if not path or not os.path.isfile(path):
+            return False, ""
+
         cutoff = get_latest_market_cutoff_time(now)
-        return mt >= cutoff.timestamp(), cutoff.strftime("%Y-%m-%d")
+        target_date = cutoff.date()
+        cutoff_date_str = target_date.strftime("%Y-%m-%d")
+        target_mmdd = target_date.strftime("%m/%d")
+
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            text = f.read()
+
+        # 1. 檢查 K 線表格最後一筆日期 (<td>MM/DD</td>)
+        kline_dates = re.findall(r"<td>(\d{2}/\d{2})</td>", text)
+        if not kline_dates:
+            return False, cutoff_date_str
+        latest_kline = kline_dates[-1]
+
+        # 2. 檢查三大法人表格第一筆（最新）日期 (<td>YYYY-MM-DD</td>)
+        m_inst = re.search(r"<h2>三大法人.*?</h2>\s*<table>\s*<tr>.*?</tr>\s*<tr><td>(\d{4}-\d{2}-\d{2})</td>", text, re.S)
+        latest_inst = m_inst.group(1) if m_inst else None
+
+        # 若報表含有三大法人表格，則需驗證三大法人最新日期
+        if "三大法人" in text and latest_inst:
+            if latest_kline == target_mmdd and latest_inst == cutoff_date_str:
+                return True, cutoff_date_str
+            # 若任一項未達今日目標日期，判定為尚未完整
+            return False, cutoff_date_str
+
+        # 若無三大法人表格，只看 K 線是否已是當天
+        if latest_kline == target_mmdd:
+            return True, cutoff_date_str
+
+        # 國定假日/休市日保護機制：
+        # 若今天市場未開盤，但檔案是在今天 14:00 之後生成，且 K 線與籌碼日期同步
+        m_gen = re.search(r"產生時間[：:]\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}):(\d{2})", text)
+        if m_gen:
+            gen_date = m_gen.group(1)
+            gen_hour = int(m_gen.group(2))
+            today_str = (now or datetime.now()).strftime("%Y-%m-%d")
+            kline_iso_suffix = latest_kline.replace("/", "-")
+            inst_iso_suffix = latest_inst[5:] if latest_inst else ""
+            if gen_date == today_str and gen_hour >= 14 and kline_iso_suffix == inst_iso_suffix:
+                return True, cutoff_date_str
+
+        return False, cutoff_date_str
     except Exception:
-        return False, ""
+        # 後備：若內容解析失敗，退回使用檔案修改時間判斷
+        try:
+            mt = os.path.getmtime(path)
+            cutoff = get_latest_market_cutoff_time(now)
+            return mt >= cutoff.timestamp(), cutoff.strftime("%Y-%m-%d")
+        except Exception:
+            return False, ""
 
 ALL_TRACKED_INPUT = "999"       # 更新全部追蹤清單，已有最新交易日資料的會跳過
 FORCE_ALL_TRACKED_INPUT = "998"  # 強制更新全部追蹤清單，不管是否已有最新資料
