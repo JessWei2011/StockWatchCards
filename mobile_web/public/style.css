@@ -415,6 +415,92 @@ body.stock-picker-open { overflow: hidden; }
 .institution-card strong.neutral { color: #cbd5e1; }
 .institution-unit { margin: 9px 2px 0; color: var(--muted); font-size: 10px; }
 
+.inst-flow-wrapper {
+  margin-top: 12px;
+  background: rgba(8, 12, 23, .45);
+  border: 1px solid rgba(71, 85, 105, .32);
+  border-radius: 12px;
+  padding: 10px 10px 8px;
+}
+.inst-flow-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+.inst-flow-title {
+  color: #cbd5e1;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+.inst-flow-hint {
+  color: #64748b;
+  font-size: 10px;
+}
+.inst-flow-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+}
+.inst-flow-table {
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 2px;
+}
+.inst-flow-table th {
+  padding: 4px 2px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  min-width: 44px;
+}
+.inst-flow-table th:first-child,
+.inst-flow-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: 52px;
+  min-width: 52px;
+  max-width: 52px;
+  background: #111827;
+  text-align: center;
+  color: #e2e8f0;
+  font-weight: 800;
+  font-size: 11px;
+}
+.inst-flow-table td {
+  padding: 5px 2px;
+  background: rgba(255, 255, 255, .035);
+  border: 1px solid rgba(71, 85, 105, .35);
+  border-radius: 4px;
+  text-align: center;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.inst-flow-table tr.total-row td {
+  border-top-color: rgba(148, 163, 184, .75);
+  font-weight: 850;
+  background: rgba(255, 255, 255, .08);
+}
+.inst-flow-value {
+  display: inline-flex;
+  justify-content: center;
+  font-weight: 750;
+  white-space: nowrap;
+  font-size: 10.5px;
+}
+.inst-flow-value.buy { color: #fb7185; }
+.inst-flow-value.sell { color: #34d399; }
+.inst-flow-value.flat { color: #94a3b8; }
+.inst-chart-empty { color: #94a3b8; font-size: 11.5px; padding: 12px 0; text-align: center; }
+
 .chart-shell.fullscreen {
   position: fixed;
   inset: 0;

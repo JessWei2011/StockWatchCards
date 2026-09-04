@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Stock2股票">
   <meta name="description" content="手機 AI 實戰勝率榜與個股看盤中心">
   <title>Stock2 手機戰情室</title>
-  <link rel="stylesheet" href="./style.css?v=20260904183448">
+  <link rel="stylesheet" href="./style.css?v=20260904184100">
 </head>
 <body>
   <header class="topbar">
@@ -107,12 +107,19 @@
         <div class="section-heading compact">
           <div>
             <span class="section-kicker">INSTITUTIONAL FLOW</span>
-            <h2 id="institutionTitle">三大法人最新買賣超</h2>
+            <h2 id="institutionTitle">三大法人籌碼動向</h2>
           </div>
           <span class="latest-date" id="institutionDate">—</span>
         </div>
         <div class="institution-grid" id="institutionGrid"></div>
-        <p class="institution-unit">單位：張；紅色為買超，綠色為賣超。</p>
+        <div class="inst-flow-wrapper">
+          <div class="inst-flow-header">
+            <span class="inst-flow-title">近 15 日三大法人逐日買賣超概數</span>
+            <span class="inst-flow-hint">可左右滑動 ↔</span>
+          </div>
+          <div class="inst-flow-scroll" id="institutionTableScroll"></div>
+        </div>
+        <p class="institution-unit">單位：張；紅色為買超，綠色為賣超。懸停或點選可查看精確張數。</p>
       </section>
 
       <section class="panel chart-panel" aria-labelledby="chartTitle">
@@ -269,7 +276,7 @@
   </div>
 
   <script src="./vendor/echarts.min.js?v=5.4.3"></script>
-  <script src="./modules/parser.js?v=20260904183448"></script>
-  <script src="./app.js?v=20260904183448"></script>
+  <script src="./modules/parser.js?v=20260904184100"></script>
+  <script src="./app.js?v=20260904184100"></script>
 </body>
 </html>

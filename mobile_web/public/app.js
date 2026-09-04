@@ -555,6 +555,58 @@
     $('#signalGrid').innerHTML = badges.join('');
   }
 
+  function formatSignedLots(value) {
+    if (!Number.isFinite(value)) return '—';
+    return `${value > 0 ? '+' : ''}${value.toLocaleString('zh-TW')}`;
+  }
+
+  function formatApproxLots(value) {
+    if (!Number.isFinite(value) || value === 0) return '0';
+    const absolute = Math.abs(value);
+    let amount;
+    if (absolute >= 10000) amount = `${(absolute / 10000).toFixed(absolute >= 100000 ? 0 : 1).replace(/\.0$/, '')}萬`;
+    else if (absolute >= 1000) amount = `${(absolute / 1000).toFixed(1).replace(/\.0$/, '')}千`;
+    else amount = Math.round(absolute).toLocaleString('zh-TW');
+    return `${value > 0 ? '+' : '-'}${amount}`;
+  }
+
+  function renderInstitutionSummaryTable(institutions) {
+    if (!Array.isArray(institutions) || !institutions.length) {
+      return '<div class="inst-chart-empty">尚無法人籌碼日資料</div>';
+    }
+    const rows = [...institutions].reverse().slice(0, 15);
+    const flowCell = value => {
+      const num = Number(value) || 0;
+      const tone = num > 0 ? 'buy' : (num < 0 ? 'sell' : 'flat');
+      const direction = num > 0 ? '買超' : (num < 0 ? '賣超' : '持平');
+      return `<span class="inst-flow-value ${tone}" title="${direction} ${escapeHtml(formatSignedLots(num))} 張">${escapeHtml(formatApproxLots(num))}</span>`;
+    };
+    const actors = [
+      ['foreign', '外資'],
+      ['trust', '投信'],
+      ['dealer', '自營商'],
+      ['total', '合計']
+    ];
+    return `
+      <table class="inst-flow-table" aria-label="近15日三大法人逐日買賣超概數，單位張">
+        <thead>
+          <tr>
+            <th>法人＼日期</th>
+            ${rows.map(row => `<th>${escapeHtml(String(row.date || '').slice(5).replace('-', '/'))}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${actors.map(([key, label]) => `
+            <tr class="${key === 'total' ? 'total-row' : ''}">
+              <td>${label}</td>
+              ${rows.map(row => `<td>${flowCell(row[key])}</td>`).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
   function renderInstitutionCards() {
     const panel = $('#institutionPanel');
     const chartData = state.chartData;
@@ -579,6 +631,12 @@
         </article>
       `;
     }).join('');
+
+    const tableWrapper = $('#institutionTableScroll');
+    if (tableWrapper) {
+      tableWrapper.innerHTML = renderInstitutionSummaryTable(chartData.institutions);
+    }
+
     panel.hidden = false;
   }
 
