@@ -631,7 +631,7 @@ def generate_ai_evolution_log(top_picks, hot_sectors, as_of_date, api_key, model
         EVOLUTION_LOG_MD.write_text(content, encoding='utf-8')
         print(f"📝 客觀覆盤日記已更新至：{EVOLUTION_LOG_MD.name}", flush=True)
 
-def write_evolution_ranking_md(selected_list, defensive_list, hot_sectors, market_overview, as_of_date, model_label):
+def write_evolution_ranking_md(selected_list, hot_sectors, market_overview, as_of_date, model_label):
     count = len(selected_list)
     sec_title = f"## 👑 【AI 獨有實戰勝率榜】（嚴選 {count} 檔・{model_label} 先產業後個股全維度版）"
     sec_sub = f"> 實戰鐵律：起漲賺錢、勝率第一。**先搜尋市場主流產業風口與重大新聞，再依營收/獲利/法說/目標價全維度評估排定榜單**，寧缺毋濫！"
@@ -667,18 +667,6 @@ def write_evolution_ranking_md(selected_list, defensive_list, hot_sectors, marke
         display_score = r.get('holistic_score', r['score'])
 
         lines.append(f"| **{i}** | `{r['code']}` | **{r['name']}** | {r['category']} | {r['price']:.2f} | {pct_str} | **{display_score}** | {rev_str} | {earn_str} | {cat_str} | {target_str} | {feat} |")
-
-    lines.extend([
-        '', '---', '',
-        '## 🛡️ 【穩健防守輔助序列】',
-        '> 供大盤重度拉回時搭配參考之超低乖離防守池。', '',
-        '| 排名 | 股票代號 | 股票名稱 | 類群 | 收盤價 | 今日漲跌 | 穩健評分 | 核心防守特徵 |',
-        '|:---:|:---:|:---|:---|---:|---:|---:|:---|'
-    ])
-    for i, r in enumerate(defensive_list, 1):
-        pct_str = f"{r['today_pct']:+5.2f}%"
-        feat = f"防守點{r['stop_loss']}元；月乖離+{r['bias_20']}%"
-        lines.append(f"| **{i}** | `{r['code']}` | **{r['name']}** | {r['category']} | {r['price']:.2f} | {pct_str} | **{r['score']}** | {feat} |")
 
     OUTPUT_EVO_MD.write_text("\n".join(lines), encoding="utf-8")
     print(f"📄 獨有勝率榜單已輸出至：{OUTPUT_EVO_MD.name}", flush=True)
@@ -788,9 +776,6 @@ def main():
     # 此刻才排定最終名次！
     final_qualified = sorted(evaluated_candidates, key=lambda x: x['holistic_score'], reverse=True)[:8]
 
-    # 穩健防守池
-    defensive_pool = sorted(candidates, key=lambda x: (abs(x['bias_20'] - 3.0), -x['score']))[:6]
-
     count = len(final_qualified)
     print(f"\n👑 【AI 獨有實戰勝率榜】（嚴選 {count} 檔・全維度綜合評估版）", flush=True)
     print(f"{'名次':<4} {'代號':<6} {'名稱':<8} {'類群':<8} {'收盤價':<9} {'今日漲跌':<10} {'月盈年盈營收':<22} {'終極實戰評分'}", flush=True)
@@ -799,7 +784,7 @@ def main():
         rev_brief = (r.get('monthly_rev', '')[:20] + '..') if len(r.get('monthly_rev', '')) > 20 else r.get('monthly_rev', '—')
         print(f"#{i:<3} {r['code']:<6} {r['name']:<8} {r['category']:<8} {r['price']:<9.2f} {r['today_pct']:+6.2f}%    {rev_brief:<22} {r['holistic_score']}")
 
-    write_evolution_ranking_md(final_qualified, defensive_pool, hot_sectors, overview, as_of_date, actual_model_used)
+    write_evolution_ranking_md(final_qualified, hot_sectors, overview, as_of_date, actual_model_used)
     generate_ai_evolution_log(final_qualified, hot_sectors, as_of_date, api_key, actual_model_used)
 
     try:

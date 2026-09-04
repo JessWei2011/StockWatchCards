@@ -3610,7 +3610,7 @@ ${escapeHtml(res.content)}
       if (line.includes('【暴漲動能型') || line.includes('攻擊型') || line.includes('攻擊榜') || line.includes('實戰勝率榜') || line.includes('起漲榜') || line.includes('AI 獨有')) {
         currentSection = 'momentum';
         continue;
-      } else if (line.includes('【穩健防守型') || line.includes('穩健型') || line.includes('穩健榜') || line.includes('穩健防守輔助序列')) {
+      } else if (line.includes('【穩健防守型') || line.includes('穩健型') || line.includes('穩健榜')) {
         currentSection = 'defensive';
         continue;
       } else if (line.startsWith('## ') && !line.includes('TOP') && !line.includes('Top') && !line.includes('勝率榜') && !line.includes('嚴選')) {
@@ -3714,9 +3714,8 @@ ${escapeHtml(res.content)}
     const isGemini = source === 'gemini';
     const isEvolution = source === 'evolution';
 
-    // 6 大總榜快速對照資料
+    // 5 大總榜快速對照資料
     const eMomo = winrateParsedData.evolution?.momentumItems || [];
-    const eDef = winrateParsedData.evolution?.defensiveItems || [];
     const gMomo = winrateParsedData.gemini?.momentumItems || [];
     const gDef = winrateParsedData.gemini?.defensiveItems || [];
     const cMomo = winrateParsedData.chatgpt?.momentumItems || [];
@@ -3851,23 +3850,18 @@ ${escapeHtml(res.content)}
         <div style="margin-bottom:16px; background:#11161f; border:1.5px solid rgba(125,180,255,0.3); border-radius:12px; padding:12px 14px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
             <div style="font-size:17px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
-              <span style="font-size:20px;">🏆</span> 六大實戰排行榜全景一覽 (點擊股票直接開啟專業看盤)
+              <span style="font-size:20px;">🏆</span> 五大實戰排行榜全景一覽 (點擊股票直接開啟專業看盤)
             </div>
             <div style="font-size:14px; color:var(--text-dim);">
               資料截止日：<strong style="color:#93c5fd; font-size:15px;">${escapeHtml(scanDate || '最新')}</strong>
             </div>
           </div>
-          <!-- 第一排：雙 AI 輔助四大榜單 (Gemini & ChatGPT) -->
-          <div class="ranking-overview-row">
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            ${renderMiniOverviewCol(eMomo.length >= 10 ? '👑 AI 獨有勝率 TOP 10' : `👑 AI 獨有勝率榜 (${eMomo.length}檔嚴選)`, '👑', '#fbbf24', eMomo, 'evolution', 'momentum')}
             ${renderMiniOverviewCol('Gemini 暴漲動能 TOP 10', '🚀', '#f87171', gMomo, 'gemini', 'momentum')}
             ${renderMiniOverviewCol('Gemini 穩健防守 TOP 10', '🛡️', '#4ade80', gDef, 'gemini', 'defensive')}
             ${renderMiniOverviewCol('ChatGPT 攻擊型 TOP 10', '⚡', '#f97316', cMomo, 'chatgpt', 'momentum')}
             ${renderMiniOverviewCol('ChatGPT 穩健型 TOP 10', '🌱', '#38bdf8', cDef, 'chatgpt', 'defensive')}
-          </div>
-          <!-- 第二排 (往下放同一排)：👑 AI 獨有實戰核心榜單 (保持與所有榜單完全一致格具寬度，不刻意加寬) -->
-          <div class="ranking-overview-row">
-            ${renderMiniOverviewCol(eMomo.length >= 10 ? '👑 AI 獨有勝率 TOP 10' : `👑 AI 獨有實戰勝率榜 (${eMomo.length}檔嚴選・攻擊)`, '👑', '#fbbf24', eMomo, 'evolution', 'momentum')}
-            ${renderMiniOverviewCol(`🛡️ 穩健防守輔助序列 (${eDef.length}檔超低乖離・防守)`, '🛡️', '#34d399', eDef, 'evolution', 'defensive')}
           </div>
         </div>
 
@@ -3875,11 +3869,8 @@ ${escapeHtml(res.content)}
         <div class="ranking-detail-toolbar" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:nowrap; gap:6px; margin-bottom:10px;">
           <div class="ranking-track-actions" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap;">
             <!-- 👑 AI 核心實戰榜單 -->
-            <button type="button" class="btn" style="padding:4px 10px; font-size:14px; font-weight:900; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${isEvolution && isMomo ? '#fbbf24' : 'rgba(250,204,21,0.35)'}; background:${isEvolution && isMomo ? 'linear-gradient(135deg, rgba(251,191,36,0.28), rgba(245,158,11,0.22))' : 'rgba(251,191,36,0.08)'}; color:${isEvolution && isMomo ? '#fde047' : '#fef08a'}; box-shadow:${isEvolution && isMomo ? '0 0 10px rgba(251,191,36,0.35)' : 'none'};" onclick="winrateRankingSource='evolution'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
-              <span>👑</span> AI 獨有起漲 (${eMomo.length}檔)
-            </button>
-            <button type="button" class="btn" style="padding:4px 10px; font-size:14px; font-weight:900; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${isEvolution && !isMomo ? '#34d399' : 'rgba(52,211,153,0.35)'}; background:${isEvolution && !isMomo ? 'linear-gradient(135deg, rgba(52,211,153,0.28), rgba(16,185,129,0.22))' : 'rgba(52,211,153,0.08)'}; color:${isEvolution && !isMomo ? '#6ee7b7' : '#a7f3d0'}; box-shadow:${isEvolution && !isMomo ? '0 0 10px rgba(52,211,153,0.35)' : 'none'};" onclick="winrateRankingSource='evolution'; winrateActiveTrack='defensive'; renderWinrateRankingUI();">
-              <span>🛡️</span> AI 穩健防守 (${eDef.length}檔)
+            <button type="button" class="btn" style="padding:4px 11px; font-size:14px; font-weight:900; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${isEvolution ? '#fbbf24' : 'rgba(250,204,21,0.35)'}; background:${isEvolution ? 'linear-gradient(135deg, rgba(251,191,36,0.28), rgba(245,158,11,0.22))' : 'rgba(251,191,36,0.08)'}; color:${isEvolution ? '#fde047' : '#fef08a'}; box-shadow:${isEvolution ? '0 0 10px rgba(251,191,36,0.35)' : 'none'};" onclick="winrateRankingSource='evolution'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
+              <span>👑</span> AI 獨有起漲 (${eMomo.length}檔嚴選)
             </button>
 
             <span style="color:rgba(255,255,255,0.25); margin:0 3px; font-size:14px;">|</span>

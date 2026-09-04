@@ -229,10 +229,9 @@ def parse_dual_track_ranking(text: str, source: str) -> tuple[str, dict[str, lis
     return scan_date, tracks
 
 
-def parse_evolution_ranking(text: str) -> tuple[str, list[dict], list[dict], str]:
+def parse_evolution_ranking(text: str) -> tuple[str, list[dict], str]:
     """Parse stock_winrate_ranking_evolution.md for mobile rich cards."""
     evolution_items = []
-    defensive_items = []
     current_section = ""
     scan_date = ""
     market_overview = ""
@@ -250,9 +249,6 @@ def parse_evolution_ranking(text: str) -> tuple[str, list[dict], list[dict], str
 
         if "AI 獨有實戰勝率榜" in line or "實戰勝率榜" in line:
             current_section = "evolution"
-            continue
-        if "穩健防守輔助序列" in line or "防守池" in line:
-            current_section = "defensive"
             continue
 
         if not (current_section and line.startswith("|") and line.endswith("|")):
@@ -281,32 +277,19 @@ def parse_evolution_ranking(text: str) -> tuple[str, list[dict], list[dict], str
                 "feature": " ； ".join(cells[11:]) if len(cells) > 11 else "",
                 "isEvolution": True
             })
-        elif current_section == "defensive":
-            defensive_items.append({
-                "rank": cells[0],
-                "code": code,
-                "name": cells[2],
-                "category": cells[3],
-                "price": cells[4],
-                "changePct": cells[5],
-                "score": cells[6],
-                "feature": cells[7] if len(cells) > 7 else "",
-                "isDefensive": True
-            })
 
-    return scan_date, evolution_items, defensive_items, market_overview
+    return scan_date, evolution_items, market_overview
 
 
 def export_all_rankings() -> None:
     evolution_path = ROOT_DIR / "stock_winrate_ranking_evolution.md"
     evo_items = []
-    def_items = []
     evo_date = ""
     market_overview = ""
 
     if evolution_path.is_file():
         try:
-            evo_date, evo_items, def_items, market_overview = parse_evolution_ranking(
+            evo_date, evo_items, market_overview = parse_evolution_ranking(
                 evolution_path.read_text(encoding="utf-8")
             )
         except Exception as e:
@@ -335,14 +318,6 @@ def export_all_rankings() -> None:
             "tone": "evolution-master",
             "isPrimary": True,
             "items": evo_items
-        })
-    if def_items:
-        boards.append({
-            "id": "evolution-defensive",
-            "title": "🛡️ 穩健防守輔助序列",
-            "tone": "evolution-defensive",
-            "isDefensive": True,
-            "items": def_items
         })
     if "chatgpt" in parsed:
         boards.append({

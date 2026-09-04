@@ -79,7 +79,7 @@
           "score": "187.0",
           "monthlyRev": "7月營收9.23億元(MoM+27.31%, YoY+57.63%)",
           "earnings": "Q2 EPS 2.16元，毛利率26.0%，上半年累計EPS 8.69元",
-          "catalyst": "AI伺服器液冷散熱需求強勁回溫，公司看好第三季營運重回成長軌道，全年液冷散熱業務維持三位數成長目標。燃料電池業務力拚倍增。為應對訂單，積極擴充水冷板與分流管產能。",
+          "catalyst": "AI伺服器液冷散熱需求強勁回溫，公司看好第三季營運重回成長軌道，全年液冷散熱業務維持三位數成長目標。燃料電池業務力拚倍增，積極擴充水冷板與分流管產能。",
           "targetPrice": "港系外資於2026年6月17日將目標價調升至2300元 (買進)。另有法人看好目標價上看1500元。",
           "feature": "✨突破5MA翻揚 ； 🏆型態:多頭排列 ； 量能增溫(1.6x)",
           "isEvolution": true
@@ -128,80 +128,6 @@
           "targetPrice": "統一證券目標價205元(看多)，預估2026年EPS 5.27元",
           "feature": "💡守穩10MA支撐 ； 🏆型態:多頭排列 ； 量能增溫(2.3x)",
           "isEvolution": true
-        }
-      ]
-    },
-    {
-      "id": "evolution-defensive",
-      "title": "🛡️ 穩健防守輔助序列",
-      "tone": "evolution-defensive",
-      "isDefensive": true,
-      "items": [
-        {
-          "rank": "1",
-          "code": "3006",
-          "name": "晶豪科",
-          "category": "記憶體",
-          "price": "278.50",
-          "changePct": "+0.54%",
-          "score": "130.0",
-          "feature": "防守點266.86元；月乖離+2.8%",
-          "isDefensive": true
-        },
-        {
-          "rank": "2",
-          "code": "2486",
-          "name": "一詮",
-          "category": "散熱",
-          "price": "256.00",
-          "changePct": "-1.35%",
-          "score": "106.0",
-          "feature": "防守點245.51元；月乖離+2.7%",
-          "isDefensive": true
-        },
-        {
-          "rank": "3",
-          "code": "5425",
-          "name": "台半",
-          "category": "功率元件",
-          "price": "92.90",
-          "changePct": "+1.86%",
-          "score": "106.0",
-          "feature": "防守點89.23元；月乖離+2.6%",
-          "isDefensive": true
-        },
-        {
-          "rank": "4",
-          "code": "6187",
-          "name": "萬潤",
-          "category": "設備",
-          "price": "1305.00",
-          "changePct": "+0.38%",
-          "score": "116.0",
-          "feature": "防守點1255.14元；月乖離+2.4%",
-          "isDefensive": true
-        },
-        {
-          "rank": "5",
-          "code": "6449",
-          "name": "鈺邦",
-          "category": "被動元件",
-          "price": "237.50",
-          "changePct": "+9.70%",
-          "score": "104.0",
-          "feature": "防守點225.89元；月乖離+3.6%",
-          "isDefensive": true
-        },
-        {
-          "rank": "6",
-          "code": "3443",
-          "name": "創意",
-          "category": "IC設計",
-          "price": "5810.00",
-          "changePct": "+0.17%",
-          "score": "88.0",
-          "feature": "防守點5522.16元；月乖離+3.6%",
-          "isDefensive": true
         }
       ]
     },
