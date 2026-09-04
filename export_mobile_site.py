@@ -229,35 +229,184 @@ def parse_dual_track_ranking(text: str, source: str) -> tuple[str, dict[str, lis
     return scan_date, tracks
 
 
-def export_four_rankings() -> None:
+def parse_evolution_ranking(text: str) -> tuple[str, list[dict], list[dict], str]:
+    """Parse stock_winrate_ranking_evolution.md for mobile rich cards."""
+    evolution_items = []
+    defensive_items = []
+    current_section = ""
+    scan_date = ""
+    market_overview = ""
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        date_match = re.search(r"資料截止日[：:]\s*([0-9/-]+)", line)
+        if date_match:
+            scan_date = date_match.group(1)
+        ov_match = re.search(r"市場資金焦點\*{0,2}[：:]\s*(.+)", line)
+        if ov_match:
+            market_overview = re.sub(r"[*`]", "", ov_match.group(1)).strip()
+
+        if "AI 獨有實戰勝率榜" in line or "實戰勝率榜" in line:
+            current_section = "evolution"
+            continue
+        if "穩健防守輔助序列" in line or "防守池" in line:
+            current_section = "defensive"
+            continue
+
+        if not (current_section and line.startswith("|") and line.endswith("|")):
+            continue
+
+        cells = [re.sub(r"[*`]", "", c).strip() for c in line.split("|")[1:-1]]
+        if len(cells) < 6 or "排名" in cells[0] or all(re.fullmatch(r":?-+:?", c) for c in cells):
+            continue
+        code = cells[1]
+        if not re.fullmatch(r"\d{4,6}", code):
+            continue
+
+        if current_section == "evolution" and len(cells) >= 11:
+            evolution_items.append({
+                "rank": cells[0],
+                "code": code,
+                "name": cells[2],
+                "category": cells[3],
+                "price": cells[4],
+                "changePct": cells[5],
+                "score": cells[6],
+                "monthlyRev": cells[7],
+                "earnings": cells[8],
+                "catalyst": cells[9],
+                "targetPrice": cells[10],
+                "feature": " ； ".join(cells[11:]) if len(cells) > 11 else "",
+                "isEvolution": True
+            })
+        elif current_section == "defensive":
+            defensive_items.append({
+                "rank": cells[0],
+                "code": code,
+                "name": cells[2],
+                "category": cells[3],
+                "price": cells[4],
+                "changePct": cells[5],
+                "score": cells[6],
+                "feature": cells[7] if len(cells) > 7 else "",
+                "isDefensive": True
+            })
+
+    return scan_date, evolution_items, defensive_items, market_overview
+
+
+def export_all_rankings() -> None:
+    evolution_path = ROOT_DIR / "stock_winrate_ranking_evolution.md"
+    evo_items = []
+    def_items = []
+    evo_date = ""
+    market_overview = ""
+
+    if evolution_path.is_file():
+        try:
+            evo_date, evo_items, def_items, market_overview = parse_evolution_ranking(
+                evolution_path.read_text(encoding="utf-8")
+            )
+        except Exception as e:
+            print(f"Warning parsing evolution rankings: {e}")
+
     parsed: dict[str, dict[str, list[dict]]] = {}
     scan_dates: list[str] = []
-    for source, path in RANKING_SOURCES.items():
-        if not path.is_file():
-            raise RuntimeError(f"找不到 {source} 排行榜：{path.name}")
-        scan_date, tracks = parse_dual_track_ranking(path.read_text(encoding="utf-8"), source)
-        parsed[source] = tracks
-        if scan_date:
-            scan_dates.append(scan_date)
+    if evo_date:
+        scan_dates.append(evo_date)
 
-    boards = [
-        ("gemini-momentum", "Gemini 暴漲動能 TOP 10", "gemini-momentum", parsed["gemini"]["momentum"]),
-        ("gemini-defensive", "Gemini 穩健防守 TOP 10", "gemini-defensive", parsed["gemini"]["defensive"]),
-        ("chatgpt-momentum", "ChatGPT 攻擊型 TOP 10", "chatgpt-momentum", parsed["chatgpt"]["momentum"]),
-        ("chatgpt-defensive", "ChatGPT 穩健型 TOP 10", "chatgpt-defensive", parsed["chatgpt"]["defensive"]),
-    ]
+    for source, path in RANKING_SOURCES.items():
+        if path.is_file():
+            try:
+                scan_date, tracks = parse_dual_track_ranking(path.read_text(encoding="utf-8"), source)
+                parsed[source] = tracks
+                if scan_date:
+                    scan_dates.append(scan_date)
+            except Exception as e:
+                print(f"Warning parsing {source}: {e}")
+
+    boards = []
+    if evo_items:
+        boards.append({
+            "id": "evolution-master",
+            "title": "👑 AI 獨有實戰勝率榜 (主)",
+            "tone": "evolution-master",
+            "isPrimary": True,
+            "items": evo_items
+        })
+    if def_items:
+        boards.append({
+            "id": "evolution-defensive",
+            "title": "🛡️ 穩健防守輔助序列",
+            "tone": "evolution-defensive",
+            "isDefensive": True,
+            "items": def_items
+        })
+    if "chatgpt" in parsed:
+        boards.append({
+            "id": "chatgpt-momentum",
+            "title": "⚡ ChatGPT 攻擊型 TOP 10",
+            "tone": "chatgpt-momentum",
+            "items": parsed["chatgpt"]["momentum"][:10]
+        })
+        boards.append({
+            "id": "chatgpt-defensive",
+            "title": "🌱 ChatGPT 穩健型 TOP 10",
+            "tone": "chatgpt-defensive",
+            "items": parsed["chatgpt"]["defensive"][:10]
+        })
+    if "gemini" in parsed:
+        boards.append({
+            "id": "gemini-momentum",
+            "title": "⚡ Gemini 暴漲動能 TOP 10",
+            "tone": "gemini-momentum",
+            "items": parsed["gemini"]["momentum"][:10]
+        })
+        boards.append({
+            "id": "gemini-defensive",
+            "title": "🌱 Gemini 穩健防守 TOP 10",
+            "tone": "gemini-defensive",
+            "items": parsed["gemini"]["defensive"][:10]
+        })
+
     payload = {
-        "version": 1,
+        "version": 2,
         "scanDate": scan_dates[0] if scan_dates else "",
-        "boards": [
-            {"id": board_id, "title": title, "tone": tone, "items": items[:10]}
-            for board_id, title, tone, items in boards
-        ],
+        "marketOverview": market_overview,
+        "boards": boards,
     }
     (OUTPUT_DIR / "rankings.json").write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+
+    # 匯出產業風口資料 sectors.json
+    sector_cache = ROOT_DIR / "market_hot_sectors_cache.json"
+    if sector_cache.is_file():
+        try:
+            (OUTPUT_DIR / "sectors.json").write_text(
+                sector_cache.read_text(encoding="utf-8"),
+                encoding="utf-8"
+            )
+        except Exception:
+            pass
+
+    # 匯出覆盤日記 evolution_log.json
+    log_file = ROOT_DIR / "evolution_log.md"
+    if log_file.is_file():
+        try:
+            log_content = log_file.read_text(encoding="utf-8")
+            (OUTPUT_DIR / "evolution_log.json").write_text(
+                json.dumps({"content": log_content, "updatedAt": scan_dates[0] if scan_dates else ""}, ensure_ascii=False, indent=2),
+                encoding="utf-8"
+            )
+        except Exception:
+            pass
+
+
+export_four_rankings = export_all_rankings
 
 
 def main() -> None:
@@ -359,6 +508,15 @@ def main() -> None:
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+
+    # 自動更新 index.html 資源快取破除版本號 (Cache-Busting)
+    index_html = OUTPUT_DIR.parent / "index.html"
+    if index_html.is_file():
+        version_tag = datetime.now().strftime("%Y%m%d%H%M%S")
+        c = index_html.read_text(encoding="utf-8")
+        c = re.sub(r'(style\.css\?v=)[^"\'\s]+', rf'\g<1>{version_tag}', c)
+        c = re.sub(r'(app\.js\?v=)[^"\'\s]+', rf'\g<1>{version_tag}', c)
+        index_html.write_text(c, encoding="utf-8")
 
     required = ["index.json", "manifest.json", "rankings.json"]
     for filename in required:

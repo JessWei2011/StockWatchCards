@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "publishedAt": "2026-09-04T17:20:39+08:00",
+  "publishedAt": "2026-09-04T18:06:14+08:00",
   "defaultCode": "3324",
   "count": 88,
   "stocks": [
@@ -398,7 +398,7 @@
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
-      "isStarred": false
+      "isStarred": true
     },
     {
       "code": "3234",
@@ -470,7 +470,7 @@
       "decision": "強烈買入 (動能爆發)",
       "winRate": "95%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
-      "isStarred": true
+      "isStarred": false
     },
     {
       "code": "3441",

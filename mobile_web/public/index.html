@@ -7,15 +7,15 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Stock2股票">
-  <meta name="description" content="手機雙 AI 四大榜單快照：Gemini 與 ChatGPT 的攻擊、穩健 Top 10">
-  <title>手機雙 AI 四大榜單快照</title>
-  <link rel="stylesheet" href="./style.css?v=20260831-3">
+  <meta name="description" content="手機 AI 實戰勝率榜與個股看盤中心">
+  <title>Stock2 手機戰情室</title>
+  <link rel="stylesheet" href="./style.css?v=20260904180614">
 </head>
 <body>
   <header class="topbar">
     <div>
       <div class="eyebrow">STOCK2 MOBILE</div>
-      <h1 id="topbarTitle">雙 AI 四大榜單</h1>
+      <h1 id="topbarTitle">AI 實戰勝率榜</h1>
     </div>
     <div class="freshness" aria-label="資料更新狀態">
       <span class="status-dot"></span>
@@ -26,157 +26,232 @@
   <main class="page-shell">
     <div id="errorBanner" class="error-banner" role="alert" hidden></div>
 
-    <section class="ranking-dashboard" id="rankingDashboard" aria-labelledby="rankingTitle">
-      <div class="ranking-intro">
-        <span class="section-kicker">MARKET SNAPSHOT</span>
-        <h2 id="rankingTitle">雙 AI 四大榜單全景一覽</h2>
-        <p>Gemini 與 ChatGPT 分別以攻擊、穩健邏輯選出 Top 10；點選個股可查看完整分析。</p>
-        <span class="ranking-date" id="rankingDate">資料截止日：—</span>
+    <!-- ==================== TAB 1: 👑 AI 榜單 ==================== -->
+    <section class="tab-view" id="viewRanking">
+      <!-- 頂部次級切換頁籤 -->
+      <div class="sub-tab-bar" id="rankingSubTabBar">
+        <button type="button" class="sub-tab-btn active" data-subtab="evolution">👑 AI 實戰勝率榜 (主)</button>
+        <button type="button" class="sub-tab-btn" data-subtab="auxiliary">⚡ ChatGPT & Gemini (輔)</button>
+        <button type="button" class="sub-tab-btn" data-subtab="log">📖 覆盤日記</button>
       </div>
-      <div class="four-ranking-grid" id="rankingList" aria-label="雙 AI 四大排行榜"></div>
-    </section>
 
-    <section id="stockDetailView" hidden>
-    <button type="button" class="ranking-return-button" id="rankingReturnButton">← 返回四大榜單</button>
-    <button type="button" class="stock-picker-button" id="stockPickerButton" aria-haspopup="dialog">
-      <span><span class="picker-label">目前個股</span><strong id="pickerCurrentStock">3324 雙鴻</strong></span>
-      <span class="picker-action">搜尋／切換⌄</span>
-    </button>
-
-    <section class="hero-card" aria-labelledby="decisionTitle">
-      <div class="hero-score">
-        <span class="score-label">預期勝率</span>
-        <strong id="winRate">—</strong>
-      </div>
-      <div class="hero-copy">
-        <span class="hero-label">建議評級</span>
-        <h2 id="decisionTitle">載入分析中…</h2>
-      </div>
-    </section>
-
-    <section class="price-grid" aria-label="關鍵價位">
-      <article><span>現價</span><strong id="currentPrice">—</strong></article>
-      <article class="entry"><span>買進</span><strong id="entryPrice">—</strong></article>
-      <article class="stop"><span>停損</span><strong id="stopPrice">—</strong></article>
-      <article class="resist"><span>壓力</span><strong id="resistPrice">—</strong></article>
-    </section>
-
-    <section class="panel signal-panel" aria-labelledby="signalTitle">
-      <div class="section-heading compact">
-        <div>
-          <span class="section-kicker">CORE SIGNALS</span>
-          <h2 id="signalTitle">核心指標狀態</h2>
+      <!-- 子視圖 A：AI 進化勝率榜 (主推大卡片) -->
+      <div id="subViewEvolution">
+        <div class="market-overview-banner" id="marketOverviewBanner" hidden>
+          <div class="banner-title"><span>🌐</span><span>今日盤面資金主軸</span></div>
+          <p class="banner-desc" id="marketOverviewText"></p>
         </div>
-        <span class="latest-date">最新判讀</span>
-      </div>
-      <div class="signal-grid" id="signalGrid" aria-label="K線、成交量、MACD、RSI、KD與籌碼指標狀態"></div>
-    </section>
-
-    <section class="panel institution-panel" id="institutionPanel" aria-labelledby="institutionTitle" hidden>
-      <div class="section-heading compact">
-        <div>
-          <span class="section-kicker">INSTITUTIONAL FLOW</span>
-          <h2 id="institutionTitle">三大法人最新買賣超</h2>
-        </div>
-        <span class="latest-date" id="institutionDate">—</span>
-      </div>
-      <div class="institution-grid" id="institutionGrid"></div>
-      <p class="institution-unit">單位：張；紅色為買超，綠色為賣超。</p>
-    </section>
-
-    <section class="panel chart-panel" aria-labelledby="chartTitle">
-      <div class="section-heading">
-        <div>
-          <span class="section-kicker">INTERACTIVE CHART</span>
-          <h2 id="chartTitle">K 線與技術指標</h2>
-        </div>
-        <button type="button" class="icon-button" id="fullscreenButton" aria-label="全螢幕查看圖表">⛶</button>
-      </div>
-
-      <div class="control-group" aria-label="K 線顯示期間">
-        <span class="control-label">期間</span>
-        <div class="segmented" id="periodControls">
-          <button type="button" data-period="20" class="active">20 日</button>
-          <button type="button" data-period="60">60 日</button>
-          <button type="button" data-period="all">全部</button>
+        <div class="evolution-list" id="evolutionList">
+          <div style="text-align:center; padding:30px; color:#64748b;">載入 AI 獨有實戰勝率榜中…</div>
         </div>
       </div>
 
-      <div class="control-row">
-        <label class="switch-control">
-          <input type="checkbox" id="maToggle" checked>
-          <span>均線</span>
-        </label>
-        <label class="switch-control">
-          <input type="checkbox" id="bollToggle" checked>
-          <span>布林</span>
-        </label>
+      <!-- 子視圖 B：輔助四大榜單 (ChatGPT & Gemini) -->
+      <div id="subViewAuxiliary" hidden>
+        <div class="ranking-intro" style="margin-bottom:12px;">
+          <span class="section-kicker">AUXILIARY BOARDS</span>
+          <h2>雙 AI 四大榜單快照</h2>
+          <p>Gemini 與 ChatGPT 分別以攻擊、穩健邏輯選出 Top 10；點擊可查看個股圖表。</p>
+        </div>
+        <div class="four-ranking-grid" id="rankingList" aria-label="雙 AI 四大排行榜"></div>
       </div>
 
-      <div class="pane-key" aria-label="五層同步圖表內容">
-        <span>K 線</span>
-        <span>VOL＋MV5／MV20</span>
-        <span>RSI(6／12)</span>
-        <span>MACD</span>
-        <span>KD</span>
+      <!-- 子視圖 C：覆盤日記 -->
+      <div id="subViewLog" hidden>
+        <div class="panel report-panel" style="padding:16px;">
+          <div id="evolutionLogContent" class="markdown-body" style="font-size:14px; line-height:1.65;">覆盤日記載入中…</div>
+        </div>
       </div>
-
-      <div class="chart-shell" id="chartShell">
-        <button type="button" class="fullscreen-close" id="fullscreenCloseButton" aria-label="關閉全螢幕圖表">✕ 關閉</button>
-        <div id="stockChart" class="stock-chart" role="img" aria-label="雙鴻 K 線、成交量與技術指標互動圖"></div>
-      </div>
-      <p class="chart-help">五層指標同步顯示；單指左右拖曳移動，雙指縮放，或拖曳底部區間控制。</p>
     </section>
 
-    <details class="panel report-panel indicator-detail-panel">
-      <summary aria-labelledby="latestTitle">
-        <span>
-          <span class="section-kicker">LATEST READING</span>
-          <strong id="latestTitle">最新指標數值</strong>
-        </span>
-        <span class="indicator-summary-meta">
-          <span class="latest-date" id="latestKlineDate">—</span>
+    <!-- ==================== TAB 2: 📈 個股看盤 ==================== -->
+    <section class="tab-view" id="viewStock" hidden>
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+        <button type="button" class="stock-picker-button" id="stockPickerButton" aria-haspopup="dialog" style="flex:1; margin-bottom:0;">
+          <span><span class="picker-label">目前個股</span><strong id="pickerCurrentStock">載入中…</strong></span>
+          <span class="picker-action">搜尋／切換⌄</span>
+        </button>
+        <button type="button" class="hero-star-btn" id="heroStarButton" title="加入/移除手機自選">★</button>
+      </div>
+
+      <section class="hero-card" aria-labelledby="decisionTitle">
+        <div class="hero-score">
+          <span class="score-label">預期勝率</span>
+          <strong id="winRate">—</strong>
+        </div>
+        <div class="hero-copy">
+          <span class="hero-label">建議評級</span>
+          <h2 id="decisionTitle">載入分析中…</h2>
+        </div>
+      </section>
+
+      <section class="price-grid" aria-label="關鍵價位">
+        <article><span>現價</span><strong id="currentPrice">—</strong></article>
+        <article class="entry"><span>買進</span><strong id="entryPrice">—</strong></article>
+        <article class="stop"><span>停損</span><strong id="stopPrice">—</strong></article>
+        <article class="resist"><span>壓力</span><strong id="resistPrice">—</strong></article>
+      </section>
+
+      <section class="panel signal-panel" aria-labelledby="signalTitle">
+        <div class="section-heading compact">
+          <div>
+            <span class="section-kicker">CORE SIGNALS</span>
+            <h2 id="signalTitle">核心指標狀態</h2>
+          </div>
+          <span class="latest-date">最新判讀</span>
+        </div>
+        <div class="signal-grid" id="signalGrid" aria-label="K線、成交量、MACD、RSI、KD與籌碼指標狀態"></div>
+      </section>
+
+      <section class="panel institution-panel" id="institutionPanel" aria-labelledby="institutionTitle" hidden>
+        <div class="section-heading compact">
+          <div>
+            <span class="section-kicker">INSTITUTIONAL FLOW</span>
+            <h2 id="institutionTitle">三大法人最新買賣超</h2>
+          </div>
+          <span class="latest-date" id="institutionDate">—</span>
+        </div>
+        <div class="institution-grid" id="institutionGrid"></div>
+        <p class="institution-unit">單位：張；紅色為買超，綠色為賣超。</p>
+      </section>
+
+      <section class="panel chart-panel" aria-labelledby="chartTitle">
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">INTERACTIVE CHART</span>
+            <h2 id="chartTitle">K 線與技術指標</h2>
+          </div>
+          <button type="button" class="icon-button" id="fullscreenButton" aria-label="全螢幕查看圖表">⛶</button>
+        </div>
+
+        <div class="control-group" aria-label="K 線顯示期間">
+          <span class="control-label">期間</span>
+          <div class="segmented" id="periodControls">
+            <button type="button" data-period="20" class="active">20 日</button>
+            <button type="button" data-period="60">60 日</button>
+            <button type="button" data-period="all">全部</button>
+          </div>
+        </div>
+
+        <div class="control-row">
+          <label class="switch-control">
+            <input type="checkbox" id="maToggle" checked>
+            <span>均線</span>
+          </label>
+          <label class="switch-control">
+            <input type="checkbox" id="bollToggle" checked>
+            <span>布林</span>
+          </label>
+        </div>
+
+        <div class="pane-key" aria-label="五層同步圖表內容">
+          <span>K 線</span>
+          <span>VOL＋MV5／MV20</span>
+          <span>RSI(6／12)</span>
+          <span>MACD</span>
+          <span>KD</span>
+        </div>
+
+        <div class="chart-shell" id="chartShell">
+          <button type="button" class="fullscreen-close" id="fullscreenCloseButton" aria-label="關閉全螢幕圖表">✕ 關閉</button>
+          <div id="stockChart" class="stock-chart" role="img" aria-label="個股 K 線、成交量與技術指標互動圖"></div>
+        </div>
+        <p class="chart-help">五層指標同步顯示；單指左右拖曳移動，雙指縮放，或拖曳底部區間控制。</p>
+      </section>
+
+      <details class="panel report-panel indicator-detail-panel">
+        <summary aria-labelledby="latestTitle">
+          <span>
+            <span class="section-kicker">LATEST READING</span>
+            <strong id="latestTitle">最新指標數值</strong>
+          </span>
+          <span class="indicator-summary-meta">
+            <span class="latest-date" id="latestKlineDate">—</span>
+            <span class="summary-action">展開</span>
+          </span>
+        </summary>
+        <div class="indicator-grid" id="indicatorGrid"></div>
+      </details>
+
+      <section class="evidence-grid" aria-label="多空證據">
+        <article class="panel evidence bull">
+          <h2>支持進場證據</h2>
+          <ul id="bullishList"></ul>
+        </article>
+        <article class="panel evidence bear">
+          <h2>反對進場證據</h2>
+          <ul id="bearishList"></ul>
+        </article>
+      </section>
+
+      <section class="panel action-panel" aria-labelledby="actionTitle">
+        <span class="section-kicker">ACTION</span>
+        <h2 id="actionTitle">操作建議</h2>
+        <p id="actionText">—</p>
+      </section>
+
+      <details class="panel report-panel">
+        <summary>
+          <span>
+            <span class="section-kicker">FULL ANALYSIS</span>
+            <strong>四階段技術分析報告</strong>
+          </span>
           <span class="summary-action">展開</span>
-        </span>
-      </summary>
-      <div class="indicator-grid" id="indicatorGrid"></div>
-    </details>
+        </summary>
+        <div id="analysisContent" class="markdown-body">報告載入中…</div>
+      </details>
 
-    <section class="evidence-grid" aria-label="多空證據">
-      <article class="panel evidence bull">
-        <h2>支持進場證據</h2>
-        <ul id="bullishList"></ul>
-      </article>
-      <article class="panel evidence bear">
-        <h2>反對進場證據</h2>
-        <ul id="bearishList"></ul>
-      </article>
+      <footer>
+        <p>本頁為電腦端最後一次手動發布的研究快照，不是即時行情。</p>
+        <p id="publishedAt">發布時間：—</p>
+      </footer>
     </section>
 
-    <section class="panel action-panel" aria-labelledby="actionTitle">
-      <span class="section-kicker">ACTION</span>
-      <h2 id="actionTitle">操作建議</h2>
-      <p id="actionText">—</p>
+    <!-- ==================== TAB 3: 🌐 產業風口 ==================== -->
+    <section class="tab-view" id="viewSectors" hidden>
+      <div class="ranking-intro" style="margin-bottom:14px;">
+        <span class="section-kicker">MARKET PULSE</span>
+        <h2>今日盤面強勢產業風口</h2>
+        <p>Google Search 聯網實時掃描：市場主流強勢題材與關鍵動能。</p>
+      </div>
+      <div class="sectors-list" id="sectorsList">
+        <div style="text-align:center; padding:30px; color:#64748b;">產業風口載入中…</div>
+      </div>
     </section>
 
-    <details class="panel report-panel">
-      <summary>
-        <span>
-          <span class="section-kicker">FULL ANALYSIS</span>
-          <strong>四階段技術分析報告</strong>
-        </span>
-        <span class="summary-action">展開</span>
-      </summary>
-      <div id="analysisContent" class="markdown-body">報告載入中…</div>
-    </details>
-
-    <footer>
-      <p>本頁為電腦端最後一次手動發布的研究快照，不是即時行情。</p>
-      <p id="publishedAt">發布時間：—</p>
-    </footer>
+    <!-- ==================== TAB 4: ⭐ 自選追蹤 ==================== -->
+    <section class="tab-view" id="viewWatchlist" hidden>
+      <div class="ranking-intro" style="margin-bottom:14px;">
+        <span class="section-kicker">LOCAL WATCHLIST</span>
+        <h2>手機本地自選追蹤</h2>
+        <p>手機獨立追蹤口袋名單，隨時巡視最新現價、勝率與操作評級。</p>
+      </div>
+      <div class="watchlist-list" id="watchlistCards"></div>
     </section>
   </main>
 
+  <!-- ==================== 底部固定導航列 ==================== -->
+  <nav class="bottom-nav" id="bottomNav" aria-label="手機主導航">
+    <button type="button" class="nav-item active" data-tab="ranking">
+      <span class="nav-icon">👑</span>
+      <span class="nav-label">AI 榜單</span>
+    </button>
+    <button type="button" class="nav-item" data-tab="stock">
+      <span class="nav-icon">📈</span>
+      <span class="nav-label">個股看盤</span>
+    </button>
+    <button type="button" class="nav-item" data-tab="sectors">
+      <span class="nav-icon">🌐</span>
+      <span class="nav-label">產業風口</span>
+    </button>
+    <button type="button" class="nav-item" data-tab="watchlist">
+      <span class="nav-icon">⭐</span>
+      <span class="nav-label">自選追蹤</span>
+      <span class="watchlist-badge" id="watchlistBadge" hidden>0</span>
+    </button>
+  </nav>
+
+  <!-- 個股選擇抽屜 -->
   <div class="stock-picker-overlay" id="stockPickerOverlay" hidden>
     <section class="stock-picker-sheet" role="dialog" aria-modal="true" aria-labelledby="stockPickerTitle">
       <div class="stock-picker-header">
@@ -195,6 +270,6 @@
 
   <script src="./vendor/echarts.min.js?v=5.4.3"></script>
   <script src="./modules/parser.js?v=20260829-3"></script>
-  <script src="./app.js?v=20260831-3"></script>
+  <script src="./app.js?v=20260904180614"></script>
 </body>
 </html>
