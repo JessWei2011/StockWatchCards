@@ -570,12 +570,15 @@
       { label: '自營商買賣超', value: latest.dealer },
       { label: '三大法人合計', value: latest.total }
     ];
-    $('#institutionGrid').innerHTML = items.map(item => `
-      <article class="institution-card ${item.value > 0 ? 'bull' : (item.value < 0 ? 'bear' : 'neutral')}">
-        <span>${item.label}</span>
-        <strong>${formatSignedNumber(item.value)}</strong>
-      </article>
-    `).join('');
+    $('#institutionGrid').innerHTML = items.map(item => {
+      const cls = item.value > 0 ? 'positive' : (item.value < 0 ? 'negative' : 'neutral');
+      return `
+        <article class="institution-card ${cls}">
+          <span>${item.label}</span>
+          <strong class="${cls}">${formatSignedNumber(item.value)}</strong>
+        </article>
+      `;
+    }).join('');
     panel.hidden = false;
   }
 
@@ -645,11 +648,11 @@
       },
       axisPointer: { link: [{ xAxisIndex: 'all' }] },
       grid: [
-        { left: 45, right: 12, top: 18, height: 160 },
-        { left: 45, right: 12, top: 190, height: 48 },
-        { left: 45, right: 12, top: 248, height: 48 },
-        { left: 45, right: 12, top: 306, height: 48 },
-        { left: 45, right: 12, top: 364, height: 48 }
+        { left: 42, right: 12, top: '4%', height: '36%' },   // Pane 0: K-Line
+        { left: 42, right: 12, top: '43%', height: '10%' },  // Pane 1: VOL
+        { left: 42, right: 12, top: '56%', height: '10%' },  // Pane 2: RSI
+        { left: 42, right: 12, top: '69%', height: '10%' },  // Pane 3: MACD
+        { left: 42, right: 12, top: '82%', height: '10%' }   // Pane 4: KD
       ],
       xAxis: [
         { type: 'category', data: dates, gridIndex: 0, axisLine: { lineStyle: { color: '#334155' } }, axisLabel: { show: false } },
@@ -661,13 +664,13 @@
       yAxis: [
         { scale: true, gridIndex: 0, splitLine: { lineStyle: { color: '#1e293b' } } },
         { scale: true, gridIndex: 1, splitLine: { lineStyle: { color: '#1e293b' } } },
-        { scale: true, gridIndex: 2, splitLine: { lineStyle: { color: '#1e293b' } } },
+        { min: 0, max: 100, gridIndex: 2, splitLine: { lineStyle: { color: '#1e293b' } } },
         { scale: true, gridIndex: 3, splitLine: { lineStyle: { color: '#1e293b' } } },
-        { scale: true, gridIndex: 4, splitLine: { lineStyle: { color: '#1e293b' } } }
+        { min: 0, max: 100, gridIndex: 4, splitLine: { lineStyle: { color: '#1e293b' } } }
       ],
       dataZoom: [
         { type: 'inside', xAxisIndex: [0, 1, 2, 3, 4], start: zoomStart(), end: 100 },
-        { type: 'slider', xAxisIndex: [0, 1, 2, 3, 4], start: zoomStart(), end: 100, bottom: 2, height: 16 }
+        { type: 'slider', xAxisIndex: [0, 1, 2, 3, 4], start: zoomStart(), end: 100, bottom: 4, height: 16 }
       ],
       series: [
         {

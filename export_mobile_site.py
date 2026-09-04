@@ -491,6 +491,7 @@ def main() -> None:
         c = index_html.read_text(encoding="utf-8")
         c = re.sub(r'(style\.css\?v=)[^"\'\s]+', rf'\g<1>{version_tag}', c)
         c = re.sub(r'(app\.js\?v=)[^"\'\s]+', rf'\g<1>{version_tag}', c)
+        c = re.sub(r'(parser\.js\?v=)[^"\'\s]+', rf'\g<1>{version_tag}', c)
         index_html.write_text(c, encoding="utf-8")
 
     required = ["index.json", "manifest.json", "rankings.json"]
