@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <title>報表資料夾管理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --ui-scale:1;
@@ -1834,7 +1837,13 @@
     background:#0f172a;
   }
   body{
-    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHei",sans-serif;
+    margin:0;
+    font-family: "SF Pro Text", "SF Pro Display", "SF Pro", -apple-system, BlinkMacSystemFont, "Inter", "PingFang TC", "PingFang HK", "PingFang SC", "Noto Sans TC", "Noto Sans CJK TC", "Apple LiGothic Medium", "Microsoft JhengHei UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "tnum" 1;
+    font-variant-numeric: tabular-nums;
     background:var(--bg); color:var(--text);
     height:100vh; display:flex; flex-direction:column;
   }
@@ -5425,37 +5434,9 @@
     }
   }
 
-  async function showEvolutionLog(){
-    try {
-      const res = await fetch('/api/evolution-log').then(r => r.json());
-      if (!res || !res.ok) {
-        alert(res?.error || '尚無覆盤日記資料');
-        return;
-      }
-      const existing = document.getElementById('evolution-modal');
-      if (existing) existing.remove();
-
-      const modal = document.createElement('div');
-      modal.id = 'evolution-modal';
-      modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.78); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px);';
-      modal.innerHTML = `
-        <div class="evolution-modal-card" style="background:#11161f; border:2px solid #fbbf24; border-radius:12px; width:92%; max-width:900px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 0 30px rgba(251,191,36,0.35); overflow:hidden;">
-          <div class="evolution-modal-header" style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1.5px solid rgba(255,255,255,0.12); background:rgba(251,191,36,0.08);">
-            <div class="evolution-modal-title" style="font-size:18px; font-weight:900; color:#fde047; display:flex; align-items:center; gap:8px;">
-              <span>📖</span> AI 量化實戰每日覆盤與自我進化日記 (evolution_log.md)
-            </div>
-            <button type="button" class="btn evolution-modal-close" onclick="document.getElementById('evolution-modal').remove();" style="padding:4px 12px; font-weight:800; cursor:pointer;">✕ 關閉</button>
-          </div>
-          <div class="evolution-modal-body" style="padding:18px 22px; overflow-y:auto; font-size:15px; line-height:1.7; color:#e2e8f0; white-space:pre-wrap; font-family:ui-monospace,SFMono-Regular,Consolas,monospace;">
-${escapeHtml(res.content)}
-          </div>
-        </div>
-      `;
-      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-      document.body.appendChild(modal);
-    } catch(e) {
-      alert('載入覆盤日記失敗: ' + e.message);
-    }
+  function showEvolutionLog(){
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    window.open(`evolution_log.html?theme=${encodeURIComponent(currentTheme)}`, '_blank');
   }
 
   function parseDualTrackRankingMd(mdText, source){
@@ -5498,13 +5479,13 @@ ${escapeHtml(res.content)}
         if (cells[0].includes('排名')) continue;
 
         if (cells.length >= 7) {
-          const rawCode = cells[1].replace(/[*`]/g, '').trim();
-          const rawName = cells[2].replace(/[*`]/g, '').trim();
+          const rawCode = (cells[1] || '').replace(/[*`]/g, '').trim();
+          const rawName = (cells[2] || '').replace(/[*`]/g, '').trim();
           const resolvedName = STOCK_NAMES_MAP[rawCode] || (rawName.includes('Advanced Energy') ? 'AES-KY' : (rawName.includes('Fositek') ? '富世達' : rawName));
           let item;
           if (cells.length >= 11) {
             item = {
-              rank: cells[0].replace(/[*`]/g, '').trim(),
+              rank: (cells[0] || '').replace(/[*`]/g, '').trim(),
               code: rawCode,
               name: resolvedName,
               category: (cells[3] || '').replace(/[*`]/g, '').trim(),
@@ -5520,7 +5501,7 @@ ${escapeHtml(res.content)}
             };
           } else if (cells.length === 8) {
             item = {
-              rank: cells[0].replace(/[*`]/g, '').trim(),
+              rank: (cells[0] || '').replace(/[*`]/g, '').trim(),
               code: rawCode,
               name: resolvedName,
               category: (cells[3] || '').replace(/[*`]/g, '').trim(),
@@ -5532,7 +5513,7 @@ ${escapeHtml(res.content)}
             };
           } else {
             item = {
-              rank: cells[0].replace(/[*`]/g, '').trim(),
+              rank: (cells[0] || '').replace(/[*`]/g, '').trim(),
               code: rawCode,
               name: resolvedName,
               category: (cells[3] || '').replace(/[*`]/g, '').trim(),
@@ -5765,7 +5746,7 @@ ${escapeHtml(res.content)}
           </div>
           
           <div class="ranking-refresh-action" style="display:flex; gap:6px; flex-shrink:0;">
-            <button type="button" class="btn ranking-log-btn" style="padding:4px 9px; font-size:13px; font-weight:850; border:1.5px solid #fbbf24; color:#fde047; background:rgba(251,191,36,0.12); white-space:nowrap;" onclick="showEvolutionLog();">📖 覆盤日記</button>
+            <button type="button" class="btn ranking-log-btn" style="padding:4px 10px; font-size:13.5px; font-weight:850; border:1.5px solid #fbbf24; color:#fde047; background:rgba(251,191,36,0.12); white-space:nowrap; cursor:pointer;" onclick="showEvolutionLog();" title="在新分頁開啟全螢幕覆盤日記 (大版面深度閱讀)">📖 覆盤日記 ↗</button>
             <button type="button" class="btn" style="padding:4px 9px; font-size:13px; font-weight:750; white-space:nowrap;" onclick="triggerScannerRun('${source}');">🔄 重新執行 ${isEvolution ? 'AI 進化' : (isGemini ? 'Gemini' : 'ChatGPT')}</button>
           </div>
         </div>
@@ -5856,7 +5837,7 @@ ${escapeHtml(res.content)}
                   let epsHtml = escapeHtml(item.earnings || '—');
                   if (item.earnings) {
                     const parts = item.earnings.split(/，(?=累計|上半年)/);
-                    if (parts.length > 1) {
+                    if (parts.length > 1 && parts[1]) {
                       epsHtml = `<div class="cell-eps-main" style="font-weight:750; color:#86efac; font-size:14.5px;">${escapeHtml(parts[0])}</div><div class="cell-eps-sub" style="font-size:13px; color:#4ade80; margin-top:3px; opacity:0.95;">累計${escapeHtml(parts[1].replace(/^累計/, ''))}</div>`;
                     } else {
                       epsHtml = `<div class="cell-eps-main" style="font-weight:700; color:#86efac; font-size:14px;">${escapeHtml(item.earnings)}</div>`;

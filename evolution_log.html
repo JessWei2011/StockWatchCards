@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📖 AI 量化實戰每日覆盤與自我進化日記 - 全螢幕深度閱讀</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* =========================================================
+       CSS 變數與雙主題配色（夜間科技黑金風 vs 白天方案 A 純白極簡風）
+       ========================================================= */
+    :root {
+      --font-scale: 1;
+      --base-font-size: 17.5px;
+      --line-height: 1.85;
+      
+      /* 夜間模式（預設） */
+      --bg: #090d16;
+      --card-bg: #111726;
+      --panel-bg: #161f33;
+      --border: #24324f;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --text: #e2e8f0;
+      --text-bright: #ffffff;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --primary: #fbbf24;
+      --primary-hover: #f59e0b;
+      --primary-bg: rgba(251, 191, 36, 0.12);
+      --primary-border: rgba(251, 191, 36, 0.35);
+      --accent: #38bdf8;
+      --accent-bg: rgba(56, 189, 248, 0.12);
+      --h1-color: #fde047;
+      --h2-color: #fef08a;
+      --h3-color: #ffffff;
+      --table-header-bg: #1e293b;
+      --table-header-color: #fde047;
+      --table-row-odd: #111726;
+      --table-row-even: #151d30;
+      --table-hover: #1e293b;
+      --table-border: #334155;
+      --code-bg: #1e293b;
+      --code-text: #38bdf8;
+      --quote-bg: rgba(251, 191, 36, 0.07);
+      --quote-border: #fbbf24;
+      --quote-text: #fef3c7;
+      --stock-up: #f87171;
+      --stock-up-bg: rgba(248, 113, 113, 0.15);
+      --stock-down: #4ade80;
+      --stock-down-bg: rgba(74, 222, 128, 0.15);
+      --shadow-header: 0 4px 20px rgba(0, 0, 0, 0.5);
+      --badge-bg: #1e293b;
+      --badge-text: #cbd5e1;
+      --list-card-bg: rgba(255, 255, 255, 0.02);
+      --list-card-border: rgba(255, 255, 255, 0.06);
+    }
+
+    /* 白天模式【方案 A：Apple Stocks / Google Finance 純白極簡高對比風】 */
+    [data-theme="light"] {
+      --bg: #ffffff;
+      --card-bg: #ffffff;
+      --panel-bg: #f8fafc;
+      --border: #e2e8f0;
+      --border-subtle: #edf2f7;
+      --text: #1e293b;
+      --text-bright: #000000;
+      --text-muted: #475569;
+      --text-dim: #64748b;
+      --primary: #b45309;
+      --primary-hover: #92400e;
+      --primary-bg: #fefce8;
+      --primary-border: #facc15;
+      --accent: #2563eb;
+      --accent-bg: #eff6ff;
+      --h1-color: #000000;
+      --h2-color: #0f172a;
+      --h3-color: #1e293b;
+      --table-header-bg: #f8fafc;
+      --table-header-color: #000000;
+      --table-row-odd: #ffffff;
+      --table-row-even: #fbfcfd;
+      --table-hover: #f1f5f9;
+      --table-border: #cbd5e1;
+      --code-bg: #f1f5f9;
+      --code-text: #0f172a;
+      --quote-bg: #fffbeb;
+      --quote-border: #eab308;
+      --quote-text: #78350f;
+      --stock-up: #dc2626;
+      --stock-up-bg: #fef2f2;
+      --stock-down: #16a34a;
+      --stock-down-bg: #f0fdf4;
+      --shadow-header: 0 2px 10px rgba(0, 0, 0, 0.05);
+      --badge-bg: #f1f5f9;
+      --badge-text: #334155;
+      --list-card-bg: #fcfdfe;
+      --list-card-border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "SF Pro Text", "SF Pro Display", "SF Pro", -apple-system, BlinkMacSystemFont, "Inter", "PingFang TC", "PingFang HK", "PingFang SC", "Noto Sans TC", "Noto Sans CJK TC", "Apple LiGothic Medium", "Apple LiGothic", "Heiti TC", "Microsoft JhengHei UI", sans-serif;
+      font-size: calc(var(--base-font-size) * var(--font-scale));
+      line-height: var(--line-height);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background 0.2s ease, color 0.2s ease;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      font-feature-settings: "tnum" 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* 頂部固定操作列 */
+    header.top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: var(--card-bg);
+      border-bottom: 1.5px solid var(--border);
+      box-shadow: var(--shadow-header);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .top-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 1.28rem;
+      font-weight: 850;
+      color: var(--text-bright);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-title .book-icon {
+      font-size: 1.45rem;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      font-weight: 750;
+      background: var(--primary-bg);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+    }
+
+    .status-badge .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+    }
+
+    .top-bar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* 控制組群 */
+    .btn-group {
+      display: inline-flex;
+      align-items: center;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .control-btn {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      padding: 6px 11px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .control-btn:hover {
+      background: var(--border-subtle);
+      color: var(--text-bright);
+    }
+
+    .control-btn.active {
+      background: var(--primary-bg);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+    }
+
+    .action-btn {
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 13px;
+      font-size: 0.88rem;
+      font-weight: 750;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .action-btn:hover {
+      background: var(--border-subtle);
+      border-color: var(--primary);
+      color: var(--text-bright);
+    }
+
+    .action-btn.btn-theme {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-bg);
+    }
+
+    .action-btn.btn-theme:hover {
+      background: var(--primary);
+      color: #000;
+    }
+
+    /* 主要容器寬度設定（支援寬版居中 1400px vs 100% 滿版切換） */
+    .main-wrapper {
+      flex: 1;
+      width: 100%;
+      padding: 30px 24px 60px;
+      margin: 0 auto;
+      transition: max-width 0.25s ease;
+    }
+
+    .main-wrapper.width-standard {
+      max-width: 1400px;
+    }
+
+    .main-wrapper.width-fluid {
+      max-width: 100%;
+      padding-left: 36px;
+      padding-right: 36px;
+    }
+
+    /* 內容卡片 */
+    .paper-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 44px 52px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      transition: all 0.2s ease;
+    }
+
+    [data-theme="light"] .paper-card {
+      box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+      border-color: #e2e8f0;
+    }
+
+    /* 載入與錯誤狀態 */
+    .loading-state, .error-state {
+      text-align: center;
+      padding: 80px 20px;
+      font-size: 1.2rem;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 44px;
+      height: 44px;
+      border: 4px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* =========================================================
+       Markdown 深度渲染樣式（大字體、極佳高對比、舒適間距）
+       ========================================================= */
+    .markdown-body {
+      color: var(--text);
+      font-size: 1rem;
+      line-height: var(--line-height);
+    }
+
+    .markdown-body h1,
+    .markdown-body h2,
+    .markdown-body h3,
+    .markdown-body h4,
+    .brand-title {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", "PingFang TC", "PingFang HK", "PingFang SC", "Apple LiGothic Medium", "Apple LiGothic", "Heiti TC", "Microsoft JhengHei UI", sans-serif;
+      letter-spacing: -0.015em;
+    }
+
+    .markdown-body h1 {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--h1-color);
+      margin-top: 0;
+      margin-bottom: 24px;
+      padding-bottom: 18px;
+      border-bottom: 2px solid var(--border);
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+    }
+
+    .markdown-body h2 {
+      font-size: 1.62rem;
+      font-weight: 850;
+      color: var(--h2-color);
+      margin-top: 46px;
+      margin-bottom: 22px;
+      padding-bottom: 12px;
+      border-bottom: 1.5px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      line-height: 1.4;
+    }
+
+    .markdown-body h3 {
+      font-size: 1.32rem;
+      font-weight: 800;
+      color: var(--h3-color);
+      margin-top: 32px;
+      margin-bottom: 16px;
+      line-height: 1.45;
+    }
+
+    .markdown-body h4 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-bright);
+      margin-top: 24px;
+      margin-bottom: 12px;
+    }
+
+    .markdown-body p {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+
+    .markdown-body strong {
+      color: var(--text-bright);
+      font-weight: 850;
+    }
+
+    .markdown-body hr {
+      border: none;
+      height: 1.5px;
+      background: var(--border);
+      margin: 38px 0;
+    }
+
+    /* 引用區塊（AI 核心觀點 / 策略亮點） */
+    .markdown-body blockquote {
+      background: var(--quote-bg);
+      border-left: 5px solid var(--quote-border);
+      border-radius: 0 12px 12px 0;
+      padding: 20px 26px;
+      margin: 26px 0;
+      color: var(--quote-text);
+      font-size: 1.08rem;
+      font-weight: 600;
+      line-height: 1.85;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+    }
+
+    [data-theme="light"] .markdown-body blockquote {
+      background: #fefce8;
+      border-left-color: #eab308;
+      color: #78350f;
+    }
+
+    /* 流程圖 / 演算法管線區塊 */
+    .pipeline-card {
+      background: var(--panel-bg);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin: 26px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .pipeline-node {
+      background: var(--card-bg);
+      border: 1.5px solid var(--primary-border);
+      color: var(--text-bright);
+      font-weight: 850;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    [data-theme="light"] .pipeline-node {
+      background: #ffffff;
+      color: #0f172a;
+      border-color: #cbd5e1;
+    }
+
+    .pipeline-arrow {
+      color: var(--primary);
+      font-size: 1.4rem;
+      font-weight: 900;
+    }
+
+    /* 結構化清單樣式 */
+    .log-ol-list {
+      list-style: none;
+      counter-reset: log-counter;
+      margin: 24px 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .log-ol-item {
+      counter-increment: log-counter;
+      background: var(--list-card-bg);
+      border: 1px solid var(--list-card-border);
+      border-radius: 10px;
+      padding: 18px 22px;
+      transition: all 0.15s ease;
+    }
+
+    .log-ol-item:hover {
+      border-color: var(--primary-border);
+    }
+
+    .log-ol-title {
+      font-size: 1.1rem;
+      font-weight: 850;
+      color: var(--text-bright);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .log-ol-title::before {
+      content: counter(log-counter) ".";
+      color: var(--primary);
+      font-weight: 900;
+      min-width: 22px;
+    }
+
+    .log-ol-desc {
+      color: var(--text);
+      font-size: 0.98rem;
+      line-height: 1.8;
+      padding-left: 32px;
+    }
+
+    .log-sub-bullet {
+      margin-top: 8px;
+      padding-left: 32px;
+      color: var(--text);
+      font-size: 0.98rem;
+      line-height: 1.8;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .log-sub-bullet-dot {
+      color: var(--primary);
+      font-size: 0.85rem;
+      line-height: 1.8;
+    }
+
+    /* 表格樣式（極高對比與寬大舒適度） */
+    .table-responsive-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      margin: 30px 0;
+      border-radius: 12px;
+      border: 1.5px solid var(--table-border);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      background: var(--card-bg);
+    }
+
+    .markdown-body table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.98rem;
+      white-space: nowrap;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", "PingFang TC", "PingFang HK", "Apple LiGothic Medium", "Apple LiGothic", "Microsoft JhengHei UI", sans-serif;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+    }
+
+    .markdown-body th {
+      background: var(--table-header-bg);
+      color: var(--table-header-color);
+      font-weight: 850;
+      padding: 16px 20px;
+      border-bottom: 2px solid var(--table-border);
+      letter-spacing: 0.02em;
+    }
+
+    .markdown-body td {
+      padding: 15px 20px;
+      border-bottom: 1px solid var(--table-border);
+      color: var(--text);
+      vertical-align: middle;
+      line-height: 1.6;
+    }
+
+    .markdown-body tr:nth-child(even) td {
+      background: var(--table-row-even);
+    }
+
+    .markdown-body tr:nth-child(odd) td {
+      background: var(--table-row-odd);
+    }
+
+    .markdown-body tr:hover td {
+      background: var(--table-hover) !important;
+    }
+
+    /* 漲跌幅色彩高亮 (台股標準：+紅、-綠) */
+    .pct-up {
+      color: var(--stock-up) !important;
+      font-weight: 850;
+      background: var(--stock-up-bg);
+      padding: 2px 7px;
+      border-radius: 5px;
+      display: inline-block;
+    }
+
+    .pct-down {
+      color: var(--stock-down) !important;
+      font-weight: 850;
+      background: var(--stock-down-bg);
+      padding: 2px 7px;
+      border-radius: 5px;
+      display: inline-block;
+    }
+
+    .score-badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-weight: 900;
+      background: var(--primary-bg);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+      font-family: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas, "PingFang TC", "Apple LiGothic Medium", monospace;
+      font-size: 1.02em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* 程式碼與標籤 */
+    .markdown-body code {
+      background: var(--code-bg);
+      color: var(--code-text);
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 0.9em;
+      font-family: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas, "PingFang TC", "Apple LiGothic Medium", monospace;
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* 原始文字檢視區 */
+    #rawView {
+      display: none;
+      width: 100%;
+      background: var(--panel-bg);
+      color: var(--text);
+      font-family: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas, "PingFang TC", "Apple LiGothic Medium", monospace;
+      font-size: 0.96rem;
+      line-height: 1.75;
+      padding: 26px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      white-space: pre-wrap;
+      word-break: break-word;
+      user-select: text;
+    }
+
+    /* 底部版權宣告與快捷提示 */
+    footer.bottom-bar {
+      margin-top: auto;
+      padding: 18px 24px;
+      text-align: center;
+      font-size: 0.88rem;
+      color: var(--text-dim);
+      border-top: 1px solid var(--border-subtle);
+      background: var(--card-bg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    /* 列印樣式最佳化 */
+    @media print {
+      header.top-bar, footer.bottom-bar { display: none !important; }
+      body { background: #fff !important; color: #000 !important; font-size: 13pt; }
+      .paper-card { border: none !important; box-shadow: none !important; padding: 0 !important; }
+      .main-wrapper { max-width: 100% !important; padding: 0 !important; }
+      .markdown-body th { background: #f1f5f9 !important; color: #000 !important; }
+      .markdown-body tr:nth-child(even) td { background: #fff !important; }
+      .markdown-body tr:nth-child(odd) td { background: #fff !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 頂部操作與控制列 -->
+  <header class="top-bar">
+    <div class="top-bar-left">
+      <div class="brand-title">
+        <span class="book-icon">📖</span>
+        <span>AI 量化實戰每日覆盤與自我進化日記</span>
+      </div>
+      <div class="status-badge" id="lastUpdatedBadge">
+        <span class="dot"></span>
+        <span id="updateTimeText">讀取中…</span>
+      </div>
+    </div>
+
+    <div class="top-bar-right">
+      <!-- 字級大小調整 -->
+      <div class="btn-group" title="字體大小縮放">
+        <button type="button" class="control-btn" onclick="adjustFont(-0.15)">A- 縮小</button>
+        <button type="button" class="control-btn" id="fontScaleBtn" onclick="resetFont()">標準 100%</button>
+        <button type="button" class="control-btn" onclick="adjustFont(0.15)">A+ 放大</button>
+      </div>
+
+      <!-- 頁面寬度切換（標準寬版 1400px vs 滿版 100%） -->
+      <div class="btn-group" title="版面寬度切換">
+        <button type="button" class="control-btn active" id="btnWidthStandard" onclick="setLayoutWidth('standard')">居中寬版</button>
+        <button type="button" class="control-btn" id="btnWidthFluid" onclick="setLayoutWidth('fluid')">全螢幕滿版</button>
+      </div>
+
+      <!-- 檢視模式切換（精美排版 vs 原始 Markdown） -->
+      <div class="btn-group" title="檢視模式">
+        <button type="button" class="control-btn active" id="btnModeRendered" onclick="setViewMode('rendered')">精美排版</button>
+        <button type="button" class="control-btn" id="btnModeRaw" onclick="setViewMode('raw')">原始 MD</button>
+      </div>
+
+      <!-- 白天 / 夜間模式切換 -->
+      <button type="button" class="action-btn btn-theme" id="themeToggleBtn" onclick="toggleTheme()">
+        <span id="themeIcon">☀️</span>
+        <span id="themeText">白天模式</span>
+      </button>
+
+      <!-- 重新整理 -->
+      <button type="button" class="action-btn" onclick="loadEvolutionLog(true)" title="重新整理覆盤日記">
+        <span>🔄</span> 重新整理
+      </button>
+
+      <!-- 複製全文 -->
+      <button type="button" class="action-btn" onclick="copyContent()" title="複製原始 Markdown 全文">
+        <span>📋</span> 複製
+      </button>
+
+      <!-- 列印 / 存為 PDF -->
+      <button type="button" class="action-btn" onclick="window.print()" title="列印或存為 PDF">
+        <span>🖨️</span> 列印
+      </button>
+
+      <!-- 關閉分頁 -->
+      <button type="button" class="action-btn" onclick="window.close()" title="關閉目前分頁">
+        <span>✕</span> 關閉
+      </button>
+    </div>
+  </header>
+
+  <!-- 主要閱讀容器 -->
+  <main class="main-wrapper width-standard" id="mainWrapper">
+    <div class="paper-card">
+      <div id="loadingBox" class="loading-state">
+        <div class="spinner"></div>
+        <div>正在載入實戰每日覆盤與自我進化日記…</div>
+      </div>
+
+      <div id="errorBox" class="error-state" style="display:none;">
+        <div style="font-size:2rem; margin-bottom:12px;">⚠️</div>
+        <div id="errorMsg">載入失敗</div>
+        <button type="button" class="action-btn" style="margin-top:16px;" onclick="loadEvolutionLog(true)">重試</button>
+      </div>
+
+      <!-- 渲染後的精美閱讀區 -->
+      <article id="renderedView" class="markdown-body" style="display:none;"></article>
+
+      <!-- 原始 Markdown 檢視區 -->
+      <pre id="rawView"></pre>
+    </div>
+  </main>
+
+  <!-- 底部列 -->
+  <footer class="bottom-bar">
+    <div>
+      💡 <strong>閱讀提示</strong>：可使用上方工具列自由調整 <strong>「字體縮放」</strong> 與 <strong>「滿版全螢幕」</strong>，享受最舒適之覆盤體驗。
+    </div>
+    <div>
+      檔案來源：<code>evolution_log.md</code> ｜ Stock Watch Cards 實戰自我進化體系
+    </div>
+  </footer>
+
+  <script>
+    // =========================================================
+    // 狀態與設定管理器
+    // =========================================================
+    let currentRawMarkdown = '';
+    let currentFontScale = 1.0;
+    const THEME_STORAGE_KEY = 'stock-app-theme-preference';
+    const FONT_STORAGE_KEY = 'evolution-log-font-scale';
+    const WIDTH_STORAGE_KEY = 'evolution-log-width-mode';
+
+    // HTML 跳脫防護
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // =========================================================
+    // 白天 / 夜間主題管理（支援 URL 傳遞與 localStorage 同步）
+    // =========================================================
+    function initTheme() {
+      // 優先序：URL 參數 ?theme=light/dark -> localStorage -> 系統深色
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlTheme = urlParams.get('theme');
+      let targetTheme = 'dark';
+
+      if (urlTheme === 'light' || urlTheme === 'dark') {
+        targetTheme = urlTheme;
+      } else {
+        const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+        if (savedTheme === 'light' || savedTheme === 'dark') {
+          targetTheme = savedTheme;
+        }
+      }
+
+      applyTheme(targetTheme, false);
+    }
+
+    function applyTheme(theme, save = true) {
+      document.documentElement.setAttribute('data-theme', theme);
+      if (save) {
+        localStorage.setItem(THEME_STORAGE_KEY, theme);
+      }
+      const isLight = theme === 'light';
+      document.getElementById('themeIcon').textContent = isLight ? '🌙' : '☀️';
+      document.getElementById('themeText').textContent = isLight ? '夜間模式' : '白天模式';
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      applyTheme(current === 'light' ? 'dark' : 'light', true);
+    }
+
+    // =========================================================
+    // 字級大小控制（支援 A- / 100% / A+ / 記住偏好）
+    // =========================================================
+    function initFontSize() {
+      const saved = localStorage.getItem(FONT_STORAGE_KEY);
+      if (saved) {
+        const scale = parseFloat(saved);
+        if (!isNaN(scale) && scale >= 0.75 && scale <= 2.2) {
+          setFontScale(scale, false);
+          return;
+        }
+      }
+      setFontScale(1.0, false);
+    }
+
+    function setFontScale(scale, save = true) {
+      currentFontScale = Math.max(0.75, Math.min(2.2, Math.round(scale * 100) / 100));
+      document.documentElement.style.setProperty('--font-scale', currentFontScale);
+      document.getElementById('fontScaleBtn').textContent = `${Math.round(currentFontScale * 100)}%`;
+      if (save) {
+        localStorage.setItem(FONT_STORAGE_KEY, currentFontScale);
+      }
+    }
+
+    function adjustFont(delta) {
+      setFontScale(currentFontScale + delta, true);
+    }
+
+    function resetFont() {
+      setFontScale(1.0, true);
+    }
+
+    // =========================================================
+    // 版面寬度切換（標準寬版 1400px vs 全螢幕滿版）
+    // =========================================================
+    function initLayoutWidth() {
+      const saved = localStorage.getItem(WIDTH_STORAGE_KEY) || 'standard';
+      setLayoutWidth(saved, false);
+    }
+
+    function setLayoutWidth(mode, save = true) {
+      const wrapper = document.getElementById('mainWrapper');
+      const btnStd = document.getElementById('btnWidthStandard');
+      const btnFluid = document.getElementById('btnWidthFluid');
+
+      if (mode === 'fluid') {
+        wrapper.className = 'main-wrapper width-fluid';
+        btnStd.classList.remove('active');
+        btnFluid.classList.add('active');
+      } else {
+        wrapper.className = 'main-wrapper width-standard';
+        btnStd.classList.add('active');
+        btnFluid.classList.remove('active');
+      }
+
+      if (save) {
+        localStorage.setItem(WIDTH_STORAGE_KEY, mode);
+      }
+    }
+
+    // =========================================================
+    // 檢視模式切換（精美排版 vs 原始 Markdown）
+    // =========================================================
+    function setViewMode(mode) {
+      const renderedView = document.getElementById('renderedView');
+      const rawView = document.getElementById('rawView');
+      const btnRendered = document.getElementById('btnModeRendered');
+      const btnRaw = document.getElementById('btnModeRaw');
+
+      if (mode === 'raw') {
+        renderedView.style.display = 'none';
+        rawView.style.display = 'block';
+        btnRendered.classList.remove('active');
+        btnRaw.classList.add('active');
+      } else {
+        rawView.style.display = 'none';
+        renderedView.style.display = 'block';
+        btnRendered.classList.add('active');
+        btnRaw.classList.remove('active');
+      }
+    }
+
+    // =========================================================
+    // 強化型 Markdown 解析引擎（支援多層清單、表格、色彩標示、流程圖）
+    // =========================================================
+    function renderMarkdownToHtml(markdown = '') {
+      const lines = String(markdown || '').split(/\r?\n/);
+      const output = [];
+      let inOl = false;
+      let inBlockquote = false;
+      const bqLines = [];
+
+      const closeOl = () => {
+        if (inOl) {
+          output.push('</ol>');
+          inOl = false;
+        }
+      };
+
+      const flushBlockquote = () => {
+        if (inBlockquote && bqLines.length > 0) {
+          output.push(`<blockquote>${bqLines.map(l => inlineFormat(l)).join('<br>')}</blockquote>`);
+          bqLines.length = 0;
+          inBlockquote = false;
+        }
+      };
+
+      // 行內格式化處理
+      const inlineFormat = (text) => {
+        if (text == null) return '';
+        let t = escapeHtml(text);
+
+        // 粗體 **text**
+        t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+        // 行內代碼 `code`
+        t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+        // 數學箭頭替換 (如 $\rightarrow$, \longrightarrow, 等)
+        t = t.replace(/\\(?:long)?rightarrow/g, '➔');
+        t = t.replace(/\$+/g, '');
+
+        // 漲跌幅色彩高亮 (台股標準：+紅、-綠)
+        t = t.replace(/\(\+([0-9.]+)(%?)\)/g, '(<span class="pct-up">+$1$2</span>)');
+        t = t.replace(/\(-([0-9.]+)(%?)\)/g, '(<span class="pct-down">-$1$2</span>)');
+
+        // 評分高亮 (終極評分)
+        t = t.replace(/(終極評分\s*[:：]?\s*)<strong>([0-9.]+)<\/strong>/g, '$1<span class="score-badge">$2</span>');
+
+        return t;
+      };
+
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+        let trimmed = line.trim();
+        let indent = line.length - line.replace(/^ +/, '').length;
+
+        // 空行
+        if (!trimmed) {
+          flushBlockquote();
+          continue;
+        }
+
+        // 流程管線圖 (例如 $$\text{A} \longrightarrow \text{B} \longrightarrow \text{C}$$)
+        if (trimmed.startsWith('$$')) {
+          closeOl();
+          flushBlockquote();
+          const cleanText = trimmed.replace(/\$\$/g, '').trim();
+          const nodes = cleanText.split(/\\(?:long)?rightarrow/);
+          if (nodes && nodes.length > 1) {
+            output.push('<div class="pipeline-card">');
+            nodes.forEach((node, idx) => {
+              if (node == null) return;
+              const nodeTitle = String(node).replace(/\\text\{([^}]+)\}/g, '$1').replace(/[${}]/g, '').trim();
+              if (nodeTitle) {
+                if (idx > 0) output.push('<span class="pipeline-arrow">➔</span>');
+                output.push(`<div class="pipeline-node">${escapeHtml(nodeTitle)}</div>`);
+              }
+            });
+            output.push('</div>');
+            continue;
+          }
+        }
+
+        // 區塊引用 >
+        if (trimmed.startsWith('>')) {
+          closeOl();
+          inBlockquote = true;
+          bqLines.push(trimmed.replace(/^>\s?/, ''));
+          continue;
+        } else {
+          flushBlockquote();
+        }
+
+        // 縮排子項（Sub-bullet 如   * **風口吻合度**...）
+        const subBullet = trimmed.match(/^[-*•]\s+(.+)$/);
+        if (inOl && indent >= 2 && subBullet) {
+          output.push(`  <div class="log-sub-bullet"><span class="log-sub-bullet-dot">🔹</span><span>${inlineFormat(subBullet[1])}</span></div>`);
+          continue;
+        }
+
+        // 縮排延續文字（Continuation line 如清單項目的說明段落）
+        if (inOl && indent >= 2 && !trimmed.match(/^\d+[.)]/)) {
+          output.push(`  <div class="log-ol-desc">${inlineFormat(trimmed)}</div>`);
+          continue;
+        }
+
+        // 有序清單主項目 (1. 2. 3...)
+        const olMatch = trimmed.match(/^(\d+)[.)]\s+(.+)$/);
+        if (olMatch) {
+          if (!inOl) {
+            output.push('<ol class="log-ol-list">');
+            inOl = true;
+          } else {
+            output.push('</li>');
+          }
+          output.push(`<li class="log-ol-item"><div class="log-ol-title">${inlineFormat(olMatch[2])}</div>`);
+          continue;
+        }
+
+        // 若不是有序清單相關項目，關閉 ol
+        closeOl();
+
+        // Markdown 表格判斷
+        if (/^\|.*\|$/.test(trimmed) && i + 1 < lines.length && /^\|?[\s:|-]+\|?$/.test(lines[i + 1].trim())) {
+          const headerRow = trimmed.split('|').slice(1, -1).map(c => c.trim());
+          const alignments = lines[i + 1].trim().split('|').slice(1, -1).map(col => {
+            const c = col.trim();
+            if (c.startsWith(':') && c.endsWith(':')) return 'center';
+            if (c.endsWith(':')) return 'right';
+            return 'left';
+          });
+
+          i += 2;
+          const rows = [];
+          while (i < lines.length && /^\|.*\|$/.test(lines[i].trim())) {
+            const cells = lines[i].trim().split('|').slice(1, -1).map(c => c.trim());
+            rows.push(cells);
+            i++;
+          }
+          i--;
+
+          output.push('<div class="table-responsive-wrapper"><table><thead><tr>');
+          headerRow.forEach((h, idx) => {
+            const align = alignments[idx] || 'left';
+            output.push(`<th style="text-align:${align};">${inlineFormat(h)}</th>`);
+          });
+          output.push('</tr></thead><tbody>');
+          rows.forEach(r => {
+            output.push('<tr>');
+            r.forEach((c, idx) => {
+              const align = alignments[idx] || 'left';
+              let formatted = inlineFormat(c);
+              if (/^[0-9]+(\.[0-9]+)?$/.test(c.trim())) {
+                formatted = `<span class="score-badge">${formatted}</span>`;
+              }
+              output.push(`<td style="text-align:${align};">${formatted}</td>`);
+            });
+            output.push('</tr>');
+          });
+          output.push('</tbody></table></div>');
+          continue;
+        }
+
+        // 標題 H1 ~ H4
+        const h1 = trimmed.match(/^#\s+(.+)$/);
+        if (h1) {
+          output.push(`<h1>${inlineFormat(h1[1])}</h1>`);
+          continue;
+        }
+        const h2 = trimmed.match(/^##\s+(.+)$/);
+        if (h2) {
+          output.push(`<h2>${inlineFormat(h2[1])}</h2>`);
+          continue;
+        }
+        const h3 = trimmed.match(/^###\s+(.+)$/);
+        if (h3) {
+          output.push(`<h3>${inlineFormat(h3[1])}</h3>`);
+          continue;
+        }
+        const h4 = trimmed.match(/^####\s+(.+)$/);
+        if (h4) {
+          output.push(`<h4>${inlineFormat(h4[1])}</h4>`);
+          continue;
+        }
+
+        // 分隔線 ---
+        if (/^[-*_]{3,}$/.test(trimmed)) {
+          output.push('<hr>');
+          continue;
+        }
+
+        // 一般無序清單 (未在 ol 中的單獨 bullet)
+        const unord = trimmed.match(/^[-*•]\s+(.+)$/);
+        if (unord) {
+          output.push(`<div class="log-sub-bullet" style="padding-left:12px; margin-bottom:8px;"><span class="log-sub-bullet-dot">▪</span><span>${inlineFormat(unord[1])}</span></div>`);
+          continue;
+        }
+
+        // 一般段落
+        output.push(`<p>${inlineFormat(trimmed)}</p>`);
+      }
+
+      if (inOl) {
+        output.push('</li></ol>');
+      }
+      flushBlockquote();
+      return output.join('\n');
+    }
+
+    // =========================================================
+    // 資料載入流程
+    // =========================================================
+    async function loadEvolutionLog(isManual = false) {
+      const loadingBox = document.getElementById('loadingBox');
+      const errorBox = document.getElementById('errorBox');
+      const renderedView = document.getElementById('renderedView');
+      const rawView = document.getElementById('rawView');
+      const updateTimeText = document.getElementById('updateTimeText');
+
+      if (isManual) {
+        updateTimeText.textContent = '更新中…';
+      }
+
+      try {
+        let content = '';
+        let mtime = null;
+
+        // 嘗試從伺服器 API 讀取
+        try {
+          const res = await fetch('/api/evolution-log');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.ok) {
+              content = data.content || '';
+              mtime = data.mtime || null;
+            }
+          }
+        } catch (e) {
+          console.warn('API fetch failed, falling back to direct md fetch', e);
+        }
+
+        // 若 API 未回傳（例如離線或純靜態開檔），回退嘗試 fetch 檔案本身
+        if (!content) {
+          const resFile = await fetch('evolution_log.md');
+          if (resFile.ok) {
+            content = await resFile.text();
+          }
+        }
+
+        if (!content) {
+          throw new Error('找不到覆盤日記檔案 (evolution_log.md)，請先執行「盤後進化」生成！');
+        }
+
+        currentRawMarkdown = content;
+
+        // 渲染 Markdown
+        const html = renderMarkdownToHtml(content);
+        renderedView.innerHTML = html;
+        rawView.textContent = content;
+
+        // 更新時間戳記
+        if (mtime) {
+          const d = new Date(mtime * 1000);
+          const dateStr = d.toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' });
+          const timeStr = d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+          updateTimeText.textContent = `實戰進化紀錄 (${dateStr} ${timeStr})`;
+        } else {
+          updateTimeText.textContent = '實戰進化紀錄 (即時同步)';
+        }
+
+        loadingBox.style.display = 'none';
+        errorBox.style.display = 'none';
+        renderedView.style.display = 'block';
+
+      } catch (err) {
+        loadingBox.style.display = 'none';
+        renderedView.style.display = 'none';
+        rawView.style.display = 'none';
+        errorBox.style.display = 'block';
+        document.getElementById('errorMsg').textContent = err.message || '讀取失敗';
+        updateTimeText.textContent = '讀取異常';
+      }
+    }
+
+    // 複製全文
+    function copyContent() {
+      if (!currentRawMarkdown) return;
+      navigator.clipboard.writeText(currentRawMarkdown).then(() => {
+        alert('✅ 已成功將「實戰覆盤日記」完整 Markdown 複製到剪貼簿！');
+      }).catch(err => {
+        alert('複製失敗，請手動全選：' + err);
+      });
+    }
+
+    // =========================================================
+    // 初始化啟動
+    // =========================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      initFontSize();
+      initLayoutWidth();
+      loadEvolutionLog();
+    });
+  </script>
+</body>
+</html>

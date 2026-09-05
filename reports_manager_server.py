@@ -1408,6 +1408,11 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as e:
                 self._json(500, {"ok": False, "error": f"讀取報告失敗: {e}"})
             return
+        if parsed.path in ("/evolution-log", "/evolution_log"):
+            self.send_response(302)
+            self.send_header("Location", "/evolution_log.html")
+            self.end_headers()
+            return
         if parsed.path == "/api/evolution-log":
             log_file = ROOT_DIR / "evolution_log.md"
             if not log_file.exists():
@@ -1415,7 +1420,8 @@ class Handler(SimpleHTTPRequestHandler):
                 return
             try:
                 content = log_file.read_text(encoding="utf-8", errors="replace")
-                self._json(200, {"ok": True, "content": content})
+                mtime = os.path.getmtime(log_file)
+                self._json(200, {"ok": True, "content": content, "mtime": mtime})
             except Exception as e:
                 self._json(500, {"ok": False, "error": f"讀取覆盤日記失敗: {e}"})
             return

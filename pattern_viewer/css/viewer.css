@@ -20,8 +20,12 @@
   box-sizing: border-box;
   min-height: 100vh;
   background: var(--pv-bg);
-  color: var(--pv-text);
-  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", sans-serif;
+  font-family: "SF Pro Text", "SF Pro Display", "SF Pro", -apple-system, BlinkMacSystemFont, "Inter", "PingFang TC", "PingFang HK", "PingFang SC", "Noto Sans TC", "Noto Sans CJK TC", "Apple LiGothic Medium", "Microsoft JhengHei UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
