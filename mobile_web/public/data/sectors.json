@@ -1,112 +1,88 @@
 {
-  "as_of_date": "09/03",
-  "overview": "今日台股市場受美股反彈激勵強勢走揚，資金主軸聚焦於AI伺服器相關供應鏈，特別是電子零組件與先進製程領域，其中被動元件與散熱族群表現尤為突出，顯示市場資金正從雲端訓練轉向邊緣運算與推理硬體。",
+  "as_of_date": "09/04",
+  "overview": "台股受惠聯準會鴿派訊號與美股走高，大盤強彈近700點，外資大舉回補，資金聚焦AI相關科技成長股，尤其散熱、被動元件與光通訊族群表現最為強勁。",
   "hot_sectors": [
     {
-      "sector_name": "AI伺服器/代工",
+      "sector_name": "AI伺服器/ODM",
       "heat_level": 5,
-      "catalysts": "AI伺服器已成為營收成長主要引擎，ODM廠營運重心轉向AI伺服器，NVIDIA GB300與Vera Rubin等新世代架構持續推升需求，台灣廠商在全球伺服器組裝市佔率超過九成。",
+      "catalysts": "戴爾財報報喜上調展望，聯想伺服器業務強勁，Google、Meta、Anthropic等AI模型軍備競賽升溫，持續推升AI訓練與推論算力需求。輝達GB系列追加訂單與水冷出貨增加。外資大買鴻海、緯創、廣達等權值股，華碩亦受AI PC與雲端伺服器題材帶動。",
       "related_tags": [
-        "ODM",
+        "AI PC",
+        "雲端伺服器",
+        "邊緣AI",
         "GPU",
-        "HPC",
-        "Rack-scale",
-        "AI資料中心",
-        "伺服器組裝"
-      ]
-    },
-    {
-      "sector_name": "先進封裝CoWoS/測試設備",
-      "heat_level": 5,
-      "catalysts": "CoWoS作為AI伺服器供應鏈的起點，產能至2026年底幾乎全滿，成為AI算力擴張的瓶頸。SoIC與FOPLP等3D堆疊技術亦加速發展，帶動封測廠資本支出與測試設備需求顯著成長。",
-      "related_tags": [
-        "CoWoS",
-        "SoIC",
-        "FOPLP",
-        "HBM",
-        "異質整合",
-        "封測",
-        "封裝設備",
-        "測試介面"
+        "TPU",
+        "ODM"
       ]
     },
     {
       "sector_name": "散熱水冷",
       "heat_level": 5,
-      "catalysts": "輝達GB300機架功耗逼近600千瓦，傳統氣冷已難以應付，液冷散熱從選配轉為標配。具備高階液冷核心組件研發與量產能力的廠商，如冷板、CDU等，將搶佔市場先機。",
+      "catalysts": "AI晶片功耗持續攀升，散熱技術成關鍵。台積電與AMD揭示下一代水冷技術藍圖（TIM-less架構），預計明年中量產。雙鴻、奇鋐等台廠積極參與新世代水冷板開發。雙鴻7月獲利亮眼，EPS達6.47元，股價無懼處置仍漲停創高；奇鋐同步創天價。光寶科策略投資波蘭液冷業者。",
       "related_tags": [
-        "液冷",
+        "液冷散熱",
         "水冷板",
-        "CDU",
-        "均熱片",
-        "熱交換器",
-        "散熱模組"
+        "微流道",
+        "AI晶片",
+        "高效能運算"
+      ]
+    },
+    {
+      "sector_name": "高階被動元件",
+      "heat_level": 5,
+      "catalysts": "TrendForce報告指出，南韓SEMCO率先調漲2026年第四季MLCC報價，產業邁入上升格局。國巨受邀參加Citi投資人說明會，買盤提前卡位。AI伺服器電源升級帶動高壓、低損耗、耐高溫MLCC需求。禾伸堂規劃擴充AI電源MLCC產能。華新科、禾伸堂、金山電等多檔個股亮燈漲停。",
+      "related_tags": [
+        "MLCC",
+        "AI伺服器電源",
+        "高容值電容",
+        "漲價題材"
       ]
     },
     {
       "sector_name": "光通訊CPO/矽光子",
-      "heat_level": 4,
-      "catalysts": "AI資料中心對高速傳輸需求激增，使光通訊成為剛需。CPO技術將光引擎直接整合至交換晶片旁，大幅降低功耗與延遲，矽光子技術亦為市場熱門題材。",
+      "heat_level": 5,
+      "catalysts": "AI資料中心高速傳輸需求持續升溫，SEMICON Taiwan 2026將矽光子與CPO列為新顯學。台積電預估矽光子2027年市場滲透率將突破5成，CPO有望於2026下半年進入量產。AI GPU、ASIC運算晶片加速「由電轉光」趨勢。前鼎、華星光、鼎元等多檔個股攻上漲停。",
       "related_tags": [
-        "CPO",
         "矽光子",
-        "光收發模組",
-        "InP",
-        "耦光",
-        "高速傳輸"
-      ]
-    },
-    {
-      "sector_name": "ASIC/IP設計",
-      "heat_level": 4,
-      "catalysts": "雲端服務供應商(CSP)自研ASIC晶片需求快速增加，AI與HPC應用推動客製化ASIC設計服務與高速IP需求，台積電生態系相關廠商受惠。",
-      "related_tags": [
-        "ASIC",
-        "IP",
-        "NRE",
-        "Turnkey",
-        "HPC",
-        "晶片設計"
+        "CPO (Co-Packaged Optics)",
+        "AI資料中心",
+        "高速互連",
+        "Micro LED"
       ]
     },
     {
       "sector_name": "工業電腦Edge AI",
       "heat_level": 4,
-      "catalysts": "AI應用從雲端走向工廠、機器人、醫療等邊緣場域，工業電腦成為Edge AI部署的關鍵硬體平台。軟硬整合與垂直場域解決方案能力成為成長動能。",
+      "catalysts": "市場看好AI應用從雲端延伸至邊緣運算（Edge AI）趨勢，工業電腦為部署邊緣AI解決方案的關鍵硬體。OpenAI GPT-6 Astra加速「邊端AI去雲化」，主力資金從雲端機房轉向邊端運算、終端PCB、低功耗晶片模組等。威強電、研揚、研華等指標股表現強勁。",
       "related_tags": [
-        "Edge AI",
-        "IPC",
-        "智慧製造",
-        "機器視覺",
-        "AMR",
-        "智慧交通",
-        "邊緣運算"
+        "邊緣運算",
+        "AI PC",
+        "低功耗晶片",
+        "終端PCB",
+        "推理硬體"
       ]
     },
     {
-      "sector_name": "高階被動元件",
+      "sector_name": "先進封裝CoWoS/設備",
       "heat_level": 4,
-      "catalysts": "三星電機傳出第四季調漲MLCC合約價，AI伺服器對高容值元件的強勁拉貨，導致高階MLCC產能供不應求，帶動產業報價走揚與資金流入。",
+      "catalysts": "台積電CoWoS產能缺口預計持續至2027年底，加速FOPLP技術崛起。台積電CoPoS試產線已於6月建置完成，13家台廠設備供應商入列。SEMICON Taiwan 2026強調AI/HPC晶片大型化對精密量測、翹曲控制、研磨、CMP及Die Bond等設備需求增加。",
       "related_tags": [
-        "MLCC",
-        "晶片電阻",
-        "鉭質電容",
-        "電感",
-        "車用電子",
-        "高容值"
+        "CoWoS",
+        "SoIC",
+        "FOPLP",
+        "封裝設備",
+        "HPC",
+        "AI晶片"
       ]
     },
     {
-      "sector_name": "電源供應",
-      "heat_level": 4,
-      "catalysts": "AI伺服器對供電穩定性與效率要求極高，推升高階電源供應器(PSU)需求。NVIDIA Vera Rubin平台全面導入800V HVDC架構，使備援電池單元(BBU)進入黃金爆發期。",
+      "sector_name": "記憶體",
+      "heat_level": 3,
+      "catalysts": "美股記憶體族群（美光、SanDisk）股價大漲，市場預期台股記憶體族群有望跟進。OpenAI GPT-6 Astra模型優化小型化分支架構，對低功耗、高穩定、量大價優的推理硬體（含記憶體）需求增加。",
       "related_tags": [
-        "PSU",
-        "Power Rack",
-        "BBU",
-        "800V HVDC",
-        "電源管理IC",
-        "資料中心電力"
+        "DRAM",
+        "NAND Flash",
+        "AI推理"
       ]
     }
   ]

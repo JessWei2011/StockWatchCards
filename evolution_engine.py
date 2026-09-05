@@ -322,22 +322,30 @@ def fetch_market_hot_sectors(api_key, as_of_date):
         except Exception:
             pass
 
-    prompt = """你是一名台股頂級操盤手與產業研究總監。
-請透過 Google Search 即時查核台股當前盤面最新最熱門的「核心強勢產業族群、熱門法說會動態與主流資金焦點」：
-請找出目前市場資金最青睞、最熱門的 5 至 8 個核心產業題材（例如：AI伺服器/代工、先進封裝CoWoS/測試設備、散熱水冷、光通訊CPO/矽光子、ASIC/IP設計、工業電腦Edge AI、高階被動元件、電源供應等）。
+    prompt = f"""【系統角色與任務】
+你是一名台股外資頂級量化操盤手與產業研究總監。基準審查日期為：{as_of_date}。
+請透過 Google Search 即時查核當前（{as_of_date} 當週）台股盤面最新受市場大資金（外資/投信/主力）追捧的「核心強勢產業族群、重大法說會利多與主流題材」：
+請找出目前市場資金最青睞、動能最強的 5 至 8 個核心產業族群（例如：AI伺服器/ODM、先進封裝CoWoS/設備、散熱水冷、光通訊CPO/矽光子、ASIC/IP設計、工業電腦Edge AI、高階被動元件、重電綠能等）。
 
-請以繁體中文直接輸出標準 JSON 格式（包含 ```json 代碼區塊），結構如下：
-{
-  "market_overview": "一句話總結今日台股市場焦點與資金主軸",
+【熱度評分標準 (heat_level 嚴格量化，嚴禁全員5星)】
+- 5 星 (爆發性主線)：族群出現集體大漲或成交金額佔大盤前三名，具重大產業急單或國際大廠（如NVIDIA、蘋果、台積電）關鍵實質催化劑。
+- 4 星 (強勢輪動線)：族群有多檔個股站穩均線起漲，法說會展望正向，外資投信連續買超。
+- 3 星 (潛在發酵線)：低檔轉機或少數龍頭突圍，題材初期萌芽。
+(必須依照真實盤面資金流向給予 3~5 分的分級)
+
+【輸出規格】
+請以繁體中文直接輸出標準 JSON 格式（可包含 ```json 代碼區塊），禁止任何引言或結尾廢話，結構如下：
+{{
+  "market_overview": "一句話總結今日台股市場焦點與資金主軸（50字以內）",
   "hot_sectors": [
-    {
+    {{
       "sector_name": "產業族群名稱",
-      "heat_level": 5, 
-      "catalysts": "最新重大法說會重點、關鍵大訂單或產業爆發動能",
+      "heat_level": 5,
+      "catalysts": "最新重大法說會重點、關鍵大訂單或產業爆發動能（杜絕籠統空話）",
       "related_tags": ["相關標籤或次產業1", "次產業2"]
-    }
+    }}
   ]
-}
+}}
 """
     overview = "台股資金高度聚焦於 AI 伺服器供應鏈、先進封裝、散熱水冷與高速運算週邊。"
     hot_sectors = [
@@ -355,6 +363,8 @@ def fetch_market_hot_sectors(api_key, as_of_date):
         try:
             m = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', text, re.DOTALL)
             json_str = m.group(1) if m else text.strip()
+            # 容錯處理：消除可能存在的尾隨逗號
+            json_str = re.sub(r',\s*([\}\]])', r'\1', json_str)
             data = json.loads(json_str)
             if data.get('hot_sectors'):
                 hot_sectors = data['hot_sectors']
@@ -410,15 +420,22 @@ def audit_stock_with_gemini(candidate, api_key, as_of_date):
 
     # 2. 即時聯網 Google Search Grounding 深度查核五大關鍵事實
     prompt = f"""
-你是一名極度講求客觀數字的台股專業研究員與頂級操盤手。
-請透過 Google 搜尋即時查核台股「{candidate['code']} {candidate['name']}」（類別：{candidate['category']}）最新公開之財務、法說會、重大利多與法人機構目標價：
+【審計任務】
+你是極度嚴苛的台股避險基金首席審計官。基準審計日：{as_of_date}。
+請透過 Google Search 即時查核台股「{candidate['code']} {candidate['name']}」（產業分類：{candidate['category']}）最新之客觀公開數據、重大訊息與法人目標價：
 
-【請嚴格搜尋並以下列五行格式精確輸出，禁止任何引言、客套或多餘文字】：
-月盈年盈：[何月份單月營收數字、MoM月增率、YoY年增率，例: 7月營收193.42億元(MoM+8.93%, YoY-0.02%)]
+【防偽與時效鐵律（嚴格執行）】
+1. [月營收]：必須為「最新公告月份」（如前月或當月最新自結營收），必須包含數字、MoM 與 YoY。若未查得請填「最新公告YoY查核中」。
+2. [獲利季報]：必須為「最新一季」公開資訊觀測站已公佈財報之 EPS 與毛利率。
+3. [法人目標價]：★嚴格僅採納距今「90天內」國內外券商之最新研究報告！★嚴禁引用超過3個月前的過期報告。若近期無券商出具報告，請填「近三個月無公開機構目標價」。
+4. [處置狀態]：★僅確認「{as_of_date} 當日」是否由證交所/櫃買中心公告執行分盤撮合處置！若正常交易請填「正常交易」，切勿將歷史處置紀錄誤判為現行處置！
+
+【請嚴格以下列五行格式精確輸出，每行以指定標籤開頭，禁止任何 Markdown 語法標籤（如 ** 或 #）與引言】：
+月盈年盈：[何月份單月營收數字、MoM月增率、YoY年增率，例: 7月營收193.42億元(MoM+8.93%, YoY+14.5%)]
 最新獲利：[最新一季財報EPS、毛利率與累計獲利，例: Q2 EPS 3.55元，毛利率16.0%]
-法說利多：[最新法說會核心要點、關鍵大訂單或擴產動能，例: AI伺服器營收預計年增50-100%，新廠2026年中投產]
-法人目標價：[外資、投信或國內大型券商最新研究報告之目標價與評等，例: 外資共識目標價155元，最高目標價210元(買進)]
-處置狀態：[正常交易 或 列入處置分盤撮合]
+法說利多：[最新法說會核心要點、關鍵大訂單或擴產動能，25字以內]
+法人目標價：[外資或國內大型券商90天內最新研究報告之目標價與評等，例: 某外資目標價210元(買進) 或 近三個月無公開機構目標價]
+處置狀態：[正常交易 或 處置分盤撮合]
 """
     text, used_model = call_gemini_search(prompt, api_key)
     if text:
@@ -441,8 +458,9 @@ def audit_stock_with_gemini(candidate, api_key, as_of_date):
             elif ('目標價' in clean or '評等' in clean or '外資' in clean or '券商' in clean) and not target_price:
                 target_price = re.sub(r'^(?:法人目標價|目標價|法人評等)[：:]\s*', '', clean).replace('|', '/').strip()
             elif '處置' in clean and not disposition:
-                if '列入處置' in clean or '處置股' in clean:
-                    disposition = "列入處置股(分盤撮合/流動性急凍)"
+                if '處置分盤撮合' in clean or '列入處置' in clean or '處置股' in clean:
+                    if '正常交易' not in clean and '未列入' not in clean and '解除' not in clean:
+                        disposition = "列入處置股(分盤撮合/流動性急凍)"
 
         junk = ['以基本面訂單為主', '基本面良好', '待後續', '無顯著']
         for j in junk:
@@ -495,12 +513,12 @@ def evaluate_holistic_score(cand, hot_sectors):
     target_price_str = cand.get('target_price', '')
     price = cand.get('price', 1.0)
 
-    # A. 產業風口契合度評估
     matched_sector = None
     for sec in hot_sectors:
         sec_name = sec.get('sector_name', '')
         tags = sec.get('related_tags', [])
-        if any(t in category or t in name for t in [sec_name] + tags):
+        match_targets = [t for t in [sec_name] + tags if t]
+        if any((t in category or category in t or t in name or name in t) for t in match_targets if category or name):
             matched_sector = sec
             break
 
@@ -605,29 +623,41 @@ def generate_ai_evolution_log(top_picks, hot_sectors, as_of_date, api_key, model
         for s in top_picks
     ])
 
-    prompt = f"""
-你是一名注重客觀事實與科學紀律的資深交易總監。
-基準日期：{as_of_date}。
+    prompt = f"""【系統角色與職責】
+你是一名管理百億台幣的多因子量化對沖基金資深投資總監（CIO）。
+基準覆盤日期：{as_of_date}。
 核心評估原則：【先搜尋產業面新聞與法說會，再對候選股全面調研，最後綜合所有資訊評估排定榜單。嚴格杜絕先有榜單才找新聞之後見之明！】
 
-今日 Google Search 掃描之市場主流強勢產業風口：
+【核心覆盤背景與資料集】
+1. 今日 Google Search 掃描之市場主流強勢產業風口：
 {sec_summary}
 
-依據全維度多因子（產業風口 + 月盈年盈營收 + 獲利EPS + 法說重點 + 法人目標價 + 技術籌碼）最終嚴選出的勝率榜標的：
+2. 經量化模型篩選、基本面事實審計與全維度加權排定之【AI 實戰勝率榜】嚴選名單：
 {stocks_summary}
 
-請為實戰覆盤日記 (evolution_log.md) 撰寫專業客觀的檢討報告（繁體中文 Markdown）：
-包含：
-1. 【今日台股主流產業風口與資金焦點】：以 Step 1 搜尋出的產業新聞與法說會動態為核心，分析資金為何集中於此。
-2. 【自上而下 (Top-Down) 嚴選邏輯檢討】：說明為何榜單個股能從產業風口中脫穎而出，並同時具備營收年增、季報獲利與法人目標價保護。
-3. 【演算法動態進化原則】：強調先產業新聞、再基本面調研、最後全維度綜合排名的科學性，杜絕主觀與粗暴盲選。
+【思考與推理步驟 (Chain-of-Thought Guidance)】
+- Step 1: 檢視今日資金是真突破（伴隨實質業績與法說成長）還是高檔題材投機拉抬？
+- Step 2: 逐檔標的審視選股邏輯，檢驗榜首標的是否具備「基本面爆發 (YoY/EPS) + 技術守穩 + 目標價溢價」三位一體之共振特徵？
+- Step 3: 揭露潛在風險與動態校準建議，明確標示高檔乖離過大、隔日沖獲利了結或均線防守點位。
 
-請直接輸出 Markdown 內文，數據嚴格精確，禁止誇大渲染。
+【輸出要求】
+請直接輸出專業、冷靜、數據導向的繁體中文 Markdown 報告（嚴格禁止使用 ```markdown 代碼塊包裹全文，直接輸出內文）：
+### 一、今日台股主流產業風口與資金焦點剖析
+### 二、勝率榜核心個股 Top-Down 選股邏輯驗證
+### 三、量化交易風控警示與進化校準方向
 """
     text, used_model = call_gemini_rest(prompt, api_key)
     if text:
+        clean_text = text.strip()
+        if clean_text.startswith("```markdown"):
+            clean_text = clean_text[len("```markdown"):].strip()
+        elif clean_text.startswith("```"):
+            clean_text = clean_text[3:].strip()
+        if clean_text.endswith("```"):
+            clean_text = clean_text[:-3].strip()
+
         header = "# 📖 AI 量化實戰每日覆盤與自我進化日記\n\n> 累積實戰經驗、天天反思漏洞、動態校準因子，結合客觀事實與 AI 深度情報，打造實戰勝率最高之決策體系。\n\n"
-        content = f"{header}## 📅 【實戰覆盤檢討書】— {as_of_date} 盤後深度覆盤（Gemini {model_label} 先產業後榜單全維度版）\n\n{text.strip()}\n"
+        content = f"{header}## 📅 【實戰覆盤檢討書】— {as_of_date} 盤後深度覆盤（Gemini {model_label} 先產業後榜單全維度版）\n\n{clean_text}\n"
         EVOLUTION_LOG_MD.write_text(content, encoding='utf-8')
         print(f"📝 客觀覆盤日記已更新至：{EVOLUTION_LOG_MD.name}", flush=True)
 
@@ -698,34 +728,61 @@ def main():
             infos.append(inf)
 
     unique_infos = {inf['code']: inf for inf in infos}
-    as_of_date = "09/03"
+    # 自動抓取最新資料日期 (相容 YYYY-MM-DD 或 MM/DD)
+    sample_dates = [inf.get('kline', [{}])[-1].get('date') for inf in infos if inf.get('kline')]
+    valid_dates = [d for d in sample_dates if d]
+    if valid_dates:
+        latest_d = max(valid_dates)
+        if "-" in latest_d:
+            parts = latest_d.split("-")
+            as_of_date = f"{parts[1]}/{parts[2]}" if len(parts) >= 3 else latest_d
+        else:
+            as_of_date = latest_d
+    else:
+        as_of_date = "09/04"
 
     # =========================================================================
     # 🌐 【步驟 1：先產業後個股】即時聯網搜尋當前台股主流強勢族群與法說會動態
     # =========================================================================
-    print("\n🌐 [Step 1] 先行聯網掃描今日台股核心強勢產業風口與法說焦點...", flush=True)
+    print(f"\n🌐 [Step 1] 先行聯網掃描今日 ({as_of_date}) 台股核心強勢產業風口與法說焦點...", flush=True)
     overview, hot_sectors = fetch_market_hot_sectors(api_key, as_of_date) if api_key else ("", [])
     print(f"  📌 今日盤面資金主軸：{overview}", flush=True)
     print("  🔥 當前核心強勢族群：", ", ".join([s.get('sector_name', '') for s in hot_sectors[:5]]), flush=True)
 
     # =========================================================================
-    # 🔍 【步驟 2：初篩技術候選池】選出具備短線起漲基礎之潛力股票群
+    # 🔍 【步驟 2：初篩技術候選池】雙軌漏斗模型 (攻擊動能軌 + 蓄勢回測守穩軌)
     # =========================================================================
-    print("\n🔍 [Step 2] 構建具備短線起漲條件之候選潛力池 (排除破5MA與過熱股)...", flush=True)
+    print("\n🔍 [Step 2] 構建雙軌候選池 (兼顧「短線攻擊動能」與「回測量縮起漲」)...", flush=True)
     candidates = []
     for c, inf in unique_infos.items():
         res = calculate_evolution_score(inf)
         if res:
             candidates.append(res)
 
-    # 基礎門檻：未跌破 5MA，短線多頭結構健全
-    momentum_candidates = [r for r in candidates if r['above_5ma'] and r['score'] >= 80.0]
-    # 先依基礎技術分取前 12 檔進入「深度調研池」
-    pre_audit_pool = sorted(momentum_candidates, key=lambda x: x['score'], reverse=True)[:12]
-    if not pre_audit_pool:
-        pre_audit_pool = sorted([r for r in candidates if r['above_5ma']], key=lambda x: x['score'], reverse=True)[:8]
+    # ── 雙軌候選漏斗 (Dual-Track Candidate Funnel) ──
+    # 軌道 1：攻擊動能軌 (Momentum Track) - 站在 5MA 之上且技術攻擊分前 8 檔
+    momentum_pool = sorted(
+        [r for r in candidates if r['above_5ma'] and r['score'] >= 75.0],
+        key=lambda x: x['score'],
+        reverse=True
+    )[:8]
 
-    print(f"  👉 進入全維度深度調研池：共 {len(pre_audit_pool)} 檔標的", flush=True)
+    # 軌道 2：蓄勢回測/量縮守穩起漲軌 (Consolidation & Dip Track) - 回測守穩、量縮整理或投信連續進駐 (前 8 檔)
+    seen_codes = {r['code'] for r in momentum_pool}
+    dip_candidates = [
+        r for r in candidates 
+        if r['code'] not in seen_codes and (
+            any("回測" in reas or "守穩" in reas or "投信" in reas or "VCP" in reas for reas in r['reasons'])
+            or (-2.0 <= r['bias_20'] <= 6.5)
+        )
+    ]
+    dip_pool = sorted(dip_candidates, key=lambda x: x['score'], reverse=True)[:8]
+
+    pre_audit_pool = momentum_pool + dip_pool
+    if not pre_audit_pool:
+        pre_audit_pool = sorted(candidates, key=lambda x: x['score'], reverse=True)[:12]
+
+    print(f"  👉 進入全維度深度調研池：共 {len(pre_audit_pool)} 檔標的 (攻擊動能 {len(momentum_pool)} 檔 + 蓄勢守穩 {len(dip_pool)} 檔)", flush=True)
 
     # =========================================================================
     # 🤖 【步驟 3：個股基本面與新聞全維度調研】(在排定榜單前先調研完畢！)

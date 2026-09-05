@@ -10,10 +10,12 @@
   },
   "2454": {
     "name": "聯發科",
-    "revenue": "7月營收484.75億(YoY+12.16%)",
+    "monthly_rev": "7月營收484.75億元(MoM-16.44%, YoY+12.16%)",
     "earnings": "Q2 EPS 15.28元，毛利率46.2%",
-    "catalyst": "首個AI ASIC專案量產帶來數十億美元營收，與NVIDIA深化合作",
-    "updated_at": "2026-09-03"
+    "catalyst": "AI ASIC展望上修，智慧裝置平台成長抵銷手機疲軟。",
+    "target_price": "FactSet分析師共識目標價5485元",
+    "disposition": "",
+    "updated_at": "09/04"
   },
   "2481": {
     "name": "強茂",
@@ -135,5 +137,41 @@
     "target_price": "美系外資目標價1680元(買進)，國泰目標價1600元(買進)。",
     "disposition": "",
     "updated_at": "09/03"
+  },
+  "3006": {
+    "name": "晶豪科",
+    "monthly_rev": "8月營收79.05億元(MoM+16.5%, YoY+605.2%)",
+    "earnings": "Q2 EPS 20.21元，毛利率68.7%",
+    "catalyst": "記憶體受惠AI需求，DDR2/DDR3市佔增，價格逐季調升。",
+    "target_price": "近三個月無公開機構目標價",
+    "disposition": "",
+    "updated_at": "09/04"
+  },
+  "6584": {
+    "name": "南俊國際",
+    "monthly_rev": "7月營收2.803億元(MoM-2.12%, YoY+32.80%)",
+    "earnings": "Q2 EPS 3.1元，毛利率41.81%",
+    "catalyst": "VR/ASIC伺服器訂單放量，越南廠擴產，新CSP客戶",
+    "target_price": "本土投顧目標價721元(增加持股)，日系外資目標價1022元(買進)",
+    "disposition": "",
+    "updated_at": "09/04"
+  },
+  "3491": {
+    "name": "昇達科",
+    "monthly_rev": "7月營收230,139千元(MoM-10.4%, YoY+82.02%)",
+    "earnings": "Q2 EPS 4.47元，毛利率55.6%",
+    "catalyst": "併購巨頻科技強化低軌衛星與AI資料中心佈局，8月起營運回溫。",
+    "target_price": "FactSet最新調查目標價1977.5元 (2026年EPS預估18.88元)",
+    "disposition": "",
+    "updated_at": "09/04"
+  },
+  "6187": {
+    "name": "萬潤",
+    "monthly_rev": "7月營收10.55億元(MoM+4.17%, YoY+73.44%)",
+    "earnings": "Q2 EPS 8.50元，毛利率54.77%",
+    "catalyst": "營運能見度至2027年Q2，先進封裝與矽光子設備為雙成長動能，CPO設備預計Q4交貨。",
+    "target_price": "美林目標價1550元(看多)，中國信託綜合證券目標價1680元(看多)",
+    "disposition": "",
+    "updated_at": "09/04"
   }
 }
