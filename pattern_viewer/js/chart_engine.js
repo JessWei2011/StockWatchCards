@@ -60,7 +60,7 @@ window.ChartEngine = {
 
     const parentW = dom.parentElement ? dom.parentElement.clientWidth : 0;
     const domWidth = dom.clientWidth || dom.offsetWidth || parentW || 900;
-    const domHeight = Math.max(dom.clientHeight || dom.offsetHeight || 0, 650);
+    const domHeight = Math.max(dom.clientHeight || dom.offsetHeight || 0, 850);
 
     console.log('[ChartEngine Debug] 🚀 ChartEngine.render() 開始執行', {
       stock: stockData.title,
@@ -73,17 +73,30 @@ window.ChartEngine = {
     });
 
     this.activeDom = dom;
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    const targetTheme = isLight ? 'light' : 'dark';
+
     let state = this.instances.get(dom);
-    if (!state || !state.chartInstance || state.chartInstance.isDisposed()) {
-      const chartInstance = echarts.init(dom, 'dark', {
+    if (!state || !state.chartInstance || state.chartInstance.isDisposed() || state.theme !== targetTheme) {
+      if (state && state.chartInstance && !state.chartInstance.isDisposed()) {
+        try {
+          if (typeof state.zoomCleanup === 'function') state.zoomCleanup();
+          state.chartInstance.dispose();
+        } catch (e) {}
+      }
+      const chartInstance = echarts.init(dom, targetTheme, {
         width: domWidth,
         height: domHeight
       });
       const zoomCleanup = this._attachZoomFix(dom);
       state = {
         chartInstance,
+        theme: targetTheme,
         zoomCleanup,
         lastStockKey: null,
+        lastStockData: null,
+        lastOverlayData: null,
+        lastDisplayToggles: null,
         lastShowMa: null,
         lastShowBoll: null,
         axisPointerHandler: null,
@@ -129,6 +142,9 @@ window.ChartEngine = {
         : 0;
     }
     state.lastStockKey = stockKey;
+    state.lastStockData = stockData;
+    state.lastOverlayData = overlayData;
+    state.lastDisplayToggles = displayToggles;
     state.lastShowMa = showShortMa;
     state.lastShowBoll = showBoll;
 
@@ -231,8 +247,14 @@ window.ChartEngine = {
 
     // Grid Layouts for 5 Panes (Height allocation)
     // 0: K-line (38%), 1: VOL (10%), 2: RSI (10%), 3: MACD (10%), 4: KD (10%)
+    const chartBg = isLight ? '#ffffff' : '#0b0f19';
+    const axisLineColor = isLight ? '#94a3b8' : '#222c3f';
+    const splitLineColor = isLight ? '#f1f5f9' : '#151b28';
+    const legendTextColor = isLight ? '#1e293b' : '#cbd5e1';
+    const zoomBorderColor = isLight ? '#cbd5e1' : '#222c3f';
+
     const option = {
-      backgroundColor: '#161922',
+      backgroundColor: chartBg,
       animation: true,
       tooltip: {
         trigger: 'axis',
@@ -248,8 +270,8 @@ window.ChartEngine = {
       },
       legend: {
         data: ['K線', 'MA5', 'MA10', 'MA20', 'MA60', 'MA120', 'BOLL上軌', 'BOLL下軌', '成交量', 'MV5', 'MV20', 'RSI(6)', 'RSI(12)', 'MACD柱體', 'DIF快線', 'MACD慢線', 'K值', 'D值'],
-        top: 4,
-        textStyle: { color: '#94a3b8', fontSize: 11 },
+        top: 6,
+        textStyle: { color: legendTextColor, fontSize: 11 },
         selected: (() => {
           const selected = Object.assign({
           'K線': true,
@@ -291,34 +313,39 @@ window.ChartEngine = {
         })()
       },
       grid: [
-        { left: '6%', right: '4%', top: '7%', height: '35%' },   // Pane 0: K-Line
-        { left: '6%', right: '4%', top: '45%', height: '10%' },  // Pane 1: VOL
-        { left: '6%', right: '4%', top: '58%', height: '10%' },  // Pane 2: RSI
-        { left: '6%', right: '4%', top: '71%', height: '10%' },  // Pane 3: MACD
-        { left: '6%', right: '4%', top: '84%', height: '10%' }   // Pane 4: KD
+        // ⬜ 白色框：K線主圖（依指示加大 3 倍 pitch：top: 8.5% HUD -> 11.0% Grid）
+        { left: '6%', right: '4%', top: '11.0%', height: '19.8%' }, // bottom: 30.8% (留白 4.2% 至 VOL)
+        // 🟨 黃色框：成交量 VOL（top: 35.0% HUD -> 37.0% Grid，僅 2.0% 間距，文字緊貼圖表頂部）
+        { left: '6%', right: '4%', top: '37.0%', height: '8.5%' }, // bottom: 45.5% (留白 4.5% 至 RSI)
+        // 🟧 橘色框：RSI 指標（top: 50.0% HUD -> 52.0% Grid，僅 2.0% 間距，文字緊貼圖表頂部）
+        { left: '6%', right: '4%', top: '52.0%', height: '8.5%' }, // bottom: 60.5% (留白 4.5% 至 MACD)
+        // 🟧 橘色框：MACD 指標（top: 65.0% HUD -> 67.0% Grid，僅 2.0% 間距，徹底消除原 4.png 標示的黃色留白框）
+        { left: '6%', right: '4%', top: '67.0%', height: '8.5%' }, // bottom: 75.5% (留白 4.5% 至 KD)
+        // 🟩 綠色框：KD 指標（top: 80.0% HUD -> 82.0% Grid，僅 2.0% 間距，徹底消除原 4.png 標示的黃色留白框）
+        { left: '6%', right: '4%', top: '82.0%', height: '8.5%' }  // bottom: 90.5% (底部 9.5% 留給日期時間軸與 dataZoom)
       ],
       xAxis: [
-        { type: 'category', data: dates, gridIndex: 0, axisLine: { lineStyle: { color: '#2d3345' } } },
-        { type: 'category', data: dates, gridIndex: 1, axisLabel: { show: false }, axisLine: { lineStyle: { color: '#2d3345' } } },
-        { type: 'category', data: dates, gridIndex: 2, axisLabel: { show: false }, axisLine: { lineStyle: { color: '#2d3345' } } },
-        { type: 'category', data: dates, gridIndex: 3, axisLabel: { show: false }, axisLine: { lineStyle: { color: '#2d3345' } } },
-        { type: 'category', data: dates, gridIndex: 4, axisLine: { lineStyle: { color: '#2d3345' } } }
+        { type: 'category', data: dates, gridIndex: 0, axisLabel: { show: false }, axisLine: { lineStyle: { color: axisLineColor } } },
+        { type: 'category', data: dates, gridIndex: 1, axisLabel: { show: false }, axisLine: { lineStyle: { color: axisLineColor } } },
+        { type: 'category', data: dates, gridIndex: 2, axisLabel: { show: false }, axisLine: { lineStyle: { color: axisLineColor } } },
+        { type: 'category', data: dates, gridIndex: 3, axisLabel: { show: false }, axisLine: { lineStyle: { color: axisLineColor } } },
+        { type: 'category', data: dates, gridIndex: 4, axisLine: { lineStyle: { color: axisLineColor } } }
       ],
       yAxis: [
         // Pane 0: K-line Price
-        { scale: true, gridIndex: 0, axisLine: { lineStyle: { color: '#2d3345' } }, splitLine: { lineStyle: { color: '#1e2330' } } },
+        { scale: true, gridIndex: 0, axisLine: { lineStyle: { color: axisLineColor } }, splitLine: { lineStyle: { color: splitLineColor } } },
         // Pane 1: Volume
         { scale: true, gridIndex: 1, axisLabel: { show: false }, splitLine: { show: false } },
         // Pane 2: RSI (0-100)
-        { min: 0, max: 100, gridIndex: 2, splitLine: { lineStyle: { color: '#1e2330' } } },
+        { min: 0, max: 100, gridIndex: 2, splitLine: { lineStyle: { color: splitLineColor } } },
         // Pane 3: MACD
-        { scale: true, gridIndex: 3, splitLine: { lineStyle: { color: '#1e2330' } } },
+        { scale: true, gridIndex: 3, splitLine: { lineStyle: { color: splitLineColor } } },
         // Pane 4: KD (0-100)
-        { min: 0, max: 100, gridIndex: 4, splitLine: { lineStyle: { color: '#1e2330' } } }
+        { min: 0, max: 100, gridIndex: 4, splitLine: { lineStyle: { color: splitLineColor } } }
       ],
       dataZoom: [
         { type: 'inside', xAxisIndex: [0, 1, 2, 3, 4], start: zoomStart, end: zoomEnd },
-        { type: 'slider', xAxisIndex: [0, 1, 2, 3, 4], bottom: '1%', height: 16, borderColor: '#232734', fillerColor: 'rgba(59, 130, 246, 0.2)', start: zoomStart, end: zoomEnd }
+        { type: 'slider', xAxisIndex: [0, 1, 2, 3, 4], bottom: '0.8%', height: 16, borderColor: zoomBorderColor, fillerColor: 'rgba(59, 130, 246, 0.2)', start: zoomStart, end: zoomEnd }
       ],
       series: [
         // 0. K-line Candlestick (Grid 0)
@@ -630,7 +657,14 @@ window.ChartEngine = {
       console.error('[ChartEngine Debug] ❌ setOption 拋出異常:', err);
     }
 
-    // Helper: 更新圖表各 Pane 左上角懸浮數值 HTML 覆蓋層 (零亂碼、高清晰)
+    // Helper: 更新圖表各 Pane 左上角懸浮數值 HTML 覆蓋層 (零亂碼、高清晰、支援日/夜模式)
+    const hudDefaultColor = isLight ? '#0f172a' : '#cbd5e1';
+    const hudLabelColor = isLight ? '#475569' : '#94a3b8';
+    const hudShadow = isLight ? 'none' : '0 1px 3px rgba(0,0,0,0.8)';
+    const hudSepColor = isLight ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.25)';
+    const fastColor = isLight ? '#0284c7' : '#38bdf8';
+    const slowColor = isLight ? '#d97706' : '#f59e0b';
+
     const updateInChartHUD = (idx) => {
       if (!state.chartInstance || state.chartInstance.isDisposed() || !stockData || !stockData.dates) return;
       if (idx < 0 || idx >= stockData.dates.length) return;
@@ -651,14 +685,20 @@ window.ChartEngine = {
         overlay.style.inset = '0';
         overlay.style.pointerEvents = 'none';
         overlay.style.zIndex = '5';
-        overlay.innerHTML = `
-          <div id="ichud-pane-0" style="position:absolute; left:6.2%; top:7.2%; font-size:12.5px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#cbd5e1; white-space:nowrap; text-shadow:0 1px 3px rgba(0,0,0,0.8); line-height:1.2;"></div>
-          <div id="ichud-pane-1" style="position:absolute; left:6.2%; top:45.2%; font-size:12.5px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#cbd5e1; white-space:nowrap; text-shadow:0 1px 3px rgba(0,0,0,0.8); line-height:1.2;"></div>
-          <div id="ichud-pane-2" style="position:absolute; left:6.2%; top:58.2%; font-size:12.5px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#cbd5e1; white-space:nowrap; text-shadow:0 1px 3px rgba(0,0,0,0.8); line-height:1.2;"></div>
-          <div id="ichud-pane-3" style="position:absolute; left:6.2%; top:71.2%; font-size:12.5px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#cbd5e1; white-space:nowrap; text-shadow:0 1px 3px rgba(0,0,0,0.8); line-height:1.2;"></div>
-          <div id="ichud-pane-4" style="position:absolute; left:6.2%; top:84.2%; font-size:12.5px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#cbd5e1; white-space:nowrap; text-shadow:0 1px 3px rgba(0,0,0,0.8); line-height:1.2;"></div>
-        `;
         chartDom.appendChild(overlay);
+      }
+
+      // 保持最新座標位置與日夜主題模式
+      if (!overlay.dataset.renderedVersion || overlay.dataset.renderedVersion !== 'v87' || overlay.dataset.themeMode !== (isLight ? 'light' : 'dark')) {
+        overlay.dataset.renderedVersion = 'v87';
+        overlay.dataset.themeMode = isLight ? 'light' : 'dark';
+        overlay.innerHTML = `
+          <div id="ichud-pane-0" style="position:absolute; left:6.2%; top:8.5%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
+          <div id="ichud-pane-1" style="position:absolute; left:6.2%; top:35.0%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
+          <div id="ichud-pane-2" style="position:absolute; left:6.2%; top:50.0%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
+          <div id="ichud-pane-3" style="position:absolute; left:6.2%; top:65.0%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
+          <div id="ichud-pane-4" style="position:absolute; left:6.2%; top:80.0%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
+        `;
       }
 
       const d = stockData.dates[idx];
@@ -686,39 +726,39 @@ window.ChartEngine = {
         const m60 = stockData.ma60 && stockData.ma60[idx] != null ? `<span style="color:#10b981; font-weight:bold;">${Number(stockData.ma60[idx]).toFixed(2)}</span>` : '—';
         const m120 = stockData.ma120 && stockData.ma120[idx] != null ? `<span style="color:#8b5cf6; font-weight:bold;">${Number(stockData.ma120[idx]).toFixed(2)}</span>` : '—';
 
-        elP0.innerHTML = `<span style="color:#38bdf8; font-weight:bold;">${d}</span> <span style="color:#94a3b8;">開:</span><span style="font-weight:bold;">${o.toFixed(2)}</span> <span style="color:#94a3b8;">高:</span><span style="font-weight:bold;">${h.toFixed(2)}</span> <span style="color:#94a3b8;">低:</span><span style="font-weight:bold;">${l.toFixed(2)}</span> <span style="color:#94a3b8;">收:</span><span style="color:${color}; font-weight:bold;">${cl.toFixed(2)}</span> <span style="color:#94a3b8;">漲跌:</span><span style="color:${color}; font-weight:bold;">${sign}${diff.toFixed(2)} (${sign}${pct.toFixed(2)}%)</span> <span style="color:rgba(255,255,255,0.25); margin:0 4px;">|</span> <span style="color:#94a3b8;">MA5:</span>${m5} <span style="color:#94a3b8;">MA10:</span>${m10} <span style="color:#94a3b8;">MA20:</span>${m20} <span style="color:#94a3b8;">MA60:</span>${m60} <span style="color:#94a3b8;">MA120:</span>${m120}`;
+        elP0.innerHTML = `<span style="color:${fastColor}; font-weight:bold;">${d}</span> <span style="color:${hudLabelColor};">開:</span><span style="font-weight:bold;">${o.toFixed(2)}</span> <span style="color:${hudLabelColor};">高:</span><span style="font-weight:bold;">${h.toFixed(2)}</span> <span style="color:${hudLabelColor};">低:</span><span style="font-weight:bold;">${l.toFixed(2)}</span> <span style="color:${hudLabelColor};">收:</span><span style="color:${color}; font-weight:bold;">${cl.toFixed(2)}</span> <span style="color:${hudLabelColor};">漲跌:</span><span style="color:${color}; font-weight:bold;">${sign}${diff.toFixed(2)} (${sign}${pct.toFixed(2)}%)</span> <span style="color:${hudSepColor}; margin:0 4px;">|</span> <span style="color:${hudLabelColor};">MA5:</span>${m5} <span style="color:${hudLabelColor};">MA10:</span>${m10} <span style="color:${hudLabelColor};">MA20:</span>${m20} <span style="color:${hudLabelColor};">MA60:</span>${m60} <span style="color:${hudLabelColor};">MA120:</span>${m120}`;
       }
 
       // Pane 1: 成交量與量均線
       if (elP1) {
         const v = stockData.volumes && stockData.volumes[idx];
-        const mv5Val = stockData.vma5 && stockData.vma5[idx] != null ? `<span style="color:#38bdf8; font-weight:bold;">${Number(stockData.vma5[idx]).toLocaleString()}</span>` : '—';
-        const mv20Val = stockData.vma20 && stockData.vma20[idx] != null ? `<span style="color:#f59e0b; font-weight:bold;">${Number(stockData.vma20[idx]).toLocaleString()}</span>` : '—';
-        elP1.innerHTML = `<span style="color:#94a3b8;">成交量:</span> <span style="color:#38bdf8; font-weight:bold;">${v != null ? Number(v).toLocaleString() + ' 張' : '—'}</span> <span style="color:rgba(255,255,255,0.25); margin:0 4px;">|</span> <span style="color:#94a3b8;">MV5:</span>${mv5Val} <span style="color:#94a3b8;">MV20:</span>${mv20Val}`;
+        const mv5Val = stockData.vma5 && stockData.vma5[idx] != null ? `<span style="color:${fastColor}; font-weight:bold;">${Number(stockData.vma5[idx]).toLocaleString()}</span>` : '—';
+        const mv20Val = stockData.vma20 && stockData.vma20[idx] != null ? `<span style="color:${slowColor}; font-weight:bold;">${Number(stockData.vma20[idx]).toLocaleString()}</span>` : '—';
+        elP1.innerHTML = `<span style="color:${hudLabelColor};">成交量:</span> <span style="color:${fastColor}; font-weight:bold;">${v != null ? Number(v).toLocaleString() + ' 張' : '—'}</span> <span style="color:${hudSepColor}; margin:0 4px;">|</span> <span style="color:${hudLabelColor};">MV5:</span>${mv5Val} <span style="color:${hudLabelColor};">MV20:</span>${mv20Val}`;
       }
 
       // Pane 2: RSI
       if (elP2) {
-        const r6Val = stockData.rsi6 && stockData.rsi6[idx] != null ? `<span style="color:#38bdf8; font-weight:bold;">${Number(stockData.rsi6[idx]).toFixed(2)}</span>` : '—';
-        const r12Val = stockData.rsi12 && stockData.rsi12[idx] != null ? `<span style="color:#f59e0b; font-weight:bold;">${Number(stockData.rsi12[idx]).toFixed(2)}</span>` : '—';
-        elP2.innerHTML = `<span style="color:#94a3b8;">RSI(6):</span>${r6Val} <span style="color:#94a3b8; margin-left:8px;">RSI(12):</span>${r12Val}`;
+        const r6Val = stockData.rsi6 && stockData.rsi6[idx] != null ? `<span style="color:${fastColor}; font-weight:bold;">${Number(stockData.rsi6[idx]).toFixed(2)}</span>` : '—';
+        const r12Val = stockData.rsi12 && stockData.rsi12[idx] != null ? `<span style="color:${slowColor}; font-weight:bold;">${Number(stockData.rsi12[idx]).toFixed(2)}</span>` : '—';
+        elP2.innerHTML = `<span style="color:${hudLabelColor};">RSI(6):</span>${r6Val} <span style="color:${hudLabelColor}; margin-left:8px;">RSI(12):</span>${r12Val}`;
       }
 
       // Pane 3: MACD
       if (elP3) {
-        const difVal = stockData.dif && stockData.dif[idx] != null ? `<span style="color:#38bdf8; font-weight:bold;">${Number(stockData.dif[idx]).toFixed(2)}</span>` : '—';
-        const macdVal = stockData.macdSignal && stockData.macdSignal[idx] != null ? `<span style="color:#f59e0b; font-weight:bold;">${Number(stockData.macdSignal[idx]).toFixed(2)}</span>` : '—';
+        const difVal = stockData.dif && stockData.dif[idx] != null ? `<span style="color:${fastColor}; font-weight:bold;">${Number(stockData.dif[idx]).toFixed(2)}</span>` : '—';
+        const macdVal = stockData.macdSignal && stockData.macdSignal[idx] != null ? `<span style="color:${slowColor}; font-weight:bold;">${Number(stockData.macdSignal[idx]).toFixed(2)}</span>` : '—';
         const hist = stockData.macdHist && stockData.macdHist[idx];
         const histColor = (hist != null && hist >= 0) ? '#ef4444' : '#10b981';
         const histVal = hist != null ? `<span style="color:${histColor}; font-weight:bold;">${Number(hist).toFixed(2)}</span>` : '—';
-        elP3.innerHTML = `<span style="color:#94a3b8;">DIF快線:</span>${difVal} <span style="color:#94a3b8; margin-left:8px;">MACD慢線:</span>${macdVal} <span style="color:#94a3b8; margin-left:8px;">OSC柱體:</span>${histVal}`;
+        elP3.innerHTML = `<span style="color:${hudLabelColor};">DIF快線:</span>${difVal} <span style="color:${hudLabelColor}; margin-left:8px;">MACD慢線:</span>${macdVal} <span style="color:${hudLabelColor}; margin-left:8px;">OSC柱體:</span>${histVal}`;
       }
 
       // Pane 4: KD
       if (elP4) {
-        const kVal = stockData.kList && stockData.kList[idx] != null ? `<span style="color:#38bdf8; font-weight:bold;">${Number(stockData.kList[idx]).toFixed(2)}</span>` : '—';
-        const dVal = stockData.dList && stockData.dList[idx] != null ? `<span style="color:#f59e0b; font-weight:bold;">${Number(stockData.dList[idx]).toFixed(2)}</span>` : '—';
-        elP4.innerHTML = `<span style="color:#94a3b8;">K(9,3):</span>${kVal} <span style="color:#94a3b8; margin-left:8px;">D(9,3):</span>${dVal}`;
+        const kVal = stockData.kList && stockData.kList[idx] != null ? `<span style="color:${fastColor}; font-weight:bold;">${Number(stockData.kList[idx]).toFixed(2)}</span>` : '—';
+        const dVal = stockData.dList && stockData.dList[idx] != null ? `<span style="color:${slowColor}; font-weight:bold;">${Number(stockData.dList[idx]).toFixed(2)}</span>` : '—';
+        elP4.innerHTML = `<span style="color:${hudLabelColor};">K(9,3):</span>${kVal} <span style="color:${hudLabelColor}; margin-left:8px;">D(9,3):</span>${dVal}`;
       }
     };
 
@@ -824,7 +864,7 @@ window.ChartEngine = {
       const state = dom ? this.instances.get(dom) : null;
       if (state && state.chartInstance && !state.chartInstance.isDisposed()) {
         const w = dom.clientWidth || (dom.parentElement ? dom.parentElement.clientWidth : 0);
-        const h = dom.clientHeight || 650;
+        const h = dom.clientHeight || 850;
         if (w > 0 && h > 0) {
           state.chartInstance.resize({ width: w, height: h });
         } else {
@@ -837,7 +877,7 @@ window.ChartEngine = {
       if (state && state.chartInstance && !state.chartInstance.isDisposed()) {
         if (dom.isConnected && dom.offsetWidth > 0) {
           const w = dom.clientWidth || (dom.parentElement ? dom.parentElement.clientWidth : 0);
-          const h = dom.clientHeight || 650;
+          const h = dom.clientHeight || 850;
           if (w > 0 && h > 0) {
             state.chartInstance.resize({ width: w, height: h });
           } else {
@@ -846,6 +886,26 @@ window.ChartEngine = {
         }
       }
     });
+  },
+
+  refreshTheme() {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    const targetTheme = isLight ? 'light' : 'dark';
+    this.instances.forEach((state, dom) => {
+      if (!dom || !dom.isConnected) return;
+      if (state && state.lastStockData) {
+        // 重新調用 render 以新主題初始化與套用配色
+        this.render(dom, state.lastStockData, state.lastOverlayData, state.lastDisplayToggles || {});
+      }
+    });
+  },
+
+  setTheme(theme) {
+    if (theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      document.body.setAttribute('data-theme', theme);
+    }
+    this.refreshTheme();
   },
 
   destroy(container) {

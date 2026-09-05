@@ -6,22 +6,1833 @@
 <style>
   :root{
     --ui-scale:1;
-    --bg:#111317; --card-bg:#1b1e24; --text:#f3f5f7; --text-dim:#c3cad4;
-    --border:#3a4050; --accent:#7db4ff; --danger:#ff8a8a; --hover:#232833;
+    /* 🌙 夜晚護眼模式：現代金融專業深色 Slate-950，柔和高對比，避免刺眼反光 */
+    --bg:#0b0f19; --card-bg:#151b28; --card-header-bg:#1a2233;
+    --text:#e2e8f0; --text-dim:#94a3b8; --text-muted:#64748b;
+    --border:#222c3f; --accent:#38bdf8; --accent-hover:#0ea5e9;
+    --danger:#f87171; --hover:#1b2438;
 
-    /* 以下這組是 AI 分析卡片彈窗(ZoomModal，跟卡片系統共用 render-shared.js)專用的變數，
-       對應 style.css 那邊同名色彩，只是換一套變數名稱接到這個頁面既有的深色主題上。 */
-    --card-back-bg:#0d0f13; --card-back-text:#dfe3e8;
-    /* 台股配色規範：漲／買超／偏多=紅，跌／賣超／偏空=綠。 */
+    /* 以下這組是 AI 分析卡片彈窗(ZoomModal，跟卡片系統共用 render-shared.js)專用的變數 */
+    --card-back-bg:#0e131f; --card-back-text:#e2e8f0;
+    /* 台股配色規範：漲／買超／偏多=紅，跌／賣超／偏空=綠 (夜間溫潤護眼調色) */
     --tw-up:#f87171; --tw-up-strong:#ef4444; --tw-down:#4ade80; --tw-down-strong:#22c55e;
     --entry:var(--tw-up); --stop:var(--tw-down); --resist:#fbbf24;
-    --shadow:0 4px 12px rgba(0,0,0,0.3); --shadow-hover:0 12px 28px rgba(0,0,0,0.5);
+    --shadow:0 4px 16px rgba(0,0,0,0.4); --shadow-hover:0 12px 30px rgba(0,0,0,0.6);
     --c-red:#ef4444; --c-red-bg:rgba(239,68,68,0.12); --c-red-border:rgba(239,68,68,0.4);
     --c-orange:#f97316; --c-orange-bg:rgba(249,115,22,0.12); --c-orange-border:rgba(249,115,22,0.4);
     --c-yellow:#eab308; --c-yellow-bg:rgba(234,179,8,0.12); --c-yellow-border:rgba(234,179,8,0.4);
     --c-gray:#64748b; --c-gray-bg:rgba(100,116,139,0.12); --c-gray-border:rgba(100,116,139,0.3);
   }
+
+  /* ── ☀️ 白天模式【方案 A：Apple Stocks / Google Finance 純白極簡高對比風】 ── */
+  [data-theme="light"] {
+    --bg: #ffffff;             /* 通透純白基底 */
+    --card-bg: #ffffff;        /* 純白卡片 */
+    --card-header-bg: #f8fafc; /* 極淡灰冷表頭 */
+    --text: #000000;           /* 純黑主文字，閱讀最銳利清晰 */
+    --text-dim: #334155;       /* 深石板灰 (Slate-700) 次要標籤，非淡灰 */
+    --text-muted: #475569;     /* Slate-600 註解 */
+    --border: #e2e8f0;         /* 乾淨俐落的淺灰線條 (Apple/Notion 標準) */
+    --accent: #2563eb;         /* 鮮明品牌藍 */
+    --accent-hover: #1d4ed8;
+    --danger: #dc2626;         /* 正紅 */
+    --hover: #f1f5f9;          /* 輕盈 Hover 灰 */
+    --card-back-bg: #ffffff;
+    --card-back-text: #000000;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-hover: 0 10px 20px rgba(0,0,0,0.08);
+
+    /* 台股配色：在純白底上使用最飽和標準的紅漲綠跌 */
+    --tw-up: #dc2626;
+    --tw-up-strong: #b91c1c;
+    --tw-down: #16a34a;
+    --tw-down-strong: #15803d;
+  }
+
+  [data-theme="light"] html,
+  [data-theme="light"] body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* 頁首與導覽列：純白底 + 俐落極細下邊框 */
+  [data-theme="light"] header {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+  }
+  [data-theme="light"] header h1 { color: #000000 !important; font-weight: 800 !important; }
+  [data-theme="light"] .breadcrumb { color: #475569 !important; }
+
+  [data-theme="light"] .app-tabs {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  [data-theme="light"] .app-tab {
+    color: #475569 !important;
+    font-weight: 750 !important;
+    border-bottom: 2px solid transparent !important;
+  }
+
+  [data-theme="light"] .app-tab:hover {
+    color: #2563eb !important;
+    background: #f8fafc !important;
+  }
+
+  [data-theme="light"] .app-tab.active {
+    color: #2563eb !important;
+    border-bottom-color: #2563eb !important;
+    background: #eff6ff !important;
+  }
+
+  /* 所有卡片容器：純白底 + 1px 明確邊框 + 極輕微柔和陰影 */
+  [data-theme="light"] .market-inst-card,
+  [data-theme="light"] .macro-table-card,
+  [data-theme="light"] .macro-backup-card,
+  [data-theme="light"] .disposal-warning-card,
+  [data-theme="light"] .ranking-card,
+  [data-theme="light"] .ranking-table-wrap,
+  [data-theme="light"] .ranking-shell,
+  [data-theme="light"] .analysis-card,
+  [data-theme="light"] .analysis-shell,
+  [data-theme="light"] .analysis-empty,
+  [data-theme="light"] .dimension-box,
+  [data-theme="light"] .display-scale-control {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+    color: #000000 !important;
+  }
+
+  /* 文字高對比強化：主字體純黑、次要字深灰，徹底告別發灰看不清 */
+  [data-theme="light"] .ranking-hero-title,
+  [data-theme="light"] .analysis-title,
+  [data-theme="light"] .tile-value,
+  [data-theme="light"] .rank-stock-link .stock-name,
+  [data-theme="light"] .macro-panel-title,
+  [data-theme="light"] .disposal-warning-title .title-text,
+  [data-theme="light"] .macro-num,
+  [data-theme="light"] .tree-report-row .name {
+    color: #000000 !important;
+  }
+
+  [data-theme="light"] .rank-detail-label,
+  [data-theme="light"] .inst-chart-note,
+  [data-theme="light"] .dim-desc,
+  [data-theme="light"] .tile-label,
+  [data-theme="light"] .analysis-tag-row .tag-label,
+  [data-theme="light"] .macro-fresh,
+  [data-theme="light"] .macro-latest-date,
+  [data-theme="light"] .macro-status,
+  [data-theme="light"] #macro-count,
+  [data-theme="light"] .disposal-item-period {
+    color: #334155 !important;
+    font-weight: 650 !important;
+  }
+
+  /* 指標小方塊與數據磚 */
+  [data-theme="light"] .macro-indicator-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .macro-th-label {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+  }
+
+  /* 表格樣式：表頭一律使用 Google Finance 經典淺灰底 (#f8fafc / #f1f5f9) 襯托深藍或黑字 */
+  [data-theme="light"] .inst-mini-chart {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .inst-flow-table th {
+    background: #f8fafc !important;
+    color: #1e293b !important;
+    font-weight: 800 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .inst-flow-table th:first-child,
+  [data-theme="light"] .inst-flow-table td:first-child {
+    background: #f1f5f9 !important;
+    color: #000000 !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] .inst-flow-table td {
+    background: #ffffff !important;
+    border: 1px solid #f1f5f9 !important;
+    color: #000000 !important;
+  }
+
+  /* ── 總經看板：台股大盤三大法人買賣金額看板 (Scheme A 純白極簡高對比) ── */
+  [data-theme="light"] .market-inst-card {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05) !important;
+  }
+  [data-theme="light"] .market-inst-header {
+    border-bottom: 1.5px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .market-inst-title {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .market-inst-date-badge {
+    background: #f0fdf4 !important;
+    color: #15803d !important;
+    border: 1px solid #86efac !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] .market-inst-date-badge.stale {
+    background: #f1f5f9 !important;
+    color: #64748b !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 700 !important;
+  }
+  [data-theme="light"] .market-inst-status {
+    color: #475569 !important;
+    font-weight: 600 !important;
+  }
+  [data-theme="light"] .market-refresh-btn {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    font-weight: 750 !important;
+  }
+  [data-theme="light"] .market-refresh-btn:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+  }
+  [data-theme="light"] .market-inst-cell {
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+    border-radius: 10px !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+  [data-theme="light"] .market-inst-cell:hover {
+    background: #f0f9ff !important;
+    border-color: #38bdf8 !important;
+  }
+  [data-theme="light"] .market-inst-cell.total {
+    background: #fefce8 !important;
+    border: 1.5px solid #facc15 !important;
+    box-shadow: 0 2px 10px rgba(234, 179, 8, 0.12) !important;
+  }
+  [data-theme="light"] .market-inst-cell-name {
+    color: #0f172a !important;
+    font-weight: 850 !important;
+    font-size: 17px !important;
+  }
+  [data-theme="light"] .market-inst-cell.total .market-inst-cell-name {
+    color: #854d0e !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .market-inst-cell-net.buy {
+    color: #b91c1c !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .market-inst-cell-net.sell {
+    color: #15803d !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .market-inst-cell-net.flat {
+    color: #64748b !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] .market-inst-dot.active {
+    background: #16a34a !important;
+    box-shadow: 0 0 6px rgba(22, 163, 74, 0.6) !important;
+  }
+  [data-theme="light"] .market-inst-dot.stale {
+    background: #94a3b8 !important;
+    box-shadow: none !important;
+  }
+
+  /* 沉暗 stale 狀態在 Day Mode 的表現 */
+  [data-theme="light"] .market-inst-card.stale {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+  }
+  [data-theme="light"] .market-inst-card.stale .market-inst-title {
+    color: #64748b !important;
+  }
+  [data-theme="light"] .market-inst-card.stale .market-inst-cell {
+    background: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+    opacity: 0.75 !important;
+  }
+  [data-theme="light"] .market-inst-card.stale .market-inst-cell-name {
+    color: #64748b !important;
+  }
+  [data-theme="light"] .market-inst-card.stale .market-inst-cell.total {
+    background: #fafaf9 !important;
+    border-color: #d6d3d1 !important;
+  }
+  [data-theme="light"] .market-inst-card.stale .market-inst-cell.total .market-inst-cell-name {
+    color: #78716c !important;
+  }
+  [data-theme="light"] .market-inst-card.stale .market-inst-cell-net.buy {
+    color: #991b1b !important;
+  }
+  [data-theme="light"] .market-inst-card.stale .market-inst-cell-net.sell {
+    color: #166534 !important;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     ☀️ 總經分析頁面【方案 A：Apple Stocks / Google Finance 純白極簡高對比風】
+     涵蓋：三大法人買賣金額看板、注意與處置股票即時預警中心、8項總經與波動率卡片、歷史明細、Git備份卡
+     ══════════════════════════════════════════════════════════════════════ */
+  [data-theme="light"] #macro-workspace {
+    background: #ffffff !important;
+  }
+  [data-theme="light"] #macro-workspace .macro-panel {
+    color: #0f172a !important;
+  }
+
+  /* 1. 🚨 處置與注意股票即時預警看板 (Disposal Warning Card) */
+  [data-theme="light"] .disposal-warning-card {
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05) !important;
+    border-radius: 12px !important;
+  }
+  [data-theme="light"] .disposal-warning-header {
+    border-bottom: 1.5px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .disposal-warning-title {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .disposal-warning-badge.alert {
+    background: #fef2f2 !important;
+    color: #b91c1c !important;
+    border: 1px solid #f87171 !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .disposal-warning-badge.normal {
+    background: #f0fdf4 !important;
+    color: #15803d !important;
+    border: 1px solid #86efac !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .disposal-warning-status {
+    color: #475569 !important;
+    font-weight: 600 !important;
+  }
+  [data-theme="light"] .disposal-tab-btn {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+    font-weight: 750 !important;
+  }
+  [data-theme="light"] .disposal-tab-btn:hover {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+  }
+  [data-theme="light"] .disposal-tab-btn.active {
+    background: #fef2f2 !important;
+    border-color: #f87171 !important;
+    color: #b91c1c !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .disposal-refresh-btn,
+  [data-theme="light"] #disposal-toggle-btn {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    font-weight: 750 !important;
+  }
+  [data-theme="light"] .disposal-refresh-btn:hover,
+  [data-theme="light"] #disposal-toggle-btn:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+  }
+
+  /* 處置/注意個股磚 (Disposal Item Cards) */
+  [data-theme="light"] .disposal-item-card {
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+    border-radius: 10px !important;
+  }
+  [data-theme="light"] .disposal-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08) !important;
+  }
+  [data-theme="light"] .disposal-item-card.upcoming {
+    background: #fff5f5 !important;
+    border: 1.5px solid #fca5a5 !important;
+  }
+  [data-theme="light"] .disposal-item-card.active {
+    background: #fefce8 !important;
+    border: 1.5px solid #fde047 !important;
+  }
+  [data-theme="light"] .disposal-item-card.notice {
+    background: #f0f9ff !important;
+    border: 1.5px solid #bae6fd !important;
+  }
+  [data-theme="light"] .disposal-item-stock {
+    color: #0f172a !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .disposal-item-stock .stock-code {
+    color: #1d4ed8 !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .disposal-item-stock .stock-name {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] .disposal-item-stock .stock-market {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+  [data-theme="light"] .disposal-item-pill.upcoming {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .disposal-item-pill.active {
+    background: #d97706 !important;
+    color: #ffffff !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .disposal-item-pill.notice {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .disposal-item-period {
+    color: #0f172a !important;
+    font-weight: 750 !important;
+    font-size: 13.5px !important;
+  }
+  [data-theme="light"] .disposal-item-desc {
+    color: #475569 !important;
+    font-weight: 550 !important;
+    line-height: 1.45 !important;
+  }
+  [data-theme="light"] .disposal-empty-msg {
+    color: #475569 !important;
+    font-weight: 700 !important;
+  }
+
+  /* 2. 🌐 總經數據中心卡片與8項指標 (Macro Data Card & Indicators) */
+  [data-theme="light"] .macro-table-card {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05) !important;
+    border-radius: 12px !important;
+  }
+  [data-theme="light"] .macro-table-toolbar {
+    border-bottom: 1.5px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .macro-panel-title {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .macro-panel-meta {
+    color: #475569 !important;
+    font-weight: 600 !important;
+  }
+  [data-theme="light"] .macro-panel-meta #macro-count {
+    color: #0f172a !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .macro-status {
+    color: #0284c7 !important;
+    font-weight: 750 !important;
+  }
+  [data-theme="light"] .macro-status.success {
+    color: #15803d !important;
+  }
+  [data-theme="light"] .macro-status.error {
+    color: #b91c1c !important;
+  }
+  [data-theme="light"] #macro-update-btn {
+    background: #7c3aed !important;
+    color: #ffffff !important;
+    border: 1px solid #6d28d9 !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] #macro-update-btn:hover {
+    background: #6d28d9 !important;
+  }
+  [data-theme="light"] #macro-toggle-history-btn {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    font-weight: 750 !important;
+  }
+  [data-theme="light"] #macro-toggle-history-btn:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+  }
+
+  /* 8 項指標方塊卡片 (8 Indicator Tiles) */
+  [data-theme="light"] .macro-indicator-card {
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+    border-radius: 10px !important;
+  }
+  [data-theme="light"] .macro-indicator-card:hover {
+    background: #f0f9ff !important;
+    border-color: #38bdf8 !important;
+  }
+  [data-theme="light"] .macro-th-label {
+    color: #0f172a !important;
+    font-weight: 850 !important;
+    font-size: 17px !important;
+  }
+  [data-theme="light"] .macro-fresh {
+    color: #0369a1 !important;
+    font-weight: 700 !important;
+    font-size: 13.5px !important;
+  }
+  [data-theme="light"] .macro-spark {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+  }
+  [data-theme="light"] .macro-latest-date {
+    color: #64748b !important;
+    font-weight: 750 !important;
+    font-size: 13px !important;
+  }
+  [data-theme="light"] .macro-card-latest .macro-num {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .macro-value {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .macro-value.up {
+    color: #b91c1c !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .macro-value.down {
+    color: #15803d !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .macro-value.flat {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .macro-delta.up {
+    color: #b91c1c !important;
+    background: #fef2f2 !important;
+    border: 1px solid #fca5a5 !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .macro-delta.down {
+    color: #15803d !important;
+    background: #f0fdf4 !important;
+    border: 1px solid #86efac !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .macro-delta.flat {
+    color: #475569 !important;
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] .macro-num:hover {
+    background: #f1f5f9 !important;
+    outline: 1px dashed #2563eb !important;
+    outline-offset: 2px !important;
+    border-radius: 4px !important;
+  }
+  [data-theme="light"] .macro-edit-input {
+    background: #ffffff !important;
+    border: 1.5px solid #2563eb !important;
+    color: #0f172a !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .macro-history-list {
+    border-top: 1.5px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .macro-history-item {
+    border-bottom: 1px solid #f1f5f9 !important;
+  }
+  [data-theme="light"] .macro-history-date {
+    color: #64748b !important;
+    font-weight: 750 !important;
+    font-size: 12px !important;
+  }
+  [data-theme="light"] .macro-history-item .macro-num {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+  }
+
+  /* 3. 📁 Git 同步檔卡片 (Macro Backup Card) */
+  [data-theme="light"] .macro-backup-card {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05) !important;
+    border-radius: 12px !important;
+  }
+  [data-theme="light"] .macro-backup-header {
+    border-bottom: 1.5px solid #e2e8f0 !important;
+    padding-bottom: 12px !important;
+    margin-bottom: 14px !important;
+  }
+  [data-theme="light"] .macro-backup-title {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .macro-backup-note {
+    color: #15803d !important;
+    font-weight: 750 !important;
+  }
+  [data-theme="light"] .macro-backup-actions .btn {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    font-weight: 750 !important;
+  }
+  [data-theme="light"] .macro-backup-actions .btn:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+  }
+  [data-theme="light"] #macro-copy-status {
+    color: #0284c7 !important;
+    font-weight: 750 !important;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     ☀️ 排行榜頁面【方案 A：Apple Stocks / Google Finance 純白極簡高對比風】
+     涵蓋：全景總覽、五大榜單微型卡、榜單切換按鈕、主榜表格、AI 獨有各項指標與覆盤日記
+     ══════════════════════════════════════════════════════════════════════ */
+  [data-theme="light"] #ranking-workspace {
+    background: #ffffff !important;
+  }
+  [data-theme="light"] #ranking-workspace .ranking-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04) !important;
+  }
+
+  /* 1. 五大實戰排行榜全景一覽 (Master Overview Card) */
+  [data-theme="light"] #ranking-workspace .ranking-overview-panel,
+  [data-theme="light"] #ranking-workspace div[style*="background:#11161f"],
+  [data-theme="light"] #ranking-workspace div[style*="background: #11161f"] {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 14px !important;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06) !important;
+  }
+  [data-theme="light"] #ranking-workspace .ranking-overview-panel > div:first-child > div:first-child,
+  [data-theme="light"] #ranking-workspace div[style*="background:#11161f"] > div:first-child > div:first-child,
+  [data-theme="light"] .ranking-overview-title {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] #ranking-workspace .ranking-overview-panel > div:first-child > div:last-child,
+  [data-theme="light"] #ranking-workspace div[style*="background:#11161f"] > div:first-child > div:last-child,
+  [data-theme="light"] .ranking-overview-date {
+    color: #475569 !important;
+    font-weight: 600 !important;
+  }
+  [data-theme="light"] #ranking-workspace .ranking-overview-panel strong,
+  [data-theme="light"] #ranking-workspace div[style*="background:#11161f"] strong {
+    color: #0369a1 !important;
+    font-weight: 850 !important;
+  }
+
+  /* 2. 五大總覽微型榜單欄位卡片 (Mini Overview Columns) */
+  [data-theme="light"] .mini-overview-col,
+  [data-theme="light"] #ranking-workspace div[style*="min-width:200px"] {
+    background: #f8fafc !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  }
+  [data-theme="light"] .mini-overview-col.active,
+  [data-theme="light"] #ranking-workspace div[style*="min-width:200px"][style*="box-shadow:0 0 16px"],
+  [data-theme="light"] #ranking-workspace div[style*="min-width:200px"][style*="box-shadow: 0 0 16px"] {
+    background: #ffffff !important;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12) !important;
+  }
+  [data-theme="light"] .mini-overview-col > div:first-child,
+  [data-theme="light"] #ranking-workspace div[style*="min-width:200px"] > div:first-child {
+    border-bottom: 1.5px solid #e2e8f0 !important;
+  }
+  /* 欄位標題：Scheme A 高飽和清晰色彩 */
+  [data-theme="light"] .mini-overview-col span[style*="#fbbf24"],
+  [data-theme="light"] #ranking-workspace div[style*="min-width:200px"] span[style*="#fbbf24"] {
+    color: #854d0e !important; /* AI 獨有金棕 */
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .mini-overview-col span[style*="#f87171"],
+  [data-theme="light"] #ranking-workspace div[style*="min-width:200px"] span[style*="#f87171"] {
+    color: #b91c1c !important; /* Gemini 暴漲深紅 */
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .mini-overview-col span[style*="#4ade80"],
+  [data-theme="light"] #ranking-workspace div[style*="min-width:200px"] span[style*="#4ade80"] {
+    color: #15803d !important; /* Gemini 穩健深綠 */
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .mini-overview-col span[style*="#f97316"],
+  [data-theme="light"] #ranking-workspace div[style*="min-width:200px"] span[style*="#f97316"] {
+    color: #c2410c !important; /* ChatGPT 攻擊深橘 */
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .mini-overview-col span[style*="#38bdf8"],
+  [data-theme="light"] #ranking-workspace div[style*="min-width:200px"] span[style*="#38bdf8"] {
+    color: #1d4ed8 !important; /* ChatGPT 穩健深藍 */
+    font-weight: 900 !important;
+  }
+
+  /* 3. 微型榜單個股項目列 (Mini Overview Stock Item Rows) */
+  [data-theme="light"] .mini-overview-row,
+  [data-theme="light"] #ranking-workspace div[style*="min-height:28px"] {
+    background: #ffffff !important;
+    border: 1px solid #f1f5f9 !important;
+    border-radius: 7px !important;
+  }
+  [data-theme="light"] .mini-overview-row:hover,
+  [data-theme="light"] #ranking-workspace div[style*="min-height:28px"]:hover {
+    background: #f0f9ff !important;
+    border-color: #bae6fd !important;
+  }
+  /* 名次序號 */
+  [data-theme="light"] #ranking-workspace div[style*="min-height:28px"] span[style*="width:18px"] {
+    color: #64748b !important;
+    font-weight: 850 !important;
+  }
+  /* 股票代號 */
+  [data-theme="light"] #ranking-workspace div[style*="min-height:28px"] .stock-code {
+    color: #1d4ed8 !important;
+    font-weight: 850 !important;
+  }
+  /* 股票名稱 */
+  [data-theme="light"] #ranking-workspace div[style*="min-height:28px"] span[style*="color:#ffffff"],
+  [data-theme="light"] #ranking-workspace div[style*="min-height:28px"] span[style*="color:#fff"],
+  [data-theme="light"] #ranking-workspace div[style*="min-height:28px"] span[style*="color: #ffffff"],
+  [data-theme="light"] #ranking-workspace div[style*="min-height:28px"] span[style*="color: #fff"],
+  [data-theme="light"] .overview-stock-name {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+  }
+  /* 右側數值 (價格或評分) */
+  [data-theme="light"] #ranking-workspace div[style*="min-height:28px"] > span:last-child,
+  [data-theme="light"] .overview-item-val {
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .col-evolution-momentum .overview-item-val {
+    color: #854d0e !important;
+  }
+  [data-theme="light"] .col-gemini-momentum .overview-item-val {
+    color: #b91c1c !important;
+  }
+  [data-theme="light"] .col-gemini-defensive .overview-item-val {
+    color: #15803d !important;
+  }
+  [data-theme="light"] .col-chatgpt-momentum .overview-item-val {
+    color: #c2410c !important;
+  }
+  [data-theme="light"] .col-chatgpt-defensive .overview-item-val {
+    color: #1d4ed8 !important;
+  }
+
+  /* 報告亮金＋翠綠標籤卡片 (Tag Leaderboard Card) */
+  [data-theme="light"] .tag-overview-panel,
+  [data-theme="light"] .tag-overview-col,
+  [data-theme="light"] #ranking-workspace div[style*="rgba(234,179,8,0.13)"] {
+    background: #fefce8 !important;
+    border: 1.5px solid #fde047 !important;
+    border-radius: 12px !important;
+  }
+  [data-theme="light"] .tag-overview-panel span[style*="#fde047"],
+  [data-theme="light"] .tag-overview-col span[style*="#fde047"],
+  [data-theme="light"] #ranking-workspace div[style*="rgba(234,179,8,0.13)"] span[style*="#fde047"] {
+    color: #854d0e !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .tag-gold-count {
+    color: #854d0e !important;
+  }
+  [data-theme="light"] .tag-green-count {
+    color: #15803d !important;
+  }
+  [data-theme="light"] .tag-total-count {
+    color: #0f172a !important;
+  }
+  [data-theme="light"] .tag-overview-panel .mini-overview-row,
+  [data-theme="light"] .tag-overview-col .mini-overview-row,
+  [data-theme="light"] #ranking-workspace div[style*="rgba(234,179,8,0.13)"] div[style*="min-height:28px"] {
+    background: #ffffff !important;
+    border: 1px solid #fef08a !important;
+  }
+
+  /* 4. 榜單切換工具列與按鈕 (Track Switching Toolbar & Buttons) */
+  [data-theme="light"] .ranking-detail-toolbar {
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .ranking-track-actions span[style*="rgba(255,255,255,0.25)"] {
+    color: #cbd5e1 !important;
+  }
+  /* 👑 AI 獨有起漲按鈕 */
+  [data-theme="light"] .ranking-track-actions button[onclick*="winrateRankingSource='evolution'"] {
+    border: 1.5px solid #fde047 !important;
+    background: #fefce8 !important;
+    color: #854d0e !important;
+    font-weight: 900 !important;
+    box-shadow: 0 2px 8px rgba(234, 179, 8, 0.18) !important;
+  }
+  /* 🚀 Gemini 暴漲按鈕 */
+  [data-theme="light"] .ranking-track-actions button[onclick*="winrateActiveTrack='momentum'"][onclick*="'gemini'"] {
+    border: 1.5px solid #fca5a5 !important;
+    background: #fef2f2 !important;
+    color: #b91c1c !important;
+    font-weight: 850 !important;
+  }
+  /* 🛡️ Gemini 穩健按鈕 */
+  [data-theme="light"] .ranking-track-actions button[onclick*="winrateActiveTrack='defensive'"][onclick*="'gemini'"] {
+    border: 1.5px solid #86efac !important;
+    background: #f0fdf4 !important;
+    color: #15803d !important;
+    font-weight: 850 !important;
+  }
+  /* ⚡ ChatGPT 攻擊按鈕 */
+  [data-theme="light"] .ranking-track-actions button[onclick*="winrateActiveTrack='momentum'"][onclick*="'chatgpt'"] {
+    border: 1.5px solid #fdba74 !important;
+    background: #fff7ed !important;
+    color: #c2410c !important;
+    font-weight: 850 !important;
+  }
+  /* 🌱 ChatGPT 穩健按鈕 */
+  [data-theme="light"] .ranking-track-actions button[onclick*="winrateActiveTrack='defensive'"][onclick*="'chatgpt'"] {
+    border: 1.5px solid #93c5fd !important;
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    font-weight: 850 !important;
+  }
+  /* 未啟用的榜單按鈕回歸 Scheme A 乾淨灰白底 */
+  [data-theme="light"] .ranking-track-actions button.btn[style*="var(--border)"],
+  [data-theme="light"] .ranking-track-actions button.btn[style*="rgba(250,204,21,0.35)"] {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #475569 !important;
+    box-shadow: none !important;
+  }
+  [data-theme="light"] .ranking-track-actions button.btn:hover {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+  }
+  /* 覆盤日記按鈕 */
+  [data-theme="light"] .ranking-refresh-action button[onclick*="showEvolutionLog"] {
+    background: #fefce8 !important;
+    border: 1.5px solid #fde047 !important;
+    color: #854d0e !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .ranking-refresh-action button[onclick*="showEvolutionLog"]:hover {
+    background: #fef9c3 !important;
+  }
+  /* 重新執行按鈕 */
+  [data-theme="light"] .ranking-refresh-action button[onclick*="triggerScannerRun"] {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    font-weight: 750 !important;
+  }
+  [data-theme="light"] .ranking-refresh-action button[onclick*="triggerScannerRun"]:hover {
+    background: #f1f5f9 !important;
+  }
+
+  /* 5. 搜尋列與計數 (Search / Filter Bar) */
+  [data-theme="light"] .ranking-filter-bar {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .ranking-filter-bar .search-input {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    font-weight: 600 !important;
+  }
+  [data-theme="light"] .ranking-filter-bar .search-input:focus {
+    border-color: #2563eb !important;
+    outline: 2px solid rgba(37, 99, 235, 0.2) !important;
+  }
+  [data-theme="light"] .ranking-filter-bar div[style*="font-size:15px"] {
+    color: #475569 !important;
+  }
+  [data-theme="light"] .ranking-filter-bar strong[style*="#fff"],
+  [data-theme="light"] .ranking-filter-bar strong[style*="#ffffff"],
+  [data-theme="light"] .ranking-filtered-count {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+  }
+
+  /* 6. 主榜單表格高對比排版 (Full Table & Evolution Table) */
+  [data-theme="light"] .ranking-table-wrap {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05) !important;
+    border-radius: 12px !important;
+  }
+  [data-theme="light"] .ranking-full-table th {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-weight: 850 !important;
+    border-bottom: 2px solid #cbd5e1 !important;
+  }
+  [data-theme="light"] .ranking-full-table tr {
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .ranking-full-table tr:nth-child(even) {
+    background: #f8fafc !important;
+  }
+  [data-theme="light"] .ranking-full-table tr:hover {
+    background: #f0f9ff !important;
+  }
+  [data-theme="light"] .ranking-full-table td {
+    color: #0f172a !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  /* 股票代號與名稱 */
+  [data-theme="light"] .rank-stock-link .stock-code {
+    color: #1d4ed8 !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .rank-stock-link .stock-name {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] .ranking-full-table tr:hover .rank-stock-link .stock-name {
+    color: #1d4ed8 !important;
+  }
+
+  /* 收盤價 (覆寫原程式碼寫死的 style="color:#fff;") */
+  [data-theme="light"] .ranking-full-table td[style*="color:#fff"],
+  [data-theme="light"] .ranking-full-table td[style*="color: #fff"],
+  [data-theme="light"] .ranking-full-table td[style*="color:#ffffff"],
+  [data-theme="light"] .ranking-full-table td[style*="color: #ffffff"],
+  [data-theme="light"] .cell-price {
+    color: #0f172a !important;
+    font-weight: 850 !important;
+  }
+
+  /* 類群標籤 */
+  [data-theme="light"] .ranking-full-table .tag-pill {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 750 !important;
+  }
+
+  /* 收藏星星按鈕 */
+  [data-theme="light"] .ranking-star-btn {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #94a3b8 !important;
+  }
+  [data-theme="light"] .ranking-star-btn:hover {
+    border-color: #facc15 !important;
+    color: #ca8a04 !important;
+  }
+  [data-theme="light"] .ranking-star-btn.active {
+    background: #fefce8 !important;
+    border-color: #fde047 !important;
+    color: #ca8a04 !important;
+  }
+
+  /* 7. 👑 AI 獨有實戰勝率詳細欄位高對比調色 (Scheme A 飽和對比) */
+  /* 📊 月盈年盈(營收) */
+  [data-theme="light"] .ranking-full-table td div[style*="#fef08a"],
+  [data-theme="light"] .cell-rev-main {
+    color: #854d0e !important; /* 深琥珀金 */
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] .ranking-full-table td div[style*="#fde047"],
+  [data-theme="light"] .cell-rev-sub {
+    color: #a16207 !important; /* 飽和金棕 */
+    font-weight: 700 !important;
+  }
+
+  /* 💰 季報獲利(EPS) */
+  [data-theme="light"] .ranking-full-table td div[style*="#86efac"],
+  [data-theme="light"] .cell-eps-main {
+    color: #15803d !important; /* 深翠綠 */
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] .ranking-full-table td div[style*="#4ade80"],
+  [data-theme="light"] .cell-eps-sub {
+    color: #166534 !important; /* 濃翠綠 */
+    font-weight: 700 !important;
+  }
+
+  /* 📢 法說重點與實質利多 */
+  [data-theme="light"] .ranking-full-table td div[style*="#f1f5f9"],
+  [data-theme="light"] .cell-catalyst {
+    color: #1e293b !important; /* 深邃 Slate-800，最高可讀性 */
+    font-weight: 550 !important;
+    line-height: 1.6 !important;
+  }
+
+  /* 🎯 法人目標價 */
+  [data-theme="light"] .ranking-full-table td div[style*="#93c5fd"],
+  [data-theme="light"] .cell-target-price {
+    color: #1d4ed8 !important; /* 寶石深藍 */
+    font-weight: 750 !important;
+    line-height: 1.5 !important;
+  }
+
+  /* 🚀 技術起漲特徵 */
+  [data-theme="light"] .ranking-full-table td div[style*="#e2e8f0"],
+  [data-theme="light"] .ranking-full-table td div[style*="#cbd5e1"],
+  [data-theme="light"] .ranking-full-table td span[style*="#f8fafc"],
+  [data-theme="light"] .cell-feature-item {
+    color: #0f172a !important; /* 極致純黑 */
+    font-weight: 600 !important;
+    line-height: 1.5 !important;
+  }
+
+  /* 標準榜欄位特徵 (斜率、乖離、法人) */
+  [data-theme="light"] .ranking-full-table td[style*="#fca5a5"] {
+    color: #b91c1c !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] .ranking-full-table td[style*="#93c5fd"] {
+    color: #1d4ed8 !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] .ranking-full-table td[style*="#e2e8f0"] {
+    color: #0f172a !important;
+    font-weight: 750 !important;
+  }
+
+  /* 8. 跨榜評級徽章 (A1, B1, C1...) */
+  [data-theme="light"] .ranking-tier-badge.tier-a {
+    background: linear-gradient(135deg, #dc2626, #ea580c) !important;
+    color: #ffffff !important;
+    border: 1px solid #f87171 !important;
+    box-shadow: 0 1px 4px rgba(220, 38, 38, 0.3) !important;
+  }
+  [data-theme="light"] .ranking-tier-badge.tier-b {
+    background: linear-gradient(135deg, #2563eb, #0284c7) !important;
+    color: #ffffff !important;
+    border: 1px solid #60a5fa !important;
+    box-shadow: 0 1px 4px rgba(37, 99, 235, 0.3) !important;
+  }
+  [data-theme="light"] .ranking-tier-badge.tier-c {
+    background: linear-gradient(135deg, #16a34a, #059669) !important;
+    color: #ffffff !important;
+    border: 1px solid #4ade80 !important;
+    box-shadow: 0 1px 4px rgba(22, 163, 74, 0.3) !important;
+  }
+
+  /* 9. AI 覆盤日記彈窗 (Evolution Log Modal) */
+  [data-theme="light"] #evolution-modal {
+    background: rgba(15, 23, 42, 0.45) !important;
+    backdrop-filter: blur(8px) !important;
+  }
+  [data-theme="light"] #evolution-modal > div,
+  [data-theme="light"] .evolution-modal-card {
+    background: #ffffff !important;
+    border: 1.5px solid #facc15 !important;
+    box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.25) !important;
+    color: #0f172a !important;
+  }
+  [data-theme="light"] #evolution-modal > div > div:first-child,
+  [data-theme="light"] .evolution-modal-header {
+    background: #fefce8 !important;
+    border-bottom: 1.5px solid #fde047 !important;
+  }
+  [data-theme="light"] #evolution-modal > div > div:first-child > div,
+  [data-theme="light"] .evolution-modal-title {
+    color: #854d0e !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] #evolution-modal button,
+  [data-theme="light"] .evolution-modal-close {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+  }
+  [data-theme="light"] #evolution-modal button:hover,
+  [data-theme="light"] .evolution-modal-close:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+  }
+  [data-theme="light"] #evolution-modal > div > div:last-child,
+  [data-theme="light"] .evolution-modal-body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     ☀️ 分析報告頁面【方案 A：Apple Stocks / Google Finance 純白極簡高對比風】
+     涵蓋：頂部快捷切換導覽、報告主卡、指標磚、六大指標模組標籤、各階段章節、警示與數據表
+     ══════════════════════════════════════════════════════════════════════ */
+  [data-theme="light"] #analysis-workspace {
+    background: #ffffff !important;
+  }
+  [data-theme="light"] .analysis-shell {
+    background: transparent !important;
+  }
+
+  /* 1. 頂部快速切換導覽列 (Analysis Top Nav Bar) */
+  [data-theme="light"] .analysis-top-nav-bar {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
+    border-radius: 12px !important;
+  }
+  [data-theme="light"] .analysis-switcher-label,
+  [data-theme="light"] .analysis-top-nav-bar label,
+  [data-theme="light"] .analysis-top-nav-bar label[style*="#93c5fd"] {
+    color: #0f172a !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .analysis-stock-select {
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    font-weight: 750 !important;
+  }
+  [data-theme="light"] .analysis-stock-select:focus {
+    border-color: #2563eb !important;
+    outline: 2px solid rgba(37, 99, 235, 0.2) !important;
+  }
+  [data-theme="light"] .analysis-top-nav-bar .btn,
+  [data-theme="light"] .analysis-nav-btn {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    font-weight: 750 !important;
+  }
+  [data-theme="light"] .analysis-top-nav-bar .btn:hover,
+  [data-theme="light"] .analysis-nav-btn:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+  }
+
+  /* 2. 報告主卡片 (Analysis Card & Header) */
+  [data-theme="light"] .analysis-card {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 4px 24px rgba(15, 23, 42, 0.05) !important;
+    border-radius: 14px !important;
+  }
+  [data-theme="light"] .analysis-header-row {
+    border-bottom: 1.5px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .analysis-title {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.3px !important;
+  }
+
+  /* 3. 徽章標籤 (Analysis Badges) */
+  [data-theme="light"] .analysis-badge {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] .analysis-badge.bullish {
+    background: #fef2f2 !important;
+    border: 1px solid #f87171 !important;
+    color: #b91c1c !important;
+  }
+  [data-theme="light"] .analysis-badge.bearish {
+    background: #f0fdf4 !important;
+    border: 1px solid #4ade80 !important;
+    color: #15803d !important;
+  }
+  [data-theme="light"] .analysis-badge.neutral {
+    background: #eff6ff !important;
+    border: 1px solid #60a5fa !important;
+    color: #1d4ed8 !important;
+  }
+  [data-theme="light"] .analysis-badge.accent {
+    background: #fefce8 !important;
+    border: 1px solid #facc15 !important;
+    color: #854d0e !important;
+  }
+
+  /* 4. 重點指標方塊 (Metrics Bar & Tiles) */
+  [data-theme="light"] .analysis-metrics-bar {
+    gap: 12px !important;
+  }
+  [data-theme="light"] .analysis-metric-tile {
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03) !important;
+    border-radius: 10px !important;
+  }
+  [data-theme="light"] .analysis-metric-tile .tile-label {
+    color: #64748b !important;
+    font-weight: 750 !important;
+    font-size: 12px !important;
+  }
+  [data-theme="light"] .analysis-metric-tile .tile-value {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+    font-size: 20px !important;
+  }
+  [data-theme="light"] .analysis-metric-tile .tile-value.highlight {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .analysis-metric-tile .tile-value.positive {
+    color: #b91c1c !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .analysis-metric-tile .tile-value.negative {
+    color: #15803d !important;
+    font-weight: 900 !important;
+  }
+
+  /* 5. 模組化指標標籤群組 (Analysis Tag Group) */
+  [data-theme="light"] .analysis-tag-group {
+    background: #f8fafc !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+  }
+
+  /* 6. 章節結構與排版 (Stage Sections & Typography) */
+  [data-theme="light"] .stage-header {
+    color: #0f172a !important;
+    font-weight: 850 !important;
+    font-size: 18px !important;
+    border-bottom: 1.5px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .stage-body {
+    color: #1e293b !important;
+    font-size: 15px !important;
+    line-height: 1.75 !important;
+  }
+  [data-theme="light"] .stage-body p {
+    color: #1e293b !important;
+  }
+  [data-theme="light"] .stage-body strong {
+    color: #0f172a !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .stage-body ul,
+  [data-theme="light"] .stage-body ol {
+    color: #1e293b !important;
+  }
+  [data-theme="light"] .stage-body li {
+    color: #1e293b !important;
+  }
+  [data-theme="light"] .analysis-subheading,
+  [data-theme="light"] h4[style*="#93c5fd"] {
+    color: #1d4ed8 !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .analysis-key-level,
+  [data-theme="light"] div[style*="var(--accent)"] {
+    color: #1d4ed8 !important;
+    font-weight: 850 !important;
+  }
+
+  /* 7. 行內標記高對比調色 (Inline Tokens) */
+  [data-theme="light"] .analysis-inline-code,
+  [data-theme="light"] code[style*="rgba(255,255,255"] {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] .token-support,
+  [data-theme="light"] span[style*="#86efac"] {
+    color: #15803d !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .token-resistance,
+  [data-theme="light"] span[style*="#fca5a5"] {
+    color: #b91c1c !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .token-stoploss,
+  [data-theme="light"] span[style*="#fde047"] {
+    color: #854d0e !important;
+    font-weight: 850 !important;
+  }
+
+  /* 8. 警示與提醒區塊 (Analysis Alerts) */
+  [data-theme="light"] .analysis-alert {
+    border-radius: 8px !important;
+    padding: 14px 18px !important;
+    font-size: 14.5px !important;
+    line-height: 1.65 !important;
+  }
+  [data-theme="light"] .analysis-alert.warn {
+    background: #fffbeb !important;
+    border-left: 4px solid #d97706 !important;
+    border-top: 1px solid #fef3c7 !important;
+    border-right: 1px solid #fef3c7 !important;
+    border-bottom: 1px solid #fef3c7 !important;
+    color: #78350f !important;
+    font-weight: 650 !important;
+  }
+  [data-theme="light"] .analysis-alert.danger {
+    background: #fef2f2 !important;
+    border-left: 4px solid #dc2626 !important;
+    border-top: 1px solid #fee2e2 !important;
+    border-right: 1px solid #fee2e2 !important;
+    border-bottom: 1px solid #fee2e2 !important;
+    color: #991b1b !important;
+    font-weight: 650 !important;
+  }
+  [data-theme="light"] .analysis-alert.success {
+    background: #f0fdf4 !important;
+    border-left: 4px solid #16a34a !important;
+    border-top: 1px solid #dcfce7 !important;
+    border-right: 1px solid #dcfce7 !important;
+    border-bottom: 1px solid #dcfce7 !important;
+    color: #14532d !important;
+    font-weight: 650 !important;
+  }
+
+  /* 9. 報告內數據表格 (Analysis Tables) */
+  [data-theme="light"] .analysis-table {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+  }
+  [data-theme="light"] .analysis-table th {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-weight: 850 !important;
+    border: 1px solid #cbd5e1 !important;
+    font-size: 13.5px !important;
+  }
+  [data-theme="light"] .analysis-table td {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #e2e8f0 !important;
+    font-size: 13.5px !important;
+  }
+  [data-theme="light"] .analysis-table tr:nth-child(even) td {
+    background: #f8fafc !important;
+  }
+
+  /* 10. 空白狀態 (Empty State) */
+  [data-theme="light"] .analysis-empty {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #475569 !important;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04) !important;
+    border-radius: 12px !important;
+  }
+  [data-theme="light"] .analysis-empty-title,
+  [data-theme="light"] .analysis-empty div[style*="font-weight:700"] {
+    color: #0f172a !important;
+    font-weight: 850 !important;
+  }
+
+  /* ── 標籤專屬高對比優化 (Light Mode Tags & Badges) ── */
+  [data-theme="light"] .tag-pill,
+  [data-theme="light"] .analysis-badge,
+  [data-theme="light"] .tree-stat-pill,
+  [data-theme="light"] .rank-decision-tag,
+  [data-theme="light"] .rank-score-pill {
+    font-weight: 800 !important;
+  }
+
+  /* 紅色系標籤 (警示、超買、死叉、破線、跌、賣出) 在白底下的高對比：淺紅底 + 深暗紅字 + 鮮明邊框 */
+  [data-theme="light"] .tag-pill[style*="#fca5a5"],
+  [data-theme="light"] .analysis-badge.bullish,
+  [data-theme="light"] .analysis-metric-tile .tile-value.positive,
+  [data-theme="light"] .tree-stat-pill.change.up,
+  [data-theme="light"] .tree-stat-pill.price.up,
+  [data-theme="light"] .tree-stat-pill.winrate,
+  [data-theme="light"] .tree-stat-pill.winrate.high,
+  [data-theme="light"] .rank-decision-tag.strong-buy,
+  [data-theme="light"] .rank-decision-tag.avoid,
+  [data-theme="light"] .rank-score-pill.high {
+    background: #fef2f2 !important;
+    color: #b91c1c !important;
+    border: 1px solid #f87171 !important;
+  }
+
+  /* 綠色系標籤 (強勢、多頭、金叉、主升、買進) 在白底下的高對比：淺綠底 + 濃郁深翠綠字 + 鮮明邊框 */
+  [data-theme="light"] .tag-pill[style*="#86efac"],
+  [data-theme="light"] .analysis-badge.bearish,
+  [data-theme="light"] .analysis-metric-tile .tile-value.negative,
+  [data-theme="light"] .tree-stat-pill.change.down,
+  [data-theme="light"] .tree-stat-pill.price.down,
+  [data-theme="light"] .rank-decision-tag.buy {
+    background: #f0fdf4 !important;
+    color: #15803d !important;
+    border: 1px solid #4ade80 !important;
+  }
+
+  /* 黃色／琥珀色標籤 (糾纏、轉折、起漲、關注) 在白底下的高對比：淺黃底 + 焦糖深琥珀字 (拒絕刺眼淺黃白字！) */
+  [data-theme="light"] .tag-pill[style*="#fde047"],
+  [data-theme="light"] .analysis-badge.accent,
+  [data-theme="light"] .rank-decision-tag.watch {
+    background: #fefce8 !important;
+    color: #854d0e !important;
+    border: 1px solid #facc15 !important;
+  }
+
+  /* 藍色系標籤 (溫和增量、站穩均線、RSI 多方) 在白底下的高對比：淺藍底 + 皇家深藍字 */
+  [data-theme="light"] .tag-pill[style*="#7dd3fc"],
+  [data-theme="light"] .tag-pill[style*="#38bdf8"],
+  [data-theme="light"] .tag-pill[style*="#93c5fd"],
+  [data-theme="light"] .tag-pill[style*="#bfdbfe"],
+  [data-theme="light"] .analysis-badge.neutral,
+  [data-theme="light"] .rank-score-pill.medium {
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border: 1px solid #60a5fa !important;
+  }
+
+  /* 紫色系標籤 (MACD、型態、PE 本益比) 在白底下的高對比：淺紫底 + 濃紫羅蘭字 */
+  [data-theme="light"] .tag-pill[style*="#c084fc"],
+  [data-theme="light"] .tag-pill[style*="#d8b4fe"],
+  [data-theme="light"] .tree-stat-pill.pe {
+    background: #faf5ff !important;
+    color: #7e22ce !important;
+    border: 1px solid #c084fc !important;
+  }
+
+  /* 灰色／常態整理標籤：白底 + 俐落石板深灰字 + 灰邊框 */
+  [data-theme="light"] .tag-pill[style*="#cbd5e1"],
+  [data-theme="light"] .tree-stat-pill.change.flat,
+  [data-theme="light"] .tree-stat-pill.price.flat,
+  [data-theme="light"] .rank-score-pill.low {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    border: 1px solid #94a3b8 !important;
+  }
+
+  /* 指標分類組小抬頭 (如 📈 K線指標、📊 VOL指標、🌊 MACD指標) 在白底下的字體強化 */
+  [data-theme="light"] .analysis-tag-row .tag-label {
+    font-weight: 800 !important;
+    border-radius: 6px !important;
+    padding: 3px 8px !important;
+  }
+  [data-theme="light"] .analysis-tag-row .tag-label[style*="#93c5fd"] {
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border: 1px solid #93c5fd !important;
+  }
+  [data-theme="light"] .analysis-tag-row .tag-label[style*="#fde047"] {
+    background: #fefce8 !important;
+    color: #854d0e !important;
+    border: 1px solid #facc15 !important;
+  }
+  [data-theme="light"] .analysis-tag-row .tag-label[style*="#c084fc"] {
+    background: #faf5ff !important;
+    color: #7e22ce !important;
+    border: 1px solid #c084fc !important;
+  }
+  [data-theme="light"] .analysis-tag-row .tag-label[style*="#38bdf8"] {
+    background: #f0f9ff !important;
+    color: #0369a1 !important;
+    border: 1px solid #7dd3fc !important;
+  }
+  [data-theme="light"] .analysis-tag-row .tag-label[style*="#fbbf24"] {
+    background: #fffbeb !important;
+    color: #92400e !important;
+    border: 1px solid #f59e0b !important;
+  }
+  [data-theme="light"] .analysis-tag-row .tag-label[style*="#fdba74"] {
+    background: #fff7ed !important;
+    color: #9a3412 !important;
+    border: 1px solid #fb923c !important;
+  }
+
+  /* 左側目錄樹與工作列 */
+  [data-theme="light"] #reports-workspace,
+  [data-theme="light"] #ranking-workspace,
+  [data-theme="light"] #analysis-workspace,
+  [data-theme="light"] #macro-workspace,
+  [data-theme="light"] #pattern-workspace {
+    background: #ffffff !important;
+  }
+  [data-theme="light"] .tree-toolbar {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .tree-toolbar button {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+  }
+  [data-theme="light"] .tree-toolbar button:hover {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+  }
+  [data-theme="light"] .generate-bar {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .generate-bar input[type="text"] {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #000000 !important;
+  }
+  [data-theme="light"] .generate-bar input[type="text"]:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
+  }
+  [data-theme="light"] .resizer {
+    background: #f1f5f9 !important;
+    border-left: 1px solid #e2e8f0 !important;
+    border-right: 1px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .sidebar {
+    border-right: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
+  }
+  [data-theme="light"] .tree-row {
+    color: #0f172a !important;
+  }
+  [data-theme="light"] .tree-row:hover {
+    background: #f8fafc !important;
+  }
+  [data-theme="light"] .tree-report-row {
+    color: #334155 !important;
+  }
+  [data-theme="light"] .tree-report-row:hover {
+    background: #f1f5f9 !important;
+    color: #000000 !important;
+  }
+  [data-theme="light"] .tree-report-row.is-starred {
+    background: #fefce8 !important;
+    border: 1px solid #fef08a !important;
+  }
+  [data-theme="light"] .tree-report-row.is-starred .name {
+    color: #854d0e !important;
+    font-weight: 800 !important;
+  }
+
+  /* 彈出視窗與速查表 Modal (☀️ 方案 A：Apple Stocks / Google Finance 純白極簡高對比) */
+  [data-theme="light"] .modal,
+  [data-theme="light"] [id*="CheatSheetModal"] > div,
+  [data-theme="light"] .cheat-sheet-modal > div {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.25) !important;
+    color: #0f172a !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] > div > div:first-child,
+  [data-theme="light"] .cheat-sheet-modal > div > div:first-child {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] h3,
+  [data-theme="light"] .cheat-sheet-modal h3 {
+    color: #0f172a !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] p,
+  [data-theme="light"] .cheat-sheet-modal p {
+    color: #475569 !important;
+    font-weight: 600 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] table,
+  [data-theme="light"] .cheat-sheet-modal table {
+    background: #ffffff !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] thead tr,
+  [data-theme="light"] .cheat-sheet-modal thead tr {
+    background: #f1f5f9 !important;
+    border-bottom: 2px solid #cbd5e1 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] th,
+  [data-theme="light"] .cheat-sheet-modal th {
+    color: #0f172a !important;
+    font-weight: 850 !important;
+    border-bottom: 2px solid #cbd5e1 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] tbody tr,
+  [data-theme="light"] .cheat-sheet-modal tbody tr {
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] tbody tr:nth-child(even),
+  [data-theme="light"] .cheat-sheet-modal tbody tr:nth-child(even) {
+    background: #f8fafc !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] tbody tr:hover,
+  [data-theme="light"] .cheat-sheet-modal tbody tr:hover {
+    background: #f0f9ff !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] td,
+  [data-theme="light"] .cheat-sheet-modal td {
+    color: #0f172a !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] td[style*="#f8fafc"],
+  [data-theme="light"] .cheat-sheet-modal td[style*="#f8fafc"] {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] td span[style*="#94a3b8"],
+  [data-theme="light"] [id*="CheatSheetModal"] td span[style*="font-size:13"],
+  [data-theme="light"] .cheat-sheet-modal td span[style*="#94a3b8"],
+  [data-theme="light"] .cheat-sheet-modal td span[style*="font-size:13"] {
+    color: #334155 !important;
+    font-weight: 600 !important;
+  }
+  /* 藥丸標籤高對比優化 (Scheme A) */
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="#fca5a5"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="#f87171"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="239,68,68"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="#fca5a5"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="#f87171"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="239,68,68"] {
+    background: #fef2f2 !important;
+    color: #b91c1c !important;
+    border-color: #fca5a5 !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="#fdba74"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="249,115,22"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="#fdba74"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="249,115,22"] {
+    background: #fff7ed !important;
+    color: #c2410c !important;
+    border-color: #fdba74 !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="#fde047"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="#fbbf24"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="234,179,8"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="245,158,11"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="#fde047"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="#fbbf24"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="234,179,8"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="245,158,11"] {
+    background: #fefce8 !important;
+    color: #854d0e !important;
+    border-color: #fde047 !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="#86efac"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="#34d399"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="34,197,94"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="#86efac"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="#34d399"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="34,197,94"] {
+    background: #f0fdf4 !important;
+    color: #15803d !important;
+    border-color: #86efac !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="#93c5fd"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="#60a5fa"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="59,130,246"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="#93c5fd"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="#60a5fa"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="59,130,246"] {
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border-color: #93c5fd !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="#7dd3fc"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="#38bdf8"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="56,189,248"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="#7dd3fc"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="#38bdf8"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="56,189,248"] {
+    background: #f0f9ff !important;
+    color: #0369a1 !important;
+    border-color: #7dd3fc !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="#c084fc"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="168,85,247"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="#c084fc"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="168,85,247"] {
+    background: #faf5ff !important;
+    color: #7e22ce !important;
+    border-color: #d8b4fe !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="#f472b6"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="236,72,153"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="#f472b6"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="236,72,153"] {
+    background: #fdf2f8 !important;
+    color: #be185d !important;
+    border-color: #fbcfe8 !important;
+    font-weight: 800 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="#cbd5e1"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="#94a3b8"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="148,163,184"],
+  [data-theme="light"] [id*="CheatSheetModal"] span[style*="100,116,139"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="#cbd5e1"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="#94a3b8"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="148,163,184"],
+  [data-theme="light"] .cheat-sheet-modal span[style*="100,116,139"] {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+    font-weight: 800 !important;
+  }
+  /* 操盤應對心法 */
+  [data-theme="light"] [id*="CheatSheetModal"] td[style*="#fca5a5"],
+  [data-theme="light"] [id*="CheatSheetModal"] td[style*="#f87171"],
+  [data-theme="light"] .cheat-sheet-modal td[style*="#fca5a5"],
+  [data-theme="light"] .cheat-sheet-modal td[style*="#f87171"] {
+    color: #991b1b !important;
+    font-weight: 600 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] td[style*="#fde047"],
+  [data-theme="light"] [id*="CheatSheetModal"] td[style*="#fbbf24"],
+  [data-theme="light"] .cheat-sheet-modal td[style*="#fde047"],
+  [data-theme="light"] .cheat-sheet-modal td[style*="#fbbf24"] {
+    color: #854d0e !important;
+    font-weight: 600 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] td[style*="#86efac"],
+  [data-theme="light"] [id*="CheatSheetModal"] td[style*="#34d399"],
+  [data-theme="light"] .cheat-sheet-modal td[style*="#86efac"],
+  [data-theme="light"] .cheat-sheet-modal td[style*="#34d399"] {
+    color: #15803d !important;
+    font-weight: 600 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] td[style*="#7dd3fc"],
+  [data-theme="light"] [id*="CheatSheetModal"] td[style*="#60a5fa"],
+  [data-theme="light"] .cheat-sheet-modal td[style*="#7dd3fc"],
+  [data-theme="light"] .cheat-sheet-modal td[style*="#60a5fa"] {
+    color: #1d4ed8 !important;
+    font-weight: 600 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] td strong,
+  [data-theme="light"] .cheat-sheet-modal td strong {
+    color: #0f172a !important;
+    font-weight: 850 !important;
+  }
+  /* 底部重點框 (Callout Card) */
+  [data-theme="light"] [id*="CheatSheetModal"] div[style*="padding:14px 18px"],
+  [data-theme="light"] [id*="CheatSheetModal"] div[style*="padding: 14px 18px"],
+  [data-theme="light"] .cheat-sheet-modal div[style*="padding:14px 18px"],
+  [data-theme="light"] .cheat-sheet-modal div[style*="padding: 14px 18px"] {
+    background: #f0f9ff !important;
+    border: 1.5px solid #bae6fd !important;
+    border-radius: 10px !important;
+    color: #0f172a !important;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.08) !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] div[style*="padding:14px 18px"] > div:first-child,
+  [data-theme="light"] [id*="CheatSheetModal"] div[style*="padding: 14px 18px"] > div:first-child,
+  [data-theme="light"] .cheat-sheet-modal div[style*="padding:14px 18px"] > div:first-child,
+  [data-theme="light"] .cheat-sheet-modal div[style*="padding: 14px 18px"] > div:first-child {
+    color: #0369a1 !important;
+    font-weight: 850 !important;
+    font-size: 16px !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] div[style*="padding:14px 18px"] > div:not(:first-child),
+  [data-theme="light"] [id*="CheatSheetModal"] div[style*="padding: 14px 18px"] > div:not(:first-child),
+  [data-theme="light"] .cheat-sheet-modal div[style*="padding:14px 18px"] > div:not(:first-child),
+  [data-theme="light"] .cheat-sheet-modal div[style*="padding: 14px 18px"] > div:not(:first-child) {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    line-height: 1.7 !important;
+  }
+  [data-theme="light"] [id*="CheatSheetModal"] div[style*="padding:14px 18px"] strong,
+  [data-theme="light"] [id*="CheatSheetModal"] div[style*="padding: 14px 18px"] strong,
+  [data-theme="light"] .cheat-sheet-modal div[style*="padding:14px 18px"] strong,
+  [data-theme="light"] .cheat-sheet-modal div[style*="padding: 14px 18px"] strong {
+    color: #0284c7 !important;
+    font-weight: 850 !important;
+  }
+  /* 空手進場口訣底部專屬 Callout Box */
+  [data-theme="light"] #entryCheatSheetModal div[style*="padding:16px 20px"],
+  [data-theme="light"] #entryCheatSheetModal div[style*="padding: 16px 20px"],
+  [data-theme="light"] .cheat-sheet-modal div[style*="padding:16px 20px"],
+  [data-theme="light"] .cheat-sheet-modal div[style*="padding: 16px 20px"] {
+    background: #fdf2f8 !important;
+    border: 1.5px solid #fbcfe8 !important;
+    border-radius: 10px !important;
+    color: #0f172a !important;
+    box-shadow: 0 4px 12px rgba(236, 72, 153, 0.08) !important;
+  }
+  [data-theme="light"] #entryCheatSheetModal div[style*="padding:16px 20px"] > div:nth-child(1),
+  [data-theme="light"] .cheat-sheet-modal div[style*="padding:16px 20px"] > div:nth-child(1) {
+    color: #be185d !important;
+    font-weight: 900 !important;
+    font-size: 17px !important;
+  }
+  [data-theme="light"] #entryCheatSheetModal div[style*="padding:16px 20px"] > div:nth-child(2),
+  [data-theme="light"] .cheat-sheet-modal div[style*="padding:16px 20px"] > div:nth-child(2) {
+    color: #831843 !important;
+    font-weight: 950 !important;
+    font-size: 18px !important;
+    text-shadow: none !important;
+  }
+  [data-theme="light"] #entryCheatSheetModal div[style*="padding:16px 20px"] > div:nth-child(n+3),
+  [data-theme="light"] .cheat-sheet-modal div[style*="padding:16px 20px"] > div:nth-child(n+3) {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    font-size: 15.5px !important;
+    line-height: 1.8 !important;
+  }
+  [data-theme="light"] #entryCheatSheetModal div[style*="padding:16px 20px"] strong,
+  [data-theme="light"] .cheat-sheet-modal div[style*="padding:16px 20px"] strong {
+    color: #be185d !important;
+    font-weight: 850 !important;
+  }
+  /* Footer */
+  [data-theme="light"] [id*="CheatSheetModal"] > div > div:last-child,
+  [data-theme="light"] .cheat-sheet-modal > div > div:last-child {
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+  }
+
+  .theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 750;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .theme-toggle-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  [data-theme="light"] .theme-toggle-btn {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #000000 !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+  }
+
+  [data-theme="light"] .theme-toggle-btn:hover {
+    background: #f8fafc !important;
+    border-color: #2563eb !important;
+  }
+
   *{box-sizing:border-box;}
+  html{
+    background:#0f172a;
+  }
   body{
     margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHei",sans-serif;
     background:var(--bg); color:var(--text);
@@ -736,13 +2547,25 @@
     transition:color .3s ease;
   }
   .market-inst-title .icon{ font-size:24px; }
+  .market-inst-dot{
+    display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:middle;
+    transition:all .3s ease;
+  }
+  .market-inst-dot.active{
+    background:#22c55e; box-shadow:0 0 8px #22c55e;
+    animation:pulse-live 0.8s infinite alternate ease-in-out;
+  }
+  .market-inst-dot.stale{
+    background:#64748b; box-shadow:none;
+  }
   .market-inst-date-badge{
-    font-size:16px; font-weight:700; padding:3px 12px; border-radius:7px;
-    background:rgba(96,165,250,.18); color:#93c5fd; border:1px solid rgba(96,165,250,.4);
+    font-size:15px; font-weight:750; padding:3px 12px; border-radius:7px;
+    background:rgba(34,197,94,.15); color:#86efac; border:1px solid rgba(34,197,94,.4);
+    display:inline-flex; align-items:center; gap:2px;
     transition:all .3s ease;
   }
   .market-inst-date-badge.stale{
-    background:rgba(100,116,139,.12); color:#64748b; border-color:rgba(100,116,139,.25);
+    background:rgba(100,116,139,.12); color:#94a3b8; border-color:rgba(100,116,139,.25);
   }
   .market-inst-actions{ display:flex; align-items:center; gap:12px; }
   .market-inst-status{ font-size:17px; color:var(--text-dim); }
@@ -1254,7 +3077,7 @@
   }
 
 </style>
-<link rel="stylesheet" href="pattern_viewer/css/viewer.css?v=74">
+<link rel="stylesheet" href="pattern_viewer/css/viewer.css?v=90">
 </head>
 <body>
   <header>
@@ -1265,6 +3088,10 @@
       <input type="number" id="display-scale" min="100" max="200" step="1" value="100" inputmode="numeric" aria-label="全域顯示大小">
       <span aria-hidden="true">%</span>
     </label>
+    <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" title="切換白天（淺色）/ 夜晚（深色）模式">
+      <span id="theme-toggle-icon">🌙</span>
+      <span id="theme-toggle-text">夜晚模式</span>
+    </button>
         <div class="server-status-group" id="server-status-group" title="伺服器連線狀態 (每5秒自動偵測，點擊可立即重測)">
       <div class="server-status-pill online" id="srv-status-8935" title="【個股中心核心伺服器 Port 8935】連線中 (包含個股分析、專業看盤、排行榜與整合總經)">
         <span class="status-dot"></span>
@@ -1397,7 +3224,7 @@
         <div class="market-inst-title">
           <span class="icon">📊</span>
           <span class="title-text">台股大盤三大法人買賣金額明細</span>
-          <span class="market-inst-date-badge" id="market-inst-date-badge">載入中...</span>
+          <span class="market-inst-date-badge" id="market-inst-date-badge"><span class="market-inst-dot active"></span>載入中...</span>
         </div>
         <div class="market-inst-actions">
           <span class="market-inst-status" id="market-inst-status"></span>
@@ -1598,7 +3425,7 @@
   </section>
 
   <!-- K線指標與均線型態速查表彈出視窗 -->
-  <div id="klineCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div id="klineCheatSheetModal" class="cheat-sheet-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#161922; border:1px solid rgba(59,130,246,0.35); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
       <!-- Header -->
       <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
@@ -1782,7 +3609,7 @@
   </div>
 
   <!-- RSI 標籤顏色與實戰速查表彈出視窗 -->
-  <div id="rsiCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div id="rsiCheatSheetModal" class="cheat-sheet-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#161922; border:1px solid rgba(56,189,248,0.35); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
       <!-- Header -->
       <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
@@ -1920,7 +3747,7 @@
   </div>
 
   <!-- VOL 量能指標與型態速查表彈出視窗 -->
-  <div id="volCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div id="volCheatSheetModal" class="cheat-sheet-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#161922; border:1px solid rgba(234,179,8,0.35); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
       <!-- Header -->
       <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
@@ -2053,7 +3880,7 @@
   </div>
 
   <!-- MACD 指標標籤顏色含意速查表 Modal (1020px 大視窗 / 16px 大字體) -->
-  <div id="macdCheatSheetModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.78); z-index:99999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+  <div id="macdCheatSheetModal" class="cheat-sheet-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.78); z-index:99999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
     <div style="background:#161922; border:1px solid rgba(168,85,247,0.4); border-radius:12px; width:94%; max-width:1020px; max-height:92vh; overflow-y:auto; box-shadow:0 24px 50px rgba(0,0,0,0.85); display:flex; flex-direction:column;">
       
       <!-- Header -->
@@ -2190,7 +4017,7 @@
   </div>
 
   <!-- KD 指標標籤顏色含意速查表 Modal (1020px 大視窗 / 16px 大字體) -->
-  <div id="kdCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div id="kdCheatSheetModal" class="cheat-sheet-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#161922; border:1px solid rgba(245,158,11,0.35); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
       <!-- Header -->
       <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
@@ -2325,7 +4152,7 @@
   </div>
 
   <!-- 籌碼指標與法人動向速查表彈出視窗 -->
-  <div id="chipCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div id="chipCheatSheetModal" class="cheat-sheet-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#161922; border:1px solid rgba(249,115,22,0.35); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
       <!-- Header -->
       <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
@@ -2472,7 +4299,7 @@
   </div>
 
   <!-- 空手進場操盤口訣與檢視順序 Modal (1020px 大視窗 / 16px 大字體) -->
-  <div id="entryCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div id="entryCheatSheetModal" class="cheat-sheet-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#161922; border:1px solid rgba(236,72,153,0.38); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
       <!-- Header -->
       <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
@@ -2616,8 +4443,8 @@
 <script>if(typeof echarts==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"><\/script>');}</script>
 <script src="pattern_viewer/js/parser.js?v=77"></script>
 <script src="pattern_viewer/js/pattern_engine.js?v=77"></script>
-<script src="pattern_viewer/js/chart_engine.js?v=78"></script>
-<script src="pattern_viewer/js/viewer_app.js?v=79"></script>
+<script src="pattern_viewer/js/chart_engine.js?v=87"></script>
+<script src="pattern_viewer/js/viewer_app.js?v=88"></script>
 <script src="render-shared.js?v=77"></script>
 <script>
   const DISPLAY_SCALE_KEY = 'stock-analysis-display-scale';
@@ -2827,6 +4654,53 @@
     }
   });
 
+  // ── ☀️/🌙 白天夜晚主題切換系統 ──
+  const THEME_STORAGE_KEY = 'stock-app-theme-preference';
+  function applyTheme(theme, save = true) {
+    const isLight = theme === 'light';
+    const targetTheme = isLight ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', targetTheme);
+    document.body.setAttribute('data-theme', targetTheme);
+    if (save) {
+      localStorage.setItem(THEME_STORAGE_KEY, targetTheme);
+    }
+    const iconEl = document.getElementById('theme-toggle-icon');
+    const textEl = document.getElementById('theme-toggle-text');
+    if (iconEl) iconEl.textContent = isLight ? '☀️' : '🌙';
+    if (textEl) textEl.textContent = isLight ? '白天模式' : '夜晚模式';
+
+    // 如果專業看盤圖表正在顯示，觸發重繪以適應新配色
+    if (window.ChartEngine && typeof window.ChartEngine.refreshTheme === 'function') {
+      window.ChartEngine.refreshTheme();
+    } else if (window.ChartEngine && typeof window.ChartEngine.resize === 'function') {
+      requestAnimationFrame(() => {
+        if (window.ChartEngine.activeDom) {
+          window.dispatchEvent(new Event('resize'));
+        }
+      });
+    }
+  }
+
+  // 初始化主題（優先讀取儲存偏好，若無則預設為夜晚深色）
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
+  applyTheme(savedTheme, false);
+
+  const themeToggleBtn = document.getElementById('theme-toggle-btn');
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+      applyTheme(nextTheme, true);
+    });
+  }
+
+  // 同步監聽跨分頁主題切換事件
+  window.addEventListener('storage', (e) => {
+    if (e.key === THEME_STORAGE_KEY && e.newValue) {
+      applyTheme(e.newValue, false);
+    }
+  });
+
   let reportsPatternViewer = null;
   let reportsPatternViewerInitialized = false;
 
@@ -2955,8 +4829,8 @@
         container.innerHTML = `
           <div class="analysis-empty">
             <div style="font-size:32px; margin-bottom:10px;">📑</div>
-            <div style="font-weight:700; color:#fff; font-size:16px; margin-bottom:6px;">${escapeHtml(normalizedCode)} 尚無 Markdown 分析報告</div>
-            <div style="color:var(--text-dim); font-size:13px; margin-bottom:16px;">${escapeHtml(data.error || '找不到 .md 檔案')}</div>
+            <div class="analysis-empty-title" style="font-weight:700; color:#fff; font-size:16px; margin-bottom:6px;">${escapeHtml(normalizedCode)} 尚無 Markdown 分析報告</div>
+            <div class="analysis-empty-desc" style="color:var(--text-dim); font-size:13px; margin-bottom:16px;">${escapeHtml(data.error || '找不到 .md 檔案')}</div>
             <button type="button" class="btn primary" onclick="document.getElementById('batch-scanner-btn').click();" style="padding:6px 16px;">🚀 執行 Batch Scanner 產生</button>
           </div>
         `;
@@ -3073,7 +4947,7 @@
     html += `
       <div class="analysis-top-nav-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <label style="font-size:13px; font-weight:800; color:#93c5fd;">🎯 切換分析個股：</label>
+          <label class="analysis-switcher-label" style="font-size:13px; font-weight:800; color:#93c5fd;">🎯 切換分析個股：</label>
           <select id="analysis-stock-switcher" class="analysis-stock-select" onchange="switchToStockAnalysis(this.value);">
             ${sortedCards.map(c => {
               const mkt = getStockMarket(c.code, c);
@@ -3083,9 +4957,9 @@
           </select>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <button type="button" class="btn" onclick="openPatternForStock('${escapeHtml(code)}')">🎓 查看此股型態教學</button>
-          <button type="button" class="btn" onclick="activateWorkspace('ranking')">🏆 查看總排行榜</button>
-          <button type="button" class="btn" onclick="activateWorkspace('reports')">🗂️ 返回報表管理</button>
+          <button type="button" class="btn analysis-nav-btn" onclick="openPatternForStock('${escapeHtml(code)}')">🎓 查看此股型態教學</button>
+          <button type="button" class="btn analysis-nav-btn" onclick="activateWorkspace('ranking')">🏆 查看總排行榜</button>
+          <button type="button" class="btn analysis-nav-btn" onclick="activateWorkspace('reports')">🗂️ 返回報表管理</button>
         </div>
       </div>
     `;
@@ -3324,7 +5198,7 @@
       }
       if (raw.startsWith('■ **')) {
         closeList();
-        html += `<h4 style="color:#93c5fd; font-size:15px; margin:16px 0 8px;">${formatInlineMd(raw)}</h4>`;
+        html += `<h4 class="analysis-subheading" style="color:#93c5fd; font-size:15px; margin:16px 0 8px;">${formatInlineMd(raw)}</h4>`;
         continue;
       }
 
@@ -3354,7 +5228,7 @@
       closeList();
 
       if (raw.startsWith('【關鍵價位】') || raw.startsWith('【操作建議】')) {
-        html += `<div style="font-weight:700; color:var(--accent); margin:14px 0 8px; font-size:15px;">${escapeHtml(raw)}</div>`;
+        html += `<div class="analysis-key-level" style="font-weight:700; color:var(--accent); margin:14px 0 8px; font-size:15px;">${escapeHtml(raw)}</div>`;
         continue;
       }
 
@@ -3372,10 +5246,10 @@
     if (!text) return '';
     let s = escapeHtml(text);
     s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    s = s.replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px; font-weight:700;">$1</code>');
-    s = s.replace(/(支撐位\s*\d+)/g, '<span style="color:#86efac; font-weight:700;">$1</span>');
-    s = s.replace(/(阻力位\s*\d+)/g, '<span style="color:#fca5a5; font-weight:700;">$1</span>');
-    s = s.replace(/(停損位)/g, '<span style="color:#fde047; font-weight:700;">$1</span>');
+    s = s.replace(/`([^`]+)`/g, '<code class="analysis-inline-code" style="background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px; font-weight:700;">$1</code>');
+    s = s.replace(/(支撐位\s*\d+)/g, '<span class="token-support" style="color:#86efac; font-weight:700;">$1</span>');
+    s = s.replace(/(阻力位\s*\d+)/g, '<span class="token-resistance" style="color:#fca5a5; font-weight:700;">$1</span>');
+    s = s.replace(/(停損位)/g, '<span class="token-stoploss" style="color:#fde047; font-weight:700;">$1</span>');
     return s;
   }
 
@@ -3565,14 +5439,14 @@
       modal.id = 'evolution-modal';
       modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.78); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px);';
       modal.innerHTML = `
-        <div style="background:#11161f; border:2px solid #fbbf24; border-radius:12px; width:92%; max-width:900px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 0 30px rgba(251,191,36,0.35); overflow:hidden;">
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1.5px solid rgba(255,255,255,0.12); background:rgba(251,191,36,0.08);">
-            <div style="font-size:18px; font-weight:900; color:#fde047; display:flex; align-items:center; gap:8px;">
+        <div class="evolution-modal-card" style="background:#11161f; border:2px solid #fbbf24; border-radius:12px; width:92%; max-width:900px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 0 30px rgba(251,191,36,0.35); overflow:hidden;">
+          <div class="evolution-modal-header" style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1.5px solid rgba(255,255,255,0.12); background:rgba(251,191,36,0.08);">
+            <div class="evolution-modal-title" style="font-size:18px; font-weight:900; color:#fde047; display:flex; align-items:center; gap:8px;">
               <span>📖</span> AI 量化實戰每日覆盤與自我進化日記 (evolution_log.md)
             </div>
-            <button type="button" class="btn" onclick="document.getElementById('evolution-modal').remove();" style="padding:4px 12px; font-weight:800; cursor:pointer;">✕ 關閉</button>
+            <button type="button" class="btn evolution-modal-close" onclick="document.getElementById('evolution-modal').remove();" style="padding:4px 12px; font-weight:800; cursor:pointer;">✕ 關閉</button>
           </div>
-          <div style="padding:18px 22px; overflow-y:auto; font-size:15px; line-height:1.7; color:#e2e8f0; white-space:pre-wrap; font-family:ui-monospace,SFMono-Regular,Consolas,monospace;">
+          <div class="evolution-modal-body" style="padding:18px 22px; overflow-y:auto; font-size:15px; line-height:1.7; color:#e2e8f0; white-space:pre-wrap; font-family:ui-monospace,SFMono-Regular,Consolas,monospace;">
 ${escapeHtml(res.content)}
           </div>
         </div>
@@ -3795,23 +5669,23 @@ ${escapeHtml(res.content)}
     function renderMiniOverviewCol(titleText, icon, colorTheme, items, src, track){
       const isCur = (winrateRankingSource === src && winrateActiveTrack === track);
       return `
-        <div style="flex:1; min-width:200px; background:rgba(0,0,0,0.4); border:2px solid ${isCur ? colorTheme : 'rgba(255,255,255,0.12)'}; border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; box-shadow:${isCur ? `0 0 16px ${colorTheme}44` : 'none'};">
+        <div class="mini-overview-col ${isCur ? 'active' : ''} col-${src}-${track}" style="flex:1; min-width:200px; background:rgba(0,0,0,0.4); border:2px solid ${isCur ? colorTheme : 'rgba(255,255,255,0.12)'}; border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; box-shadow:${isCur ? `0 0 16px ${colorTheme}44` : 'none'};">
           <div style="text-align:center; border-bottom:1.5px solid rgba(255,255,255,0.12); padding-bottom:6px; cursor:pointer;" onclick="winrateRankingSource='${src}'; winrateActiveTrack='${track}'; renderWinrateRankingUI();">
-            <span style="font-weight:900; font-size:16.5px; color:${colorTheme}; white-space:nowrap; letter-spacing:0.3px;">
+            <span class="overview-col-title" style="font-weight:900; font-size:16.5px; color:${colorTheme}; white-space:nowrap; letter-spacing:0.3px;">
               ${escapeHtml(titleText)}
             </span>
           </div>
           <div style="display:flex; flex-direction:column; gap:4px;">
             ${items.length === 0 ? '<div style="color:var(--text-dim); font-size:15px; padding:10px; text-align:center;">無資料</div>' : items.slice(0, 10).map((it, idx) => `
-              <div style="display:flex; align-items:center; justify-content:space-between; padding:3px 7px; border-radius:6px; background:rgba(255,255,255,0.035); font-size:15px; min-height:28px; box-sizing:border-box; cursor:pointer; transition:all .15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.background='rgba(255,255,255,0.035)';" onclick="if(!window.getSelection().toString().trim()) openPatternForStock('${escapeHtml(it.code)}');">
+              <div class="mini-overview-row" style="display:flex; align-items:center; justify-content:space-between; padding:3px 7px; border-radius:6px; background:rgba(255,255,255,0.035); font-size:15px; min-height:28px; box-sizing:border-box; cursor:pointer; transition:all .15s ease;" onclick="if(!window.getSelection().toString().trim()) openPatternForStock('${escapeHtml(it.code)}');">
                 <div style="display:flex; align-items:center; gap:5px; min-width:0; overflow:hidden;">
                   <span style="font-weight:900; color:var(--text-dim); width:18px; font-size:14px; text-align:right; flex-shrink:0;">${idx + 1}</span>
                   <button type="button" class="ranking-star-btn overview-star-btn ${isStockStarred(it.code) ? 'active' : ''}" data-code="${escapeHtml(it.code)}" aria-label="${isStockStarred(it.code) ? '從重點清單移除' : '加入重點清單'}" aria-pressed="${isStockStarred(it.code)}" title="${isStockStarred(it.code) ? '已加入重點（點擊取消）' : '加入重點清單'}">★</button>
                   <span class="stock-code ${getStockMarketClass(it.code)}" style="font-weight:850; font-family:monospace; font-size:15px; flex-shrink:0;" title="[${getStockMarketLabel(it.code)}] ${escapeHtml(it.code)}">${escapeHtml(it.code)}</span>
-                  <span style="font-weight:800; color:#ffffff; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</span>
+                  <span class="overview-stock-name" style="font-weight:800; color:#ffffff; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</span>
                   ${tierBadgesMap[it.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[it.code].tier}" title="${escapeHtml(tierBadgesMap[it.code].title)}">${tierBadgesMap[it.code].label}</span>` : ''}
                 </div>
-                <span style="font-size:14.5px; font-weight:850; color:${colorTheme}; white-space:nowrap; flex-shrink:0;">${escapeHtml(it.price || it.score || '')}</span>
+                <span class="overview-item-val" style="font-size:14.5px; font-weight:850; color:${colorTheme}; white-space:nowrap; flex-shrink:0;">${escapeHtml(it.price || it.score || '')}</span>
               </div>
             `).join('')}
           </div>
@@ -3821,22 +5695,22 @@ ${escapeHtml(res.content)}
 
     function renderTagLeaderboardOverview(items){
       return `
-        <div style="flex:1; min-width:200px; background:linear-gradient(135deg, rgba(234,179,8,0.13), rgba(34,197,94,0.10)); border:2px solid rgba(250,204,21,0.42); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; box-shadow:0 0 14px rgba(250,204,21,0.12);">
+        <div class="mini-overview-col tag-overview-col" style="flex:1; min-width:200px; background:linear-gradient(135deg, rgba(234,179,8,0.13), rgba(34,197,94,0.10)); border:2px solid rgba(250,204,21,0.42); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; box-shadow:0 0 14px rgba(250,204,21,0.12);">
           <div style="text-align:center; border-bottom:1.5px solid rgba(255,255,255,0.12); padding-bottom:6px;">
-            <span style="font-weight:900; font-size:16.5px; color:#fde047; white-space:nowrap; letter-spacing:0.3px;">✨ 報告亮金＋翠綠標籤 TOP 10</span>
+            <span class="overview-col-title" style="font-weight:900; font-size:16.5px; color:#fde047; white-space:nowrap; letter-spacing:0.3px;">✨ 報告亮金＋翠綠標籤 TOP 10</span>
           </div>
           <div style="display:flex; flex-direction:column; gap:4px;">
             ${items.length === 0 ? '<div style="color:var(--text-dim); font-size:15px; padding:10px; text-align:center;">尚無可統計的報告標籤</div>' : items.map((item, idx) => `
-              <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; padding:3px 7px; border-radius:6px; background:rgba(255,255,255,0.045); font-size:15px; min-height:28px; box-sizing:border-box; cursor:pointer; transition:all .15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.11)';" onmouseout="this.style.background='rgba(255,255,255,0.045)';" onclick="if(!window.getSelection().toString().trim()) openPatternForStock('${escapeHtml(item.code)}');">
+              <div class="mini-overview-row" style="display:flex; align-items:center; justify-content:space-between; gap:6px; padding:3px 7px; border-radius:6px; background:rgba(255,255,255,0.045); font-size:15px; min-height:28px; box-sizing:border-box; cursor:pointer; transition:all .15s ease;" onclick="if(!window.getSelection().toString().trim()) openPatternForStock('${escapeHtml(item.code)}');">
                 <div style="display:flex; align-items:center; gap:5px; min-width:0; overflow:hidden;">
                   <span style="font-weight:900; color:${idx < 3 ? '#facc15' : 'var(--text-dim)'}; width:18px; font-size:14px; text-align:right; flex-shrink:0;">${idx + 1}</span>
                   <button type="button" class="ranking-star-btn overview-star-btn ${isStockStarred(item.code) ? 'active' : ''}" data-code="${escapeHtml(item.code)}" aria-label="${isStockStarred(item.code) ? '從重點清單移除' : '加入重點清單'}" aria-pressed="${isStockStarred(item.code)}" title="${isStockStarred(item.code) ? '已加入重點（點擊取消）' : '加入重點清單'}">★</button>
                   <span class="stock-code ${getStockMarketClass(item.code)}" style="font-weight:850; font-family:monospace; font-size:15px; flex-shrink:0;" title="[${getStockMarketLabel(item.code)}] ${escapeHtml(item.code)}">${escapeHtml(item.code)}</span>
-                  <span style="font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(item.name)}</span>
+                  <span class="overview-stock-name" style="font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(item.name)}</span>
                   ${tierBadgesMap[item.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[item.code].tier}" title="${escapeHtml(tierBadgesMap[item.code].title)}">${tierBadgesMap[item.code].label}</span>` : ''}
                 </div>
                 <div style="display:flex; align-items:center; gap:7px; flex-shrink:0; font-size:13.5px; font-weight:900;">
-                  <span style="color:#fde047;">${item.gold}</span><span style="color:#86efac;">${item.green}</span><span style="color:#fff; min-width:18px; text-align:right;">${item.total}</span>
+                  <span class="tag-gold-count" style="color:#fde047;">${item.gold}</span><span class="tag-green-count" style="color:#86efac;">${item.green}</span><span class="tag-total-count" style="color:#fff; min-width:18px; text-align:right;">${item.total}</span>
                 </div>
               </div>`).join('')}
           </div>
@@ -3847,12 +5721,12 @@ ${escapeHtml(res.content)}
     let html = `
       <div class="ranking-card">
         <!-- 🚀 全景總覽 (Master Overview) 一覽無遺 -->
-        <div style="margin-bottom:16px; background:#11161f; border:1.5px solid rgba(125,180,255,0.3); border-radius:12px; padding:12px 14px;">
+        <div class="ranking-overview-panel" style="margin-bottom:16px; background:#11161f; border:1.5px solid rgba(125,180,255,0.3); border-radius:12px; padding:12px 14px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
-            <div style="font-size:17px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
+            <div class="ranking-overview-title" style="font-size:17px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
               <span style="font-size:20px;">🏆</span> 五大實戰排行榜全景一覽 (點擊股票直接開啟專業看盤)
             </div>
-            <div style="font-size:14px; color:var(--text-dim);">
+            <div class="ranking-overview-date" style="font-size:14px; color:var(--text-dim);">
               資料截止日：<strong style="color:#93c5fd; font-size:15px;">${escapeHtml(scanDate || '最新')}</strong>
             </div>
           </div>
@@ -3869,29 +5743,29 @@ ${escapeHtml(res.content)}
         <div class="ranking-detail-toolbar" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:nowrap; gap:6px; margin-bottom:10px;">
           <div class="ranking-track-actions" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap;">
             <!-- 👑 AI 核心實戰榜單 -->
-            <button type="button" class="btn" style="padding:4px 11px; font-size:14px; font-weight:900; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${isEvolution ? '#fbbf24' : 'rgba(250,204,21,0.35)'}; background:${isEvolution ? 'linear-gradient(135deg, rgba(251,191,36,0.28), rgba(245,158,11,0.22))' : 'rgba(251,191,36,0.08)'}; color:${isEvolution ? '#fde047' : '#fef08a'}; box-shadow:${isEvolution ? '0 0 10px rgba(251,191,36,0.35)' : 'none'};" onclick="winrateRankingSource='evolution'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
+            <button type="button" class="btn ranking-track-btn ${isEvolution ? 'active' : ''}" style="padding:4px 11px; font-size:14px; font-weight:900; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${isEvolution ? '#fbbf24' : 'rgba(250,204,21,0.35)'}; background:${isEvolution ? 'linear-gradient(135deg, rgba(251,191,36,0.28), rgba(245,158,11,0.22))' : 'rgba(251,191,36,0.08)'}; color:${isEvolution ? '#fde047' : '#fef08a'}; box-shadow:${isEvolution ? '0 0 10px rgba(251,191,36,0.35)' : 'none'};" onclick="winrateRankingSource='evolution'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
               <span>👑</span> AI 獨有起漲 (${eMomo.length}檔嚴選)
             </button>
 
             <span style="color:rgba(255,255,255,0.25); margin:0 3px; font-size:14px;">|</span>
 
             <!-- 雙 AI 輔助四大榜單 -->
-            <button type="button" class="btn" style="padding:4px 8px; font-size:13.5px; font-weight:800; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${isGemini && isMomo ? '#f87171' : 'var(--border)'}; background:${isGemini && isMomo ? 'rgba(239,68,68,0.22)' : 'var(--card-bg)'}; color:${isGemini && isMomo ? '#fca5a5' : 'var(--text)'};" onclick="winrateRankingSource='gemini'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
+            <button type="button" class="btn ranking-track-btn ${isGemini && isMomo ? 'active' : ''}" style="padding:4px 8px; font-size:13.5px; font-weight:800; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${isGemini && isMomo ? '#f87171' : 'var(--border)'}; background:${isGemini && isMomo ? 'rgba(239,68,68,0.22)' : 'var(--card-bg)'}; color:${isGemini && isMomo ? '#fca5a5' : 'var(--text)'};" onclick="winrateRankingSource='gemini'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
               <span>🚀</span> Gemini 暴漲
             </button>
-            <button type="button" class="btn" style="padding:4px 8px; font-size:13.5px; font-weight:800; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${isGemini && !isMomo ? '#4ade80' : 'var(--border)'}; background:${isGemini && !isMomo ? 'rgba(34,197,94,0.22)' : 'var(--card-bg)'}; color:${isGemini && !isMomo ? '#86efac' : 'var(--text)'};" onclick="winrateRankingSource='gemini'; winrateActiveTrack='defensive'; renderWinrateRankingUI();">
+            <button type="button" class="btn ranking-track-btn ${isGemini && !isMomo ? 'active' : ''}" style="padding:4px 8px; font-size:13.5px; font-weight:800; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${isGemini && !isMomo ? '#4ade80' : 'var(--border)'}; background:${isGemini && !isMomo ? 'rgba(34,197,94,0.22)' : 'var(--card-bg)'}; color:${isGemini && !isMomo ? '#86efac' : 'var(--text)'};" onclick="winrateRankingSource='gemini'; winrateActiveTrack='defensive'; renderWinrateRankingUI();">
               <span>🛡️</span> Gemini 穩健
             </button>
-            <button type="button" class="btn" style="padding:4px 8px; font-size:13.5px; font-weight:800; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${!isGemini && !isEvolution && isMomo ? '#f97316' : 'var(--border)'}; background:${!isGemini && !isEvolution && isMomo ? 'rgba(249,115,22,0.22)' : 'var(--card-bg)'}; color:${!isGemini && !isEvolution && isMomo ? '#fdba74' : 'var(--text)'};" onclick="winrateRankingSource='chatgpt'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
+            <button type="button" class="btn ranking-track-btn ${!isGemini && !isEvolution && isMomo ? 'active' : ''}" style="padding:4px 8px; font-size:13.5px; font-weight:800; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${!isGemini && !isEvolution && isMomo ? '#f97316' : 'var(--border)'}; background:${!isGemini && !isEvolution && isMomo ? 'rgba(249,115,22,0.22)' : 'var(--card-bg)'}; color:${!isGemini && !isEvolution && isMomo ? '#fdba74' : 'var(--text)'};" onclick="winrateRankingSource='chatgpt'; winrateActiveTrack='momentum'; renderWinrateRankingUI();">
               <span>⚡</span> ChatGPT 攻擊
             </button>
-            <button type="button" class="btn" style="padding:4px 8px; font-size:13.5px; font-weight:800; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${!isGemini && !isEvolution && !isMomo ? '#38bdf8' : 'var(--border)'}; background:${!isGemini && !isEvolution && !isMomo ? 'rgba(56,189,248,0.22)' : 'var(--card-bg)'}; color:${!isGemini && !isEvolution && !isMomo ? '#7dd3fc' : 'var(--text)'};" onclick="winrateRankingSource='chatgpt'; winrateActiveTrack='defensive'; renderWinrateRankingUI();">
+            <button type="button" class="btn ranking-track-btn ${!isGemini && !isEvolution && !isMomo ? 'active' : ''}" style="padding:4px 8px; font-size:13.5px; font-weight:800; border-radius:7px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; border:1.5px solid ${!isGemini && !isEvolution && !isMomo ? '#38bdf8' : 'var(--border)'}; background:${!isGemini && !isEvolution && !isMomo ? 'rgba(56,189,248,0.22)' : 'var(--card-bg)'}; color:${!isGemini && !isEvolution && !isMomo ? '#7dd3fc' : 'var(--text)'};" onclick="winrateRankingSource='chatgpt'; winrateActiveTrack='defensive'; renderWinrateRankingUI();">
               <span>🌱</span> ChatGPT 穩健
             </button>
           </div>
           
           <div class="ranking-refresh-action" style="display:flex; gap:6px; flex-shrink:0;">
-            <button type="button" class="btn" style="padding:4px 9px; font-size:13px; font-weight:850; border:1.5px solid #fbbf24; color:#fde047; background:rgba(251,191,36,0.12); white-space:nowrap;" onclick="showEvolutionLog();">📖 覆盤日記</button>
+            <button type="button" class="btn ranking-log-btn" style="padding:4px 9px; font-size:13px; font-weight:850; border:1.5px solid #fbbf24; color:#fde047; background:rgba(251,191,36,0.12); white-space:nowrap;" onclick="showEvolutionLog();">📖 覆盤日記</button>
             <button type="button" class="btn" style="padding:4px 9px; font-size:13px; font-weight:750; white-space:nowrap;" onclick="triggerScannerRun('${source}');">🔄 重新執行 ${isEvolution ? 'AI 進化' : (isGemini ? 'Gemini' : 'ChatGPT')}</button>
           </div>
         </div>
@@ -3903,7 +5777,7 @@ ${escapeHtml(res.content)}
             <input type="text" class="search-input" id="winrate-search-input" placeholder="搜尋代號、名稱、類群或特徵..." value="${escapeHtml(winrateSearchQuery)}">
           </div>
           <div style="font-size:15px; color:var(--text-dim); padding-right:6px; white-space:nowrap;">
-            目前顯示：<strong style="color:#fff;">${filtered.length}</strong> 檔
+            目前顯示：<strong class="ranking-filtered-count" style="color:#fff;">${filtered.length}</strong> 檔
           </div>
         </div>
 
@@ -3966,7 +5840,7 @@ ${escapeHtml(res.content)}
                 if (scoreVal < 100) scoreClass = 'medium';
 
                 const pctVal = parseFloat(item.changePct) || 0;
-                const pctColor = pctVal > 0 ? '#ef4444' : (pctVal < 0 ? '#22c55e' : '#e2e8f0');
+                const pctColor = pctVal > 0 ? '#ef4444' : (pctVal < 0 ? '#22c55e' : 'var(--text-muted, #e2e8f0)');
 
                 if (item.isEvolutionDetailed) {
                   // 1. 月盈年盈(營收)：將月營收總額與成長率(MoM, YoY)換行排版
@@ -3974,7 +5848,7 @@ ${escapeHtml(res.content)}
                   if (item.monthlyRev && item.monthlyRev.includes('(')) {
                     const rMatch = item.monthlyRev.match(/^(.*?)\((.*)\)$/);
                     if (rMatch) {
-                      revHtml = `<div style="font-weight:750; color:#fef08a; font-size:14.5px;">${escapeHtml(rMatch[1])}</div><div style="font-size:13px; color:#fde047; margin-top:3px; opacity:0.95;">(${escapeHtml(rMatch[2])})</div>`;
+                      revHtml = `<div class="cell-rev-main" style="font-weight:750; color:#fef08a; font-size:14.5px;">${escapeHtml(rMatch[1])}</div><div class="cell-rev-sub" style="font-size:13px; color:#fde047; margin-top:3px; opacity:0.95;">(${escapeHtml(rMatch[2])})</div>`;
                     }
                   }
 
@@ -3983,35 +5857,35 @@ ${escapeHtml(res.content)}
                   if (item.earnings) {
                     const parts = item.earnings.split(/，(?=累計|上半年)/);
                     if (parts.length > 1) {
-                      epsHtml = `<div style="font-weight:750; color:#86efac; font-size:14.5px;">${escapeHtml(parts[0])}</div><div style="font-size:13px; color:#4ade80; margin-top:3px; opacity:0.95;">累計${escapeHtml(parts[1].replace(/^累計/, ''))}</div>`;
+                      epsHtml = `<div class="cell-eps-main" style="font-weight:750; color:#86efac; font-size:14.5px;">${escapeHtml(parts[0])}</div><div class="cell-eps-sub" style="font-size:13px; color:#4ade80; margin-top:3px; opacity:0.95;">累計${escapeHtml(parts[1].replace(/^累計/, ''))}</div>`;
                     } else {
-                      epsHtml = `<div style="font-weight:700; color:#86efac; font-size:14px;">${escapeHtml(item.earnings)}</div>`;
+                      epsHtml = `<div class="cell-eps-main" style="font-weight:700; color:#86efac; font-size:14px;">${escapeHtml(item.earnings)}</div>`;
                     }
                   }
 
                   // 3. 法說重點與實質利多：完整自動換行、舒適行距
-                  const catHtml = `<div style="font-size:14px; color:#f1f5f9; line-height:1.55; word-break:break-word;">${escapeHtml(item.catalyst || '—')}</div>`;
+                  const catHtml = `<div class="cell-catalyst" style="font-size:14px; color:#f1f5f9; line-height:1.55; word-break:break-word;">${escapeHtml(item.catalyst || '—')}</div>`;
 
                   // 4. 法人目標價：多筆機構評等以分行呈現，完整保留文字不截斷
                   let tpHtml = escapeHtml(item.targetPrice || '—');
                   if (item.targetPrice && (item.targetPrice.includes('，') || item.targetPrice.includes('；') || item.targetPrice.includes('。'))) {
                     const tpParts = item.targetPrice.split(/(?:[，；]|(?<=[)）元])。)/).map(s => s.trim().replace(/^。/, '')).filter(Boolean);
                     if (tpParts.length > 1) {
-                      tpHtml = tpParts.map((tpStr, pIdx) => `<div style="font-size:13.5px; color:#93c5fd; font-weight:650; line-height:1.45; word-break:break-word; ${pIdx > 0 ? 'margin-top:3px;' : ''}">${escapeHtml(tpStr)}</div>`).join('');
+                      tpHtml = tpParts.map((tpStr, pIdx) => `<div class="cell-target-price" style="font-size:13.5px; color:#93c5fd; font-weight:650; line-height:1.45; word-break:break-word; ${pIdx > 0 ? 'margin-top:3px;' : ''}">${escapeHtml(tpStr)}</div>`).join('');
                     } else {
-                      tpHtml = `<div style="font-size:14px; color:#93c5fd; font-weight:650; line-height:1.45; word-break:break-word;">${escapeHtml(item.targetPrice)}</div>`;
+                      tpHtml = `<div class="cell-target-price" style="font-size:14px; color:#93c5fd; font-weight:650; line-height:1.45; word-break:break-word;">${escapeHtml(item.targetPrice)}</div>`;
                     }
                   } else {
-                    tpHtml = `<div style="font-size:14px; color:#93c5fd; font-weight:650; line-height:1.45; word-break:break-word;">${escapeHtml(item.targetPrice || '—')}</div>`;
+                    tpHtml = `<div class="cell-target-price" style="font-size:14px; color:#93c5fd; font-weight:650; line-height:1.45; word-break:break-word;">${escapeHtml(item.targetPrice || '—')}</div>`;
                   }
 
                   // 5. 技術起漲特徵：依分號拆分為清晰獨立行
                   let featHtml = escapeHtml(item.feature || '—');
                   if (item.feature && (item.feature.includes('；') || item.feature.includes(';'))) {
                     const feats = item.feature.split(/[；;]/).map(s => s.trim()).filter(Boolean);
-                    featHtml = feats.map((fStr, fIdx) => `<div style="font-size:13.5px; color:#e2e8f0; line-height:1.4; padding:1px 0; display:flex; align-items:flex-start; gap:4px; ${fIdx > 0 ? 'margin-top:2px;' : ''}"><span>${escapeHtml(fStr)}</span></div>`).join('');
+                    featHtml = feats.map((fStr, fIdx) => `<div class="cell-feature-item" style="font-size:13.5px; color:#e2e8f0; line-height:1.4; padding:1px 0; display:flex; align-items:flex-start; gap:4px; ${fIdx > 0 ? 'margin-top:2px;' : ''}"><span>${escapeHtml(fStr)}</span></div>`).join('');
                   } else {
-                    featHtml = `<div style="font-size:14px; color:#cbd5e1; line-height:1.45; word-break:break-word;">${escapeHtml(item.feature || '—')}</div>`;
+                    featHtml = `<div class="cell-feature-item" style="font-size:14px; color:#cbd5e1; line-height:1.45; word-break:break-word;">${escapeHtml(item.feature || '—')}</div>`;
                   }
 
                   return `
@@ -4020,7 +5894,7 @@ ${escapeHtml(res.content)}
                       <td class="cell-fixed"><span class="rank-stock-link"><button type="button" class="ranking-star-btn ${isStockStarred(item.code) ? 'active' : ''}" data-code="${escapeHtml(item.code)}" aria-label="${isStockStarred(item.code) ? '從重點清單移除' : '加入重點清單'}" aria-pressed="${isStockStarred(item.code)}" title="${isStockStarred(item.code) ? '已加入重點（點擊取消）' : '加入重點清單'}">★</button><span class="stock-code ${getStockMarketClass(item.code)}" title="[${getStockMarketLabel(item.code)}] ${escapeHtml(item.code)}">${escapeHtml(item.code)}</span></span></td>
                       <td class="cell-fixed"><span class="rank-stock-link"><span class="stock-name">${escapeHtml(item.name)}</span>${tierBadgesMap[item.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[item.code].tier}" title="${escapeHtml(tierBadgesMap[item.code].title)}">${tierBadgesMap[item.code].label}</span>` : ''}</span></td>
                       <td class="cell-fixed" style="text-align:center;"><span class="tag-pill" style="font-size:13.5px; padding:3px 6px; white-space:nowrap;">${escapeHtml(item.category)}</span></td>
-                      <td class="cell-fixed" style="text-align:right; font-weight:850; color:#fff;">${escapeHtml(item.price)}</td>
+                      <td class="cell-fixed cell-price ranking-price-cell" style="text-align:right; font-weight:850;">${escapeHtml(item.price)}</td>
                       <td class="cell-fixed" style="text-align:center; color:${pctColor}; font-weight:850;">${escapeHtml(item.changePct)}</td>
                       <td class="cell-fixed" style="text-align:center;"><span class="rank-score-pill ${scoreClass}">${escapeHtml(item.score)}</span></td>
                       <td class="cell-wrap" style="min-width:260px;">${revHtml}</td>
@@ -4039,10 +5913,10 @@ ${escapeHtml(res.content)}
                       <td><span class="rank-stock-link"><button type="button" class="ranking-star-btn ${isStockStarred(item.code) ? 'active' : ''}" data-code="${escapeHtml(item.code)}" aria-label="${isStockStarred(item.code) ? '從重點清單移除' : '加入重點清單'}" aria-pressed="${isStockStarred(item.code)}" title="${isStockStarred(item.code) ? '已加入重點（點擊取消）' : '加入重點清單'}">★</button><span class="stock-code ${getStockMarketClass(item.code)}" title="[${getStockMarketLabel(item.code)}] ${escapeHtml(item.code)}">${escapeHtml(item.code)}</span></span></td>
                       <td><span class="rank-stock-link"><span class="stock-name">${escapeHtml(item.name)}</span>${tierBadgesMap[item.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[item.code].tier}" title="${escapeHtml(tierBadgesMap[item.code].title)}">${tierBadgesMap[item.code].label}</span>` : ''}</span></td>
                       <td style="text-align:center;"><span class="tag-pill" style="font-size:14px; padding:3px 7px; white-space:nowrap;">${escapeHtml(item.category)}</span></td>
-                      <td style="text-align:right; font-weight:850; color:#fff;">${escapeHtml(item.price)}</td>
+                      <td class="cell-price ranking-price-cell" style="text-align:right; font-weight:850;">${escapeHtml(item.price)}</td>
                       <td style="text-align:center; color:${pctColor}; font-weight:850;">${escapeHtml(item.changePct)}</td>
                       <td style="text-align:center;"><span class="rank-score-pill ${scoreClass}">${escapeHtml(item.score)}</span></td>
-                      <td style="white-space:normal; line-height:1.55;"><span style="font-size:15px; color:#f8fafc; font-weight:500;">${escapeHtml(item.feature)}</span></td>
+                      <td style="white-space:normal; line-height:1.55;"><span class="ranking-feature-text" style="font-size:15px; font-weight:500;">${escapeHtml(item.feature)}</span></td>
                     </tr>
                   `;
                 }
@@ -4053,12 +5927,12 @@ ${escapeHtml(res.content)}
                     <td><span class="rank-stock-link"><button type="button" class="ranking-star-btn ${isStockStarred(item.code) ? 'active' : ''}" data-code="${escapeHtml(item.code)}" aria-label="${isStockStarred(item.code) ? '從重點清單移除' : '加入重點清單'}" aria-pressed="${isStockStarred(item.code)}" title="${isStockStarred(item.code) ? '已加入重點（點擊取消）' : '加入重點清單'}">★</button><span class="stock-code ${getStockMarketClass(item.code)}" title="[${getStockMarketLabel(item.code)}] ${escapeHtml(item.code)}">${escapeHtml(item.code)}</span></span></td>
                     <td><span class="rank-stock-link"><span class="stock-name">${escapeHtml(item.name)}</span>${tierBadgesMap[item.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[item.code].tier}" title="${escapeHtml(tierBadgesMap[item.code].title)}">${tierBadgesMap[item.code].label}</span>` : ''}</span></td>
                     <td style="text-align:center;"><span class="tag-pill" style="font-size:14px; padding:3px 7px; white-space:nowrap;">${escapeHtml(item.category)}</span></td>
-                    <td style="text-align:right; font-weight:850; color:#fff;">${escapeHtml(item.price)}</td>
-                    <td style="text-align:center; color:#fca5a5; font-weight:800;">${escapeHtml(item.slope)}</td>
-                    <td style="text-align:center; color:#93c5fd; font-weight:800;">${escapeHtml(item.metric)}</td>
-                    <td style="text-align:center; color:#e2e8f0; font-weight:750;">${escapeHtml(item.volOrChip)}</td>
+                    <td class="cell-price ranking-price-cell" style="text-align:right; font-weight:850;">${escapeHtml(item.price)}</td>
+                    <td class="ranking-slope-cell" style="text-align:center; color:#fca5a5; font-weight:800;">${escapeHtml(item.slope)}</td>
+                    <td class="ranking-metric-cell" style="text-align:center; color:#93c5fd; font-weight:800;">${escapeHtml(item.metric)}</td>
+                    <td class="ranking-vol-cell" style="text-align:center; color:#e2e8f0; font-weight:750;">${escapeHtml(item.volOrChip)}</td>
                     <td style="text-align:center;"><span class="rank-score-pill ${scoreClass}">${escapeHtml(item.score)}</span></td>
-                    <td style="white-space:normal; line-height:1.45;"><span style="font-size:15.5px; color:#f8fafc; font-weight:500;">${escapeHtml(item.feature)}</span></td>
+                    <td style="white-space:normal; line-height:1.45;"><span class="ranking-feature-text" style="font-size:15.5px; font-weight:500;">${escapeHtml(item.feature)}</span></td>
                   </tr>
                 `;
               }).join('')}
@@ -5910,10 +7784,13 @@ ${escapeHtml(res.content)}
     ]);
     // 與最新數值採用相同基準：比較最新一期和前一期，而非整段走勢的首尾。
     const direction=macroDirection(points[points.length-1], points[points.length-2]);
-    const color=direction === 'flat' ? '#94a3b8' : (direction === 'up' ? '#f87171' : '#4ade80');
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    const color = isLight
+      ? (direction === 'flat' ? '#64748b' : (direction === 'up' ? '#dc2626' : '#16a34a'))
+      : (direction === 'flat' ? '#94a3b8' : (direction === 'up' ? '#f87171' : '#4ade80'));
     const line=xy.map(([x,y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
     const area=`${pad},${height} ${line} ${width-pad},${height}`;
-    return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" preserveAspectRatio="none"><polygon points="${area}" fill="${color}" opacity=".13"></polygon><polyline points="${line}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>`;
+    return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" preserveAspectRatio="none"><polygon points="${area}" fill="${color}" opacity="${isLight ? '.16' : '.13'}"></polygon><polyline points="${line}" fill="none" stroke="${color}" stroke-width="${isLight ? '2.2' : '2'}" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>`;
   }
 
   function macroPrevTradingDay(date){
@@ -6184,10 +8061,77 @@ ${macroJsonText()}`;
   });
 
   // ── 大盤三大法人買賣金額明細 ──
-  function getTodayMarketDate(){
+  function getMarketInstFreshness(dataDate){
+    if (!dataDate) {
+      return { isFresh: false, isStale: true, badgeText: '日期未知', dotClass: 'stale' };
+    }
+
     const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
     const pad = n => String(n).padStart(2, '0');
-    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+    // 1. 若資料日期就是今天，必然是今日最新
+    if (dataDate === todayStr) {
+      return {
+        isFresh: true,
+        isStale: false,
+        badgeText: `資料日期：${dataDate} (今日最新)`,
+        dotClass: 'active'
+      };
+    }
+
+    // 2. 週末休市特別處理 (週六 6 / 週日 0)
+    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+    if (isWeekend) {
+      // 週六(6)推回昨天週五(1天前)；週日(0)推回前天週五(2天前)
+      const friday = new Date(now);
+      friday.setDate(friday.getDate() - (dayOfWeek === 6 ? 1 : 2));
+      const fridayStr = `${friday.getFullYear()}-${pad(friday.getMonth() + 1)}-${pad(friday.getDate())}`;
+
+      // 週末期間最新數據等於或大於本週五，代表已取得最新交易日數據，燈號保持常亮！
+      if (dataDate >= fridayStr) {
+        return {
+          isFresh: true,
+          isStale: false,
+          badgeText: `資料日期：${dataDate} (週末休市 - 最新交易日)`,
+          dotClass: 'active'
+        };
+      }
+    }
+
+    // 3. 平常日開盤前或盤中 (台股於交易日約 14:30 - 15:00 公布三大法人金額)
+    const hour = now.getHours();
+    const min = now.getMinutes();
+    const isPastPublishTime = (hour > 14 || (hour === 14 && min >= 30));
+
+    // 計算前一交易日
+    const prevTrading = new Date(now);
+    if (dayOfWeek === 1 && !isPastPublishTime) {
+      // 週一盤前或盤中：前一交易日為上週五 (3天前)
+      prevTrading.setDate(prevTrading.getDate() - 3);
+    } else if (!isPastPublishTime) {
+      // 週二至週五盤前或盤中：前一交易日為昨日
+      prevTrading.setDate(prevTrading.getDate() - 1);
+    }
+    const prevTradingStr = `${prevTrading.getFullYear()}-${pad(prevTrading.getMonth() + 1)}-${pad(prevTrading.getDate())}`;
+
+    if (!isPastPublishTime && dataDate >= prevTradingStr) {
+      return {
+        isFresh: true,
+        isStale: false,
+        badgeText: `資料日期：${dataDate} (盤中 - 前一交易日最新)`,
+        dotClass: 'active'
+      };
+    }
+
+    // 若已過公布時間但資料仍落後，則判定為尚未更新
+    return {
+      isFresh: false,
+      isStale: true,
+      badgeText: `資料日期：${dataDate} (非最新 - 尚未更新)`,
+      dotClass: 'stale'
+    };
   }
 
   function formatMarketYi(v, withSign){
@@ -6214,12 +8158,10 @@ ${macroJsonText()}`;
       }
 
       const { date: dataDate, rows } = json.data;
-      const todayDate = getTodayMarketDate();
-      const isToday = !!(dataDate && dataDate === todayDate);
-      const isStale = !isToday; // 若不是今天的明細，則為深色調
-      badgeEl.textContent = dataDate ? `資料日期：${dataDate}${isToday ? ' (今日最新)' : ' (非今日)'}` : '日期未知';
-      badgeEl.classList.toggle('stale', isStale);
-      if (cardEl) cardEl.classList.toggle('stale', isStale);
+      const freshness = getMarketInstFreshness(dataDate);
+      badgeEl.innerHTML = `<span class="market-inst-dot ${freshness.dotClass}"></span>${escapeHtml(freshness.badgeText)}`;
+      badgeEl.classList.toggle('stale', freshness.isStale);
+      if (cardEl) cardEl.classList.toggle('stale', freshness.isStale);
       statusEl.textContent = `查詢時間 ${new Date().toLocaleTimeString('zh-TW', { hour12: false })}`;
 
       let cellsHtml = '';

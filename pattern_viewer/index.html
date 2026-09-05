@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI 股市型態視覺教學與 K線圖形介面</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="css/viewer.css?v=74">
+  <link rel="stylesheet" href="css/viewer.css?v=90">
   <script src="js/vendor/echarts.min.js"></script>
   <script>if(typeof echarts==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"><\/script>');}</script>
 </head>
@@ -22,6 +22,10 @@
       <div class="controls-bar" style="display:flex; align-items:center; gap:12px;">
         <button type="button" class="btn" onclick="openEntryCheatSheetModal()" style="padding:6px 14px; font-size:13.5px; font-weight:800; background:rgba(236,72,153,0.14); color:#f472b6; border:1px solid rgba(236,72,153,0.4); border-radius:8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.2s ease;">
           <span>🎯</span> 空手進場口訣
+        </button>
+        <button type="button" class="btn" id="themeToggleBtn" title="切換白天（淺色）/ 夜晚（深色）模式" style="padding:6px 12px; font-size:13px; font-weight:700; border-radius:8px; display:inline-flex; align-items:center; gap:5px; cursor:pointer; border:1px solid var(--pv-border); background:var(--pv-panel); color:var(--pv-text);">
+          <span id="themeToggleIcon">🌙</span>
+          <span id="themeToggleText">夜晚模式</span>
         </button>
         <label for="stockSelect" style="font-weight:700; color:#93c5fd;">🎯 選擇看盤個股：</label>
         <div class="stock-search-wrap">
@@ -153,7 +157,7 @@
   </div>
 
   <!-- K線指標與均線型態速查表彈出視窗 -->
-  <div id="klineCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div id="klineCheatSheetModal" class="cheat-sheet-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#161922; border:1px solid rgba(59,130,246,0.35); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
       <!-- Header -->
       <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
@@ -296,7 +300,7 @@
   </div>
 
   <!-- RSI 標籤顏色與實戰速查表彈出視窗 -->
-  <div id="rsiCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div id="rsiCheatSheetModal" class="cheat-sheet-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#161922; border:1px solid rgba(56,189,248,0.35); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
       <!-- Header -->
       <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
@@ -434,7 +438,7 @@
   </div>
 
   <!-- VOL 量能指標與型態速查表彈出視窗 -->
-  <div id="volCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div id="volCheatSheetModal" class="cheat-sheet-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#161922; border:1px solid rgba(234,179,8,0.35); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
       <!-- Header -->
       <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
@@ -567,7 +571,7 @@
   </div>
 
   <!-- MACD 指標標籤顏色含意速查表 Modal (1020px 大視窗 / 16px 大字體) -->
-  <div id="macdCheatSheetModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.78); z-index:99999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+  <div id="macdCheatSheetModal" class="cheat-sheet-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.78); z-index:99999; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
     <div style="background:#161922; border:1px solid rgba(168,85,247,0.4); border-radius:12px; width:94%; max-width:1020px; max-height:92vh; overflow-y:auto; box-shadow:0 24px 50px rgba(0,0,0,0.85); display:flex; flex-direction:column;">
       
       <!-- Header -->
@@ -704,7 +708,7 @@
   </div>
 
   <!-- KD 指標標籤顏色含意速查表 Modal (1020px 大視窗 / 16px 大字體) -->
-  <div id="kdCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div id="kdCheatSheetModal" class="cheat-sheet-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#161922; border:1px solid rgba(245,158,11,0.35); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
       <!-- Header -->
       <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
@@ -839,7 +843,7 @@
   </div>
 
   <!-- 籌碼指標與法人動向速查表彈出視窗 -->
-  <div id="chipCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div id="chipCheatSheetModal" class="cheat-sheet-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#161922; border:1px solid rgba(249,115,22,0.35); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
       <!-- Header -->
       <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
@@ -986,7 +990,7 @@
   </div>
 
   <!-- 空手進場操盤口訣與檢視順序 Modal (1020px 大視窗 / 16px 大字體) -->
-  <div id="entryCheatSheetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div id="entryCheatSheetModal" class="cheat-sheet-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#161922; border:1px solid rgba(236,72,153,0.38); border-radius:12px; width:100%; max-width:1020px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,0.75); overflow:hidden;">
       <!-- Header -->
       <div style="padding:16px 24px; background:#1e2330; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
@@ -1128,8 +1132,8 @@
 
   <script src="js/parser.js?v=68"></script>
   <script src="js/pattern_engine.js?v=68"></script>
-  <script src="js/chart_engine.js?v=78"></script>
-  <script src="js/viewer_app.js?v=79"></script>
+  <script src="js/chart_engine.js?v=87"></script>
+  <script src="js/viewer_app.js?v=88"></script>
   <script>
     window.openKlineCheatSheetModal = function() {
       const modal = document.getElementById('klineCheatSheetModal');
@@ -1295,6 +1299,45 @@
       if (e.key === 'Escape') {
         const viewport = document.querySelector('.chart-viewport.fullscreen');
         if (viewport) window.toggleChartFullscreen(false);
+      }
+    });
+
+    // ── ☀️/🌙 白天夜晚主題切換 ──
+    const THEME_STORAGE_KEY = 'stock-app-theme-preference';
+    function applyPatternTheme(theme, save = true) {
+      const isLight = theme === 'light';
+      const targetTheme = isLight ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', targetTheme);
+      document.body.setAttribute('data-theme', targetTheme);
+      if (save) localStorage.setItem(THEME_STORAGE_KEY, targetTheme);
+      const icon = document.getElementById('themeToggleIcon');
+      const text = document.getElementById('themeToggleText');
+      if (icon) icon.textContent = isLight ? '☀️' : '🌙';
+      if (text) text.textContent = isLight ? '白天模式' : '夜晚模式';
+      if (window.ChartEngine && typeof window.ChartEngine.refreshTheme === 'function') {
+        window.ChartEngine.refreshTheme();
+      } else if (window.ChartEngine && typeof window.ChartEngine.resize === 'function') {
+        window.dispatchEvent(new Event('resize'));
+      }
+      if (window.PatternViewer && window.PatternViewer.instance && typeof window.PatternViewer.instance.updateUI === 'function') {
+        window.PatternViewer.instance.updateUI();
+      }
+    }
+
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
+    applyPatternTheme(savedTheme, false);
+
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', () => {
+        const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+        applyPatternTheme(cur === 'light' ? 'dark' : 'light', true);
+      });
+    }
+
+    window.addEventListener('storage', (e) => {
+      if (e.key === THEME_STORAGE_KEY && e.newValue) {
+        applyPatternTheme(e.newValue, false);
       }
     });
 

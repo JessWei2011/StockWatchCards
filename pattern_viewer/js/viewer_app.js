@@ -496,6 +496,42 @@
         }
       }
 
+      // 🏷️ 方案A 語意化標籤渲染 Helper
+      const renderTagPill = (text, category) => {
+        let tagClass = 'tag-neutral';
+        if (category === 'kline') {
+          if (/多頭|上彎|仰角|噴出|金叉|站上|重回/.test(text)) tagClass = 'tag-bull';
+          else if (/空頭|下彎|俯角|探底|死叉|跌破|失守/.test(text)) tagClass = 'tag-bear';
+          else if (/糾纏|整理|糾結|蓄勢/.test(text)) tagClass = 'tag-warn';
+        } else if (category === 'rsi') {
+          if (/過熱|超買|頂背離|死亡交叉|死叉/.test(text)) tagClass = 'tag-bear';
+          else if (/超跌|底背離|黃金交叉|金叉/.test(text)) tagClass = 'tag-warn';
+          else if (/鈍化/.test(text)) tagClass = 'tag-bull';
+          else if (/多方|推進/.test(text)) tagClass = 'tag-info';
+        } else if (category === 'vol') {
+          if (/天量|倒貨|頂背離|死亡交叉|死叉|退潮|阻力牆|防壓回/.test(text)) tagClass = 'tag-bear';
+          else if (/突破|黃金交叉|金叉|窒息量|洗淨/.test(text)) tagClass = 'tag-warn';
+          else if (/滾量|量價齊揚|主升|吞噬/.test(text)) tagClass = 'tag-bull';
+          else if (/溫和|增量/.test(text)) tagClass = 'tag-info';
+        } else if (category === 'macd') {
+          if (/死亡交叉|死叉|翻綠|頂背離|轉弱/.test(text)) tagClass = 'tag-bear';
+          else if (/金叉|黃金交叉|翻紅|底背離|反彈|起漲/.test(text)) tagClass = 'tag-warn';
+          else if (/零軸上強勢多頭|多頭發散|強勢攻擊/.test(text)) tagClass = 'tag-bull';
+          else if (/多方|波段/.test(text)) tagClass = 'tag-info';
+        } else if (category === 'kd') {
+          if (/死亡交叉|死叉|頂背離|超買|轉弱/.test(text)) tagClass = 'tag-bear';
+          else if (/金叉|黃金交叉|超賣|底背離|買點|轉強/.test(text)) tagClass = 'tag-warn';
+          else if (/鈍化|軋空/.test(text)) tagClass = 'tag-bull';
+          else if (/多方|推進/.test(text)) tagClass = 'tag-info';
+        } else if (category === 'chip') {
+          if (/倒貨|結帳|資增法賣|退潮|賣超|沉陷|警示/.test(text)) tagClass = 'tag-bear';
+          else if (/由賣轉買|護盤|對作|接刀|吃貨|避險|點火|起漲/.test(text)) tagClass = 'tag-warn';
+          else if (/大買|總攻擊|認養|鎖碼|資減法買|主升|狂拉/.test(text)) tagClass = 'tag-bull';
+          else if (/防守|建倉|重倉|集資|買超|積極/.test(text)) tagClass = 'tag-info';
+        }
+        return `<span class="tag-pill ${tagClass}">${text}</span>`;
+      };
+
       // 渲染「📈 K線指標狀態」
       const statKlineTags = this.q('#statKlineTags') || document.getElementById('statKlineTags');
       if (statKlineTags) {
@@ -510,19 +546,9 @@
 
         if (klineTagsStr) {
           const parts = klineTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
-          statKlineTags.innerHTML = parts.map(t => {
-            let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
-            if (/多頭|上彎|仰角|噴出|金叉|站上|重回/.test(t)) {
-              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
-            } else if (/空頭|下彎|俯角|探底|死叉|跌破|失守/.test(t)) {
-              style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
-            } else if (/糾纏|整理|糾結|蓄勢/.test(t)) {
-              style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
-            }
-            return `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; ${style}">${t}</span>`;
-          }).join('');
+          statKlineTags.innerHTML = parts.map(t => renderTagPill(t, 'kline')).join('');
         } else {
-          statKlineTags.innerHTML = `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">均線排列正常</span>`;
+          statKlineTags.innerHTML = `<span class="tag-pill tag-neutral">均線排列正常</span>`;
         }
       }
 
@@ -539,21 +565,9 @@
         
         if (rsiTagsStr) {
           const parts = rsiTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
-          statRsiTags.innerHTML = parts.map(t => {
-            let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
-            if (/過熱|超買|頂背離|死亡交叉|死叉/.test(t)) {
-              style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
-            } else if (/超跌|底背離|黃金交叉|金叉/.test(t)) {
-              style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
-            } else if (/鈍化/.test(t)) {
-              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
-            } else if (/多方|推進/.test(t)) {
-              style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
-            }
-            return `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; ${style}">${t}</span>`;
-          }).join('');
+          statRsiTags.innerHTML = parts.map(t => renderTagPill(t, 'rsi')).join('');
         } else {
-          statRsiTags.innerHTML = `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">RSI 數據正常</span>`;
+          statRsiTags.innerHTML = `<span class="tag-pill tag-neutral">RSI 數據正常</span>`;
         }
       }
 
@@ -571,21 +585,9 @@
 
         if (volTagsStr) {
           const parts = volTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
-          statVolTags.innerHTML = parts.map(t => {
-            let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
-            if (/天量|倒貨|頂背離|死亡交叉|死叉|退潮|阻力牆|防壓回/.test(t)) {
-              style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
-            } else if (/突破|黃金交叉|金叉|窒息量|洗淨/.test(t)) {
-              style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
-            } else if (/滾量|量價齊揚|主升|吞噬/.test(t)) {
-              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
-            } else if (/溫和|增量/.test(t)) {
-              style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
-            }
-            return `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; ${style}">${t}</span>`;
-          }).join('');
+          statVolTags.innerHTML = parts.map(t => renderTagPill(t, 'vol')).join('');
         } else {
-          statVolTags.innerHTML = `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">常態量能換手</span>`;
+          statVolTags.innerHTML = `<span class="tag-pill tag-neutral">常態量能換手</span>`;
         }
       }
 
@@ -603,21 +605,9 @@
 
         if (macdTagsStr) {
           const parts = macdTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
-          statMacdTags.innerHTML = parts.map(t => {
-            let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
-            if (/死亡交叉|死叉|翻綠|頂背離|轉弱/.test(t)) {
-              style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
-            } else if (/金叉|黃金交叉|翻紅|底背離|反彈|起漲/.test(t)) {
-              style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
-            } else if (/零軸上強勢多頭|多頭發散|強勢攻擊/.test(t)) {
-              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
-            } else if (/多方|波段/.test(t)) {
-              style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
-            }
-            return `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; ${style}">${t}</span>`;
-          }).join('');
+          statMacdTags.innerHTML = parts.map(t => renderTagPill(t, 'macd')).join('');
         } else {
-          statMacdTags.innerHTML = `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">MACD 數據正常</span>`;
+          statMacdTags.innerHTML = `<span class="tag-pill tag-neutral">MACD 數據正常</span>`;
         }
       }
 
@@ -635,21 +625,9 @@
 
         if (kdTagsStr) {
           const parts = kdTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
-          statKdTags.innerHTML = parts.map(t => {
-            let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
-            if (/死亡交叉|死叉|頂背離|超買|轉弱/.test(t)) {
-              style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
-            } else if (/金叉|黃金交叉|超賣|底背離|買點|轉強/.test(t)) {
-              style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
-            } else if (/鈍化|軋空/.test(t)) {
-              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
-            } else if (/多方|推進/.test(t)) {
-              style = 'background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);';
-            }
-            return `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; ${style}">${t}</span>`;
-          }).join('');
+          statKdTags.innerHTML = parts.map(t => renderTagPill(t, 'kd')).join('');
         } else {
-          statKdTags.innerHTML = `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">KD 數據正常</span>`;
+          statKdTags.innerHTML = `<span class="tag-pill tag-neutral">KD 數據正常</span>`;
         }
       }
 
@@ -667,21 +645,9 @@
 
         if (chipTagsStr) {
           const parts = chipTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
-          statChipTags.innerHTML = parts.map(t => {
-            let style = 'background:rgba(148,163,184,0.15); color:#cbd5e1; border:1px solid rgba(148,163,184,0.3);';
-            if (/倒貨|結帳|資增法賣|退潮|賣超|沉陷|警示/.test(t)) {
-              style = 'background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.38);';
-            } else if (/由賣轉買|護盤|對作|接刀|吃貨|避險|點火|起漲/.test(t)) {
-              style = 'background:rgba(234,179,8,0.18); color:#fde047; border:1px solid rgba(234,179,8,0.38);';
-            } else if (/大買|總攻擊|認養|鎖碼|資減法買|主升|狂拉/.test(t)) {
-              style = 'background:rgba(34,197,94,0.18); color:#86efac; border:1px solid rgba(34,197,94,0.38);';
-            } else if (/防守|建倉|重倉|集資|買超|積極/.test(t)) {
-              style = 'background:rgba(56,189,248,0.18); color:#7dd3fc; border:1px solid rgba(56,189,248,0.38);';
-            }
-            return `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; ${style}">${t}</span>`;
-          }).join('');
+          statChipTags.innerHTML = parts.map(t => renderTagPill(t, 'chip')).join('');
         } else {
-          statChipTags.innerHTML = `<span style="display:inline-block; padding:3px 9px; border-radius:6px; font-size:15px; padding:3px 9px; font-weight:750; background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">法人籌碼中性</span>`;
+          statChipTags.innerHTML = `<span class="tag-pill tag-neutral">法人籌碼中性</span>`;
         }
       }
       // 渲染「三大法人近15日逐日買賣超概數」表格 (放置於 KD 指標下方)
