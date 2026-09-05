@@ -3,7 +3,8 @@
 台股分析工具 - 精簡Token版 (上市/上櫃 完美整合版 + 處置期間判斷)
 用法: python tw_analysis.py 6182
 """
-import sys, time, warnings, os, re, json, logging, glob, threading, gc
+import sys, time, warnings, os, re, json, logging, glob, threading, gc, shutil
+from pathlib import Path
 try:
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
@@ -59,16 +60,81 @@ MAX_BATCH_WORKERS = max(8, min(16, (os.cpu_count() or 4) * 2))
 _chart_render_lock = threading.Lock()
 
 
-def find_existing_report_dir(sid):
+def find_existing_report_dir(sid, name=""):
     """在整個 reports/ (含用 reports_manager 手動分類過的子資料夾)裡找這檔股票現有報表
-    在哪個資料夾，重新產生時才會存回原本的位置，而不是每次都固定丟回根目錄——不然使用者
-    手動分類過的舊版報表會變孤兒留在原地，根目錄又多一份新產生的重複資料。
+    1. 若已存在於某個分類子資料夾（非根目錄），優先存回原本該子資料夾（尊重既有分類歸檔）。
+    2. 若是全新股票，或過去僅散落在 reports/ 根目錄（未分類）：
+       透過 AI 自動產業分類引擎 (classify_stock) 判定標準產業分類（例如 '封測'、'金融保險'、'記憶體'、'散熱' 等），
+       自動在 reports/ 下建立該標準分類子資料夾並存入，達到 100% 全自動實體歸檔！
     """
     matches = glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*.html"), recursive=True)
-    if not matches:
-        return REPORTS_DIR
-    matches.sort(key=os.path.getmtime, reverse=True)
-    return os.path.dirname(matches[0])
+    if matches:
+        matches.sort(key=os.path.getmtime, reverse=True)
+        existing_dir = os.path.dirname(matches[0])
+        # 若現有檔案已經在子資料夾中（而非 reports/ 根目錄），存回原資料夾
+        if os.path.abspath(existing_dir) != os.path.abspath(REPORTS_DIR):
+            return existing_dir
+
+    # 全新股票或原本留在根目錄的未分類股票 ➔ 啟動 AI 自動產業分類歸檔
+    try:
+        from evolution_engine import classify_stock
+        category, _ = classify_stock(sid, name)
+        if category and category not in ("reports", "未分類", "新報表"):
+            target_sub = os.path.join(REPORTS_DIR, category)
+            os.makedirs(target_sub, exist_ok=True)
+            return target_sub
+    except Exception:
+        pass
+
+    return REPORTS_DIR
+
+def auto_organize_unfiled_reports():
+    """自動掃描 reports/ 根目錄下所有未分類的報表（.html、.png、.md），
+    透過 AI 自動分類判定器自動建立標準資料夾並歸檔移入。"""
+    root_htmls = [f for f in Path(REPORTS_DIR).glob("*.html") if f.is_file()]
+    if not root_htmls:
+        return 0
+
+    try:
+        from evolution_engine import classify_stock
+    except Exception:
+        return 0
+
+    moved_count = 0
+    for hfile in root_htmls:
+        m = re.match(r'^([0-9A-Za-z]{2,6})_(.+?)\((TW|TWO)\)', hfile.name)
+        if not m:
+            continue
+        code, raw_name, _ = m.groups()
+        category, _ = classify_stock(code, raw_name)
+        if not category or category in ("reports", "未分類"):
+            category = "其他"
+
+        dest_dir = Path(REPORTS_DIR) / category
+        dest_dir.mkdir(exist_ok=True)
+
+        # 移動 html
+        dest_html = dest_dir / hfile.name
+        try:
+            if dest_html.exists() and dest_html.resolve() != hfile.resolve():
+                dest_html.unlink()
+            shutil.move(str(hfile), str(dest_html))
+        except Exception:
+            pass
+
+        # 移動 matching png 與 md
+        for related in Path(REPORTS_DIR).glob(f"{code}_*"):
+            if related.is_file():
+                dest_rel = dest_dir / related.name
+                try:
+                    if dest_rel.exists() and dest_rel.resolve() != related.resolve():
+                        dest_rel.unlink()
+                    shutil.move(str(related), str(dest_rel))
+                except Exception:
+                    pass
+        print(f"📦 [AI自動歸檔] {code} {raw_name} ➔ reports/{category}/")
+        moved_count += 1
+    return moved_count
 
 def load_cache(sid):
     """讀取本地已存的三大法人/融資融券/大戶持股資料（依日期快取，過去資料不會變動可安心重用）"""
@@ -1246,7 +1312,7 @@ def run(ticker_input):
     safe_name = sanitize_filename(name)
 
     base_name = sanitize_filename(f"{sid}_{safe_name}{market_tag}{dispo_tag}")
-    target_dir = find_existing_report_dir(sid)
+    target_dir = find_existing_report_dir(sid, name)
     os.makedirs(target_dir, exist_ok=True)
     fname = os.path.join(target_dir, f"{base_name}.html")
 
@@ -1506,6 +1572,10 @@ def run_batch(tickers):
             results_by_index[index] = (ticker, ok)
 
     gc.collect()
+    try:
+        auto_organize_unfiled_reports()
+    except Exception:
+        pass
     t_end = time.perf_counter()
     print(f"\n{'='*60}")
     print(f"批次執行完畢（{worker_count} 執行緒並行）")
