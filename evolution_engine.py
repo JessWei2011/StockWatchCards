@@ -269,6 +269,7 @@ def calculate_evolution_score(stock_info):
         'code': stock_info['code'],
         'name': stock_info['name'],
         'category': stock_info['category'],
+        'semantic_tags': stock_info.get('semantic_tags', []),
         'price': price,
         'today_pct': round(today_pct, 2),
         's5': round(s5, 2),
@@ -309,6 +310,323 @@ def call_gemini_search(prompt, api_key, models_priority=['gemini-2.5-flash', 'ge
             print(f"      [Gemini {m}] 請求異常: {e}", flush=True)
             continue
     return None, None
+
+# =========================================================================
+# 🏛️ 【全自動台股產業分類體系與語意本體庫 (Taxonomy & Concept Ontology)】
+# -------------------------------------------------------------------------
+# AI 擔任規則制定者與裁判，自動為個股進行標準化產業歸類與同義詞對齊。
+# 徹底解決 RAM vs 記憶體、CCL vs PCB材料、CoWoS vs 封測之斷層。
+# =========================================================================
+
+STOCK_TAXONOMY_REGISTRY = {
+    # 半導體 - 晶圓代工與先進製程
+    "2330": ("晶圓代工", ["台積電", "先進製程", "2nm", "3nm", "CoWoS", "晶圓代工", "AI晶片"]),
+    "2303": ("晶圓代工", ["聯電", "成熟製程", "晶圓代工"]),
+
+    # 半導體 - IC設計與ASIC/IP
+    "2454": ("IC設計", ["聯發科", "手機SoC", "天璣", "AI ASIC", "車用晶片", "IC設計"]),
+    "3034": ("IC設計", ["聯詠", "驅動IC", "OLED", "ASIC", "車用", "IC設計"]),
+    "3443": ("IC設計", ["創意", "ASIC", "設計服務", "台積電體系", "HBM", "矽智財", "IP"]),
+    "3545": ("IC設計", ["敦泰", "觸控IC", "驅動IC", "車用觸控", "IC設計"]),
+    "3661": ("IC設計", ["世芯-KY", "ASIC", "CSP", "AI加速器", "3nm", "HPC", "矽智財", "IP"]),
+    "4919": ("IC設計", ["新唐", "MCU", "微控制器", "BMC", "伺服器控制晶片", "IC設計"]),
+    "8227": ("IC設計", ["巨有科技", "ASIC", "設計服務", "台積電DCA", "矽智財", "IP"]),
+
+    # 半導體 - 記憶體與儲存
+    "2344": ("記憶體", ["華邦電", "記憶體", "RAM", "DRAM", "NOR Flash", "利基型DRAM"]),
+    "2408": ("記憶體", ["南亞科", "記憶體", "RAM", "DRAM", "DDR4", "DDR5"]),
+    "3006": ("記憶體", ["晶豪科", "記憶體", "RAM", "DRAM", "利基型DRAM", "SPI NAND", "Flash"]),
+    "5289": ("記憶體", ["宜鼎", "記憶體", "工控記憶體", "RAM", "DRAM", "SSD", "邊緣AI"]),
+    "5386": ("記憶體", ["青雲", "記憶體", "RAM", "記憶體模組", "顯卡代理"]),
+    "6265": ("記憶體", ["方土昶", "記憶體", "RAM", "記憶體通路", "Flash"]),
+    "6531": ("記憶體", ["愛普", "記憶體", "VHM", "3D晶圓堆疊", "PSRAM", "客製化記憶體", "AI推理"]),
+    "8299": ("記憶體", ["群聯", "記憶體", "NAND", "Flash", "SSD控制晶片", "PCIe Gen5", "aiDAPTIV+"]),
+
+    # 半導體 - 封測與先進封裝
+    "2449": ("封測", ["京元電子", "封測", "IC測試", "晶圓測試", "先進封裝", "CoWoS", "AI晶片封測"]),
+    "3374": ("封測", ["精材", "封測", "晶圓級封裝", "WLCSP", "CIS封測", "台積電體系"]),
+    "6147": ("封測", ["頎邦", "封測", "驅動IC封測", "凸塊", "Bumping", "COF"]),
+    "6239": ("封測", ["力成", "封測", "記憶體封測", "先進封裝", "扇出型封裝", "FOPLP"]),
+    "8150": ("封測", ["南茂", "封測", "記憶體封測", "DDIC封測", "驅動IC封測"]),
+
+    # 半導體 - 設備與測試介面
+    "3055": ("半導體設備", ["蔚華科", "半導體設備", "測試設備", "檢測", "封裝設備"]),
+    "6187": ("半導體設備", ["萬潤", "半導體設備", "CoWoS設備", "先進封裝設備", "點膠機", "貼合設備"]),
+    "6217": ("測試介面", ["中探針", "探針", "測試治具", "連接器", "測試介面"]),
+    "6223": ("測試介面", ["旺矽", "探針卡", "Probe Card", "垂直探針卡", "VPC", "測試介面", "AI晶片"]),
+    "6515": ("測試介面", ["穎崴", "測試座", "Test Socket", "探針卡", "垂直探針卡", "AI晶片測試", "測試介面"]),
+    "6683": ("測試介面", ["雍智科技", "測試載板", "探針卡模組", "IC測試載板", "測試介面"]),
+    "7769": ("半導體設備", ["鴻勁", "分選機", "Handler", "ATC溫控", "CoWoS測試", "先進封裝設備"]),
+
+    # 半導體 - 矽晶圓與材料
+    "3532": ("矽晶圓", ["台勝科", "矽晶圓", "8吋矽晶圓", "12吋矽晶圓", "半導體材料"]),
+    "5483": ("矽晶圓", ["中美晶", "矽晶圓", "太陽能", "半導體特化", "化合物半導體"]),
+    "6182": ("矽晶圓", ["合晶", "矽晶圓", "重摻矽晶圓", "車用半導體材料"]),
+    "6488": ("矽晶圓", ["環球晶", "矽晶圓", "12吋矽晶圓", "碳化矽", "SiC", "全球前三大"]),
+
+    # 電腦與硬體 - AI伺服器與系統組裝
+    "2324": ("伺服器", ["仁寶", "伺服器", "AI伺服器", "ODM", "系統組裝", "筆電代工"]),
+    "3231": ("伺服器", ["緯創", "伺服器", "AI伺服器", "ODM", "GPU基板", "GB200", "系統組裝"]),
+    "6669": ("伺服器", ["緯穎", "伺服器", "AI伺服器", "雲端伺服器", "白牌伺服器", "ASIC伺服器", "CSP"]),
+
+    # 電腦與硬體 - 伺服器機構與滑軌
+    "2059": ("伺服器機構", ["川湖", "滑軌", "導軌", "伺服器導軌", "AI伺服器滑軌", "機架機構"]),
+    "3693": ("伺服器機構", ["營邦", "伺服器機箱", "機櫃", "水冷機箱", "雲端機架", "伺服器機構"]),
+    "6584": ("伺服器機構", ["南俊國際", "滑軌", "導軌", "伺服器導軌", "AWS滑軌", "伺服器機構"]),
+    "6805": ("伺服器機構", ["富世達", "軸承", "鉸鏈", "摺疊鉸鏈", "伺服器滑軌快扣", "伺服器機構"]),
+
+    # 電腦與硬體 - 散熱模組與液冷
+    "2486": ("散熱", ["一詮", "散熱", "均熱片", "導線架", "高階散熱", "水冷"]),
+    "3017": ("散熱", ["奇鋐", "散熱", "水冷", "液冷", "3D VC", "水冷板", "散熱風扇", "CDU"]),
+    "3324": ("散熱", ["雙鴻", "散熱", "水冷", "液冷", "水冷板", "CDU", "液冷系統"]),
+    "3653": ("散熱", ["健策", "散熱", "均熱片", "ILM扣件", "伺服器扣件", "散熱模組"]),
+    "8996": ("散熱", ["高力", "散熱", "水冷", "液冷", "熱交換器", "分歧管", "水冷板"]),
+
+    # 電腦與硬體 - 品牌電腦與板卡
+    "2357": ("電腦板卡", ["華碩", "AI PC", "主機板", "顯示卡", "電競", "伺服器", "筆電"]),
+    "2377": ("電腦板卡", ["微星", "AI PC", "主機板", "顯示卡", "電競筆電", "工業電腦", "Edge AI"]),
+    "2395": ("工業電腦", ["研華", "工業電腦", "IPC", "Edge AI", "邊緣運算", "工業物聯網", "自動化"]),
+
+    # 電子零組件 - 銅箔基板與PCB材料
+    "1815": ("PCB材料", ["富喬", "玻纖布", "Low-Dk", "PCB材料", "銅箔基板材料"]),
+    "2383": ("銅箔基板", ["台光電", "CCL", "銅箔基板", "無鹵板", "AI伺服器UBB", "PCB材料"]),
+    "6213": ("銅箔基板", ["聯茂", "CCL", "銅箔基板", "高速基板", "PCB材料"]),
+    "6274": ("銅箔基板", ["台燿", "CCL", "銅箔基板", "極低損耗材料", "800G交換機", "PCB材料"]),
+    "8021": ("PCB材料", ["尖點", "鑽針", "PCB鑽針", "鍍膜耗材", "PCB加工"]),
+    "8039": ("PCB材料", ["台虹", "FCCL", "軟性銅箔基板", "PCB材料"]),
+    "8358": ("PCB材料", ["金居", "銅箔", "電解銅箔", "RG系列", "高速銅箔", "PCB材料"]),
+
+    # 電子零組件 - PCB印刷電路板
+    "2368": ("PCB", ["金像電", "PCB", "印刷電路板", "AI伺服器板", "高層板", "多層板"]),
+    "4958": ("PCB", ["臻鼎-KY", "PCB", "軟板", "FPC", "載板", "HDI", "印刷電路板"]),
+
+    # 電子零組件 - IC載板
+    "3037": ("IC載板", ["欣興", "載板", "IC載板", "ABF載板", "BT載板", "CoWoS載板"]),
+    "3189": ("IC載板", ["景碩", "載板", "IC載板", "ABF載板", "BT載板"]),
+    "8046": ("IC載板", ["南電", "載板", "IC載板", "ABF載板", "BT載板", "網通載板"]),
+
+    # 電子零組件 - 被動元件
+    "2327": ("被動元件", ["國巨", "被動元件", "MLCC", "晶片電阻", "電感", "AI電源"]),
+    "2492": ("被動元件", ["華新科", "被動元件", "MLCC", "晶片電阻", "低溫共燒陶瓷"]),
+    "3026": ("被動元件", ["禾伸堂", "被動元件", "MLCC", "高壓MLCC", "伺服器電源電容", "陶瓷電容"]),
+    "6173": ("被動元件", ["信昌電", "被動元件", "MLCC", "大尺寸MLCC", "介電陶瓷粉末"]),
+    "6207": ("被動元件", ["雷科", "被動元件", "被動元件包材", "雷射修阻機", "CoWoS設備"]),
+    "6449": ("被動元件", ["鈺邦", "被動元件", "固態電容", "捲繞型電容", "AI伺服器主板"]),
+
+    # 電子零組件 - 功率半導體
+    "2481": ("功率元件", ["強茂", "功率元件", "MOSFET", "二極體", "車用電子", "SiC"]),
+    "5425": ("功率元件", ["台半", "功率元件", "車用二極體", "MOSFET", "工控"]),
+    "8261": ("功率元件", ["富鼎", "功率元件", "MOSFET", "高壓MOSFET", "鴻海體系"]),
+
+    # 電子零組件 - 光學鏡頭
+    "3008": ("光學", ["大立光", "光學", "鏡頭", "手機鏡頭", "潛望式鏡頭", "塑膠鏡片"]),
+    "3362": ("光學", ["先進光", "光學", "鏡頭", "筆電鏡頭", "車用鏡頭", "指紋辨識"]),
+    "3406": ("光學", ["玉晶光", "光學", "鏡頭", "蘋果鏡頭", "VR/AR透鏡", "Pancake"]),
+    "3441": ("光學", ["聯一光", "光學", "鏡頭", "光學毛胚", "玻璃鏡片", "車用鏡片"]),
+
+    # 電子零組件 - 高速連接器與線纜
+    "3665": ("連接線器", ["貿聯-KY", "連接線器", "連接器", "高速傳輸線", "線束", "特斯拉", "輝達供應鏈"]),
+
+    # 電子零組件 - 電源供應與能源
+    "2301": ("電源供應", ["光寶科", "電源供應", "電源", "PSU", "伺服器電源", "鈦金級電源", "液冷機櫃"]),
+    "2308": ("電源供應", ["台達電", "電源供應", "電源", "PSU", "伺服器電源", "液冷散熱系統", "儲能"]),
+
+    # 通訊與次世代傳輸 - 光通訊與矽光子CPO
+    "2426": ("光通訊CPO", ["鼎元", "光通訊", "CPO", "矽光子", "感測元件", "富采集團"]),
+    "2455": ("光通訊CPO", ["全新", "光通訊", "CPO", "砷化鎵磊晶", "VCSEL", "PA", "矽光子"]),
+    "3081": ("光通訊CPO", ["聯亞", "光通訊", "CPO", "矽光子", "磊晶片", "雷射二極體"]),
+    "3234": ("光通訊CPO", ["光環", "光通訊", "CPO", "光收發模組", "雷射晶粒"]),
+    "3363": ("光通訊CPO", ["上詮", "光通訊", "CPO", "矽光子", "光纖陣列", "台積電供應鏈"]),
+    "3450": ("光通訊CPO", ["聯鈞", "光通訊", "CPO", "矽光子", "雷射封裝", "光通訊封測"]),
+
+    # 通訊與次世代傳輸 - 網通設備與交換器
+    "2345": ("網通", ["智邦", "網通", "交換器", "Switch", "400G", "800G交換器", "白牌網通", "光通訊"]),
+
+    # 通訊與次世代傳輸 - 衛星通訊與射頻
+    "3105": ("低軌衛星", ["穩懋", "低軌衛星", "砷化鎵代工", "PA", "功率放大器", "射頻元件"]),
+    "3491": ("低軌衛星", ["昇達科", "低軌衛星", "毫米波元件", "衛星天線", "衛星地面站"]),
+
+    # 綠能與儲能系統 - 儲能與BMS
+    "4931": ("儲能BMS", ["新盛力", "儲能BMS", "BMS", "電池模組", "伺服器BBU", "手工具電池"]),
+    "5309": ("儲能BMS", ["系統電", "儲能BMS", "BMS", "儲能櫃", "TPMS", "工控電池"]),
+    "6781": ("儲能BMS", ["AES-KY", "儲能BMS", "BMS", "伺服器BBU", "備援電池", "二輪電動車"]),
+
+    # 生技醫療 - 新藥
+    "6446": ("生技醫療", ["藥華藥", "生技醫療", "新藥", "Besremi", "罕見疾病藥", "生技權值"])
+}
+
+CATEGORY_DIR_NORMALIZER = {
+    "cpo": "光通訊CPO",
+    "ic設計": "IC設計",
+    "pcb材料": "PCB材料",
+    "pcb": "PCB",
+    "伺服器": "伺服器",
+    "散熱": "散熱",
+    "封測": "封測",
+    "設備": "半導體設備",
+    "工業電腦": "工業電腦",
+    "被動元件": "被動元件",
+    "網通": "網通",
+    "載板": "IC載板",
+    "探針": "測試介面",
+    "晶圓代工": "晶圓代工",
+    "記憶體": "記憶體",
+    "軸承摺疊": "伺服器機構",
+    "連接線器": "連接線器",
+    "電源供應": "電源供應",
+    "儲能bms": "儲能BMS",
+    "低軌衛星": "低軌衛星",
+    "光學": "光學",
+    "功率元件": "功率元件",
+    "矽晶圓": "矽晶圓",
+    "生技醫療": "生技醫療"
+}
+
+SECTOR_SYNONYM_MAP = {
+    "記憶體": ["RAM", "DRAM", "NAND", "FLASH", "ROM", "記憶體模組", "利基型DRAM", "快閃記憶體"],
+    "被動元件": ["MLCC", "電容", "電阻", "電感", "保護元件", "高容值電容", "固態電容"],
+    "銅箔基板": ["CCL", "銅箔基板", "無鹵基板", "銅箔", "玻纖布", "PCB材料"],
+    "PCB材料": ["CCL", "銅箔基板", "玻纖布", "銅箔", "鑽針", "FCCL"],
+    "PCB": ["PCB", "印刷電路板", "硬板", "軟板", "FPC", "多層板", "HDI"],
+    "IC載板": ["載板", "ABF", "BT", "IC載板", "先進封裝載板"],
+    "IC設計": ["ASIC", "IP", "矽智財", "晶片設計", "MCU", "SOC", "IC設計"],
+    "散熱": ["水冷", "液冷", "散熱模組", "CDU", "水冷板", "熱管", "熱板", "風扇", "散熱水冷"],
+    "伺服器": ["SERVER", "ODM", "OEM", "白牌伺服器", "機架", "AI伺服器", "GPU基板"],
+    "伺服器機構": ["滑軌", "導軌", "伺服器機箱", "機櫃", "水冷機箱", "軸承", "快扣"],
+    "光通訊CPO": ["CPO", "矽光子", "光通訊", "光收發", "800G", "1.6T", "光模組", "光纖"],
+    "網通": ["交換器", "SWITCH", "800G", "400G", "路由器", "網通設備"],
+    "封測": ["先進封裝", "COWOS", "FOPLP", "測試", "晶圓測試", "OSAT", "封裝", "SOIC"],
+    "測試介面": ["探針", "探針卡", "PROBE CARD", "測試座", "SOCKET", "VPC", "垂直探針卡"],
+    "半導體設備": ["設備", "COWOS設備", "封裝設備", "分選機", "HANDLER", "點膠機"],
+    "電源供應": ["電源", "PSU", "電源供應器", "伺服器電源", "變壓器", "逆變器", "UPS"],
+    "儲能BMS": ["電池", "鋰電池", "儲能", "BMS", "BBU", "備援電池", "儲能櫃"],
+    "低軌衛星": ["低軌衛星", "LEO", "衛星天線", "地面站", "毫米波", "射頻", "PA"],
+    "電腦板卡": ["AI PC", "主機板", "顯示卡", "電競", "筆電", "PC"],
+    "工業電腦": ["IPC", "EDGE AI", "邊緣運算", "工業物聯網", "工控電腦"]
+}
+
+SECTOR_CONCEPT_ONTOLOGY = {
+    "AI伺服器/ODM": {
+        "categories": {"伺服器", "伺服器機構", "電腦板卡", "電源供應", "連接線器"},
+        "keywords": {"伺服器", "ODM", "GB200", "GB300", "BLACKWELL", "AI PC", "機櫃", "滑軌", "川湖", "廣達", "鴻海", "緯穎", "緯創"}
+    },
+    "散熱水冷": {
+        "categories": {"散熱"},
+        "keywords": {"散熱", "水冷", "液冷", "水冷板", "CDU", "快接頭", "3D VC", "奇鋐", "雙鴻", "健策", "高力", "建準", "一詮"}
+    },
+    "高階被動元件": {
+        "categories": {"被動元件"},
+        "keywords": {"被動元件", "MLCC", "電容", "電阻", "電感", "國巨", "華新科", "禾伸堂", "鈺邦", "信昌電"}
+    },
+    "先進封裝CoWoS/設備": {
+        "categories": {"封測", "半導體設備", "測試介面", "晶圓代工", "IC載板"},
+        "keywords": {"封測", "先進封裝", "COWOS", "SOIC", "FOPLP", "台積電", "京元電子", "萬潤", "弘塑", "辛耘", "穎崴", "旺矽", "鴻勁"}
+    },
+    "光通訊CPO/矽光子": {
+        "categories": {"光通訊CPO", "網通"},
+        "keywords": {"CPO", "矽光子", "光通訊", "光收發", "800G", "1.6T", "光模組", "智邦", "光聖", "上詮", "聯鈞", "華星光", "聯亞"}
+    },
+    "工業電腦Edge AI": {
+        "categories": {"工業電腦", "電腦板卡"},
+        "keywords": {"工業電腦", "IPC", "EDGE AI", "邊緣運算", "研華", "微星", "華碩", "威強電"}
+    },
+    "記憶體": {
+        "categories": {"記憶體"},
+        "keywords": {"記憶體", "RAM", "DRAM", "NAND", "FLASH", "晶豪科", "南亞科", "華邦電", "愛普", "群聯"}
+    },
+    "銅箔基板與PCB": {
+        "categories": {"銅箔基板", "PCB材料", "PCB", "IC載板"},
+        "keywords": {"CCL", "銅箔基板", "PCB", "ABF", "台光電", "台燿", "聯茂", "金像電", "欣興"}
+    }
+}
+
+def classify_stock(code: str, name: str, original_category: str = None) -> tuple[str, list[str]]:
+    """
+    自動化產業分類與語意標籤判定器 (AI 裁判引擎)
+    優先順序：
+    1. 權威代碼庫 (STOCK_TAXONOMY_REGISTRY) 直接判定
+    2. 資料夾名稱正規化 (CATEGORY_DIR_NORMALIZER) 與同義詞拓展
+    3. 保留原始有效分類，或收斂為通用科技分類
+    """
+    code_str = str(code).strip()
+    name_str = str(name).strip()
+    raw_cat = (original_category or "").strip()
+
+    # 1. 權威代碼註冊表優先
+    if code_str in STOCK_TAXONOMY_REGISTRY:
+        cat, tags = STOCK_TAXONOMY_REGISTRY[code_str]
+        expanded_tags = list(tags)
+        if cat in SECTOR_SYNONYM_MAP:
+            expanded_tags.extend(SECTOR_SYNONYM_MAP[cat])
+        return cat, list(set(expanded_tags))
+
+    # 2. 資料夾名稱標準化映射
+    norm_key = raw_cat.lower()
+    if norm_key and norm_key not in ("reports", "未分類", "新報表", "none"):
+        if norm_key in CATEGORY_DIR_NORMALIZER:
+            std_cat = CATEGORY_DIR_NORMALIZER[norm_key]
+            tags = [std_cat, raw_cat, name_str]
+            if std_cat in SECTOR_SYNONYM_MAP:
+                tags.extend(SECTOR_SYNONYM_MAP[std_cat])
+            return std_cat, list(set(tags))
+        return raw_cat, [raw_cat, name_str]
+
+    return "電子零組件", [name_str, "電子零組件"]
+
+def match_stock_to_hot_sectors(cand: dict, hot_sectors: list) -> tuple[dict | None, float]:
+    """
+    語意本體風口契合度智能比對器 (Concept Ontology Matcher)
+    以多維度概念本體、同義詞拓展庫與重大法說催化劑加權比對，
+    徹底取代原本粗暴且容易漏失的純字串包含比對。
+    """
+    category = cand.get('category', '')
+    tags = {t.upper() for t in cand.get('semantic_tags', []) if t}
+    tags.add(category.upper())
+    name = cand.get('name', '').upper()
+    code = cand.get('code', '')
+
+    best_sector = None
+    max_score = 0.0
+
+    for sec in hot_sectors:
+        sec_name = sec.get('sector_name', '')
+        sec_tags = {t.upper() for t in sec.get('related_tags', []) if t}
+        sec_tags.add(sec_name.upper())
+        catalysts = sec.get('catalysts', '').upper()
+
+        score = 0.0
+
+        # 維度 1：產業本體概念庫比對 (最高權重 40~100分)
+        for concept_name, concept in SECTOR_CONCEPT_ONTOLOGY.items():
+            c_name_up = concept_name.upper()
+            if c_name_up in sec_name.upper() or sec_name.upper() in c_name_up or any(k in sec_name.upper() for k in concept["keywords"]):
+                if category in concept["categories"]:
+                    score += 40.0
+                if any(k in tags for k in concept["keywords"]):
+                    score += 25.0
+                if name in concept["keywords"] or code in concept["keywords"]:
+                    score += 35.0
+
+        # 維度 2：同義詞與語意標籤交集比對 (每個命中標籤 +15分)
+        overlap = tags.intersection(sec_tags)
+        if overlap:
+            score += len(overlap) * 15.0
+
+        # 維度 3：族群名稱與類別模糊包含 (+20分)
+        for t in sec_tags:
+            if t and (t in category.upper() or category.upper() in t or t in name or name in t):
+                score += 20.0
+                break
+
+        # 維度 4：重大催化劑內文明確提及個股名稱 (+25分)
+        if name and name in catalysts:
+            score += 25.0
+
+        if score > max_score and score >= 20.0:
+            max_score = score
+            best_sector = sec
+
+    return best_sector, max_score
 
 SECTOR_CACHE_FILE = ROOT_DIR / "market_hot_sectors_cache.json"
 
@@ -513,18 +831,13 @@ def evaluate_holistic_score(cand, hot_sectors):
     target_price_str = cand.get('target_price', '')
     price = cand.get('price', 1.0)
 
-    matched_sector = None
-    for sec in hot_sectors:
-        sec_name = sec.get('sector_name', '')
-        tags = sec.get('related_tags', [])
-        match_targets = [t for t in [sec_name] + tags if t]
-        if any((t in category or category in t or t in name or name in t) for t in match_targets if category or name):
-            matched_sector = sec
-            break
+    matched_sector, match_strength = match_stock_to_hot_sectors(cand, hot_sectors)
 
     if matched_sector:
         heat = matched_sector.get('heat_level', 4)
         sec_bonus = 22.0 if heat >= 5 else 16.0
+        if match_strength >= 50.0:
+            sec_bonus += 3.0 # 高度契合強勢概念本體額外加成
         score += sec_bonus
         cand['matched_sector'] = matched_sector.get('sector_name', '')
         reasons.insert(0, f"🔥踩中市場主流風口:【{matched_sector.get('sector_name', '')}】(+{sec_bonus:.0f}分)")
@@ -725,6 +1038,10 @@ def main():
     for f in html_files:
         inf = parse_html_report(f)
         if inf:
+            # 🤖 自動產業分類與語意本體庫判定 (AI 擔任規則制定者與裁判，自動精準收納)
+            std_cat, sem_tags = classify_stock(inf['code'], inf['name'], inf.get('category'))
+            inf['category'] = std_cat
+            inf['semantic_tags'] = sem_tags
             infos.append(inf)
 
     unique_infos = {inf['code']: inf for inf in infos}
