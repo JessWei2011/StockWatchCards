@@ -36,7 +36,7 @@
       if (!window.indexedDB) return false;
       return new Promise((resolve) => {
         try {
-          const req = indexedDB.open('Stock2MobileOfflineDB', 2);
+          const req = indexedDB.open('Stock2MobileOfflineDB', 3);
           req.onupgradeneeded = (e) => {
             const db = e.target.result;
             if (!db.objectStoreNames.contains('files')) {
@@ -595,7 +595,7 @@
           </div>
           <div class="evo-log-stocks-list">
             ${stockItems.map(stk => `
-              <article class="evo-log-stock-card" onclick="openPatternForStock('${escapeHtml(stk.code)}')" style="cursor:pointer;" title="點擊查看 ${escapeHtml(stk.name)} 個股看盤">
+              <article class="evo-log-stock-card" data-code="${escapeHtml(stk.code)}" onclick="openPatternForStock('${escapeHtml(stk.code)}')" style="cursor:pointer;" title="點擊查看 ${escapeHtml(stk.name)} 個股看盤">
                 <div class="evo-log-stock-header">
                   <div class="evo-log-stock-title">
                     <span class="evo-log-stock-code">${escapeHtml(stk.code)}</span>
@@ -640,14 +640,21 @@
     return html;
   }
 
+  // 全域個股導航輔助函數（支援 HTML onclick 與事件代理）
+  window.openPatternForStock = function(code) {
+    if (!code) return;
+    loadStock(code, { pushHistory: true });
+    switchTab('stock');
+  };
+
   async function loadEvolutionLog() {
     const container = $('#evolutionLogContent');
     if (!container) return;
     try {
-      const data = await fetchJson('./data/evolution_log.json');
+      const data = await fetchJson('./data/evolution_log.json?t=' + Date.now());
       container.innerHTML = formatEvolutionLogMagazine(data.content || '');
     } catch (e) {
-      container.innerHTML = `<p style="color:#ef4444;">覆盤日記讀取失敗：${escapeHtml(e.message)}</p>`;
+      container.innerHTML = `<p style="color:#ef4444; padding:20px; text-align:center;">覆盤日記讀取失敗：${escapeHtml(e.message)}</p>`;
     }
   }
 
@@ -1163,6 +1170,18 @@
         switchTab('stock');
       }
     });
+
+    // 4.1 覆盤日記個股卡片點選
+    const logContent = $('#evolutionLogContent');
+    if (logContent) {
+      logContent.addEventListener('click', event => {
+        const card = event.target.closest('.evo-log-stock-card[data-code]');
+        if (card && card.dataset.code) {
+          loadStock(card.dataset.code, { pushHistory: true });
+          switchTab('stock');
+        }
+      });
+    }
 
     // 5. 看盤頁頂部星號按鈕
     $('#heroStarButton').addEventListener('click', () => {
