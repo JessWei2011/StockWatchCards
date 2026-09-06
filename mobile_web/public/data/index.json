@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "publishedAt": "2026-09-05T06:14:12+08:00",
+  "publishedAt": "2026-09-06T08:40:38+08:00",
   "defaultCode": "3324",
-  "count": 88,
+  "count": 89,
   "stocks": [
     {
       "code": "1815",
@@ -199,7 +199,7 @@
     {
       "code": "2449",
       "name": "京元電子",
-      "group": "reports",
+      "group": "封測",
       "market": "TW",
       "analysisDate": "2026-09-04",
       "current": "262.00",
@@ -629,6 +629,18 @@
       "isStarred": true
     },
     {
+      "code": "4979",
+      "name": "華星光",
+      "group": "電子零組件",
+      "market": "TWO",
+      "analysisDate": "2026-09-04",
+      "current": "629.00",
+      "decision": "強烈買入 (動能爆發)",
+      "winRate": "84%",
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
+    },
+    {
       "code": "5289",
       "name": "宜鼎",
       "group": "記憶體",
@@ -902,7 +914,7 @@
       "decision": "買入 (多頭順勢)",
       "winRate": "75%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
-      "isStarred": true
+      "isStarred": false
     },
     {
       "code": "6683",
@@ -1044,7 +1056,7 @@
       "analysisDate": "2026-09-04",
       "current": "500.00",
       "decision": "強烈買入 (動能爆發)",
-      "winRate": "89%",
+      "winRate": "79%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": false
     },

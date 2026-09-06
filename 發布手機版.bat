@@ -24,6 +24,12 @@ if not defined PY_EXE (
     goto FAIL
 )
 
+if exist "%ProgramFiles%\nodejs" (
+    set "PATH=%ProgramFiles%\nodejs;%PATH%"
+)
+if exist "%LOCALAPPDATA%\OpenAI\Codex\runtimes\cua_node\440c4f095d41ea30\bin" (
+    set "PATH=%LOCALAPPDATA%\OpenAI\Codex\runtimes\cua_node\440c4f095d41ea30\bin;%PATH%"
+)
 if exist "%LOCALAPPDATA%\OpenAI\Codex\runtimes\cua_node\415ffebf3d576e9b\bin" (
     set "PATH=%LOCALAPPDATA%\OpenAI\Codex\runtimes\cua_node\415ffebf3d576e9b\bin;%PATH%"
 )

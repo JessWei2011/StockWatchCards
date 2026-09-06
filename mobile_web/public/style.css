@@ -1278,3 +1278,214 @@ footer { color: #546176; }
   background: rgba(250, 204, 21, 0.15);
   box-shadow: 0 0 10px rgba(250, 204, 21, 0.3);
 }
+
+/* ==================== 📖 手機端精美覆盤日記排版 (Magazine Theme) ==================== */
+.evo-log-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.evo-log-hero {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.06));
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 14px;
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.evo-log-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #fde047;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.evo-log-hero-title {
+  font-size: 16.5px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.4;
+  margin: 0 0 6px;
+}
+.evo-log-hero-quote {
+  font-size: 12.5px;
+  color: #fef08a;
+  line-height: 1.5;
+  opacity: 0.9;
+  border-left: 2.5px solid #facc15;
+  padding-left: 8px;
+  margin: 6px 0 0;
+}
+.evo-log-section {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 14px;
+  padding: 14px 14px 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+.evo-log-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+.evo-log-section-tag {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+.evo-log-section-tag.gold {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fde047;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+.evo-log-section-tag.blue {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+.evo-log-section-tag.red {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+.evo-log-section-title {
+  font-size: 15px;
+  font-weight: 850;
+  color: #f1f5f9;
+  margin: 0;
+}
+.evo-log-lead {
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.65;
+  margin-bottom: 12px;
+  background: rgba(30, 41, 59, 0.4);
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+.evo-log-sector-item {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.7));
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.evo-log-sector-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.evo-log-sector-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #38bdf8;
+}
+.evo-log-sector-heat {
+  font-size: 12px;
+  color: #fbbf24;
+  font-weight: 700;
+}
+.evo-log-sector-body {
+  font-size: 12.5px;
+  color: #94a3b8;
+  line-height: 1.55;
+}
+.evo-log-stock-card {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.8), rgba(10, 15, 28, 0.9));
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  transition: all 0.15s ease;
+}
+.evo-log-stock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+.evo-log-stock-title {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.evo-log-stock-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #38bdf8;
+}
+.evo-log-stock-name {
+  font-size: 15px;
+  font-weight: 850;
+  color: #fff;
+}
+.evo-log-stock-cat {
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+.evo-log-stock-score {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.25), rgba(245, 158, 11, 0.15));
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fde047;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+.evo-log-stock-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+}
+.evo-log-metric-row {
+  display: flex;
+  gap: 6px;
+  line-height: 1.5;
+}
+.evo-log-metric-lbl {
+  color: #64748b;
+  flex-shrink: 0;
+  min-width: 58px;
+}
+.evo-log-metric-val {
+  color: #cbd5e1;
+  overflow-wrap: anywhere;
+}
+.evo-log-metric-val.price {
+  color: #e2e8f0;
+  font-weight: 700;
+}
+.evo-log-metric-val.logic {
+  color: #93c5fd;
+}
+.evo-log-risk-item {
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid #ef4444;
+  border-radius: 0 8px 8px 0;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+  color: #fecdd3;
+  line-height: 1.55;
+}
+.evo-log-risk-item strong {
+  color: #fca5a5;
+  display: block;
+  margin-bottom: 2px;
+}

@@ -424,13 +424,228 @@
     }
   }
 
-  // ==================== 覆盤日記載入 (Evolution Log) ====================
+  // ==================== 覆盤日記載入 (Evolution Log - 手機雜誌美化版) ====================
+  function formatEvolutionLogMagazine(rawContent = '') {
+    if (!rawContent) return '<p style="color:#94a3b8; text-align:center; padding:30px;">暫無覆盤日記</p>';
+
+    const lines = String(rawContent).split(/\r?\n/);
+    let html = '<div class="evo-log-wrapper">';
+    
+    let title = 'AI 量化實戰每日覆盤與自我進化日記';
+    let subtitle = '';
+    let quote = '累積實戰經驗、天天反思漏洞、動態校準因子，結合客觀事實與 AI 深度情報，打造實戰勝率最高之決策體系。';
+    let inSection = null; // 'sectors' | 'stocks' | 'risks'
+    let currentSector = null;
+    let currentStock = null;
+    let sectorItems = [];
+    let stockItems = [];
+    let riskItems = [];
+    let sectionLead = '';
+
+    const flushStock = () => {
+      if (currentStock) {
+        stockItems.push(currentStock);
+        currentStock = null;
+      }
+    };
+
+    const flushSector = () => {
+      if (currentSector) {
+        sectorItems.push(currentSector);
+        currentSector = null;
+      }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      // 1. 大標題與引言
+      if (line.startsWith('# 📖') || line.startsWith('# ')) {
+        title = line.replace(/^#\s*/, '').trim();
+        continue;
+      }
+      if (line.startsWith('## 📅') || line.startsWith('## ')) {
+        subtitle = line.replace(/^##\s*/, '').trim();
+        continue;
+      }
+      if (line.startsWith('>')) {
+        quote = line.replace(/^>\s*/, '').trim();
+        continue;
+      }
+
+      // 2. 三大核心章節切換
+      if (line.includes('一、今日台股主流產業') || line.includes('主流產業風口')) {
+        flushStock(); flushSector();
+        inSection = 'sectors';
+        continue;
+      }
+      if (line.includes('二、勝率榜核心個股') || line.includes('選股邏輯驗證')) {
+        flushStock(); flushSector();
+        inSection = 'stocks';
+        continue;
+      }
+      if (line.includes('三、量化交易風控警示') || line.includes('風控警示與進化')) {
+        flushStock(); flushSector();
+        inSection = 'risks';
+        continue;
+      }
+
+      // 3. 區塊內內容解析
+      if (inSection === 'sectors') {
+        const secMatch = line.match(/^(\d+)\.\s+(.+?)[:：]?$/);
+        if (secMatch) {
+          flushSector();
+          currentSector = { name: secMatch[2], body: [] };
+          continue;
+        }
+        if (currentSector) {
+          currentSector.body.push(line);
+        } else if (!sectionLead) {
+          sectionLead = line;
+        }
+      } else if (inSection === 'stocks') {
+        const stockMatch = line.match(/^(\d+)\.\s+(\d{4})\s+(.+?)\s*\((.+?)\)/);
+        if (stockMatch) {
+          flushStock();
+          currentStock = {
+            rank: stockMatch[1],
+            code: stockMatch[2],
+            name: stockMatch[3],
+            category: stockMatch[4],
+            score: '',
+            priceText: '',
+            logicText: '',
+            other: []
+          };
+          continue;
+        }
+        if (currentStock) {
+          if (line.includes('終極實戰評分') || line.includes('實戰評分')) {
+            const sm = line.match(/[:：]\s*(\d+(?:\.\d+)?)\s*分?/);
+            if (sm) currentStock.score = sm[1];
+          } else if (line.includes('走勢與基本面') || line.includes('價格與表現')) {
+            currentStock.priceText = line.replace(/^[-\s*]*[走勢價格與表現基本面]+[:：]\s*/, '');
+          } else if (line.includes('邏輯驗證') || line.includes('核心特徵')) {
+            currentStock.logicText = line.replace(/^[-\s*]*[邏輯驗證核心特徵]+[:：]\s*/, '');
+          } else {
+            currentStock.other.push(line.replace(/^[-\s*]+/, ''));
+          }
+        }
+      } else if (inSection === 'risks') {
+        const riskMatch = line.match(/^(\d+)\.\s+(.+?)[:：]?$/);
+        if (riskMatch) {
+          riskItems.push({ title: riskMatch[2], body: [] });
+          continue;
+        }
+        if (riskItems.length > 0) {
+          riskItems[riskItems.length - 1].body.push(line.replace(/^[-\s*]+/, ''));
+        }
+      }
+    }
+    flushStock();
+    flushSector();
+
+    // ── 組裝雜誌級精美版面 ──
+    // 頂部 Hero 卡片
+    html += `
+      <header class="evo-log-hero">
+        <div class="evo-log-hero-badge"><span>👑</span><span>CIO 深度覆盤日記</span></div>
+        <h2 class="evo-log-hero-title">${escapeHtml(subtitle || title)}</h2>
+        <div class="evo-log-hero-quote">${escapeHtml(quote)}</div>
+      </header>
+    `;
+
+    // 第一章：主流產業風口
+    if (sectorItems.length > 0 || sectionLead) {
+      html += `
+        <section class="evo-log-section">
+          <div class="evo-log-section-header">
+            <span class="evo-log-section-tag gold">主流風口</span>
+            <h3 class="evo-log-section-title">今日台股主流產業與資金焦點</h3>
+          </div>
+          ${sectionLead ? `<div class="evo-log-lead">${escapeHtml(sectionLead)}</div>` : ''}
+          <div class="evo-log-sectors-list">
+            ${sectorItems.map(s => {
+              const heatMatch = s.name.match(/(熱度\s*\d+\s*星)/);
+              const cleanName = s.name.replace(/[（(].*?[)）]/g, '').trim();
+              const heatStr = heatMatch ? heatMatch[1] : '';
+              return `
+                <div class="evo-log-sector-item">
+                  <div class="evo-log-sector-title">
+                    <span class="evo-log-sector-name">📌 ${escapeHtml(cleanName)}</span>
+                    ${heatStr ? `<span class="evo-log-sector-heat">${escapeHtml(heatStr)}</span>` : ''}
+                  </div>
+                  <div class="evo-log-sector-body">${escapeHtml(s.body.join(' '))}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </section>
+      `;
+    }
+
+    // 第二章：勝率榜核心個股 Top-Down 選股驗證 (精緻股票卡片流)
+    if (stockItems.length > 0) {
+      html += `
+        <section class="evo-log-section">
+          <div class="evo-log-section-header">
+            <span class="evo-log-section-tag blue">核心持倉</span>
+            <h3 class="evo-log-section-title">勝率榜核心個股 Top-Down 驗證</h3>
+          </div>
+          <div class="evo-log-stocks-list">
+            ${stockItems.map(stk => `
+              <article class="evo-log-stock-card" onclick="openPatternForStock('${escapeHtml(stk.code)}')" style="cursor:pointer;" title="點擊查看 ${escapeHtml(stk.name)} 個股看盤">
+                <div class="evo-log-stock-header">
+                  <div class="evo-log-stock-title">
+                    <span class="evo-log-stock-code">${escapeHtml(stk.code)}</span>
+                    <strong class="evo-log-stock-name">${escapeHtml(stk.name)}</strong>
+                    <span class="evo-log-stock-cat">${escapeHtml(stk.category)}</span>
+                  </div>
+                  ${stk.score ? `<span class="evo-log-stock-score">${escapeHtml(stk.score)} 分</span>` : ''}
+                </div>
+                <div class="evo-log-stock-metric">
+                  ${stk.priceText ? `<div class="evo-log-metric-row"><span class="evo-log-metric-lbl">走勢基本面</span><span class="evo-log-metric-val price">${escapeHtml(stk.priceText)}</span></div>` : ''}
+                  ${stk.logicText ? `<div class="evo-log-metric-row"><span class="evo-log-metric-lbl">邏輯驗證</span><span class="evo-log-metric-val logic">${escapeHtml(stk.logicText)}</span></div>` : ''}
+                  ${stk.other.length ? stk.other.map(o => `<div class="evo-log-metric-row"><span class="evo-log-metric-lbl">重點</span><span class="evo-log-metric-val">${escapeHtml(o)}</span></div>`).join('') : ''}
+                </div>
+              </article>
+            `).join('')}
+          </div>
+        </section>
+      `;
+    }
+
+    // 第三章：風控警示與進化校準
+    if (riskItems.length > 0) {
+      html += `
+        <section class="evo-log-section">
+          <div class="evo-log-section-header">
+            <span class="evo-log-section-tag red">量化風控</span>
+            <h3 class="evo-log-section-title">量化交易風控警示與動態校準</h3>
+          </div>
+          <div class="evo-log-risks-list">
+            ${riskItems.map(r => `
+              <div class="evo-log-risk-item">
+                <strong>🛡️ ${escapeHtml(r.title)}</strong>
+                <div>${escapeHtml(r.body.join(' '))}</div>
+              </div>
+            `).join('')}
+          </div>
+        </section>
+      `;
+    }
+
+    html += '</div>';
+    return html;
+  }
+
   async function loadEvolutionLog() {
     const container = $('#evolutionLogContent');
     if (!container) return;
     try {
       const data = await fetchJson('./data/evolution_log.json');
-      container.innerHTML = renderMarkdown(data.content || '暫無覆盤日記');
+      container.innerHTML = formatEvolutionLogMagazine(data.content || '');
     } catch (e) {
       container.innerHTML = `<p style="color:#ef4444;">覆盤日記讀取失敗：${escapeHtml(e.message)}</p>`;
     }
