@@ -1225,13 +1225,22 @@ def main():
 
     # =========================================================================
     # 👑 【步驟 5：排定最終名次，輸出 AI 獨有實戰勝率榜】
+    # 核心準則：動態嚴選 1~10 檔。設定嚴格合格門檻 (Threshold >= 180.0 分)，
+    # 凡通過者全部列出；若超過 10 檔僅取最優秀 TOP 10；絕不硬湊，也絕不錯殺合格優秀者！
     # =========================================================================
     print("\n👑 [Step 5] 依據全維度綜合評估得分 (Holistic Score)，正式排定最終榜單名次...", flush=True)
-    # 此刻才排定最終名次！
-    final_qualified = sorted(evaluated_candidates, key=lambda x: x['holistic_score'], reverse=True)[:8]
+    QUALIFIED_THRESHOLD = 180.0
+    sorted_candidates = sorted(evaluated_candidates, key=lambda x: x['holistic_score'], reverse=True)
+    passed_candidates = [r for r in sorted_candidates if r['holistic_score'] >= QUALIFIED_THRESHOLD]
+    
+    # 數量上限為 10 檔，若合格數量不足 10 檔則如實輸出，絕不濫竽充數；若完全無人達標，則至少保留第 1 名
+    if passed_candidates:
+        final_qualified = passed_candidates[:10]
+    else:
+        final_qualified = sorted_candidates[:1]
 
     count = len(final_qualified)
-    print(f"\n👑 【AI 獨有實戰勝率榜】（嚴選 {count} 檔・全維度綜合評估版）", flush=True)
+    print(f"\n👑 【AI 獨有實戰勝率榜】（嚴選 {count} 檔・高標門檻 {QUALIFIED_THRESHOLD} 分・全維度綜合評估版）", flush=True)
     print(f"{'名次':<4} {'代號':<6} {'名稱':<8} {'類群':<8} {'收盤價':<9} {'今日漲跌':<10} {'月盈年盈營收':<22} {'終極實戰評分'}", flush=True)
     print("-" * 80, flush=True)
     for i, r in enumerate(final_qualified, 1):

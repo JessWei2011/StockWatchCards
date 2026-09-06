@@ -128,6 +128,36 @@
           "targetPrice": "外資共識目標價250元，最高目標價370元(元大投顧)",
           "feature": "🔥踩中市場主流風口:【AI伺服器/ODM】(+22分) ； ✨突破5MA翻揚 ； 🏆型態:多頭排列",
           "isEvolution": true
+        },
+        {
+          "rank": "9",
+          "code": "3026",
+          "name": "禾伸堂",
+          "category": "被動元件",
+          "price": "701.00",
+          "changePct": "+9.87%",
+          "score": "192.0",
+          "monthlyRev": "7月營收15.01億元(MoM+8.89%, YoY+37.05%)",
+          "earnings": "Q2 EPS 3.87元，毛利率26.2%，累計EPS 6.73元",
+          "catalyst": "公司轉型為AI高階電源核心元件供應商，AI產線滿載，NP0 MLCC全球市占逾五成，交期逾20週。預計2026-2029年投入30億元擴充台灣與海外產能。",
+          "targetPrice": "凱基投顧給予「增加持股」評等，12個月目標價650元 (以2027年EPS 25倍本益比推算)",
+          "feature": "🔥踩中市場主流風口:【高階被動元件】(+25分) ； 💡守穩10MA支撐 ； 📉回測量縮守穩(0.8x)",
+          "isEvolution": true
+        },
+        {
+          "rank": "10",
+          "code": "3006",
+          "name": "晶豪科",
+          "category": "記憶體",
+          "price": "278.50",
+          "changePct": "+0.54%",
+          "score": "191.0",
+          "monthlyRev": "8月營收79.05億元(MoM+16.5%, YoY+605.2%)",
+          "earnings": "Q2 EPS 20.21元，毛利率68.7%",
+          "catalyst": "記憶體受惠AI需求，DDR2/DDR3市佔增，價格逐季調升。",
+          "targetPrice": "近三個月無公開機構目標價",
+          "feature": "🔥踩中市場主流風口:【記憶體】(+19分) ； 💡守穩10MA支撐 ； 🏆型態:多頭排列",
+          "isEvolution": true
         }
       ]
     },

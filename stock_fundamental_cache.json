@@ -173,5 +173,14 @@
     "target_price": "美林目標價1550元(看多)，中國信託綜合證券目標價1680元(看多)",
     "disposition": "",
     "updated_at": "09/04"
+  },
+  "4979": {
+    "name": "華星光",
+    "monthly_rev": "7月營收5.09億元(MoM+11.8%, YoY+31.01%)",
+    "earnings": "Q2 EPS 1.29元，毛利率22.4%，累計上半年EPS 2.91元",
+    "catalyst": "800G模組放量、CW/EML擴產、1.6T NPO 2027量產",
+    "target_price": "本土法人目標價800元(買進)",
+    "disposition": "",
+    "updated_at": "09/04"
   }
 }
