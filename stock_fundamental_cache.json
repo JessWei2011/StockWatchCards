@@ -182,5 +182,14 @@
     "target_price": "本土法人目標價800元(買進)",
     "disposition": "",
     "updated_at": "09/04"
+  },
+  "2467": {
+    "name": "志聖",
+    "monthly_rev": "7月營收11.68億元(MoM+34.33%, YoY+132.73%)",
+    "earnings": "Q2 EPS 4.14元，上半年累計EPS 7.16元，毛利率查核中",
+    "catalyst": "AI核心業務佔上半年營收70%，先進封裝與先進PCB訂單逾90%",
+    "target_price": "近三個月無公開機構目標價",
+    "disposition": "",
+    "updated_at": "09/04"
   }
 }

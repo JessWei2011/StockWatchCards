@@ -53,11 +53,43 @@ KLINE_DISPLAY_DAYS = 180  # K線顯示天數（約36週，完整支援 MA5/10/20
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cache")
 HOLDERS_MARKET_CACHE = os.path.join(CACHE_DIR, "holders_market.csv")
 REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
+TODAY_NEW_STOCKS_FILE = os.path.join(CACHE_DIR, "today_new_stocks.json")
 HOLDERS_WEEKS = 8  # 大戶持股比例趨勢顯示週數
 HOLDERS_BACKFILL_WEEKS = 3  # 快取不足時，額外回補的過去週數(一次性，補齊後不再重複查詢)
 DEFAULT_BATCH_WORKERS = max(4, min(12, (os.cpu_count() or 4)))
 MAX_BATCH_WORKERS = max(8, min(16, (os.cpu_count() or 4) * 2))
 _chart_render_lock = threading.Lock()
+
+
+def record_today_new_stock(sid):
+    """記錄今天新加入的個股代號，僅保留至當天午夜，隔天自動過期失效，不需同步到雲端或 Git。"""
+    if not sid:
+        return
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    clean_sid = str(sid).strip().upper()
+    data = {"date": today_str, "codes": []}
+    if os.path.exists(TODAY_NEW_STOCKS_FILE):
+        try:
+            with open(TODAY_NEW_STOCKS_FILE, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+                if loaded.get("date") == today_str and isinstance(loaded.get("codes"), list):
+                    data["codes"] = [str(c).strip().upper() for c in loaded["codes"] if str(c).strip()]
+        except Exception:
+            pass
+    if clean_sid and clean_sid not in data["codes"]:
+        data["codes"].append(clean_sid)
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        tmp_file = TODAY_NEW_STOCKS_FILE + ".tmp"
+        with open(tmp_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        if os.path.exists(tmp_file):
+            if os.path.exists(TODAY_NEW_STOCKS_FILE):
+                os.remove(TODAY_NEW_STOCKS_FILE)
+            os.rename(tmp_file, TODAY_NEW_STOCKS_FILE)
+    except Exception:
+        pass
+
 
 
 def find_existing_report_dir(sid, name=""):
@@ -1316,6 +1348,10 @@ def run(ticker_input):
     os.makedirs(target_dir, exist_ok=True)
     fname = os.path.join(target_dir, f"{base_name}.html")
 
+    # 檢查是否為全新加入的個股（存檔前 reports/ 裡尚無此個股的任何 HTML 報表）
+    existing_reports = glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*.html"), recursive=True)
+    is_brand_new = len(existing_reports) == 0
+
     # 出關/名稱變動時清掉這檔股票在 reports/ 裡的舊檔名殘留，並順便清理舊 _chart.png
     for old_path in glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*.html"), recursive=True) + \
                      glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*_chart.png"), recursive=True):
@@ -1334,8 +1370,13 @@ def run(ticker_input):
     with open(fname, "w", encoding="utf-8") as f:
         f.write(html)
 
+    if is_brand_new:
+        record_today_new_stock(sid)
+        print(f" ✨ [今日新增] {sid} {name} 已標記為今日新加入個股 (NEW!)\n")
+
     print(f"\n✅ 已存檔: {fname}\n")
     return True
+
 
 def parse_tickers(raw):
     """把使用者輸入拆成多支股票代碼/名稱（支援逗號、頓號、空白混合分隔）"""

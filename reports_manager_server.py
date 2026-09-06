@@ -115,6 +115,60 @@ def write_watchlist(starred_list):
     return payload
 
 
+CACHE_DIR = ROOT_DIR / "cache"
+CACHE_DIR.mkdir(exist_ok=True)
+TODAY_NEW_STOCKS_FILE = CACHE_DIR / "today_new_stocks.json"
+TODAY_NEW_STOCKS_LOCK = threading.Lock()
+
+
+def read_today_new_stocks():
+    """讀取今日新增個股清單。若檔案過期（非今日）則自動重置為空，自然消失，不需同步。"""
+    today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    with TODAY_NEW_STOCKS_LOCK:
+        if not TODAY_NEW_STOCKS_FILE.exists():
+            return {"date": today_str, "codes": []}
+        try:
+            data = json.loads(TODAY_NEW_STOCKS_FILE.read_text(encoding="utf-8"))
+            if data.get("date") != today_str or not isinstance(data.get("codes"), list):
+                clean_data = {"date": today_str, "codes": []}
+                TODAY_NEW_STOCKS_FILE.write_text(json.dumps(clean_data, ensure_ascii=False, indent=2), encoding="utf-8")
+                return clean_data
+            return {"date": today_str, "codes": [str(c).strip().upper() for c in data["codes"] if str(c).strip()]}
+        except Exception:
+            return {"date": today_str, "codes": []}
+
+
+def record_today_new_stocks(codes):
+    """將個股代號加入今日新增個股清單（今日有效）。"""
+    today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    if isinstance(codes, str):
+        codes = [codes]
+    with TODAY_NEW_STOCKS_LOCK:
+        existing = {"date": today_str, "codes": []}
+        if TODAY_NEW_STOCKS_FILE.exists():
+            try:
+                loaded = json.loads(TODAY_NEW_STOCKS_FILE.read_text(encoding="utf-8"))
+                if loaded.get("date") == today_str and isinstance(loaded.get("codes"), list):
+                    existing["codes"] = [str(c).strip().upper() for c in loaded["codes"] if str(c).strip()]
+            except Exception:
+                pass
+        seen = set(existing["codes"])
+        for c in (codes or []):
+            clean = str(c).strip().upper()
+            if clean and clean not in seen:
+                seen.add(clean)
+                existing["codes"].append(clean)
+        try:
+            CACHE_DIR.mkdir(exist_ok=True)
+            tmp_file = TODAY_NEW_STOCKS_FILE.with_suffix(".tmp")
+            tmp_file.write_text(json.dumps(existing, ensure_ascii=False, indent=2), encoding="utf-8")
+            tmp_file.replace(TODAY_NEW_STOCKS_FILE)
+        except Exception:
+            pass
+        return existing
+
+
+
 def read_macro_data():
     try:
         payload = json.loads(MACRO_DATA_FILE.read_text(encoding="utf-8"))
@@ -451,6 +505,11 @@ def build_tree(path=None):
     _folders, reports = list_folder(path)
     res = {"name": path.name if rel else "reports", "path": rel, "children": children, "reports": reports}
     if is_root:
+        try:
+            today_info = read_today_new_stocks()
+            res["todayNewStocks"] = today_info.get("codes", [])
+        except Exception:
+            res["todayNewStocks"] = []
         with _CACHE_LOCK:
             _TREE_CACHE["timestamp"] = now
             _TREE_CACHE["data"] = res
@@ -1302,6 +1361,9 @@ class Handler(SimpleHTTPRequestHandler):
             else:
                 self._json(502, {"ok": False, "error": error or "無法取得處置/注意資訊"})
             return
+        if parsed.path == "/api/new-stocks-today":
+            self._json(200, {"ok": True, **read_today_new_stocks()})
+            return
         if parsed.path == "/api/tree":
             self._json(200, {"ok": True, "tree": build_tree()})
             return
@@ -1590,6 +1652,16 @@ class Handler(SimpleHTTPRequestHandler):
             except OSError as e:
                 self._json(500, {"ok": False, "error": f"關注清單寫入失敗: {e}"})
                 return
+            self._json(200, {"ok": True, **saved})
+            return
+
+        if parsed.path == "/api/new-stocks-today":
+            try:
+                body = self._read_json_body()
+            except Exception:
+                body = {}
+            codes = body.get("codes") or ([body.get("code")] if body.get("code") else [])
+            saved = record_today_new_stocks(codes)
             self._json(200, {"ok": True, **saved})
             return
 

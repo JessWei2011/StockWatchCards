@@ -62,13 +62,12 @@ try {
                 (Test-Path -LiteralPath (Join-Path $_.FullName 'update_macro_data.py'))
             }
     )
-    if ($NestedRepositories.Count -ne 1) {
-        throw "Expected exactly one nested macro repository, found $($NestedRepositories.Count)."
-    }
 
     if ($ValidateOnly) {
         Write-Host "Validation passed. Root: $ProjectRoot" -ForegroundColor Green
-        Write-Host "Validation passed. Macro: $($NestedRepositories[0].FullName)" -ForegroundColor Green
+        foreach ($Repo in $NestedRepositories) {
+            Write-Host "Validation passed. Macro: $($Repo.FullName)" -ForegroundColor Green
+        }
         exit 0
     }
 
@@ -79,7 +78,9 @@ try {
         $CommitMessage = 'Sync project updates'
     }
 
-    Publish-Repository -Label 'Macro' -Repository $NestedRepositories[0].FullName -Message $CommitMessage
+    foreach ($Repo in $NestedRepositories) {
+        Publish-Repository -Label "Macro ($($Repo.Name))" -Repository $Repo.FullName -Message $CommitMessage
+    }
     Publish-Repository -Label 'Stock2' -Repository $ProjectRoot -Message $CommitMessage
 
     Write-Host ""

@@ -1519,6 +1519,28 @@
     color: #854d0e !important;
     font-weight: 800 !important;
   }
+  [data-theme="light"] .tree-new-badge {
+    background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 4px rgba(220, 38, 38, 0.35) !important;
+  }
+  [data-theme="light"] .folder-new-badge {
+    background: #fef2f2 !important;
+    border-color: #f87171 !important;
+    color: #dc2626 !important;
+  }
+  [data-theme="light"] .card-new-badge {
+    background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 5px rgba(220, 38, 38, 0.3) !important;
+  }
+  [data-theme="light"] .tree-report-row.is-today-new {
+    background: #fef2f2 !important;
+  }
+  [data-theme="light"] .tree-report-row.is-today-new:hover {
+    background: #fee2e2 !important;
+  }
+
 
   /* 彈出視窗與速查表 Modal (☀️ 方案 A：Apple Stocks / Google Finance 純白極簡高對比) */
   [data-theme="light"] .modal,
@@ -1916,6 +1938,82 @@
   .tree-report-row.is-starred .name{
     color:#fef08a;
     font-weight:700;
+  }
+  /* ── 🌟 今日新增個股 "NEW!" 小 ICON 樣式（僅保留至當天，不需同步） ── */
+  .tree-new-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+    color: #ffffff !important;
+    font-family: 'JetBrains Mono', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 8.5px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    padding: 1px 4.5px;
+    border-radius: 4px;
+    line-height: 1.15;
+    box-shadow: 0 1px 4px rgba(239, 68, 68, 0.45);
+    animation: pulse-today-new 2.2s infinite ease-in-out;
+    user-select: none;
+    flex-shrink: 0;
+    margin-right: 3px;
+  }
+  @keyframes pulse-today-new {
+    0%, 100% { transform: scale(1); box-shadow: 0 1px 4px rgba(239, 68, 68, 0.45); }
+    50% { transform: scale(1.08); box-shadow: 0 2px 7px rgba(249, 115, 22, 0.7); }
+  }
+  .folder-new-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(239, 68, 68, 0.16);
+    border: 1px solid rgba(239, 68, 68, 0.55);
+    color: #fca5a5;
+    font-family: 'JetBrains Mono', 'Inter', sans-serif;
+    font-size: 8.5px;
+    font-weight: 850;
+    padding: 0 4px;
+    border-radius: 4px;
+    margin-left: 6px;
+    line-height: 14px;
+    vertical-align: middle;
+    letter-spacing: 0.4px;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .card-new-badge {
+    position: absolute;
+    top: 6px;
+    left: 28px;
+    background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+    color: #ffffff !important;
+    font-family: 'JetBrains Mono', 'Inter', sans-serif;
+    font-size: 8.5px;
+    font-weight: 900;
+    padding: 1px 5px;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    z-index: 3;
+    user-select: none;
+    letter-spacing: 0.5px;
+  }
+  .tree-report-row.is-today-new {
+    background: rgba(239, 68, 68, 0.08);
+  }
+  .tree-report-row.is-today-new:hover {
+    background: rgba(239, 68, 68, 0.16);
+  }
+  .tree-report-row.is-today-new.is-starred {
+    background: rgba(250, 204, 21, 0.12);
+  }
+  @keyframes highlight-flash {
+    0% { background: rgba(239, 68, 68, 0.45); transform: scale(1.02); }
+    50% { background: rgba(249, 115, 22, 0.3); }
+    100% { background: transparent; transform: scale(1); }
+  }
+  .flash-highlight {
+    animation: highlight-flash 2.5s ease-out;
   }
   .tree-star-btn{
     width:17px; height:17px; padding:0; border-radius:4px;
@@ -6251,6 +6349,126 @@
   let selectedBases = new Set();
   let organizerExpanded = false;
 
+  // ── 🌟 今日新增個股標籤（僅保留至當天午夜，隔天自動消失，不需同步） ──
+  const TODAY_NEW_STOCKS_STORAGE_KEY = 'stock_manager_today_new_stocks';
+  window.TODAY_NEW_STOCKS = new Set();
+
+  function getTodayLocalDateString() {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function loadTodayNewStocksFromStorage() {
+    try {
+      const raw = localStorage.getItem(TODAY_NEW_STOCKS_STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      const todayStr = getTodayLocalDateString();
+      if (data && data.date === todayStr && Array.isArray(data.codes)) {
+        data.codes.forEach(c => {
+          const clean = String(c || '').trim().toUpperCase();
+          if (clean) window.TODAY_NEW_STOCKS.add(clean);
+        });
+      } else {
+        localStorage.removeItem(TODAY_NEW_STOCKS_STORAGE_KEY);
+        window.TODAY_NEW_STOCKS.clear();
+      }
+    } catch (e) {
+      console.warn('載入今日新增個股失敗:', e);
+    }
+  }
+
+  function saveTodayNewStocksToStorage() {
+    try {
+      const todayStr = getTodayLocalDateString();
+      const payload = {
+        date: todayStr,
+        codes: Array.from(window.TODAY_NEW_STOCKS)
+      };
+      localStorage.setItem(TODAY_NEW_STOCKS_STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) {
+      console.warn('儲存今日新增個股失敗:', e);
+    }
+  }
+
+  async function syncTodayNewStocksFromServer() {
+    loadTodayNewStocksFromStorage();
+    try {
+      const res = await fetch('/api/new-stocks-today');
+      if (res.ok) {
+        const json = await res.json();
+        const todayStr = getTodayLocalDateString();
+        if (json && json.ok && json.date === todayStr && Array.isArray(json.codes)) {
+          json.codes.forEach(c => {
+            const clean = String(c || '').trim().toUpperCase();
+            if (clean) window.TODAY_NEW_STOCKS.add(clean);
+          });
+          saveTodayNewStocksToStorage();
+        }
+      }
+    } catch (e) {
+      // 離線或伺服器尚未回應時沿用 localStorage
+    }
+  }
+
+  function markStockAsNewToday(codes) {
+    if (!codes) return;
+    const list = Array.isArray(codes) ? codes : [codes];
+    let added = false;
+    list.forEach(c => {
+      const clean = String(c || '').trim().toUpperCase();
+      if (clean && !window.TODAY_NEW_STOCKS.has(clean)) {
+        window.TODAY_NEW_STOCKS.add(clean);
+        added = true;
+      }
+    });
+    if (added) {
+      saveTodayNewStocksToStorage();
+      fetch('/api/new-stocks-today', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codes: Array.from(window.TODAY_NEW_STOCKS) })
+      }).catch(() => {});
+    }
+  }
+
+  function removeStockFromNewToday(code) {
+    const clean = String(code || '').trim().toUpperCase();
+    if (clean && window.TODAY_NEW_STOCKS.has(clean)) {
+      window.TODAY_NEW_STOCKS.delete(clean);
+      saveTodayNewStocksToStorage();
+    }
+  }
+
+  function isStockNewToday(code) {
+    if (!code) return false;
+    const clean = String(code).trim().toUpperCase();
+    return window.TODAY_NEW_STOCKS.has(clean);
+  }
+
+  function nodeHasTodayNewStocks(node) {
+    if (!node || window.TODAY_NEW_STOCKS.size === 0) return false;
+    if (node.reports && Array.isArray(node.reports)) {
+      for (const r of node.reports) {
+        if (r && r.code && isStockNewToday(r.code)) {
+          return true;
+        }
+      }
+    }
+    if (node.children && Array.isArray(node.children)) {
+      for (const child of node.children) {
+        if (nodeHasTodayNewStocks(child)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+
   function pathParts(path){ return path ? path.split('/') : []; }
 
   function allFolderPaths(node, acc){
@@ -6435,6 +6653,13 @@
     await syncWatchlistFromServer();
     const { data } = await api('GET', '/api/tree');
     tree = data.tree;
+    if (tree && Array.isArray(tree.todayNewStocks)) {
+      tree.todayNewStocks.forEach(c => {
+        const clean = String(c || '').trim().toUpperCase();
+        if (clean) window.TODAY_NEW_STOCKS.add(clean);
+      });
+      saveTodayNewStocksToStorage();
+    }
     populateMarketMapFromTree(tree);
     renderTree();
   }
@@ -6473,6 +6698,11 @@
     row.className = 'tree-row' + (node.path === currentPath ? ' active' : '');
     row.dataset.path = node.path;
 
+    const hasTodayNew = !isRoot && nodeHasTodayNewStocks(node);
+    if (hasTodayNew) {
+      collapsedPaths.delete(node.path);
+    }
+
     const toggle = document.createElement('span');
     toggle.className = 'tree-toggle';
     if (hasChildren) {
@@ -6490,6 +6720,13 @@
     label.className = 'tree-label';
     label.textContent = (isRoot ? '🗂️ reports' : '📁 ' + node.name);
     label.title = isRoot ? 'reports' : node.name;
+    if (hasTodayNew) {
+      const nb = document.createElement('span');
+      nb.className = 'folder-new-badge';
+      nb.textContent = 'NEW!';
+      nb.title = '此分類內有今日新增歸檔的個股';
+      label.appendChild(nb);
+    }
     row.appendChild(label);
 
     if (!isRoot) {
@@ -6644,10 +6881,17 @@
     }
 
     const item = document.createElement('div');
-    item.className = 'tree-report-row' + (isStarred ? ' is-starred' : '');
+    const isNew = isStockNewToday(code);
+    if (isNew) {
+      item.classList.add('is-today-new');
+    }
+    item.className = 'tree-report-row' + (isStarred ? ' is-starred' : '') + (isNew ? ' is-today-new' : '');
     item.draggable = true;
 
     if (code) item.dataset.code = code;
+    const newBadge = isNew
+      ? `<span class="tree-new-badge" title="今日新增個股 (今日有效，明日自動清除)">NEW!</span>`
+      : '';
     const card = cardsByCode[code] || {};
     const stat = (window.winrateMapByCode && window.winrateMapByCode[code]) ? window.winrateMapByCode[code] : {};
     // 左側個股樹狀清單以各檔 Markdown 報告為準，而非排行榜資料。
@@ -6745,7 +6989,7 @@
     const marketClass = market === 'TWO' ? 'market-two' : 'market-tw';
     const marketLabel = market === 'TWO' ? '上櫃' : '上市';
     const marketTitle = `[${marketLabel}] ${code} ${displayName}`;
-    item.innerHTML = `${starBtn}<span class="code ${marketClass}" title="${escapeHtml(marketTitle)}">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>${dispBadge}<span class="tree-stat-pills">${quickActions}${winPill}${changePill}${pricePill}${pePill}</span>`;
+    item.innerHTML = `${newBadge}${starBtn}<span class="code ${marketClass}" title="${escapeHtml(marketTitle)}">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>${dispBadge}<span class="tree-stat-pills">${quickActions}${winPill}${changePill}${pricePill}${pePill}</span>`;
     item.addEventListener('click', () => {
       if (window.activeWorkspaceName === 'reports') {
         selectStockGlobal(code);
@@ -6860,8 +7104,11 @@
       const market = getStockMarket(r.code, r);
       const marketClass = market === 'TWO' ? 'market-two' : 'market-tw';
       const marketLabel = market === 'TWO' ? '上櫃' : '上市';
+      const isNew = isStockNewToday(r.code);
+      const cardNewBadge = isNew ? `<span class="card-new-badge" title="今日新增個股 (今日有效)">NEW!</span>` : '';
       card.innerHTML = `
         <input type="checkbox" class="select-box" draggable="false">
+        ${cardNewBadge}
         ${badge}
         ${cardDispBadge}
         ${thumb}
@@ -7096,6 +7343,7 @@
       const { ok, data } = await api('POST', '/api/report/delete', { code });
       if (!ok) { setStatus('❌ ' + data.error, true); return; }
       setStatus(data.deletedFiles > 0 ? `✅ 已刪除 ${code} 的 HTML 與 Markdown 報表` : `⚠️ 找不到 ${code} 對應的報表檔案`);
+      removeStockFromNewToday(code);
       await loadTree();
       await loadCards();
       await loadList();
@@ -7498,11 +7746,13 @@
     generatePolling = true;
     const statusEl = document.getElementById('generate-status');
     if (!generateStartTime) generateStartTime = Date.now();
+    let lastJobData = null;
 
     while (true) {
       let data;
       try {
         ({ data } = await api('GET', '/api/generate/status'));
+        lastJobData = data;
       } catch (e) {
         statusEl.classList.add('error');
         statusEl.textContent = '❌ 無法連線查詢進度: ' + e.message;
@@ -7548,15 +7798,35 @@
 
     generatePolling = false;
     setGenerateUI(false);
+    await syncTodayNewStocksFromServer();
+
+    // 檢查本次產生是否針對特定個股代號（非 ALL）
+    const inputEl = document.getElementById('generate-input');
+    const rawVal = inputEl ? inputEl.value.trim() : '';
+    const isBatchAll = rawVal.toUpperCase().startsWith('ALL') || rawVal === '全部';
+    const successfulTickers = (lastJobData && lastJobData.results || []).filter(r => r.ok && r.ticker).map(r => r.ticker);
+    if (!isBatchAll && successfulTickers.length > 0) {
+      markStockAsNewToday(successfulTickers);
+    }
+
     await loadTree();
     await loadList();
     await refreshPatternData();
 
-    // 若有成功產出個股，自動切換至該股票報表
+    // 若有成功產出個股，自動切換至該股票報表並高亮定位
     try {
-      const firstSuccess = (data && data.results || []).find(r => r.ok && r.ticker);
+      const firstSuccess = (lastJobData && lastJobData.results || []).find(r => r.ok && r.ticker);
       if (firstSuccess) {
-        await selectStockGlobal(firstSuccess.ticker);
+        const targetSid = String(firstSuccess.ticker).trim().toUpperCase();
+        await selectStockGlobal(targetSid);
+        setTimeout(() => {
+          const targetRow = document.querySelector(`.tree-report-row[data-code="${targetSid}"]`);
+          if (targetRow) {
+            targetRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            targetRow.classList.add('flash-highlight');
+            setTimeout(() => targetRow.classList.remove('flash-highlight'), 2500);
+          }
+        }, 300);
       }
     } catch (_e) {}
   }
@@ -8383,6 +8653,7 @@ ${macroJsonText()}`;
   setupResizer(document.getElementById('resizer-left'), document.querySelector('.sidebar'), 'sidebar', true);
 
   syncWatchlistFromServer()
+    .then(() => syncTodayNewStocksFromServer())
     .then(() => loadTree())
     .then(() => loadCards())
     .then(loadList);
