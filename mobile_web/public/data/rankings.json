@@ -56,6 +56,21 @@
         },
         {
           "rank": "4",
+          "code": "4979",
+          "name": "華星光",
+          "category": "電子零組件",
+          "price": "629.00",
+          "changePct": "+9.97%",
+          "score": "207.4",
+          "monthlyRev": "7月營收5.09億元(MoM+11.8%, YoY+31.01%)",
+          "earnings": "Q2 EPS 1.29元，毛利率22.4%，累計上半年EPS 2.91元",
+          "catalyst": "800G模組放量、CW/EML擴產、1.6T NPO 2027量產",
+          "targetPrice": "本土法人目標價800元(買進)",
+          "feature": "🔥踩中市場主流風口:【光通訊CPO/矽光子】(+25分) ； ✨突破5MA翻揚 ； 🏆型態:多頭排列",
+          "isEvolution": true
+        },
+        {
+          "rank": "5",
           "code": "2395",
           "name": "研華",
           "category": "工業電腦",
@@ -70,7 +85,7 @@
           "isEvolution": true
         },
         {
-          "rank": "5",
+          "rank": "6",
           "code": "3661",
           "name": "世芯-KY",
           "category": "IC設計",
@@ -85,7 +100,7 @@
           "isEvolution": true
         },
         {
-          "rank": "6",
+          "rank": "7",
           "code": "6515",
           "name": "穎崴",
           "category": "測試介面",
@@ -100,7 +115,7 @@
           "isEvolution": true
         },
         {
-          "rank": "7",
+          "rank": "8",
           "code": "6584",
           "name": "南俊國際",
           "category": "伺服器機構",
@@ -115,7 +130,7 @@
           "isEvolution": true
         },
         {
-          "rank": "8",
+          "rank": "9",
           "code": "2301",
           "name": "光寶科",
           "category": "電源供應",
@@ -130,7 +145,7 @@
           "isEvolution": true
         },
         {
-          "rank": "9",
+          "rank": "10",
           "code": "3026",
           "name": "禾伸堂",
           "category": "被動元件",
@@ -142,21 +157,6 @@
           "catalyst": "公司轉型為AI高階電源核心元件供應商，AI產線滿載，NP0 MLCC全球市占逾五成，交期逾20週。預計2026-2029年投入30億元擴充台灣與海外產能。",
           "targetPrice": "凱基投顧給予「增加持股」評等，12個月目標價650元 (以2027年EPS 25倍本益比推算)",
           "feature": "🔥踩中市場主流風口:【高階被動元件】(+25分) ； 💡守穩10MA支撐 ； 📉回測量縮守穩(0.8x)",
-          "isEvolution": true
-        },
-        {
-          "rank": "10",
-          "code": "3006",
-          "name": "晶豪科",
-          "category": "記憶體",
-          "price": "278.50",
-          "changePct": "+0.54%",
-          "score": "191.0",
-          "monthlyRev": "8月營收79.05億元(MoM+16.5%, YoY+605.2%)",
-          "earnings": "Q2 EPS 20.21元，毛利率68.7%",
-          "catalyst": "記憶體受惠AI需求，DDR2/DDR3市佔增，價格逐季調升。",
-          "targetPrice": "近三個月無公開機構目標價",
-          "feature": "🔥踩中市場主流風口:【記憶體】(+19分) ； 💡守穩10MA支撐 ； 🏆型態:多頭排列",
           "isEvolution": true
         }
       ]
