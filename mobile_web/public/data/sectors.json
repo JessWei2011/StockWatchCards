@@ -1,88 +1,45 @@
 {
-  "as_of_date": "09/04",
-  "overview": "台股受惠聯準會鴿派訊號與美股走高，大盤強彈近700點，外資大舉回補，資金聚焦AI相關科技成長股，尤其散熱、被動元件與光通訊族群表現最為強勁。",
+  "schema_version": 2,
+  "as_of_date": "2026-09-07",
+  "overview": "外資大幅回補激勵權值與低基期電子股，被動元件漲價潮與半導體先進封裝成為盤面資金輪動焦點。",
   "hot_sectors": [
     {
-      "sector_name": "AI伺服器/ODM",
+      "sector_name": "被動元件（MLCC與特種材料）",
       "heat_level": 5,
-      "catalysts": "戴爾財報報喜上調展望，聯想伺服器業務強勁，Google、Meta、Anthropic等AI模型軍備競賽升溫，持續推升AI訓練與推論算力需求。輝達GB系列追加訂單與水冷出貨增加。外資大買鴻海、緯創、廣達等權值股，華碩亦受AI PC與雲端伺服器題材帶動。",
+      "stage": "accelerating",
+      "catalysts": "國際大廠三星電機啟動產品調漲，帶動MLCC漲價題材全面擴散，外資連續回補禾伸堂、信昌電與華新科放量攻漲停，族群由點擴面啟動主升加速行情。",
+      "event_date": "2026-09-07",
+      "source_url": "https://www.ctee.com.tw/news/20260907700848-430201",
       "related_tags": [
-        "AI PC",
-        "雲端伺服器",
-        "邊緣AI",
-        "GPU",
-        "TPU",
-        "ODM"
+        "MLCC漲價",
+        "被動元件",
+        "車用與工控材料"
       ]
     },
     {
-      "sector_name": "散熱水冷",
-      "heat_level": 5,
-      "catalysts": "AI晶片功耗持續攀升，散熱技術成關鍵。台積電與AMD揭示下一代水冷技術藍圖（TIM-less架構），預計明年中量產。雙鴻、奇鋐等台廠積極參與新世代水冷板開發。雙鴻7月獲利亮眼，EPS達6.47元，股價無懼處置仍漲停創高；奇鋐同步創天價。光寶科策略投資波蘭液冷業者。",
-      "related_tags": [
-        "液冷散熱",
-        "水冷板",
-        "微流道",
-        "AI晶片",
-        "高效能運算"
-      ]
-    },
-    {
-      "sector_name": "高階被動元件",
-      "heat_level": 5,
-      "catalysts": "TrendForce報告指出，南韓SEMCO率先調漲2026年第四季MLCC報價，產業邁入上升格局。國巨受邀參加Citi投資人說明會，買盤提前卡位。AI伺服器電源升級帶動高壓、低損耗、耐高溫MLCC需求。禾伸堂規劃擴充AI電源MLCC產能。華新科、禾伸堂、金山電等多檔個股亮燈漲停。",
-      "related_tags": [
-        "MLCC",
-        "AI伺服器電源",
-        "高容值電容",
-        "漲價題材"
-      ]
-    },
-    {
-      "sector_name": "光通訊CPO/矽光子",
-      "heat_level": 5,
-      "catalysts": "AI資料中心高速傳輸需求持續升溫，SEMICON Taiwan 2026將矽光子與CPO列為新顯學。台積電預估矽光子2027年市場滲透率將突破5成，CPO有望於2026下半年進入量產。AI GPU、ASIC運算晶片加速「由電轉光」趨勢。前鼎、華星光、鼎元等多檔個股攻上漲停。",
-      "related_tags": [
-        "矽光子",
-        "CPO (Co-Packaged Optics)",
-        "AI資料中心",
-        "高速互連",
-        "Micro LED"
-      ]
-    },
-    {
-      "sector_name": "工業電腦Edge AI",
+      "sector_name": "半導體先進封測與廠務設備",
       "heat_level": 4,
-      "catalysts": "市場看好AI應用從雲端延伸至邊緣運算（Edge AI）趨勢，工業電腦為部署邊緣AI解決方案的關鍵硬體。OpenAI GPT-6 Astra加速「邊端AI去雲化」，主力資金從雲端機房轉向邊端運算、終端PCB、低功耗晶片模組等。威強電、研揚、研華等指標股表現強勁。",
+      "stage": "emerging",
+      "catalysts": "AI強勁需求推動先進封裝擴產，信紘科在手訂單達230億元能見度直達2028年，日月光投控與京元電子帶量重回均線之上，法人籌碼長線布局增溫。",
+      "event_date": "2026-09-07",
+      "source_url": "https://www.ctee.com.tw/news/20260907700848-430201",
       "related_tags": [
-        "邊緣運算",
-        "AI PC",
-        "低功耗晶片",
-        "終端PCB",
-        "推理硬體"
+        "CoWoS/先進封裝",
+        "半導體設備",
+        "廠務工程"
       ]
     },
     {
-      "sector_name": "先進封裝CoWoS/設備",
-      "heat_level": 4,
-      "catalysts": "台積電CoWoS產能缺口預計持續至2027年底，加速FOPLP技術崛起。台積電CoPoS試產線已於6月建置完成，13家台廠設備供應商入列。SEMICON Taiwan 2026強調AI/HPC晶片大型化對精密量測、翹曲控制、研磨、CMP及Die Bond等設備需求增加。",
-      "related_tags": [
-        "CoWoS",
-        "SoIC",
-        "FOPLP",
-        "封裝設備",
-        "HPC",
-        "AI晶片"
-      ]
-    },
-    {
-      "sector_name": "記憶體",
+      "sector_name": "伺服器管理晶片（BMC）與高速傳輸",
       "heat_level": 3,
-      "catalysts": "美股記憶體族群（美光、SanDisk）股價大漲，市場預期台股記憶體族群有望跟進。OpenAI GPT-6 Astra模型優化小型化分支架構，對低功耗、高穩定、量大價優的推理硬體（含記憶體）需求增加。",
+      "stage": "emerging",
+      "catalysts": "信驊公布8月營收創歷史新高並宣布Q4因應市場強勁需求將調漲產品售價達雙位數，龍頭率先表態突圍，帶動高階伺服器控制IC族群醞釀轉機動能。",
+      "event_date": "2026-09-07",
+      "source_url": "https://www.ctee.com.tw/news/20260907700848-430201",
       "related_tags": [
-        "DRAM",
-        "NAND Flash",
-        "AI推理"
+        "BMC晶片",
+        "伺服器規格升級",
+        "高價股指標"
       ]
     }
   ]

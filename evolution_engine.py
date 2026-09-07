@@ -5,12 +5,12 @@
 🏆 AI 獨有實戰勝率與自我進化引擎 (evolution_engine.py) - 旗艦多維平衡版
 ----------------------------------------------------------------------------------------
 【實事求是與科學量化核心】：
-1. 拒絕粗暴大屠殺：一票否決僅保留「處置撮合陷阱」與「月乖離 > 22% 瘋狂過熱」。
+1. 處置股統一扣分但仍可入榜；月乖離過熱或過弱保留排除規則。
 2. 漸進式綜合評分矩陣：
    - 攻守兼備：同時納入「放量突破起漲」與「量縮良性回測月線守穩」。
    - 開高走低長黑採平滑扣分制，絕不因單日震盪盲目錯殺優質回測買點。
 3. 風報比（R/R）：個股前醒目標註，不作死門檻硬剔除，由操盤手決策。
-4. 驅動核心：直連 Google REST API (Gemini 3.5 Flash / 備援架構)，秒級情報審查。
+4. 驅動核心：直連 Google REST API (Gemini 3.8 Flash / 備援架構)，秒級情報審查。
 ========================================================================================
 """
 
@@ -19,6 +19,8 @@ import os
 import re
 import json
 import time
+import hashlib
+from datetime import date, datetime
 from pathlib import Path
 import requests
 import pandas as pd
@@ -34,7 +36,11 @@ if sys.platform == 'win32':
 ROOT_DIR = Path(__file__).resolve().parent
 REPORTS_DIR = ROOT_DIR / "reports"
 OUTPUT_EVO_MD = ROOT_DIR / "stock_winrate_ranking_evolution.md"
+CHATGPT_RANKING_MD = ROOT_DIR / "stock_winrate_ranking.md"
+GEMINI_RANKING_MD = ROOT_DIR / "stock_winrate_ranking_gemini.md"
 EVOLUTION_LOG_MD = ROOT_DIR / "evolution_log.md"
+RANKING_HISTORY_DIR = ROOT_DIR / "ranking_history"
+LLM_HANDOFF_FILE = ROOT_DIR / "llm_manual_handoff.json"
 
 sys.path.insert(0, str(ROOT_DIR))
 from batch_scanner_gemini import (
@@ -76,12 +82,82 @@ def get_gemini_api_key():
                     return val
     return None
 
-def call_gemini_rest(prompt, api_key, models_priority=['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-flash-lite-latest']):
+GEMINI_MODELS_PRIORITY = ('gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.5-flash-lite')
+
+
+class ManualLLMResponseRequired(RuntimeError):
+    pass
+
+
+def _manual_prompt_id(prompt):
+    return hashlib.sha256(prompt.encode('utf-8')).hexdigest()[:16]
+
+
+def consume_manual_llm_response(prompt):
+    if not LLM_HANDOFF_FILE.exists():
+        return None
+    try:
+        item = json.loads(LLM_HANDOFF_FILE.read_text(encoding='utf-8'))
+    except Exception:
+        return None
+    prompt_id = _manual_prompt_id(prompt)
+    if item.get('prompt_id') != prompt_id or item.get('status') != 'ready':
+        return None
+    response = str(item.get('response') or '').strip()
+    if not response:
+        return None
+    item['status'] = 'consumed'
+    item['consumed_at'] = datetime.now().isoformat(timespec='seconds')
+    LLM_HANDOFF_FILE.write_text(json.dumps(item, ensure_ascii=False, indent=2), encoding='utf-8')
+    print(f"📥 已載入 Gemini 網頁版人工回覆 [{prompt_id}]", flush=True)
+    return response
+
+
+def request_manual_llm_response(prompt):
+    prompt_id = _manual_prompt_id(prompt)
+    is_sector_prompt = '"hot_sectors"' in prompt and '"market_overview"' in prompt
+    kind = '產業風口查核' if is_sector_prompt else '候選股批次查核'
+    item = {
+        'status': 'awaiting_response', 'prompt_id': prompt_id, 'kind': kind,
+        'step': 1 if is_sector_prompt else 2, 'total_steps': 2,
+        'prompt': prompt, 'response': '',
+        'created_at': datetime.now().isoformat(timespec='seconds'),
+    }
+    if not is_sector_prompt:
+        # 供網頁端核對 Gemini 是否逐檔回覆，避免漏答仍被當成完成。
+        item['expected_codes'] = list(dict.fromkeys(
+            re.findall(r'"code"\s*:\s*"(\d{4,6})"', prompt)
+        ))
+    LLM_HANDOFF_FILE.write_text(json.dumps(item, ensure_ascii=False, indent=2), encoding='utf-8')
+    print(f"📝 MANUAL_HANDOFF_REQUIRED：{kind}；請在網頁複製 Prompt，貼回 JSON 回覆 [{prompt_id}]", flush=True)
+    raise ManualLLMResponseRequired(prompt_id)
+
+
+def gemini_error_summary(response):
+    """擷取 Google 可公開的錯誤原因，不把 API key 或完整請求網址寫入紀錄。"""
+    try:
+        error = response.json().get('error', {})
+        message = str(error.get('message') or '').strip()
+        details_text = json.dumps(error.get('details') or [], ensure_ascii=False)
+        retry = re.search(r'"retryDelay"\s*:\s*"([^"]+)"', details_text)
+        metric = re.search(r'"quotaMetric"\s*:\s*"([^"]+)"', details_text)
+        parts = [message[:260]] if message else []
+        if metric:
+            parts.append(f"quota={metric.group(1).rsplit('/', 1)[-1]}")
+        if retry:
+            parts.append(f"建議等待={retry.group(1)}")
+        return '；'.join(parts) or f'HTTP {response.status_code}'
+    except Exception:
+        return f'HTTP {getattr(response, "status_code", "未知")}'
+
+
+def call_gemini_rest(prompt, api_key, models_priority=GEMINI_MODELS_PRIORITY):
     for m in models_priority:
+        print(f'⏳ LLM 覆盤：等待 {m} 回覆（逾時後嘗試備援）', flush=True)
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.2}
+            "generationConfig": {"thinkingConfig": {"thinkingLevel": "low"}}
         }
         try:
             res = requests.post(url, json=payload, timeout=20)
@@ -90,10 +166,134 @@ def call_gemini_rest(prompt, api_key, models_priority=['gemini-2.5-flash', 'gemi
                 text = data['candidates'][0]['content']['parts'][0]['text']
                 return text, m
             elif res.status_code in (503, 429):
+                print(f"      [Gemini {m}] HTTP {res.status_code}: {gemini_error_summary(res)}", flush=True)
                 continue
         except Exception:
             continue
     return None, None
+
+def apply_disposition_penalty(candidate, description):
+    """所有來源共用處置扣分；重複查核不重複扣分，正常交易可撤銷舊標記。"""
+    candidate.setdefault('score_before_disposition', candidate['score'])
+    candidate.setdefault('reasons_before_disposition', list(candidate['reasons']))
+    candidate['score'] = candidate['score_before_disposition']
+    candidate['reasons'] = list(candidate['reasons_before_disposition'])
+    candidate['disposition'] = description
+    if description:
+        candidate['score'] -= 27.0
+        # 分盤造成的量縮不能取得自然回測加分。
+        if any('回測量縮守穩' in r for r in candidate['reasons']):
+            candidate['score'] -= 12.0
+        candidate['reasons'] = [r for r in candidate['reasons'] if '回測量縮守穩' not in r]
+        candidate['reasons'].append(f'🚨{description}（處置扣27分）')
+    return candidate
+
+
+def report_session_date(value, generated_at):
+    """以報表產生日期補足無年份的 K 線日期，避免跨年誤用快取。"""
+    value = str(value).strip()
+    if re.fullmatch(r'\d{4}[-/]\d{2}[-/]\d{2}', value):
+        return date.fromisoformat(value.replace('/', '-')).isoformat()
+    anchor = date.fromisoformat(generated_at)
+    month, day = map(int, value.split('/'))
+    session = date(anchor.year, month, day)
+    if session > anchor:
+        session = date(anchor.year - 1, month, day)
+    return session.isoformat()
+
+
+def select_qualified_candidates(candidates, threshold=180.0, limit=10):
+    return sorted((c for c in candidates if c['holistic_score'] >= threshold),
+                  key=lambda c: c['holistic_score'], reverse=True)[:limit]
+
+
+def select_actionable_candidates(candidates, threshold=105.0, limit=10, watch_limit=5):
+    """正式起漲優先；不足時補充尚待觸發的觀察候選，避免空榜卻不冒充買進訊號。"""
+    active_stages = {'剛突破起漲', '突破後量縮回測', '壓縮蓄勢待突破'}
+    active = sorted((c for c in candidates
+                     if c.get('setup_stage') in active_stages and c['holistic_score'] >= threshold),
+                    key=lambda c: c['holistic_score'], reverse=True)
+    for candidate in active:
+        candidate['selection_tier'] = '正式起漲候選'
+    remaining = max(0, min(watch_limit, limit - len(active)))
+    watch = sorted((c for c in candidates
+                    if c.get('setup_stage') == '趨勢中段／訊號未明'
+                    and c.get('score', 0) >= 70
+                    and -8.0 <= c.get('pivot_distance', -99) <= 2.0
+                    and c.get('today_pct', 99) < 7.0 and c.get('ret5', 99) < 13.0),
+                   key=lambda c: (c.get('holistic_score', 0),
+                                  c.get('pre_audit_score', c.get('score', 0))), reverse=True)[:remaining]
+    for candidate in watch:
+        candidate['selection_tier'] = '觀察候選（尚待突破觸發）'
+    return (active + watch)[:limit]
+
+
+def apply_universe_relative_strength(candidates):
+    """以 reports 股票池的 3/5 日報酬分位衡量相對強度，不再把單純上漲稱為逆勢。"""
+    if not candidates:
+        return candidates
+    frame = pd.DataFrame([{'ret3': c['ret3'], 'ret5': c['ret5']} for c in candidates])
+    percentiles = (frame.rank(pct=True, method='average')['ret3']
+                   + frame.rank(pct=True, method='average')['ret5']) / 2
+    for candidate, percentile in zip(candidates, percentiles):
+        candidate['universe_rs_percentile'] = round(float(percentile) * 100, 1)
+        delta = 10.0 if percentile >= 0.80 else 6.0 if percentile >= 0.60 else -6.0 if percentile <= 0.20 else 0.0
+        reason = f"📊股票池相對強度PR{percentile*100:.0f}({delta:+.0f}分)"
+        if 'score_before_disposition' in candidate:
+            candidate['score_before_disposition'] += delta
+            candidate['reasons_before_disposition'].append(reason)
+            apply_disposition_penalty(candidate, candidate.get('disposition', ''))
+        else:
+            candidate['score'] += delta
+            candidate['reasons'].append(reason)
+        candidate['score'] = round(candidate['score'], 1)
+    return candidates
+
+
+def write_ranking_snapshot(as_of_date, all_candidates, selected, hot_sectors):
+    """保存每次訊號與分項資料，供未來 3/5 交易日驗證，避免事後改寫歷史。"""
+    RANKING_HISTORY_DIR.mkdir(exist_ok=True)
+    generated_at = datetime.now().astimezone().isoformat(timespec='seconds')
+    stamp = datetime.now().strftime('%H%M%S')
+    payload = {
+        'schema_version': 1, 'as_of_date': as_of_date, 'generated_at': generated_at,
+        'holding_horizon': '3-5 trading days', 'entry_assumption': 'next trading day open',
+        'hot_sectors': hot_sectors, 'selected_codes': [c['code'] for c in selected],
+        'candidates': all_candidates,
+    }
+    path = RANKING_HISTORY_DIR / f'{as_of_date}_{stamp}.json'
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str), encoding='utf-8')
+    try:
+        display_path = path.relative_to(ROOT_DIR)
+    except ValueError:
+        display_path = path
+    print(f'🧾 評分證據快照已保存：{display_path}', flush=True)
+    return path
+
+
+def parse_json_object(text):
+    if not text:
+        return None
+    match = re.search(r'```(?:json)?\s*(\{.*\})\s*```', text, re.DOTALL)
+    raw = match.group(1) if match else text.strip()
+    raw = re.sub(r',\s*([}\]])', r'\1', raw)
+    try:
+        value = json.loads(raw)
+        return value if isinstance(value, dict) else None
+    except (TypeError, json.JSONDecodeError):
+        return None
+
+
+def evidence_is_recent(item, as_of_date, max_age_days=30):
+    """只有截止日前、具來源網址且在有效期內的事件可影響分數。"""
+    try:
+        event_date = date.fromisoformat(str(item.get('event_date', '')))
+        cutoff = date.fromisoformat(as_of_date)
+    except (TypeError, ValueError):
+        return False
+    url = str(item.get('source_url', ''))
+    return url.startswith(('https://', 'http://')) and 0 <= (cutoff - event_date).days <= max_age_days
+
 
 def calculate_evolution_score(stock_info):
     kline = stock_info.get('kline', [])
@@ -146,126 +346,94 @@ def calculate_evolution_score(stock_info):
     close_loc = (price - low_s.iloc[-1]) / bar_range
 
     # 🛑 【真正致命的客觀一票否決】
-    if is_disposal:
-        return None
     if bias_20 > 22.0:
         return None
     if bias_20 < -18.0:
         return None
 
-    # ── 多維漸進式評分矩陣 (基準分 50.0) ──
+    # ── 3~5 交易日起漲評分：先判斷階段，再評估趨勢、量價與籌碼 ──
     score = 50.0
     reasons = []
+    ret3 = (price / float(close_s.iloc[-4]) - 1) * 100 if n >= 4 else 0.0
+    ret5 = (price / float(close_s.iloc[-6]) - 1) * 100 if n >= 6 else 0.0
+    ret10 = (price / float(close_s.iloc[-11]) - 1) * 100 if n >= 11 else 0.0
+    prior20_high = float(high_s.iloc[-21:-1].max()) if n >= 21 else float(high_s.iloc[:-1].max())
+    prev_prior20_high = float(high_s.iloc[-22:-2].max()) if n >= 22 else prior20_high
+    pivot_distance = (price / prior20_high - 1) * 100 if prior20_high else 0.0
+    prev_pct = (prev_close / float(close_s.iloc[-3]) - 1) * 100 if n >= 3 else 0.0
+    tr = pd.concat([(high_s-low_s), (high_s-close_s.shift()).abs(), (low_s-close_s.shift()).abs()], axis=1).max(axis=1)
+    atr14 = float(tr.rolling(14).mean().iloc[-1])
+    atr_pct = atr14 / price * 100 if price else 0.0
+    range5 = (float(high_s.iloc[-5:].max()) / max(float(low_s.iloc[-5:].min()), 1e-9)-1)*100
+    range10 = (float(high_s.iloc[-10:].max()) / max(float(low_s.iloc[-10:].min()), 1e-9)-1)*100
 
-    # A. 均線與K線位置 (攻守兼備)
-    if any("均線開花" in t for t in ktags):
-        score += 22.0
-        reasons.append("🚀均線開花多頭發散")
-    elif any("突破站上5MA" in t or "5MA轉仰角" in t for t in ktags):
-        score += 18.0
-        reasons.append("✨突破5MA翻揚")
-    elif any("站穩5MA" in t for t in ktags):
-        score += 14.0
-        reasons.append("📈站穩5MA推進")
-    elif price >= ma10.iloc[-1] * 0.995:
-        score += 10.0
-        reasons.append("💡守穩10MA支撐")
-    elif price >= ma20.iloc[-1] * 0.99:
-        score += 8.0
-        reasons.append("🛡️月線有守支撐扎實")
+    extended = today_pct >= 7.0 or ret5 >= 13.0 or bias_20 >= 11.0 or pivot_distance >= 8.0
+    repair_bounce = prev_pct <= -3.0 and today_pct >= 2.0 and price <= float(high_s.iloc[-2])
+    fresh_breakout = (price > prior20_high and prev_close <= prev_prior20_high
+                      and 0.3 <= today_pct <= 6.0 and vol_ratio >= 1.15)
+    recent_breakout = any(float(close_s.iloc[i]) > float(high_s.iloc[max(0, i-20):i].max())
+                          for i in range(max(20, n-7), n-1))
+    breakout_retest = (recent_breakout and abs(pivot_distance) <= 3.0 and price >= prior20_high*0.985
+                       and today_pct <= 4.0 and vol_ratio <= 1.15 and close_loc >= 0.45)
+    coiling = (range10 <= 10.0 and range5 <= range10*0.75 and -3.5 <= pivot_distance <= 1.0
+               and abs(ret5) <= 6.0 and vol_ratio <= 1.05 and price >= ma20.iloc[-1])
+
+    if extended:
+        stage, stage_score = '漲幅延伸／追價風險', -22.0
+    elif repair_bounce:
+        stage, stage_score = '修復反彈／尚待突破確認', -12.0
+    elif fresh_breakout:
+        stage, stage_score = '剛突破起漲', 32.0
+    elif breakout_retest:
+        stage, stage_score = '突破後量縮回測', 28.0
+    elif coiling:
+        stage, stage_score = '壓縮蓄勢待突破', 25.0
     else:
-        score -= 10.0
-        reasons.append("⚠️失守短均線(-10分)")
+        stage, stage_score = '趨勢中段／訊號未明', 0.0
+    score += stage_score
+    reasons.append(f"🎯階段:{stage}({stage_score:+.0f}分)")
 
-    if "杯柄" in pattern_name or "VCP" in pattern_name:
-        score += 16.0
-        reasons.append(f"🏆型態:{pattern_name}")
-    elif "多頭排列" in pattern_name:
-        score += 10.0
-        reasons.append("🏆型態:多頭排列")
+    # 趨勢最多 +15，量價最多 +12，MACD 最多 +10，避免同一漲勢重複加權。
+    if price >= ma5.iloc[-1] > ma10.iloc[-1] > ma20.iloc[-1] and s20 > 0:
+        score += 15.0; reasons.append('📈短中均線多頭(+15分)')
+    elif price >= ma20.iloc[-1] and s20 >= 0:
+        score += 8.0; reasons.append('🛡️站穩上升月線(+8分)')
+    else:
+        score -= 10.0; reasons.append('⚠️月線趨勢未確認(-10分)')
 
-    # B. 成交量結構
-    if any("滾量換手" in t for t in vtags):
-        score += 22.0
-        reasons.append("🚀滾量換手量價齊揚")
-    elif any("帶量長紅" in t or "帶量突破" in t for t in vtags):
-        score += 18.0
-        reasons.append("🔥帶量突破實質換手")
-    elif vol_ratio >= 1.2:
-        score += 10.0
-        reasons.append(f"量能增溫({vol_ratio:.1f}x)")
-    elif vol_ratio <= 0.85 and price >= ma20.iloc[-1]:
-        score += 12.0
-        reasons.append(f"📉回測量縮守穩({vol_ratio:.1f}x)")
+    volume_risk = any(k in t for t in vtags for k in ('爆歷史天量收黑', '量價頂背離', '天量阻力牆'))
+    if volume_risk:
+        score -= 18.0; reasons.append('⚠️量價出貨／壓力訊號(-18分)')
+    elif fresh_breakout:
+        score += 12.0; reasons.append(f'🔥突破量能確認({vol_ratio:.1f}x,+12分)')
+    elif (breakout_retest or coiling) and vol_ratio <= 0.85:
+        score += 10.0; reasons.append(f'💎結構內量縮({vol_ratio:.1f}x,+10分)')
+    elif 0.8 <= vol_ratio <= 1.5:
+        score += 4.0
 
-    if any("天量阻力牆" in t for t in vtags):
-        score -= 14.0
-        reasons.append("⚠️臨前高天量阻力(-14分)")
+    if any('金叉' in t or '綠柱收斂' in t for t in mtags):
+        score += 10.0; reasons.append('✨MACD轉強(+10分)')
+    elif any('強勢多頭' in t for t in mtags):
+        score += 6.0
+    elif any('死亡交叉' in t or '翻綠' in t for t in mtags):
+        score -= 12.0; reasons.append('⚠️MACD轉弱(-12分)')
 
-    # C. MACD 動態指標
-    if any("零軸上強勢多頭" in t for t in mtags):
-        score += 20.0
-        reasons.append("🚀MACD:多頭紅柱擴大")
-    elif any("二次金叉" in t or "零軸上金叉" in t for t in mtags):
-        score += 18.0
-        reasons.append("✨MACD:零軸上金叉")
-    elif any("綠柱收斂" in t for t in mtags):
-        score += 12.0
-        reasons.append("💡MACD:綠柱收斂空方衰退")
-    elif any("死亡交叉" in t for t in mtags):
-        score -= 16.0
-    elif any("翻綠" in t for t in mtags):
-        score -= 10.0
-
-    # D. 月線發動與防守區 (安全墊)
-    if 1.0 <= bias_20 <= 8.5 and s20 > 0.1:
-        score += 20.0
-        reasons.append(f"月線黃金發動區(+{bias_20:.1f}%)")
-    elif -2.0 <= bias_20 < 1.0 and s20 >= 0:
-        score += 16.0
-        reasons.append(f"貼近月線安全成本區(+{bias_20:.1f}%)")
-    elif -10.0 <= bias_20 < -2.0:
-        score += 10.0
-        reasons.append(f"低檔打底負乖離反彈({bias_20:.1f}%)")
-    elif bias_20 > 9.5:
-        score -= (bias_20 - 9.5) * 1.5
-
-    # E. K棒微觀扣分制 (平滑扣分，不直接處死)
     if intraday_pct < -2.2 and close_loc < 0.30:
-        score -= 15.0
-        reasons.append(f"⚠️開高走低長黑(-15分,實體{intraday_pct:.1f}%)")
-    elif any("假突破" in t or "誘多出貨" in t for t in ktags):
-        score -= 12.0
-        reasons.append("⚠️假突破上影線(-12分)")
-    elif today_pct > 1.0:
-        score += 14.0
-        reasons.append(f"逆勢抗跌(+{today_pct:.1f}%)")
-    elif today_pct >= 0:
-        score += 8.0
-        reasons.append("抗跌守穩")
+        score -= 15.0; reasons.append(f'⚠️開高走低長黑(-15分)')
+    elif any('假突破' in t or '誘多出貨' in t for t in ktags):
+        score -= 15.0; reasons.append('⚠️假突破上影線(-15分)')
 
-    # F. 籌碼總量
     if trust_buy_days >= 3:
-        score += 14.0
-        reasons.append(f"投信買超({trust_buy_days}/5日)")
+        score += 10.0; reasons.append(f"投信買超({trust_buy_days}/5日,+10分)")
     elif inst_buy_days >= 3:
-        score += 8.0
-        reasons.append(f"法人回補({inst_buy_days}/5日)")
+        score += 6.0; reasons.append(f"法人回補({inst_buy_days}/5日,+6分)")
 
-    # G. 實戰流動性與資金佔用折價 (Liquidity Discount)
-    if price >= 5000.0:
-        score -= 18.0 # 超高價千金股滑價與深度風險折價
-    elif price >= 3000.0:
-        score -= 12.0
-    elif price >= 1000.0:
-        score -= 6.0
+    support = max(float(ma20.iloc[-1]), prior20_high*0.975 if stage in ('剛突破起漲','突破後量縮回測') else float(ma10.iloc[-1]))
+    stop_loss = round(min(price * 0.99, support - atr14 * 0.5), 2)
+    technical_target_price = round(prior20_high + atr14 * 2.0, 2) if prior20_high > price else round(price + atr14*2.0, 2)
+    rr_ratio = round((technical_target_price-price)/max(price-stop_loss, 0.1), 1)
 
-    stop_loss = round(float(ma20.iloc[-1]) * 0.985, 2)
-    risk_pct = max((price - stop_loss) / price * 100, 1.0)
-    target_price = round(price * (1 + min(max(risk_pct * 2.2, 12.0), 30.0) / 100), 2)
-    rr_ratio = round((target_price - price) / max(price - stop_loss, 0.1), 1)
-
-    return {
+    candidate = {
         'code': stock_info['code'],
         'name': stock_info['name'],
         'category': stock_info['category'],
@@ -277,23 +445,34 @@ def calculate_evolution_score(stock_info):
         'bias_20': round(bias_20, 1),
         'rsi14': round(rsi14, 1),
         'vol_ratio': round(vol_ratio, 1),
+        'ret3': round(ret3, 1), 'ret5': round(ret5, 1), 'ret10': round(ret10, 1),
+        'atr_pct': round(atr_pct, 1), 'pivot_price': round(prior20_high, 2),
+        'pivot_distance': round(pivot_distance, 1), 'range5': round(range5, 1),
+        'range10': round(range10, 1), 'setup_stage': stage,
         'score': round(score, 1),
         'reasons': reasons,
         'stop_loss': stop_loss,
-        'target_price': target_price,
+        'target_price': '',
+        'technical_target_price': technical_target_price,
         'rr_ratio': rr_ratio,
         'above_5ma': bool(price >= ma5.iloc[-1]),
+        'session_date': stock_info.get('session_date', ''),
         'date': kline[-1].get('date', '最新')
     }
+    return apply_disposition_penalty(candidate, '本機報表標示處置（待當日查核）' if is_disposal else '')
 
-def call_gemini_search(prompt, api_key, models_priority=['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite']):
+def call_gemini_search(prompt, api_key, models_priority=GEMINI_MODELS_PRIORITY):
     """透過 Google Search Grounding 即時聯網搜尋最新月盈年盈營收、季報EPS、法說會利多與法人目標價"""
+    manual_response = consume_manual_llm_response(prompt)
+    if manual_response:
+        return manual_response, 'Gemini 3.8 網頁版人工查核'
     for m in models_priority:
+        print(f'⏳ LLM 搜尋：等待 {m} 回覆（逾時後嘗試備援）', flush=True)
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
             "tools": [{"googleSearch": {}}],
-            "generationConfig": {"temperature": 0.1}
+            "generationConfig": {"thinkingConfig": {"thinkingLevel": "low"}}
         }
         try:
             res = requests.post(url, json=payload, timeout=30)
@@ -302,14 +481,18 @@ def call_gemini_search(prompt, api_key, models_priority=['gemini-2.5-flash', 'ge
                 text = data['candidates'][0]['content']['parts'][0]['text']
                 return text, m
             elif res.status_code in (503, 429):
-                print(f"      [Gemini {m}] 伺服器負載高({res.status_code})，切換備用模型...", flush=True)
+                print(f"      [Gemini {m}] HTTP {res.status_code}: {gemini_error_summary(res)}", flush=True)
                 continue
             else:
-                print(f"      [Gemini {m}] HTTP {res.status_code}: {res.text[:120]}", flush=True)
+                try:
+                    detail = res.json().get('error', {}).get('message', '')
+                except Exception:
+                    detail = res.text
+                print(f"      [Gemini {m}] HTTP {res.status_code}: {detail[:300]}", flush=True)
         except Exception as e:
             print(f"      [Gemini {m}] 請求異常: {e}", flush=True)
             continue
-    return None, None
+    request_manual_llm_response(prompt)
 
 # =========================================================================
 # 🏛️ 【全自動台股產業分類體系與語意本體庫 (Taxonomy & Concept Ontology)】
@@ -715,7 +898,9 @@ def fetch_market_hot_sectors(api_key, as_of_date):
     if SECTOR_CACHE_FILE.exists():
         try:
             cached = json.loads(SECTOR_CACHE_FILE.read_text(encoding="utf-8"))
-            if cached.get('as_of_date') == as_of_date and cached.get('hot_sectors'):
+            if (cached.get('schema_version') == 2
+                    and cached.get('as_of_date') == as_of_date
+                    and isinstance(cached.get('hot_sectors'), list)):
                 return cached.get('overview', ''), cached.get('hot_sectors', [])
         except Exception:
             pass
@@ -723,38 +908,35 @@ def fetch_market_hot_sectors(api_key, as_of_date):
     prompt = f"""【系統角色與任務】
 你是一名台股外資頂級量化操盤手與產業研究總監。基準審查日期為：{as_of_date}。
 請透過 Google Search 即時查核當前（{as_of_date} 當週）台股盤面最新受市場大資金（外資/投信/主力）追捧的「核心強勢產業族群、重大法說會利多與主流題材」：
-請找出目前市場資金最青睞、動能最強的 5 至 8 個核心產業族群（例如：AI伺服器/ODM、先進封裝CoWoS/設備、散熱水冷、光通訊CPO/矽光子、ASIC/IP設計、工業電腦Edge AI、高階被動元件、重電綠能等）。
+目標是預測未來 3 至 5 個交易日，不要把已集體急漲、只有舊聞重述、或利多已充分反映的族群列為風口。允許找不到任何合格族群並回傳空陣列。
 
 【熱度評分標準 (heat_level 嚴格量化，嚴禁全員5星)】
-- 5 星 (爆發性主線)：族群出現集體大漲或成交金額佔大盤前三名，具重大產業急單或國際大廠（如NVIDIA、蘋果、台積電）關鍵實質催化劑。
+- 5 星 (剛加速主線)：近 1 至 5 個交易日資金廣度與成交金額同步升溫，且有 14 天內新實質催化劑；已連續急漲者不得給 5 星。
 - 4 星 (強勢輪動線)：族群有多檔個股站穩均線起漲，法說會展望正向，外資投信連續買超。
 - 3 星 (潛在發酵線)：低檔轉機或少數龍頭突圍，題材初期萌芽。
 (必須依照真實盤面資金流向給予 3~5 分的分級)
 
 【輸出規格】
-請以繁體中文直接輸出標準 JSON 格式（可包含 ```json 代碼區塊），禁止任何引言或結尾廢話，結構如下：
+每個族群至少提供一筆可開啟的來源網址。event_date 必須是事件首次公開日期，不是文章轉載日期。請直接輸出 JSON：
+為降低多次搜尋的差異，來源固定依序採用：公開資訊觀測站／證交所／櫃買中心／公司官網與法說資料，再採用具日期的財經媒體。相同事件有衝突時採較前順位來源；同順位採發布時間較晚者。族群排序依 heat_level、資金廣度、催化劑日期由高至低，仍同分時依 sector_name 排序。
+請務必執行 Google Search。最後只能輸出 prompt 指定的完整 JSON，不要 Markdown、不要前言、不要引用標記放在 JSON 外面。
 {{
   "market_overview": "一句話總結今日台股市場焦點與資金主軸（50字以內）",
   "hot_sectors": [
     {{
       "sector_name": "產業族群名稱",
       "heat_level": 5,
+      "stage": "emerging或accelerating或extended",
       "catalysts": "最新重大法說會重點、關鍵大訂單或產業爆發動能（杜絕籠統空話）",
+      "event_date": "YYYY-MM-DD",
+      "source_url": "https://來源網址",
       "related_tags": ["相關標籤或次產業1", "次產業2"]
     }}
   ]
 }}
 """
-    overview = "台股資金高度聚焦於 AI 伺服器供應鏈、先進封裝、散熱水冷與高速運算週邊。"
-    hot_sectors = [
-        {"sector_name": "AI伺服器/代工", "heat_level": 5, "catalysts": "Blackwell/GB300放量出貨，CSP大廠資本支出上修", "related_tags": ["伺服器", "代工", "ODM", "AI"]},
-        {"sector_name": "先進封裝(CoWoS/設備)", "heat_level": 5, "catalysts": "台積電CoWoS產能滿載，檢測與封裝設備需求爆發", "related_tags": ["設備", "CoWoS", "半導體設備", "測試"]},
-        {"sector_name": "散熱水冷/液冷", "heat_level": 5, "catalysts": "高熱功耗TDP推動水冷板、CDU與快接頭全面滲透", "related_tags": ["散熱", "水冷", "液冷"]},
-        {"sector_name": "光通訊(CPO/矽光子)", "heat_level": 5, "catalysts": "800G/1.6T高速光收發模組放量，CPO架構進入商用驗證", "related_tags": ["CPO", "光通訊", "網通"]},
-        {"sector_name": "ASIC/IP設計", "heat_level": 4, "catalysts": "CSP自研晶片專案放量，NRE與IP授權營收逐季創高", "related_tags": ["IC設計", "ASIC", "IP", "矽智財"]},
-        {"sector_name": "工業電腦/Edge AI", "heat_level": 4, "catalysts": "邊緣運算與智慧製造需求擴大，IPC廠商轉型AI應用", "related_tags": ["工業電腦", "IPC", "Edge AI"]},
-        {"sector_name": "被動元件/高階電容", "heat_level": 4, "catalysts": "AI高階電源NP0 MLCC與固態電容需求急增，交期拉長", "related_tags": ["被動元件", "MLCC", "電容"]}
-    ]
+    overview = "產業新聞查核未完成，無已驗證風口。"
+    hot_sectors = []
 
     text, _ = call_gemini_search(prompt, api_key)
     if text:
@@ -764,8 +946,13 @@ def fetch_market_hot_sectors(api_key, as_of_date):
             # 容錯處理：消除可能存在的尾隨逗號
             json_str = re.sub(r',\s*([\}\]])', r'\1', json_str)
             data = json.loads(json_str)
-            if data.get('hot_sectors'):
-                hot_sectors = data['hot_sectors']
+            raw_sectors = data.get('hot_sectors', [])
+            hot_sectors = [s for s in raw_sectors
+                           if isinstance(s, dict)
+                           and s.get('stage') in ('emerging', 'accelerating')
+                           and evidence_is_recent(s, as_of_date, 14)
+                           and isinstance(s.get('heat_level'), (int, float))
+                           and 3 <= s['heat_level'] <= 5]
             if data.get('market_overview'):
                 overview = data['market_overview']
         except Exception:
@@ -773,6 +960,7 @@ def fetch_market_hot_sectors(api_key, as_of_date):
 
     try:
         SECTOR_CACHE_FILE.write_text(json.dumps({
+            'schema_version': 2,
             'as_of_date': as_of_date,
             'overview': overview,
             'hot_sectors': hot_sectors
@@ -797,20 +985,103 @@ def save_fundamental_cache(cache):
     except Exception:
         pass
 
+
+AUDIT_BLOCKS = ('monthly_revenue', 'earnings', 'catalyst', 'analyst_target', 'disposition')
+
+
+def is_complete_audit_payload(data):
+    """所有區塊可含 null，但不可省略，避免將 Gemini 漏答誤認為已完成。"""
+    return isinstance(data, dict) and all(isinstance(data.get(key), dict) for key in AUDIT_BLOCKS)
+
+
+def normalize_audit_payload(data, as_of_date, used_model):
+    if not is_complete_audit_payload(data):
+        return None
+    revenue = data.get('monthly_revenue') if isinstance(data.get('monthly_revenue'), dict) else {}
+    earnings_data = data.get('earnings') if isinstance(data.get('earnings'), dict) else {}
+    catalyst_data = data.get('catalyst') if isinstance(data.get('catalyst'), dict) else {}
+    target_data = data.get('analyst_target') if isinstance(data.get('analyst_target'), dict) else {}
+    disposition_data = data.get('disposition') if isinstance(data.get('disposition'), dict) else {}
+    rev = (f"{revenue.get('period')}營收{revenue.get('amount_text')}"
+           f"(MoM{revenue.get('mom_pct'):+g}%, YoY{revenue.get('yoy_pct'):+g}%)"
+           if all(revenue.get(k) is not None for k in ('period','amount_text','mom_pct','yoy_pct')) else '')
+    earn = (f"{earnings_data.get('period')} EPS {earnings_data.get('eps')}元"
+            + (f"，EPS YoY {earnings_data.get('eps_yoy_pct'):+g}%" if isinstance(earnings_data.get('eps_yoy_pct'), (int,float)) else '')
+            + (f"，毛利率{earnings_data.get('gross_margin_pct')}%" if isinstance(earnings_data.get('gross_margin_pct'), (int,float)) else '')
+            if earnings_data.get('period') and isinstance(earnings_data.get('eps'), (int,float)) else '')
+    target_price = (f"90日內法人目標價中位數{target_data.get('median_price'):g}元"
+                    f"({target_data.get('rating') or '未提供評等'}, {int(target_data.get('sample_size') or 0)}筆)"
+                    if isinstance(target_data.get('median_price'), (int,float)) else '')
+    status = disposition_data.get('status')
+    disposition_checked = status in ('normal', 'disposition') and evidence_is_recent(disposition_data, as_of_date, 0)
+    return {
+        'monthly_rev': rev, 'earnings': earn,
+        'catalyst': str(catalyst_data.get('summary') or ''), 'target_price': target_price,
+        'disposition': "列入處置股(分盤撮合/流動性急凍)" if disposition_checked and status == 'disposition' else '',
+        'disposition_checked': disposition_checked, 'audit_data': data, '_used_model': used_model
+    }
+
+
+def same_day_legacy_result(item, as_of_date):
+    if not isinstance(item, dict):
+        return None
+    cached_date = str(item.get('updated_at', '')).replace('/', '-')
+    if cached_date != as_of_date and cached_date != as_of_date[5:]:
+        return None
+    return {
+        'monthly_rev': item.get('monthly_rev', item.get('revenue', '')),
+        'earnings': item.get('earnings', ''), 'catalyst': item.get('catalyst', ''),
+        'target_price': item.get('target_price', ''), 'audit_data': {},
+        'disposition': item.get('disposition', ''), 'disposition_checked': False,
+        '_legacy_fallback': True, '_used_model': '同交易日舊格式快取（未計分）'
+    }
+
+
+def recent_legacy_result(item, as_of_date, max_age_days=7):
+    """當日 LLM 被配額擋住時，保留最近有效資料供顯示；資料不參與今日加分。"""
+    same_day = same_day_legacy_result(item, as_of_date)
+    if same_day:
+        return same_day
+    if not isinstance(item, dict):
+        return None
+    raw_date = str(item.get('updated_at', '')).replace('/', '-')
+    try:
+        if re.fullmatch(r'\d{2}-\d{2}', raw_date):
+            raw_date = f"{as_of_date[:4]}-{raw_date}"
+        age = (date.fromisoformat(as_of_date) - date.fromisoformat(raw_date)).days
+    except (TypeError, ValueError):
+        return None
+    if age < 0 or age > max_age_days:
+        return None
+    result = {
+        'monthly_rev': item.get('monthly_rev', item.get('revenue', '')),
+        'earnings': item.get('earnings', ''), 'catalyst': item.get('catalyst', ''),
+        'target_price': item.get('target_price', ''), 'audit_data': {},
+        'disposition': '', 'disposition_checked': False,
+        '_legacy_fallback': True,
+        '_used_model': f'最近有效查核 {raw_date}（今日未更新、未計分）',
+        '_cached_date': raw_date,
+    }
+    return result if any(result.get(k) for k in ('monthly_rev', 'earnings', 'catalyst', 'target_price')) else None
+
 def audit_stock_with_gemini(candidate, api_key, as_of_date):
     code = candidate['code']
     cache = load_fundamental_cache()
+    legacy_item = cache.get(code) if isinstance(cache.get(code), dict) else None
 
     # 1. 優先取用快取（必須具備法人目標價與月盈年盈資訊，若缺少則重新聯網查核）
     if code in cache:
         item = cache[code]
-        if item.get('target_price') and item.get('monthly_rev'):
+        if (item.get('schema_version') == 2 and item.get('updated_at') == as_of_date):
+            print(f'💾 {code} 使用同交易日查核快取', flush=True)
             return {
                 'monthly_rev': item.get('monthly_rev', ''),
                 'earnings': item.get('earnings', ''),
                 'catalyst': item.get('catalyst', ''),
                 'target_price': item.get('target_price', ''),
+                'audit_data': item.get('audit_data', {}),
                 'disposition': item.get('disposition', ''),
+                'disposition_checked': item.get('disposition_checked', False),
                 'is_trap': False,
                 'confidence_bonus': 10,
                 '_used_model': 'Google Search Grounding (Cached)'
@@ -822,84 +1093,108 @@ def audit_stock_with_gemini(candidate, api_key, as_of_date):
 你是極度嚴苛的台股避險基金首席審計官。基準審計日：{as_of_date}。
 請透過 Google Search 即時查核台股「{candidate['code']} {candidate['name']}」（產業分類：{candidate['category']}）最新之客觀公開數據、重大訊息與法人目標價：
 
-【防偽與時效鐵律（嚴格執行）】
-1. [月營收]：必須為「最新公告月份」（如前月或當月最新自結營收），必須包含數字、MoM 與 YoY。若未查得請填「最新公告YoY查核中」。
-2. [獲利季報]：必須為「最新一季」公開資訊觀測站已公佈財報之 EPS 與毛利率。
-3. [法人目標價]：★嚴格僅採納距今「90天內」國內外券商之最新研究報告！★嚴禁引用超過3個月前的過期報告。若近期無券商出具報告，請填「近三個月無公開機構目標價」。
-4. [處置狀態]：★僅確認「{as_of_date} 當日」是否由證交所/櫃買中心公告執行分盤撮合處置！若正常交易請填「正常交易」，切勿將歷史處置紀錄誤判為現行處置！
+【防偽與時效規則】
+每項資料附原始來源網址與事件首次公開日期；找不到就填 null，禁止猜測。所有資料必須在 {as_of_date} 當日收盤前已公開。
+催化劑同時搜尋利多與利空，direction 只能是 positive、neutral、negative；new_information 只有 30 天內首次出現且改變未來展望才可為 true。
+目標價只填 90 天內報告的中位數或唯一一筆數值，禁止取最高價；同時回傳樣本數與評等。
+處置狀態只確認 {as_of_date} 當日。
+來源固定依序採用：公開資訊觀測站／證交所／櫃買中心／公司官網與法說資料，再採用具日期的財經媒體。資料衝突時採較前順位來源；同順位採發布時間較晚者。不得因搜尋結果排序改變而改用較舊資料。
+五個資料區塊都必須保留；查不到時保留區塊並將值填 null。
 
-【請嚴格以下列五行格式精確輸出，每行以指定標籤開頭，禁止任何 Markdown 語法標籤（如 ** 或 #）與引言】：
-月盈年盈：[何月份單月營收數字、MoM月增率、YoY年增率，例: 7月營收193.42億元(MoM+8.93%, YoY+14.5%)]
-最新獲利：[最新一季財報EPS、毛利率與累計獲利，例: Q2 EPS 3.55元，毛利率16.0%]
-法說利多：[最新法說會核心要點、關鍵大訂單或擴產動能，25字以內]
-法人目標價：[外資或國內大型券商90天內最新研究報告之目標價與評等，例: 某外資目標價210元(買進) 或 近三個月無公開機構目標價]
-處置狀態：[正常交易 或 處置分盤撮合]
+請務必執行 Google Search。最後只能輸出 prompt 指定的完整 JSON，不要 Markdown、不要前言、不要引用標記放在 JSON 外面。
+請只輸出以下 JSON：
+{{
+ "monthly_revenue": {{"period":null,"amount_text":null,"mom_pct":null,"yoy_pct":null,"event_date":null,"source_url":null}},
+ "earnings": {{"period":null,"eps":null,"eps_yoy_pct":null,"gross_margin_pct":null,"event_date":null,"source_url":null}},
+ "catalyst": {{"summary":null,"direction":"neutral","new_information":false,"event_date":null,"source_url":null}},
+ "analyst_target": {{"median_price":null,"rating":null,"sample_size":0,"event_date":null,"source_url":null}},
+ "disposition": {{"status":"normal或disposition或unknown","event_date":"{as_of_date}","source_url":null}}
+}}
 """
     text, used_model = call_gemini_search(prompt, api_key)
-    if text:
-        rev = ""
-        earn = ""
-        cat = ""
-        target_price = ""
-        disposition = ""
-
-        for line in text.splitlines():
-            clean = line.strip().replace('*', '').replace('#', '').strip('- ').strip()
-            if not clean or len(clean) < 3:
-                continue
-            if ('月盈' in clean or '年盈' in clean or '營收' in clean or 'MoM' in clean or 'YoY' in clean) and not rev:
-                rev = re.sub(r'^(?:月盈年盈|月盈率|年盈率|營收|最新營收|單月營收)[：:]\s*', '', clean).replace('|', '/').strip()
-            elif ('EPS' in clean or '毛利' in clean or '獲利' in clean or '淨利' in clean) and not earn:
-                earn = re.sub(r'^(?:最新獲利|獲利表現|獲利|財報獲利)[：:]\s*', '', clean).replace('|', '/').strip()
-            elif ('法說' in clean or '訂單' in clean or '大單' in clean or '利多' in clean or '產能' in clean) and not cat:
-                cat = re.sub(r'^(?:法說利多|法說重點|法說會|實質利多|利多消息|利多)[：:]\s*', '', clean).replace('|', '/').strip()
-            elif ('目標價' in clean or '評等' in clean or '外資' in clean or '券商' in clean) and not target_price:
-                target_price = re.sub(r'^(?:法人目標價|目標價|法人評等)[：:]\s*', '', clean).replace('|', '/').strip()
-            elif '處置' in clean and not disposition:
-                if '處置分盤撮合' in clean or '列入處置' in clean or '處置股' in clean:
-                    if '正常交易' not in clean and '未列入' not in clean and '解除' not in clean:
-                        disposition = "列入處置股(分盤撮合/流動性急凍)"
-
-        junk = ['以基本面訂單為主', '基本面良好', '待後續', '無顯著']
-        for j in junk:
-            if j in rev: rev = ""
-            if j in earn: earn = ""
-            if j in cat: cat = ""
-            if j in target_price: target_price = ""
-
-        # 寫入快取持久化
+    data = parse_json_object(text)
+    if data:
+        result = normalize_audit_payload(data, as_of_date, used_model)
+    else:
+        result = None
+    if result:
         cache[code] = {
+            'schema_version': 2,
             'name': candidate['name'],
-            'monthly_rev': rev,
-            'earnings': earn,
-            'catalyst': cat,
-            'target_price': target_price,
-            'disposition': disposition,
+            'monthly_rev': result['monthly_rev'], 'earnings': result['earnings'],
+            'catalyst': result['catalyst'], 'target_price': result['target_price'],
+            'disposition': result['disposition'],
+            'disposition_checked': result['disposition_checked'],
+            'audit_data': data,
             'updated_at': as_of_date
         }
         save_fundamental_cache(cache)
+        return result
+    # 新查核失敗時可沿用同一交易日舊資料作畫面參考，但因缺少來源結構，絕不參與加分。
+    return same_day_legacy_result(legacy_item, as_of_date)
 
-        return {
-            'monthly_rev': rev,
-            'earnings': earn,
-            'catalyst': cat,
-            'target_price': target_price,
-            'disposition': disposition,
-            '_used_model': used_model
-        }
-    return None
+
+def audit_candidates_with_gemini(candidates, api_key, as_of_date, chunk_size=10):
+    """批次查核以降低 RPM/配額壓力；同交易日舊格式資料只供顯示且不計分。"""
+    cache = load_fundamental_cache()
+    results = {}
+    pending = []
+    for candidate in candidates:
+        item = cache.get(candidate['code']) if isinstance(cache.get(candidate['code']), dict) else None
+        if item and item.get('schema_version') == 2 and item.get('updated_at') == as_of_date:
+            result = normalize_audit_payload(item.get('audit_data', {}), as_of_date,
+                                             'Google Search Grounding (Cached)')
+            if result:
+                results[candidate['code']] = result
+                print(f"💾 {candidate['code']} 使用同交易日結構化快取", flush=True)
+                continue
+        pending.append(candidate)
+
+    total_chunks = (len(pending) + chunk_size - 1) // chunk_size
+    for chunk_index, start in enumerate(range(0, len(pending), chunk_size), 1):
+        chunk = pending[start:start + chunk_size]
+        stock_list = [{'code': c['code'], 'name': c['name'], 'category': c['category']} for c in chunk]
+        print(f"  -> 🔍 批次聯網查核 {', '.join(c['code'] for c in chunk)} [{chunk_index}/{total_chunks}批]...", flush=True)
+        prompt = f"""你是嚴格的台股事實審計員。截止日為 {as_of_date}，一次查核以下股票：
+{json.dumps(stock_list, ensure_ascii=False)}
+只能使用截止日收盤前已公開資料；每項附事件首次公開日與原始來源網址，未知填 null。催化劑須同查利多與利空。
+目標價只填截止日前90天內報告的中位數或唯一值，禁止取最高值。處置只確認截止日當日。
+為降低多次搜尋的差異，來源固定依序採用：公開資訊觀測站／證交所／櫃買中心／公司官網與法說資料，再採用具日期的財經媒體。相同事件有衝突時採較前順位來源；同順位採發布時間較晚者。不得因搜尋結果排序改變而改用較舊資料。
+stocks 必須逐一回覆上列每個股票代號，順序相同、不可遺漏、不可增加；五個資料區塊都必須保留，查不到資料時保留該區塊並將值填 null。
+請務必執行 Google Search。最後只能輸出 prompt 指定的完整 JSON，不要 Markdown、不要前言、不要引用標記放在 JSON 外面。
+只輸出 JSON，格式為：
+{{"stocks":[{{"code":"股票代號","monthly_revenue":{{"period":null,"amount_text":null,"mom_pct":null,"yoy_pct":null,"event_date":null,"source_url":null}},"earnings":{{"period":null,"eps":null,"eps_yoy_pct":null,"gross_margin_pct":null,"event_date":null,"source_url":null}},"catalyst":{{"summary":null,"direction":"positive或neutral或negative","new_information":false,"event_date":null,"source_url":null}},"analyst_target":{{"median_price":null,"rating":null,"sample_size":0,"event_date":null,"source_url":null}},"disposition":{{"status":"normal或disposition或unknown","event_date":"{as_of_date}","source_url":null}}}}]}}
+"""
+        text, used_model = call_gemini_search(prompt, api_key)
+        payload = parse_json_object(text)
+        returned = payload.get('stocks', []) if isinstance(payload, dict) else []
+        by_code = {str(item.get('code')): item for item in returned if isinstance(item, dict) and item.get('code')}
+        for candidate in chunk:
+            code = candidate['code']
+            result = normalize_audit_payload(by_code.get(code), as_of_date, used_model)
+            if result:
+                results[code] = result
+                cache[code] = {
+                    'schema_version': 2, 'name': candidate['name'],
+                    'monthly_rev': result['monthly_rev'], 'earnings': result['earnings'],
+                    'catalyst': result['catalyst'], 'target_price': result['target_price'],
+                    'disposition': result['disposition'],
+                    'disposition_checked': result['disposition_checked'],
+                    'audit_data': result['audit_data'], 'updated_at': as_of_date
+                }
+            else:
+                legacy = same_day_legacy_result(cache.get(code), as_of_date)
+                if legacy:
+                    results[code] = legacy
+        save_fundamental_cache(cache)
+    return results
 
 def evaluate_holistic_score(cand, hot_sectors):
     """
     【步驟 4：全維度多因子融合評估矩陣】
     嚴格遵守：先有產業新聞與個股基本面事實，再做評估排榜！
-    融合因子：
-    1. 基礎技術量化分 (均線/量能/MACD)
-    2. 產業風口契合度加分 (Sector Wind Bonus, +15~+25)
-    3. 營收成長力加分 (Revenue Growth Bonus, +8~+18)
-    4. 獲利品質加分 (EPS & Margin Bonus, +6~+14)
-    5. 法說會與重大動態加分 (Briefing Catalyst Bonus, +8~+18)
-    6. 法人目標價上檔空間加分 (Target Price Upside Bonus, +8~+16)
+    融合因子：技術起漲階段、股票池相對強度、已驗證產業風口、
+    營收/EPS 成長、30 日內新催化與 90 日內法人目標價中位數。
     """
     score = float(cand.get('score', 50.0))
     reasons = list(cand.get('reasons', []))
@@ -910,29 +1205,30 @@ def evaluate_holistic_score(cand, hot_sectors):
     catalyst = cand.get('catalyst', '')
     target_price_str = cand.get('target_price', '')
     price = cand.get('price', 1.0)
+    audit_data = cand.get('audit_data', {})
 
     matched_sector, match_strength = match_stock_to_hot_sectors(cand, hot_sectors)
 
     if matched_sector:
-        heat = matched_sector.get('heat_level', 4)
-        sec_bonus = 22.0 if heat >= 5 else 16.0
+        heat = matched_sector.get('heat_level', 3)
+        sec_bonus = {5: 22.0, 4: 16.0, 3: 9.0}.get(int(heat), 0.0)
         if match_strength >= 50.0:
             sec_bonus += 3.0 # 高度契合強勢概念本體額外加成
         score += sec_bonus
         cand['matched_sector'] = matched_sector.get('sector_name', '')
         reasons.insert(0, f"🔥踩中市場主流風口:【{matched_sector.get('sector_name', '')}】(+{sec_bonus:.0f}分)")
     else:
-        score -= 6.0 # 未在主流產業風口微幅折價
+        if hot_sectors:
+            score -= 6.0 # 已找到市場風口但個股未契合時才折價；搜尋失敗不懲罰個股。
 
     # B. 營收動能評估 (MoM / YoY)
     rev_bonus = 0.0
-    if monthly_rev:
-        yoy_m = re.search(r'YoY\s*([+-]?\d+(?:\.\d+)?)\s*%', monthly_rev, re.IGNORECASE)
-        mom_m = re.search(r'MoM\s*([+-]?\d+(?:\.\d+)?)\s*%', monthly_rev, re.IGNORECASE)
-        yoy_val = float(yoy_m.group(1)) if yoy_m else None
-        mom_val = float(mom_m.group(1)) if mom_m else None
+    revenue_data = audit_data.get('monthly_revenue', {})
+    if evidence_is_recent(revenue_data, cand.get('session_date', cand.get('date_iso', '')), 45):
+        yoy_val = revenue_data.get('yoy_pct')
+        mom_val = revenue_data.get('mom_pct')
 
-        if yoy_val is not None:
+        if isinstance(yoy_val, (int, float)):
             if yoy_val >= 50.0:
                 rev_bonus += 16.0
             elif yoy_val >= 20.0:
@@ -942,7 +1238,7 @@ def evaluate_holistic_score(cand, hot_sectors):
             elif yoy_val < -10.0:
                 rev_bonus -= 10.0
 
-        if mom_val is not None:
+        if isinstance(mom_val, (int, float)):
             if mom_val >= 10.0:
                 rev_bonus += 8.0
             elif mom_val >= 3.0:
@@ -954,45 +1250,44 @@ def evaluate_holistic_score(cand, hot_sectors):
 
     # C. 獲利品質評估 (EPS / 毛利)
     earn_bonus = 0.0
-    if earnings:
-        if '創歷史新高' in earnings or '歷史新高' in earnings:
-            earn_bonus += 14.0
-        eps_m = re.search(r'EPS\s*(\d+(?:\.\d+)?)', earnings, re.IGNORECASE)
-        if eps_m:
-            eps_val = float(eps_m.group(1))
-            if eps_val >= 10.0:
-                earn_bonus += 12.0
-            elif eps_val >= 3.0:
-                earn_bonus += 8.0
-            elif eps_val >= 1.0:
-                earn_bonus += 5.0
+    earnings_data = audit_data.get('earnings', {})
+    if evidence_is_recent(earnings_data, cand.get('session_date', cand.get('date_iso', '')), 150):
+        eps_val = earnings_data.get('eps')
+        eps_yoy = earnings_data.get('eps_yoy_pct')
+        if isinstance(eps_val, (int,float)) and eps_val < 0:
+            earn_bonus -= 10.0
+        if isinstance(eps_yoy, (int,float)):
+            if eps_yoy >= 30: earn_bonus += 12.0
+            elif eps_yoy >= 10: earn_bonus += 7.0
+            elif eps_yoy <= -20: earn_bonus -= 10.0
         score += earn_bonus
 
     # D. 法說會與實質利多 (Catalysts)
     cat_bonus = 0.0
-    if catalyst:
-        strong_kw = ['大單', '滿載', '擴產', '倍增', '新廠', '三位數', '強勁', '優於預期', '能見度']
-        hit_count = sum(1 for kw in strong_kw if kw in catalyst)
-        if hit_count >= 2:
-            cat_bonus += 18.0
-        elif hit_count >= 1:
-            cat_bonus += 12.0
-        else:
-            cat_bonus += 6.0
+    catalyst_data = audit_data.get('catalyst', {})
+    if evidence_is_recent(catalyst_data, cand.get('session_date', cand.get('date_iso', '')), 30):
+        direction = catalyst_data.get('direction')
+        is_new = catalyst_data.get('new_information') is True
+        if direction == 'positive' and is_new:
+            cat_bonus = 15.0
+            reasons.append('📢30日內新正向催化(+15分)')
+        elif direction == 'negative':
+            cat_bonus = -15.0
+            reasons.append('⚠️30日內負向事件(-15分)')
         score += cat_bonus
 
     # E. 法人目標價潛在上檔空間 (Analyst Upside)
     target_bonus = 0.0
-    if target_price_str:
-        tp_nums = [float(x) for x in re.findall(r'(\d+(?:\.\d+)?)元', target_price_str)]
-        if tp_nums:
-            max_tp = max(tp_nums)
-            upside_pct = (max_tp - price) / price * 100
+    target_data = audit_data.get('analyst_target', {})
+    if evidence_is_recent(target_data, cand.get('session_date', cand.get('date_iso', '')), 90):
+        median_tp = target_data.get('median_price')
+        if isinstance(median_tp, (int,float)) and int(target_data.get('sample_size') or 0) >= 1:
+            upside_pct = (median_tp - price) / price * 100
             if upside_pct >= 30.0:
-                target_bonus += 16.0
+                target_bonus += 10.0
                 reasons.append(f"🎯法人目標價溢價空間巨大(+{upside_pct:.0f}%)")
             elif upside_pct >= 15.0:
-                target_bonus += 10.0
+                target_bonus += 6.0
                 reasons.append(f"🎯法人目標價具上檔空間(+{upside_pct:.0f}%)")
             elif upside_pct < -5.0:
                 target_bonus -= 10.0
@@ -1054,13 +1349,33 @@ def generate_ai_evolution_log(top_picks, hot_sectors, as_of_date, api_key, model
         EVOLUTION_LOG_MD.write_text(content, encoding='utf-8')
         print(f"📝 客觀覆盤日記已更新至：{EVOLUTION_LOG_MD.name}", flush=True)
 
+def load_cross_ranking_memberships():
+    """讀取另外兩份榜單的入榜代號，僅供交叉驗證顯示，不影響 AI 榜分數。"""
+    memberships = {'chatgpt': set(), 'gemini': set()}
+    for key, path in (('chatgpt', CHATGPT_RANKING_MD), ('gemini', GEMINI_RANKING_MD)):
+        try:
+            text = path.read_text(encoding='utf-8')
+        except OSError:
+            continue
+        memberships[key] = set(re.findall(r'`(\d{4,6})`', text))
+    return memberships
+
+
 def write_evolution_ranking_md(selected_list, hot_sectors, market_overview, as_of_date, model_label):
     count = len(selected_list)
-    sec_title = f"## 👑 【AI 獨有實戰勝率榜】（嚴選 {count} 檔・{model_label} 先產業後個股全維度版）"
-    sec_sub = f"> 實戰鐵律：起漲賺錢、勝率第一。**先搜尋市場主流產業風口與重大新聞，再依營收/獲利/法說/目標價全維度評估排定榜單**，寧缺毋濫！"
+    active_count = sum(r.get('selection_tier') == '正式起漲候選' for r in selected_list)
+    watch_count = count - active_count
+    sec_title = f"## 👑 【AI 獨有實戰勝率榜】（正式 {active_count} 檔・觀察 {watch_count} 檔・{model_label}）"
+    sec_sub = ("> 正式候選已通過起漲型態與分數門檻；**觀察候選尚未突破觸發價，不能視為進場訊號**。"
+               "LLM 查核失敗時保留技術排序，舊資料只顯示、不計分。")
 
     sec_pills = " ｜ ".join([f"**{s.get('sector_name', '')}** ({s.get('catalysts', '')[:25]}...)" for s in hot_sectors[:4]])
 
+    comparison = load_cross_ranking_memberships()
+    both_count = sum(r['code'] in comparison['chatgpt'] and r['code'] in comparison['gemini']
+                     for r in selected_list)
+    either_count = sum(r['code'] in comparison['chatgpt'] or r['code'] in comparison['gemini']
+                       for r in selected_list)
     lines = [
         '# 👑 台股 AI 獨有實戰勝率榜 (AI Self-Evolving Master Watchlist)', '',
         f'> 資料截止日：{as_of_date}。驅動核心：{model_label}。體系核心：**先產業新聞與法說會掃描 ➔ 候選池全維度調研 ➔ 綜合加權排定榜單**。', '',
@@ -1070,11 +1385,16 @@ def write_evolution_ranking_md(selected_list, hot_sectors, market_overview, as_o
         '---', '',
         sec_title,
         sec_sub, '',
-        '| 排名 | 股票代號 | 股票名稱 | 類群 | 收盤價 | 今日漲跌 | 實戰評分 | 月盈年盈(營收) | 季報獲利(EPS) | 法說重點與實質利多 | 法人目標價 | 核心技術起漲特徵 |',
-        '|:---:|:---:|:---|:---|---:|---:|---:|:---|:---|:---|:---|:---|'
+        f'> **三榜交叉驗證**：本榜 {count} 檔中，{both_count} 檔同時進入 ChatGPT 與 Gemini 榜；{either_count} 檔至少進入其中一榜。交叉結果只顯示、不加分。', '',
+        '| 排名 | 股票代號 | 股票名稱 | 類群 | 收盤價 | 今日漲跌 | 實戰評分 | 其他榜單 | 月盈年盈(營收) | 季報獲利(EPS) | 法說重點與實質利多 | 法人目標價 | 核心技術起漲特徵 |',
+        '|:---:|:---:|:---|:---|---:|---:|---:|:---|:---|:---|:---|:---|:---|'
     ]
     for i, r in enumerate(selected_list, 1):
         clean_reasons = []
+        if r.get('selection_tier'):
+            clean_reasons.append(f"{r['selection_tier']}・突破觸發價{r.get('pivot_price', 0):.2f}元")
+        if r.get('verification_status'):
+            clean_reasons.append(f"情報狀態:{r['verification_status']}")
         for reas in r.get('holistic_reasons', r.get('reasons', [])):
             c = re.sub(r'[💎⚠️]?【風報比[^】]*】', '', reas).strip()
             # 排除已獨立成欄的基本面或警示字串
@@ -1083,13 +1403,20 @@ def write_evolution_ranking_md(selected_list, hot_sectors, market_overview, as_o
             if c: clean_reasons.append(c)
         feat = " ； ".join(clean_reasons[:3]) or "多頭結構守穩"
         pct_str = f"{r['today_pct']:+5.2f}%"
-        rev_str = r.get('monthly_rev') or '查核中'
-        earn_str = r.get('earnings') or '查核中'
-        cat_str = r.get('catalyst') or '依技術面強勢為主'
-        target_str = r.get('target_price') or '法人評估中'
+        status = r.get('verification_status', '')
+        verified = status == 'LLM證據已查核'
+        missing_label = '未查得可驗證資料' if verified else 'LLM查核未完成'
+        rev_str = r.get('monthly_rev') or missing_label
+        earn_str = r.get('earnings') or missing_label
+        cat_str = r.get('catalyst') or missing_label
+        target_str = r.get('target_price') or ('90日內未查得公開法人目標價' if verified else 'LLM查核未完成')
+        in_chatgpt = r['code'] in comparison['chatgpt']
+        in_gemini = r['code'] in comparison['gemini']
+        cross_label = ('ChatGPT＋Gemini' if in_chatgpt and in_gemini else
+                       'ChatGPT' if in_chatgpt else 'Gemini' if in_gemini else '兩榜皆無')
         display_score = r.get('holistic_score', r['score'])
 
-        lines.append(f"| **{i}** | `{r['code']}` | **{r['name']}** | {r['category']} | {r['price']:.2f} | {pct_str} | **{display_score}** | {rev_str} | {earn_str} | {cat_str} | {target_str} | {feat} |")
+        lines.append(f"| **{i}** | `{r['code']}` | **{r['name']}** | {r['category']} | {r['price']:.2f} | {pct_str} | **{display_score}** | {cross_label} | {rev_str} | {earn_str} | {cat_str} | {target_str} | {feat} |")
 
     OUTPUT_EVO_MD.write_text("\n".join(lines), encoding="utf-8")
     print(f"📄 獨有勝率榜單已輸出至：{OUTPUT_EVO_MD.name}", flush=True)
@@ -1102,10 +1429,9 @@ def main():
     print("=" * 75, flush=True)
 
     api_key = get_gemini_api_key()
-    model_label = "Gemini 2.5 Flash"
+    model_label = "Gemini Search Grounding"
     if api_key:
-        masked_key = f"{api_key[:8]}...{api_key[-4:]}"
-        print(f"🔑 成功載入 GEMINI_API_KEY ({masked_key})，啟用 Google Search 即時聯網查核 [{model_label}]", flush=True)
+        print(f"🔑 成功載入 GEMINI_API_KEY，啟用 Google Search 即時聯網查核 [{model_label}]", flush=True)
     else:
         print("⚠️ 未檢測到 GEMINI_API_KEY，將以本機量化指標漏斗模式運作。", flush=True)
 
@@ -1118,25 +1444,26 @@ def main():
     for f in html_files:
         inf = parse_html_report(f)
         if inf:
+            generated = re.search(r'產生時間[：:]\s*(\d{4}-\d{2}-\d{2})',
+                                  f.read_text(encoding='utf-8', errors='ignore'))
+            try:
+                inf['session_date'] = report_session_date(
+                    inf['kline'][-1]['date'], generated.group(1) if generated else '')
+            except (ValueError, IndexError, KeyError):
+                print(f'⚠️ 跳過無法確認交易日期的報表：{f.name}', flush=True)
+                continue
             # 🤖 自動產業分類與語意本體庫判定 (AI 擔任規則制定者與裁判，自動精準收納)
             std_cat, sem_tags = classify_stock(inf['code'], inf['name'], inf.get('category'))
             inf['category'] = std_cat
             inf['semantic_tags'] = sem_tags
             infos.append(inf)
 
-    unique_infos = {inf['code']: inf for inf in infos}
-    # 自動抓取最新資料日期 (相容 YYYY-MM-DD 或 MM/DD)
-    sample_dates = [inf.get('kline', [{}])[-1].get('date') for inf in infos if inf.get('kline')]
-    valid_dates = [d for d in sample_dates if d]
-    if valid_dates:
-        latest_d = max(valid_dates)
-        if "-" in latest_d:
-            parts = latest_d.split("-")
-            as_of_date = f"{parts[1]}/{parts[2]}" if len(parts) >= 3 else latest_d
-        else:
-            as_of_date = latest_d
-    else:
-        as_of_date = "09/04"
+    if not infos:
+        print('❌ 沒有可確認交易日期的報表。', flush=True)
+        return
+    as_of_date = max(inf['session_date'] for inf in infos)
+    # 排名只比較同一交易日；舊報表不可冒充最新報價。
+    unique_infos = {inf['code']: inf for inf in infos if inf['session_date'] == as_of_date}
 
     # =========================================================================
     # 🌐 【步驟 1：先產業後個股】即時聯網搜尋當前台股主流強勢族群與法說會動態
@@ -1155,31 +1482,33 @@ def main():
         res = calculate_evolution_score(inf)
         if res:
             candidates.append(res)
+    apply_universe_relative_strength(candidates)
 
-    # ── 雙軌候選漏斗 (Dual-Track Candidate Funnel) ──
-    # 軌道 1：攻擊動能軌 (Momentum Track) - 站在 5MA 之上且技術攻擊分前 8 檔
+    # 先讓已驗證產業風口參與候選排序，避免熱門產業的早期蓄勢股被純技術漏斗提前淘汰。
+    for candidate in candidates:
+        sector, strength = match_stock_to_hot_sectors(candidate, hot_sectors)
+        heat = int(sector.get('heat_level', 0)) if sector else 0
+        candidate['pre_audit_score'] = candidate['score'] + ({5: 18, 4: 12, 3: 6}.get(heat, 0))
+        candidate['pre_matched_sector'] = sector.get('sector_name', '') if sector else ''
+        candidate['sector_match_strength'] = strength
+
     momentum_pool = sorted(
-        [r for r in candidates if r['above_5ma'] and r['score'] >= 75.0],
-        key=lambda x: x['score'],
-        reverse=True
-    )[:8]
-
-    # 軌道 2：蓄勢回測/量縮守穩起漲軌 (Consolidation & Dip Track) - 回測守穩、量縮整理或投信連續進駐 (前 8 檔)
+        [r for r in candidates if r['setup_stage'] in ('剛突破起漲', '突破後量縮回測')],
+        key=lambda x: x['pre_audit_score'], reverse=True)[:8]
     seen_codes = {r['code'] for r in momentum_pool}
-    dip_candidates = [
-        r for r in candidates 
-        if r['code'] not in seen_codes and (
-            any("回測" in reas or "守穩" in reas or "投信" in reas or "VCP" in reas for reas in r['reasons'])
-            or (-2.0 <= r['bias_20'] <= 6.5)
-        )
-    ]
-    dip_pool = sorted(dip_candidates, key=lambda x: x['score'], reverse=True)[:8]
+    dip_pool = sorted(
+        [r for r in candidates if r['code'] not in seen_codes and r['setup_stage'] == '壓縮蓄勢待突破'],
+        key=lambda x: x['pre_audit_score'], reverse=True)[:8]
+    seen_codes.update(r['code'] for r in dip_pool)
+    watch_pool = sorted(
+        [r for r in candidates if r['code'] not in seen_codes
+         and r['setup_stage'] == '趨勢中段／訊號未明'
+         and r['score'] >= 70 and -8.0 <= r['pivot_distance'] <= 2.0
+         and r['today_pct'] < 7.0 and r['ret5'] < 13.0],
+        key=lambda x: x['pre_audit_score'], reverse=True)[:5]
+    pre_audit_pool = momentum_pool + dip_pool + watch_pool
 
-    pre_audit_pool = momentum_pool + dip_pool
-    if not pre_audit_pool:
-        pre_audit_pool = sorted(candidates, key=lambda x: x['score'], reverse=True)[:12]
-
-    print(f"  👉 進入全維度深度調研池：共 {len(pre_audit_pool)} 檔標的 (攻擊動能 {len(momentum_pool)} 檔 + 蓄勢守穩 {len(dip_pool)} 檔)", flush=True)
+    print(f"  👉 進入全維度深度調研池：共 {len(pre_audit_pool)} 檔標的 (正式起漲 {len(momentum_pool)} 檔 + 蓄勢 {len(dip_pool)} 檔 + 觀察 {len(watch_pool)} 檔)", flush=True)
 
     # =========================================================================
     # 🤖 【步驟 3：個股基本面與新聞全維度調研】(在排定榜單前先調研完畢！)
@@ -1188,31 +1517,37 @@ def main():
     audited_candidates = []
     actual_model_used = model_label
     if api_key:
-        for cand in pre_audit_pool:
-            print(f"  -> 🔍 聯網查核 {cand['code']} {cand['name']} ({cand['category']})...", flush=True)
-            audit = audit_stock_with_gemini(cand, api_key, as_of_date)
-            time.sleep(1.5)
-            if audit:
-                if audit.get('_used_model'):
-                    actual_model_used = audit.get('_used_model')
-                if audit.get('is_trap'):
-                    print(f"  🚫 排除客觀風險股: {cand['code']} {cand['name']}", flush=True)
-                    continue
-
-                cand['monthly_rev'] = audit.get('monthly_rev', '').strip()
-                cand['earnings'] = audit.get('earnings', '').strip()
-                cand['catalyst'] = audit.get('catalyst', '').strip()
-                cand['target_price'] = audit.get('target_price', '').strip()
-                disp_desc = audit.get('disposition', '').strip()
-
-                if disp_desc:
-                    cand['reasons'] = [r for r in cand['reasons'] if "回測量縮" not in r]
-                    cand['score'] -= 27.0
-                    cand['reasons'].append(f"🚨{disp_desc}")
-
+        audits = audit_candidates_with_gemini(pre_audit_pool, api_key, as_of_date)
+        verified_count = sum(not a.get('_legacy_fallback') for a in audits.values())
+        legacy_count = sum(bool(a.get('_legacy_fallback')) for a in audits.values())
+        print(f"  📊 查核資料狀態：今日完成 {verified_count} 檔、同日舊資料 {legacy_count} 檔、完全缺失 {len(pre_audit_pool)-len(audits)} 檔", flush=True)
+        for audit_index, cand in enumerate(pre_audit_pool, 1):
+            print(f"  -> 📋 整理 {cand['code']} {cand['name']} [{audit_index}/{len(pre_audit_pool)}]", flush=True)
+            audit = audits.get(cand['code'])
+            if not audit:
+                cand['verification_status'] = 'LLM查核失敗，僅技術排序'
+                cand['reasons'].append('⚠️LLM情報未完成（不加基本面分）')
                 audited_candidates.append(cand)
+                continue
+            if audit.get('_used_model') and not audit.get('_legacy_fallback'):
+                actual_model_used = audit.get('_used_model')
+            cand['monthly_rev'] = audit.get('monthly_rev', '').strip()
+            cand['earnings'] = audit.get('earnings', '').strip()
+            cand['catalyst'] = audit.get('catalyst', '').strip()
+            cand['target_price'] = audit.get('target_price', '').strip()
+            cand['audit_data'] = audit.get('audit_data', {})
+            cand['session_date'] = as_of_date
+            cand['verification_status'] = ((audit.get('_used_model') or '沿用舊查核（僅顯示、不計分）')
+                                           if audit.get('_legacy_fallback') else 'LLM證據已查核')
+            disp_desc = audit.get('disposition', '').strip()
+            if disp_desc or audit.get('disposition_checked'):
+                apply_disposition_penalty(cand, disp_desc)
+            audited_candidates.append(cand)
     else:
         audited_candidates = pre_audit_pool
+        for cand in audited_candidates:
+            cand['verification_status'] = '未設定API，僅技術排序'
+            cand['reasons'].append('⚠️未設定LLM API（不加基本面分）')
 
     # =========================================================================
     # ⚖️ 【步驟 4：融合產業風口、基本面成長、法說與目標價之全維度多因子評估】
@@ -1225,29 +1560,25 @@ def main():
 
     # =========================================================================
     # 👑 【步驟 5：排定最終名次，輸出 AI 獨有實戰勝率榜】
-    # 核心準則：動態嚴選 1~10 檔。設定嚴格合格門檻 (Threshold >= 180.0 分)，
+    # 新評分尺度的技術起漲合格門檻為 105 分；LLM 證據只負責加減分，不得因 API 失敗刪除候選。
     # 凡通過者全部列出；若超過 10 檔僅取最優秀 TOP 10；絕不硬湊，也絕不錯殺合格優秀者！
     # =========================================================================
     print("\n👑 [Step 5] 依據全維度綜合評估得分 (Holistic Score)，正式排定最終榜單名次...", flush=True)
-    QUALIFIED_THRESHOLD = 180.0
-    sorted_candidates = sorted(evaluated_candidates, key=lambda x: x['holistic_score'], reverse=True)
-    passed_candidates = [r for r in sorted_candidates if r['holistic_score'] >= QUALIFIED_THRESHOLD]
-    
-    # 數量上限為 10 檔，若合格數量不足 10 檔則如實輸出，絕不濫竽充數；若完全無人達標，則至少保留第 1 名
-    if passed_candidates:
-        final_qualified = passed_candidates[:10]
-    else:
-        final_qualified = sorted_candidates[:1]
+    QUALIFIED_THRESHOLD = 105.0
+    final_qualified = select_actionable_candidates(evaluated_candidates, QUALIFIED_THRESHOLD)
 
     count = len(final_qualified)
-    print(f"\n👑 【AI 獨有實戰勝率榜】（嚴選 {count} 檔・高標門檻 {QUALIFIED_THRESHOLD} 分・全維度綜合評估版）", flush=True)
+    active_count = sum(r.get('selection_tier') == '正式起漲候選' for r in final_qualified)
+    print(f"\n👑 【AI 獨有實戰勝率榜】（正式 {active_count} 檔・觀察 {count-active_count} 檔・起漲門檻 {QUALIFIED_THRESHOLD} 分）", flush=True)
     print(f"{'名次':<4} {'代號':<6} {'名稱':<8} {'類群':<8} {'收盤價':<9} {'今日漲跌':<10} {'月盈年盈營收':<22} {'終極實戰評分'}", flush=True)
     print("-" * 80, flush=True)
     for i, r in enumerate(final_qualified, 1):
         rev_brief = (r.get('monthly_rev', '')[:20] + '..') if len(r.get('monthly_rev', '')) > 20 else r.get('monthly_rev', '—')
         print(f"#{i:<3} {r['code']:<6} {r['name']:<8} {r['category']:<8} {r['price']:<9.2f} {r['today_pct']:+6.2f}%    {rev_brief:<22} {r['holistic_score']}")
 
+    write_ranking_snapshot(as_of_date, evaluated_candidates, final_qualified, hot_sectors)
     write_evolution_ranking_md(final_qualified, hot_sectors, overview, as_of_date, actual_model_used)
+    print('📝 [Step 6] 榜單已寫入，正在產生 LLM 覆盤日記...', flush=True)
     generate_ai_evolution_log(final_qualified, hot_sectors, as_of_date, api_key, actual_model_used)
 
     try:
@@ -1262,5 +1593,9 @@ def main():
     print("=" * 75, flush=True)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except ManualLLMResponseRequired:
+        print("⏸️ 已暫停評分，等待 Gemini 網頁版回覆；既有正式榜單未被覆寫。", flush=True)
+        raise SystemExit(2)
 

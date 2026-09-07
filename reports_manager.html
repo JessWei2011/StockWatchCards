@@ -5454,7 +5454,7 @@
       }
       // 同時取得 Evolution, Gemini 與 ChatGPT 三份資料
       const [resE, resG, resC] = await Promise.all([
-        fetch('/api/winrate-ranking-report?source=evolution').then(r => r.json()).catch(() => null),
+        fetch('/api/winrate-ranking-report?source=evolution', {cache:'no-store'}).then(r => r.json()).catch(() => null),
         fetch('/api/winrate-ranking-report?source=gemini').then(r => r.json()).catch(() => null),
         fetch('/api/winrate-ranking-report?source=chatgpt').then(r => r.json()).catch(() => null)
       ]);
@@ -5475,53 +5475,127 @@
         return;
       }
       renderWinrateRankingUI();
+      pollEvolutionProgress();
     } catch (e) {
       container.innerHTML = `<div class="analysis-empty">⚠️ 載入排行榜失敗: ${escapeHtml(e.message)}</div>`;
     }
   }
 
   let _evolutionPollingTimer = null;
+  let evolutionStatus = null, evolutionStartedAt = null, evolutionBefore = null, evolutionHandoff = null;
+  let evolutionResult = '', evolutionPollBusy = false;
+  function renderEvolutionProgress(){
+    const box = document.getElementById('evolution-progress');
+    if (!box || !evolutionStatus) return;
+    const st = evolutionStatus;
+    const lines = (st.lines || []).filter(Boolean).map(x => String(x).replace(/key=[^\s&]+/g, 'key=[REDACTED]').replace(/AIza[\w-]+/g, '[REDACTED]'));
+    const organized = lines.filter(x => x.includes('->') && x.includes('📋 整理 '));
+    const checks = organized.length ? organized : lines.filter(x => x.includes('->') && x.includes('聯網查核 '));
+    const total = lines.join('\n').match(/共 (\d+) 檔標的/);
+    const stage = [...lines].reverse().find(x => /\[Step \d\]/.test(x)) || '準備執行';
+    const start = st.started_at || evolutionStartedAt;
+    const duration = lines.join('\n').match(/總耗時：([\d.]+) 秒/);
+    const seconds = duration ? Math.round(Number(duration[1])) : start ? Math.max(0, Math.floor((st.finished_at || Date.now()/1000)-start)) : null;
+    const wait = st.last_output_at ? Math.max(0, Math.floor(Date.now()/1000-st.last_output_at)) : null;
+    const waitingManual = evolutionHandoff?.status === 'awaiting_response';
+    const title = st.running ? '⏳ AI 查核進行中' : waitingManual ? '📋 等待 Gemini 網頁版回覆' : st.done ? (st.returncode === 0 ? '✅ 執行完成' : '❌ 執行失敗，請查看紀錄') : '尚未執行';
+    const current = checks.length ? `${checks.at(-1)}（目前 ${checks.length}/${total ? total[1] : '?'} 檔）` : '';
+    box.innerHTML = `<div style="padding:12px;border:1px solid var(--border);border-radius:8px;margin:10px 0" role="status">
+      <strong>${title}</strong> ${seconds == null ? '' : `｜耗時 ${Math.floor(seconds/60)} 分 ${seconds%60} 秒`}
+      <div>${escapeHtml(stage)}</div><div>${escapeHtml(current)}</div>
+      ${st.running && wait != null ? `<div>距上次進度訊息 ${wait} 秒；正在等待處理，並非剩餘時間。</div>` : ''}
+      <div>${escapeHtml(evolutionResult)}</div>
+      ${waitingManual ? `<div style="margin-top:12px;padding:12px;border:1px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08)">
+        <div style="font-weight:850;color:#fde047;margin-bottom:6px">第 ${Number(evolutionHandoff.step || 1)}/${Number(evolutionHandoff.total_steps || 2)} 階段｜${escapeHtml(evolutionHandoff.kind || 'LLM 查核')}｜人工接力</div>
+        <div style="margin-bottom:8px">① 複製 Prompt 到 Gemini 網頁版　② 將完整 JSON 回覆貼到下方　③ 送回 Python 繼續評分</div>
+        <textarea id="evolution-handoff-prompt" readonly style="width:100%;height:180px;box-sizing:border-box;background:#0f172a;color:#cbd5e1;border:1px solid var(--border);border-radius:6px;padding:8px">${escapeHtml(evolutionHandoff.prompt || '')}</textarea>
+        <button type="button" class="btn" onclick="copyEvolutionPrompt()" style="margin:7px 0">📋 複製完整 Prompt</button>
+        <textarea id="evolution-handoff-response" placeholder="貼上 Gemini 回覆的完整 JSON…" style="width:100%;height:160px;box-sizing:border-box;background:#0f172a;color:#fff;border:1px solid var(--border);border-radius:6px;padding:8px"></textarea>
+        <button type="button" class="btn primary" onclick="submitEvolutionResponse()" style="margin-top:7px">送回 Python 並繼續評分</button>
+      </div>` : ''}
+      <details ${st.running || st.returncode ? 'open' : ''}><summary>最近執行紀錄</summary><pre style="white-space:pre-wrap;max-height:220px;overflow:auto">${escapeHtml(lines.slice(-12).join('\n'))}</pre></details></div>`;
+    const btn = document.getElementById('evolution-run-button');
+    if (btn) { btn.disabled = !!st.running; btn.textContent = st.running ? '⏳ AI 查核中' : '🔄 重新執行 AI 進化'; }
+  }
+  async function pollEvolutionProgress(){
+    if (evolutionPollBusy) return;
+    evolutionPollBusy = true;
+    try {
+      const [response, handoffResponse] = await Promise.all([
+        fetch('/api/batch-scanner-evolution/status', {cache:'no-store', signal:AbortSignal.timeout(10000)}),
+        fetch('/api/llm-handoff', {cache:'no-store', signal:AbortSignal.timeout(10000)})
+      ]);
+      const st = await response.json();
+      const handoffData = await handoffResponse.json();
+      if (!response.ok || !st.ok) throw new Error(st.error || '無法取得執行狀態');
+      evolutionHandoff = handoffData.handoff || null;
+      const wasRunning = evolutionStatus?.running;
+      evolutionStatus = st;
+      if (st.running && !_evolutionPollingTimer) _evolutionPollingTimer = setInterval(pollEvolutionProgress, 2000);
+      if (!st.running && _evolutionPollingTimer) { clearInterval(_evolutionPollingTimer); _evolutionPollingTimer = null; }
+      if (st.done && wasRunning && st.returncode === 0) {
+        await loadWinrateRankingReport('evolution');
+        const after = winrateParsedData.evolution?.momentumItems || [];
+        if (evolutionBefore) {
+          const added = after.filter(x => !evolutionBefore.some(y => y.code === x.code));
+          const removed = evolutionBefore.filter(x => !after.some(y => y.code === x.code));
+          const moved = after.filter((x,i) => { const old = evolutionBefore.findIndex(y => y.code === x.code); return old >= 0 && old !== i; });
+          evolutionResult = `新進：${added.map(x => x.code).join('、') || '無'}；退出：${removed.map(x => x.code).join('、') || '無'}；名次變動 ${moved.length} 檔。`;
+          if (!added.length && !removed.length && !moved.length) evolutionResult += ' 名單與順序相同；可查看分數及查核資料是否更新。';
+        }
+      }
+      renderEvolutionProgress();
+    } catch(error) {
+      evolutionResult = `狀態連線失敗：${error.message}；不代表背景任務停止，將繼續重試。`;
+      renderEvolutionProgress();
+    } finally { evolutionPollBusy = false; }
+  }
+  async function copyEvolutionPrompt(){
+    const prompt = document.getElementById('evolution-handoff-prompt')?.value || '';
+    await navigator.clipboard.writeText(prompt);
+    evolutionResult = '✅ Prompt 已複製，請貼到 Gemini 網頁版。';
+    renderEvolutionProgress();
+  }
+  async function submitEvolutionResponse(){
+    const responseText = document.getElementById('evolution-handoff-response')?.value.trim() || '';
+    if (!responseText) { evolutionResult = '請先貼上 Gemini 回覆的 JSON。'; renderEvolutionProgress(); return; }
+    try {
+      const response = await fetch('/api/llm-handoff', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({prompt_id:evolutionHandoff.prompt_id, response:responseText}),
+        signal:AbortSignal.timeout(15000)
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.error || '送出失敗');
+      evolutionResult = '✅ JSON 已接收，Python 正在接續查核與評分。';
+      evolutionHandoff = null;
+      evolutionStatus = {running:true, lines:[], started_at:Date.now()/1000};
+      if (!_evolutionPollingTimer) _evolutionPollingTimer = setInterval(pollEvolutionProgress, 2000);
+      renderEvolutionProgress();
+      await pollEvolutionProgress();
+    } catch(error) {
+      evolutionResult = `❌ ${error.message}`;
+      renderEvolutionProgress();
+    }
+  }
+  async function startEvolutionRun(){
+    if (evolutionStatus?.running) return;
+    evolutionBefore = (winrateParsedData.evolution?.momentumItems || []).map(x => ({...x}));
+    evolutionStartedAt = Date.now()/1000;
+    evolutionResult = '';
+    evolutionStatus = {running:true, lines:[]};
+    renderEvolutionProgress();
+    try {
+      const response = await fetch('/api/batch-scanner-evolution', {method:'POST', signal:AbortSignal.timeout(10000)});
+      const result = await response.json();
+      if (!result.ok) throw new Error(result.error || '啟動失敗');
+    } catch(error) { evolutionResult = `啟動回應：${error.message}；正在確認後端狀態。`; }
+    if (!_evolutionPollingTimer) _evolutionPollingTimer = setInterval(pollEvolutionProgress, 2000);
+    await pollEvolutionProgress();
+  }
   function triggerScannerRun(source){
     if (source === 'evolution') {
-      const btn = document.querySelector('.ranking-refresh-action button:last-child');
-      const originalText = btn ? btn.innerHTML : '🔄 重新執行 AI 進化';
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '⏳ AI 進化中 (Gemini 審核中...)';
-        btn.style.opacity = '0.75';
-      }
-
-      fetch('/api/batch-scanner-evolution', { method: 'POST' })
-        .then(r => r.json())
-        .then(data => {
-          if (!data.ok) {
-            alert(data.error || '啟動失敗');
-            if (btn) { btn.disabled = false; btn.innerHTML = originalText; btn.style.opacity = '1'; }
-            return;
-          }
-          
-          if (_evolutionPollingTimer) clearInterval(_evolutionPollingTimer);
-          _evolutionPollingTimer = setInterval(async () => {
-            try {
-              const st = await fetch('/api/batch-scanner-evolution/status').then(r => r.json());
-              if (st && st.ok) {
-                if (st.done) {
-                  clearInterval(_evolutionPollingTimer);
-                  _evolutionPollingTimer = null;
-                  if (btn) { btn.disabled = false; btn.innerHTML = originalText; btn.style.opacity = '1'; }
-                  loadWinrateRankingReport('evolution');
-                  alert('👑 【AI 獨有實戰勝率進化完成！】\n已全面結合 Gemini 3.5 Flash 審核，榜單與覆盤日記已同步更新！');
-                }
-              }
-            } catch(e) {
-              console.error(e);
-            }
-          }, 2000);
-        })
-        .catch(err => {
-          alert('請求失敗: ' + err.message);
-          if (btn) { btn.disabled = false; btn.innerHTML = originalText; btn.style.opacity = '1'; }
-        });
+      startEvolutionRun();
     } else if (source === 'gemini') {
       fetch('/api/batch-scanner-gemini', { method: 'POST' }).then(() => {
         alert('🚀 Gemini 掃描器已在背景啟動，約 3~5 秒後請點擊重新整理！');
@@ -5845,11 +5919,12 @@
           
           <div class="ranking-refresh-action" style="display:flex; gap:6px; flex-shrink:0;">
             <button type="button" class="btn ranking-log-btn" style="padding:4px 10px; font-size:13.5px; font-weight:850; border:1.5px solid #fbbf24; color:#fde047; background:rgba(251,191,36,0.12); white-space:nowrap; cursor:pointer;" onclick="showEvolutionLog();" title="在新分頁開啟全螢幕覆盤日記 (大版面深度閱讀)">📖 覆盤日記 ↗</button>
-            <button type="button" class="btn" style="padding:4px 9px; font-size:13px; font-weight:750; white-space:nowrap;" onclick="triggerScannerRun('${source}');">🔄 重新執行 ${isEvolution ? 'AI 進化' : (isGemini ? 'Gemini' : 'ChatGPT')}</button>
+            <button type="button" class="btn" style="padding:4px 9px; font-size:13px; font-weight:750; white-space:nowrap;" id="${isEvolution ? 'evolution-run-button' : 'ranking-other-run-button'}" onclick="triggerScannerRun('${source}');">🔄 重新執行 ${isEvolution ? 'AI 進化' : (isGemini ? 'Gemini' : 'ChatGPT')}</button>
           </div>
         </div>
 
         <!-- 搜尋列 -->
+        ${isEvolution ? '<div id="evolution-progress"></div>' : ''}
         <div class="ranking-filter-bar" style="margin-bottom:10px;">
           <div class="search-box" style="flex:1;">
             <span>🔍</span>
@@ -6022,6 +6097,7 @@
     `;
 
     container.innerHTML = html;
+    renderEvolutionProgress();
 
     const searchInput = document.getElementById('winrate-search-input');
     if (searchInput) {
@@ -7760,7 +7836,9 @@
       }
 
       const { progress, done, results } = data;
-      const elapsedSec = Math.max(1, Math.floor((Date.now() - generateStartTime) / 1000));
+      const serverStartedMs = data.started_at ? data.started_at * 1000 : generateStartTime;
+      const elapsedSec = Math.max(1, Math.floor((Date.now() - serverStartedMs) / 1000));
+      const quietSec = data.last_output_at ? Math.max(0, Math.floor(Date.now() / 1000 - data.last_output_at)) : 0;
       const btn = document.getElementById('generate-btn');
       if (btn && btn.disabled) {
         btn.innerHTML = `<span class="btn-spin-icon">⚙️</span> 處理中 (${elapsedSec}s)...`;
@@ -7770,7 +7848,10 @@
         statusEl.classList.remove('error');
         if (progress.total > 1) {
           const pct = Math.round((progress.i / progress.total) * 100);
-          statusEl.innerHTML = `<span class="pulse-dot-live"></span><span style="color:#67e8f9; font-weight:800;">[處理中 ${progress.i}/${progress.total} (${pct}%)]</span> 正在分析 <strong style="color:#fde047; margin:0 4px;">${escapeHtml(progress.ticker || '')}</strong> <span style="color:var(--text-dim); margin-left:6px;">(已耗時 ${elapsedSec} 秒)</span>`;
+          const active = Array.isArray(data.active) && data.active.length ? data.active : [];
+          const activeText = active.length ? `尚在處理 <strong style="color:#fde047; margin:0 4px;">${active.map(escapeHtml).join('、')}</strong>` : `最近完成 <strong style="color:#fde047; margin:0 4px;">${escapeHtml(progress.ticker || '')}</strong>`;
+          const quietText = quietSec >= 10 ? `；最後更新 ${quietSec} 秒前` : '';
+          statusEl.innerHTML = `<span class="pulse-dot-live"></span><span style="color:#67e8f9; font-weight:800;">[已完成 ${progress.i}/${progress.total} (${pct}%)]</span> ${activeText} <span style="color:var(--text-dim); margin-left:6px;">(已耗時 ${elapsedSec} 秒${quietText})</span>`;
         } else if (progress.ticker) {
           statusEl.innerHTML = `<span class="pulse-dot-live"></span><span style="color:#67e8f9; font-weight:800;">[處理中]</span> 正在分析 <strong style="color:#fde047; margin:0 4px;">${escapeHtml(progress.ticker)}</strong> <span style="color:var(--text-dim); margin-left:6px;">(已耗時 ${elapsedSec} 秒)</span>`;
         } else {

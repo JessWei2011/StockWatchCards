@@ -40,8 +40,51 @@ MACRO_DATA_FILE = MACRO_DIR / "macro_data.json"
 MACRO_STATUS_FILE = MACRO_DIR / "macro_update_status.json"
 MACRO_UPDATE_SCRIPT = MACRO_DIR / "update_macro_data.py"
 PORT = 8935
+AUDIT_BLOCKS = ('monthly_revenue', 'earnings', 'catalyst', 'analyst_target', 'disposition')
 
 REPORTS_DIR.mkdir(exist_ok=True)
+
+
+def validate_manual_llm_response(handoff, payload):
+    """在重啟評分前攔下漏股或漏區塊的人工 JSON。"""
+    if not isinstance(payload, dict):
+        raise ValueError("Gemini 回覆必須是 JSON 物件")
+    if int(handoff.get('step') or 0) == 1:
+        if not isinstance(payload.get('market_overview'), str):
+            raise ValueError("缺少 market_overview")
+        if not isinstance(payload.get('hot_sectors'), list):
+            raise ValueError("缺少 hot_sectors 陣列（允許空陣列）")
+        required = ('sector_name', 'heat_level', 'stage', 'catalysts',
+                    'event_date', 'source_url', 'related_tags')
+        for index, sector in enumerate(payload['hot_sectors'], 1):
+            if not isinstance(sector, dict) or any(key not in sector for key in required):
+                raise ValueError(f"hot_sectors 第 {index} 筆欄位不完整")
+        return
+
+    stocks = payload.get('stocks')
+    if not isinstance(stocks, list):
+        raise ValueError("缺少 stocks 陣列")
+    expected = [str(code) for code in handoff.get('expected_codes', [])]
+    if not expected:
+        expected = list(dict.fromkeys(re.findall(
+            r'"code"\s*:\s*"(\d{4,6})"', str(handoff.get('prompt') or '')
+        )))
+    actual = [str(item.get('code') or '') for item in stocks if isinstance(item, dict)]
+    if expected and actual != expected:
+        missing = [code for code in expected if code not in actual]
+        extra = [code for code in actual if code not in expected]
+        detail = []
+        if missing:
+            detail.append(f"缺少 {', '.join(missing)}")
+        if extra:
+            detail.append(f"多出 {', '.join(extra)}")
+        if not detail:
+            detail.append("股票順序與 Prompt 不同")
+        raise ValueError("stocks 回覆不完整：" + "；".join(detail))
+    for item in stocks:
+        code = str(item.get('code') or '') if isinstance(item, dict) else ''
+        if not isinstance(item, dict) or any(not isinstance(item.get(key), dict) for key in AUDIT_BLOCKS):
+            raise ValueError(f"股票 {code or '未知'} 的五個查核區塊不完整")
 
 MACRO_FILE_LOCK = threading.Lock()
 MACRO_UPDATE_LOCK = threading.Lock()
@@ -780,6 +823,7 @@ GENERATOR_SCRIPT = ROOT_DIR / "stock_report_generator.py"
 GENERATE_LOCK = threading.Lock()
 GENERATE_PROGRESS_RE = re.compile(r"^\[(\d+)/(\d+)\]\s+(.+)$")
 GENERATE_RESULT_RE = re.compile(r"^(✅ OK|❌ 失敗) \[(\d+)/(\d+)\] (.+)$")
+GENERATE_ACTIVE_RE = re.compile(r"^🔄 尚在處理：(.*)$")
 
 
 def _new_generate_job():
@@ -787,9 +831,13 @@ def _new_generate_job():
         "running": False,
         "lines": [],
         "progress": {"i": 0, "total": 0, "ticker": ""},
+        "active": [],
         "results": [],
         "done": False,
         "returncode": None,
+        "started_at": None,
+        "last_output_at": None,
+        "finished_at": None,
     }
 
 
@@ -815,6 +863,7 @@ BATCH_SCANNER_GEMINI_LOCK = threading.Lock()
 batch_scanner_gemini_job = _new_batch_scanner_job()
 
 EVOLUTION_ENGINE_SCRIPT = ROOT_DIR / "evolution_engine.py"
+LLM_HANDOFF_FILE = ROOT_DIR / "llm_manual_handoff.json"
 EVOLUTION_ENGINE_LOCK = threading.Lock()
 evolution_engine_job = _new_batch_scanner_job()
 
@@ -836,7 +885,11 @@ def _run_evolution_engine():
         )
         for raw_line in proc.stdout:
             with EVOLUTION_ENGINE_LOCK:
-                evolution_engine_job["lines"].append(raw_line.rstrip("\n"))
+                line = re.sub(r'key=[^\s&]+', 'key=[REDACTED]', raw_line.rstrip("\n"))
+                line = re.sub(r'AIza[\w-]+', '[REDACTED]', line)
+                line = re.sub(r'AQ\.[\w-]+', '[REDACTED]', line)
+                evolution_engine_job["lines"].append(line)
+                evolution_engine_job["last_output_at"] = time.time()
         proc.wait()
         rc = proc.returncode
     except Exception as e:
@@ -848,6 +901,7 @@ def _run_evolution_engine():
             evolution_engine_job["running"] = False
             evolution_engine_job["done"] = True
             evolution_engine_job["returncode"] = rc
+            evolution_engine_job["finished_at"] = time.time()
 
 DEPLOY_MOBILE_BAT = ROOT_DIR / "發布手機版.bat"
 DEPLOY_MOBILE_LOCK = threading.Lock()
@@ -997,6 +1051,13 @@ def _run_generate(args):
         line = raw_line.rstrip("\n")
         with GENERATE_LOCK:
             generate_job["lines"].append(line)
+            generate_job["last_output_at"] = time.time()
+
+        active_match = GENERATE_ACTIVE_RE.match(line)
+        if active_match:
+            with GENERATE_LOCK:
+                generate_job["active"] = [x for x in active_match.group(1).split("、") if x]
+            continue
 
         m = GENERATE_PROGRESS_RE.match(line)
         if m:
@@ -1024,6 +1085,7 @@ def _run_generate(args):
         generate_job["done"] = True
         generate_job["running"] = False
         generate_job["returncode"] = proc.returncode
+        generate_job["finished_at"] = time.time()
 
 
 def fetch_institutional_breakdown():
@@ -1437,6 +1499,16 @@ class Handler(SimpleHTTPRequestHandler):
             with EVOLUTION_ENGINE_LOCK:
                 self._json(200, {"ok": True, **evolution_engine_job})
             return
+        if parsed.path == "/api/llm-handoff":
+            if not LLM_HANDOFF_FILE.exists():
+                self._json(200, {"ok": True, "handoff": None})
+                return
+            try:
+                handoff = json.loads(LLM_HANDOFF_FILE.read_text(encoding="utf-8"))
+                self._json(200, {"ok": True, "handoff": handoff})
+            except Exception as error:
+                self._json(500, {"ok": False, "error": f"讀取人工接力資料失敗: {error}"})
+            return
         if parsed.path == "/api/deploy-mobile/status":
             with DEPLOY_MOBILE_LOCK:
                 self._json(200, {"ok": True, **deploy_mobile_job})
@@ -1602,8 +1674,42 @@ class Handler(SimpleHTTPRequestHandler):
                     return
                 evolution_engine_job = _new_batch_scanner_job()
                 evolution_engine_job["running"] = True
+                evolution_engine_job["started_at"] = time.time()
+                evolution_engine_job["last_output_at"] = time.time()
             threading.Thread(target=_run_evolution_engine, daemon=True).start()
             self._json(200, {"ok": True})
+            return
+
+        if parsed.path == "/api/llm-handoff":
+            try:
+                body = self._read_json_body()
+                prompt_id = str(body.get("prompt_id") or "").strip()
+                response_text = str(body.get("response") or "").strip()
+                if not LLM_HANDOFF_FILE.exists():
+                    raise ValueError("目前沒有等待回覆的 Prompt")
+                handoff = json.loads(LLM_HANDOFF_FILE.read_text(encoding="utf-8"))
+                if handoff.get("status") != "awaiting_response" or handoff.get("prompt_id") != prompt_id:
+                    raise ValueError("Prompt 已更新，請重新複製最新內容")
+                cleaned = re.sub(r'^```(?:json)?\s*|\s*```$', '', response_text, flags=re.I | re.S).strip()
+                parsed_response = json.loads(cleaned)
+                validate_manual_llm_response(handoff, parsed_response)
+                handoff["response"] = json.dumps(parsed_response, ensure_ascii=False)
+                handoff["status"] = "ready"
+                handoff["submitted_at"] = datetime.datetime.now().isoformat(timespec="seconds")
+                LLM_HANDOFF_FILE.write_text(json.dumps(handoff, ensure_ascii=False, indent=2), encoding="utf-8")
+            except (ValueError, json.JSONDecodeError) as error:
+                self._json(400, {"ok": False, "error": f"回覆格式錯誤：{error}"})
+                return
+            with EVOLUTION_ENGINE_LOCK:
+                if evolution_engine_job["running"]:
+                    self._json(409, {"ok": False, "error": "AI 進化引擎仍在執行中"})
+                    return
+                evolution_engine_job = _new_batch_scanner_job()
+                evolution_engine_job["running"] = True
+                evolution_engine_job["started_at"] = time.time()
+                evolution_engine_job["last_output_at"] = time.time()
+            threading.Thread(target=_run_evolution_engine, daemon=True).start()
+            self._json(200, {"ok": True, "restarted": True})
             return
 
         if parsed.path == "/api/deploy-mobile":
@@ -1637,6 +1743,8 @@ class Handler(SimpleHTTPRequestHandler):
                 args = ["ALL" if p.upper() in ("ALL", "全部") else p for p in parts]
                 generate_job = _new_generate_job()
                 generate_job["running"] = True
+                generate_job["started_at"] = time.time()
+                generate_job["last_output_at"] = time.time()
             threading.Thread(target=_run_generate, args=(args,), daemon=True).start()
             self._json(200, {"ok": True})
             return

@@ -1,12 +1,52 @@
 {
   "3231": {
+    "schema_version": 2,
     "name": "緯創",
-    "monthly_rev": "7月營收3082.19億元(MoM-4.23%, YoY+60.76%)",
-    "earnings": "Q2 EPS 4.72元，毛利率5.56%，累計上半年EPS 7.78元",
-    "catalyst": "AI伺服器需求強勁，佔伺服器營收逾95%，下半年出貨量預計優於上半年，能見度至2027年上半年。網通交換器業務今年成長逾10倍，毛利率優異。",
-    "target_price": "外資共識目標價266.53元，最高目標價400.00元(Strong Buy)",
+    "monthly_rev": "2026-07營收3082.19億元(MoM-4.23%, YoY+60.76%)",
+    "earnings": "2026-Q2 EPS 4.72元",
+    "catalyst": "利多：AI伺服器基板大量出貨，單季EPS 4.72元創歷史新高且分析師陸續上修獲利；利空：7月營收因基期高月減4.23%，GB200出貨放量節奏待觀察。",
+    "target_price": "90日內法人目標價中位數277.5元(買進, 19筆)",
     "disposition": "",
-    "updated_at": "09/03"
+    "disposition_checked": true,
+    "audit_data": {
+      "code": "3231",
+      "monthly_revenue": {
+        "period": "2026-07",
+        "amount_text": "3082.19億元",
+        "mom_pct": -4.23,
+        "yoy_pct": 60.76,
+        "event_date": "2026-08-07",
+        "source_url": "https://news.cnyes.com/news/id/6564881"
+      },
+      "earnings": {
+        "period": "2026-Q2",
+        "eps": 4.72,
+        "eps_yoy_pct": null,
+        "gross_margin_pct": null,
+        "event_date": "2026-08-04",
+        "source_url": "https://finance.biggo.com.tw/news/TW_3231.TW_2026-08-04"
+      },
+      "catalyst": {
+        "summary": "利多：AI伺服器基板大量出貨，單季EPS 4.72元創歷史新高且分析師陸續上修獲利；利空：7月營收因基期高月減4.23%，GB200出貨放量節奏待觀察。",
+        "direction": "positive",
+        "new_information": true,
+        "event_date": "2026-09-07",
+        "source_url": "https://today.line.me/tw/v3/article/j7R9vmY"
+      },
+      "analyst_target": {
+        "median_price": 277.5,
+        "rating": "買進",
+        "sample_size": 19,
+        "event_date": "2026-09-07",
+        "source_url": "https://today.line.me/tw/v3/article/j7R9vmY"
+      },
+      "disposition": {
+        "status": "normal",
+        "event_date": "2026-09-07",
+        "source_url": "https://www.twse.com.tw"
+      }
+    },
+    "updated_at": "2026-09-07"
   },
   "2454": {
     "name": "聯發科",
@@ -20,11 +60,12 @@
   "2481": {
     "name": "強茂",
     "monthly_rev": "7月營收14.48億元(MoM+4.23%, YoY+30.98%)",
-    "earnings": "Q2 EPS 1.28元，毛利率33.2%，上半年累計EPS 2.03元",
-    "catalyst": "轉型高階車用(佔比35%)與AI(佔比11%)應用，上半年車用營收年增40%，AI功率元件出貨升溫，全年AI營收預計翻倍成長，訂單能見度至2027年。",
-    "target_price": "統一證券目標價205元(看多)，預估2026年EPS 5.27元",
+    "earnings": "Q2 EPS 1.28元，毛利率33.22%，上半年累計稅後純益8.36億元",
+    "catalyst": "AI與車用需求強勁，高階功率元件與SiC MOSFET布局，新產能開出",
+    "target_price": "某外資目標價205元(強力買進)",
     "disposition": "",
-    "updated_at": "09/03"
+    "disposition_checked": true,
+    "updated_at": "2026-09-04"
   },
   "3443": {
     "name": "創意",
@@ -35,12 +76,13 @@
   },
   "6515": {
     "name": "穎崴",
-    "monthly_rev": "7月營收16.00億元(MoM+9.6%, YoY+155.57%)",
-    "earnings": "Q2 EPS 18.70元，毛利率38.33%，累計上半年EPS 38.24元",
-    "catalyst": "AI應用客戶需求放大，高階產品持續放量，帶動7月營收創歷史新高。AI晶片朝大封裝、高針數發展，AI相關開案動能強勁，高階測試座需求爆發。",
-    "target_price": "FactSet最新調查顯示，2026年EPS預估中位數為97.11元，目標價為11750元。",
+    "monthly_rev": "8月營收17.06億元(MoM+6.58%, YoY+233.37%)",
+    "earnings": "Q2 EPS 18.7元，毛利率38%，累計上半年EPS 38.24元",
+    "catalyst": "AI/HPC需求強勁，擴產能，CPO測試座市占逾九成，導入液冷測試",
+    "target_price": "FactSet分析師目標價11750元",
     "disposition": "",
-    "updated_at": "09/03"
+    "disposition_checked": true,
+    "updated_at": "2026-09-04"
   },
   "3693": {
     "name": "營邦",
@@ -67,121 +109,251 @@
     "updated_at": "2026-09-03"
   },
   "2377": {
+    "schema_version": 2,
     "name": "微星",
-    "monthly_rev": "7月營收193.42億元(MoM+8.93%, YoY-0.02%)",
-    "earnings": "Q2 EPS 3.55元，毛利率15.97%，累計上半年EPS 7.59元",
-    "catalyst": "AI伺服器營收預計年增50-100%，中高階PC產品比重提升，終端產品售價規劃調漲15-30%，台灣新廠預計2027年完工，NVIDIA DGX產品線全面就緒。",
-    "target_price": "外資共識目標價155元(中位數)，最高目標價190元，評等以中立居多",
+    "monthly_rev": "",
+    "earnings": "2026-Q2 EPS 7.59元，毛利率15.97%",
+    "catalyst": "利多：Q2毛利率達15.97%創歷史新高，AI平台整合Nvidia開源模型跨入AI Agent；利空：7月營收年減0.02%，PC/板卡終端消費需求復甦節奏平緩。",
+    "target_price": "90日內法人目標價中位數145元(中立, 1筆)",
     "disposition": "",
-    "updated_at": "09/03"
+    "disposition_checked": true,
+    "audit_data": {
+      "code": "2377",
+      "monthly_revenue": {
+        "period": "2026-07",
+        "amount_text": "193.42億元",
+        "mom_pct": null,
+        "yoy_pct": -0.02,
+        "event_date": "2026-08-07",
+        "source_url": "https://news.cnyes.com/news/print/6565694"
+      },
+      "earnings": {
+        "period": "2026-Q2",
+        "eps": 7.59,
+        "eps_yoy_pct": null,
+        "gross_margin_pct": 15.97,
+        "event_date": "2026-08-12",
+        "source_url": "https://www.top1markets.com/tw/news/msi-2377-earnings-ai-agent-stock-analysis-fm26"
+      },
+      "catalyst": {
+        "summary": "利多：Q2毛利率達15.97%創歷史新高，AI平台整合Nvidia開源模型跨入AI Agent；利空：7月營收年減0.02%，PC/板卡終端消費需求復甦節奏平緩。",
+        "direction": "positive",
+        "new_information": true,
+        "event_date": "2026-08-12",
+        "source_url": "https://www.top1markets.com/tw/news/msi-2377-earnings-ai-agent-stock-analysis-fm26"
+      },
+      "analyst_target": {
+        "median_price": 145.0,
+        "rating": "中立",
+        "sample_size": 1,
+        "event_date": "2026-08-15",
+        "source_url": "https://readmo.cmoney.tw/article/22c942f4-3f58-4f05-8e99-0b6dfb44e75f"
+      },
+      "disposition": {
+        "status": "normal",
+        "event_date": "2026-09-07",
+        "source_url": "https://www.twse.com.tw"
+      }
+    },
+    "updated_at": "2026-09-07"
   },
   "3661": {
     "name": "世芯-KY",
     "monthly_rev": "7月營收74.33億元(MoM+108.07%, YoY+181.78%)",
-    "earnings": "Q2 EPS 20.01元，毛利率34.84%，累計上半年EPS 37.57元",
-    "catalyst": "北美客戶N3 AI加速器自5月起量產出貨，Q3營收獲利將強勁季增，下半年迎爆發成長期。N2加速器專案預計年底前Tape-out，2027年底進入量產。",
-    "target_price": "外資最高目標價6800元(買進)，FactSet外資共識目標價6000元",
+    "earnings": "Q2 EPS 20.01元，毛利率34.8%，累計上半年EPS 37.57元",
+    "catalyst": "3奈米AI加速器量產出貨，Q3營收獲利看新高，成長動能可望延續3~4年。",
+    "target_price": "花旗環球目標價6800元(買進)",
     "disposition": "",
-    "updated_at": "09/03"
+    "disposition_checked": true,
+    "updated_at": "2026-09-04"
   },
   "2395": {
     "name": "研華",
-    "monthly_rev": "7月營收112.72億元(MoM+11.35%, YoY+87.57%)",
-    "earnings": "Q2 EPS 5.2元，毛利率37.7%，上半年累計EPS 9.05元",
-    "catalyst": "2026年Q2獲利創歷史新高，受惠AI基礎設施與Edge AI應用需求強勁。Edge AI營收目標2026年底達30%，Q2接單出貨比(B/B值)重回成長軌道。",
-    "target_price": "元大投顧目標價760元(買進)，中信投顧目標價735元(增加持股)，FactSet分析師共識目標價680元",
+    "monthly_rev": "7月營收112.72億元(MoM+11.35%, YoY+87.58%)",
+    "earnings": "Q2 EPS 5.20元，毛利率37.7%，上半年累計EPS 9.05元",
+    "catalyst": "AI需求強勁，Q3營收續創高，全年AI產品營收佔比目標逾30%",
+    "target_price": "元大投顧目標價760元(買進)，中信投顧目標價735元(增加持股) (報告日期2026-08-06)",
     "disposition": "",
-    "updated_at": "09/03"
+    "disposition_checked": true,
+    "updated_at": "2026-09-04"
   },
   "3026": {
     "name": "禾伸堂",
-    "monthly_rev": "7月營收15.01億元(MoM+8.89%, YoY+37.05%)",
-    "earnings": "Q2 EPS 3.87元，毛利率26.2%，累計EPS 6.73元",
-    "catalyst": "公司轉型為AI高階電源核心元件供應商，AI產線滿載，NP0 MLCC全球市占逾五成，交期逾20週。預計2026-2029年投入30億元擴充台灣與海外產能。",
-    "target_price": "凱基投顧給予「增加持股」評等，12個月目標價650元 (以2027年EPS 25倍本益比推算)",
+    "monthly_rev": "7月營收15.01億元(MoM+8.9%, YoY+37.1%)",
+    "earnings": "Q2 EPS 3.87元，毛利率26.2%",
+    "catalyst": "AI應用帶動高階MLCC需求，擴產增能，Q3營收毛利率看升",
+    "target_price": "近三個月無公開機構目標價",
     "disposition": "",
-    "updated_at": "09/03"
+    "disposition_checked": true,
+    "updated_at": "2026-09-04"
   },
   "2301": {
     "name": "光寶科",
     "monthly_rev": "7月營收190.06億元(MoM+1.88%, YoY+37.61%)",
-    "earnings": "Q2 EPS 3.14元，毛利率27.2%，累計上半年EPS 4.8元",
-    "catalyst": "2026年Q2營收527億元，年增30%創歷史新高；上修2026年資本支出至180億元；投資新加坡DenseLight切入高速光通訊，預計2026下半年顯現效益。",
-    "target_price": "外資共識目標價250元，最高目標價370元(元大投顧)",
+    "earnings": "Q2 EPS 3.14元，毛利率27.2%，上半年累計EPS 4.8元",
+    "catalyst": "資本支出上修、獲北美CSP新單、佈局光通訊與液冷DCX",
+    "target_price": "元大投顧目標價370元(買進)",
     "disposition": "",
-    "updated_at": "09/03"
+    "disposition_checked": true,
+    "updated_at": "2026-09-04"
   },
   "2324": {
     "name": "仁寶",
-    "monthly_rev": "7月營收810.06億元(MoM-15.49%, YoY+38.25%)",
-    "earnings": "Q2 EPS 0.73元，毛利率4.6%，累計上半年EPS 1.18元",
-    "catalyst": "最新法說會指出AI伺服器營收佔伺服器業務約70%，預計2026年底伺服器營收佔比有望超標10%，2027年目標達總營收20%，桃園大溪製造中心積極擴產。",
-    "target_price": "FactSet共識目標價40元，外資最高目標價45元",
+    "monthly_rev": "7月營收810.06億元(MoM-15.49%, YoY+38.26%)",
+    "earnings": "Q2 EPS 0.73元，毛利率4.62%，累計上半年EPS 1.18元",
+    "catalyst": "AI伺服器動能強勁，產能倍增，目標營收佔比超標。",
+    "target_price": "Factset目標價40元(2026/08/24)",
     "disposition": "",
-    "updated_at": "09/03"
+    "disposition_checked": true,
+    "updated_at": "2026-09-04"
   },
   "8996": {
     "name": "高力",
-    "monthly_rev": "7月營收9.23億元(MoM+27.31%, YoY+57.63%)",
-    "earnings": "Q2 EPS 2.16元，毛利率26.0%，上半年累計EPS 8.69元",
-    "catalyst": "AI伺服器液冷散熱需求強勁回溫，公司看好第三季營運重回成長軌道，全年液冷散熱業務維持三位數成長目標。燃料電池業務力拚倍增，積極擴充水冷板與分流管產能。",
-    "target_price": "港系外資於2026年6月17日將目標價調升至2300元 (買進)。另有法人看好目標價上看1500元。",
+    "monthly_rev": "8月營收12.04億元(MoM+30.48%, YoY+112.84%)",
+    "earnings": "Q2 EPS 2.16元，毛利率26.0%",
+    "catalyst": "AI散熱與燃料電池需求強勁，擴產計畫積極進行",
+    "target_price": "里昂證券目標價2300元(強力買進) (報告日期2026-06-18)",
     "disposition": "",
-    "updated_at": "09/03"
+    "disposition_checked": true,
+    "updated_at": "2026-09-04"
   },
   "6781": {
     "name": "AES-KY",
-    "monthly_rev": "8月營收17.51億元(MoM+1.61%, YoY+26.64%)",
-    "earnings": "Q2 EPS 12.81元，毛利率39.06%，累計上半年EPS 23.45元",
-    "catalyst": "AI伺服器BBU需求強勁，預計2026年BBU營收年增30-40%；高壓HVDC BBU預計2026年下半年至2027年初量產；越南及中國大",
-    "target_price": "美系外資目標價1680元(買進)，國泰目標價1600元(買進)。",
+    "monthly_rev": "8月營收17.51億元(MoM+1.6%, YoY+26.6%)",
+    "earnings": "Q2 EPS 12.81元，毛利率39.06%",
+    "catalyst": "AI伺服器BBU需求強勁，HVDC產品年底推出，擴產動能",
+    "target_price": "某外資目標價1680元(買進)",
     "disposition": "",
-    "updated_at": "09/03"
+    "disposition_checked": true,
+    "updated_at": "2026-09-04"
   },
   "3006": {
     "name": "晶豪科",
-    "monthly_rev": "8月營收79.05億元(MoM+16.5%, YoY+605.2%)",
-    "earnings": "Q2 EPS 20.21元，毛利率68.7%",
-    "catalyst": "記憶體受惠AI需求，DDR2/DDR3市佔增，價格逐季調升。",
+    "monthly_rev": "8月營收79.05億元(MoM+16.51%, YoY+605.24%)",
+    "earnings": "Q2 EPS 20.21元，毛利率68.7%，累計上半年EPS 27.58元",
+    "catalyst": "AI帶動記憶體需求，產能吃緊，價格維持高檔，下半年營運樂觀。",
     "target_price": "近三個月無公開機構目標價",
     "disposition": "",
-    "updated_at": "09/04"
+    "disposition_checked": true,
+    "updated_at": "2026-09-04"
   },
   "6584": {
     "name": "南俊國際",
-    "monthly_rev": "7月營收2.803億元(MoM-2.12%, YoY+32.80%)",
-    "earnings": "Q2 EPS 3.1元，毛利率41.81%",
-    "catalyst": "VR/ASIC伺服器訂單放量，越南廠擴產，新CSP客戶",
-    "target_price": "本土投顧目標價721元(增加持股)，日系外資目標價1022元(買進)",
+    "monthly_rev": "7月營收2.80億元(MoM-2.12%, YoY+32.8%)",
+    "earnings": "Q2 EPS 3.10元，毛利率41.8%，上半年累計EPS 6.47元",
+    "catalyst": "VR滑軌8月出貨，ASIC 9月量產，AI佔比增，越南擴產。",
+    "target_price": "亞系外資目標價1022元(買進)",
     "disposition": "",
-    "updated_at": "09/04"
+    "disposition_checked": true,
+    "updated_at": "2026-09-04"
   },
   "3491": {
+    "schema_version": 2,
     "name": "昇達科",
-    "monthly_rev": "7月營收230,139千元(MoM-10.4%, YoY+82.02%)",
-    "earnings": "Q2 EPS 4.47元，毛利率55.6%",
-    "catalyst": "併購巨頻科技強化低軌衛星與AI資料中心佈局，8月起營運回溫。",
-    "target_price": "FactSet最新調查目標價1977.5元 (2026年EPS預估18.88元)",
+    "monthly_rev": "",
+    "earnings": "",
+    "catalyst": "利多：LEO低軌衛星元件需求高成長，7月營收年增82%；利空：第二季營收季減11.58%為近兩季低點，毛利率較上季略降。",
+    "target_price": "",
     "disposition": "",
-    "updated_at": "09/04"
+    "disposition_checked": true,
+    "audit_data": {
+      "code": "3491",
+      "monthly_revenue": {
+        "period": "2026-07",
+        "amount_text": "2.30億元",
+        "mom_pct": null,
+        "yoy_pct": 82.02,
+        "event_date": "2026-08-05",
+        "source_url": "https://www.capitalim.com.tw/newsite/stock-news/stock-news/c875df32-69aa-48bb-a8c9-27c7519807eb;page=1(popup:login)"
+      },
+      "earnings": {
+        "period": "2026-Q2",
+        "eps": null,
+        "eps_yoy_pct": null,
+        "gross_margin_pct": 55.6,
+        "event_date": "2026-08-14",
+        "source_url": "https://cmnews.com.tw/article/cmoneyaicurator-6699bc61-97c1-11f1-8316-c971ea7ef1c8"
+      },
+      "catalyst": {
+        "summary": "利多：LEO低軌衛星元件需求高成長，7月營收年增82%；利空：第二季營收季減11.58%為近兩季低點，毛利率較上季略降。",
+        "direction": "positive",
+        "new_information": true,
+        "event_date": "2026-09-05",
+        "source_url": "https://money.udn.com/money/story/12040/9732923"
+      },
+      "analyst_target": {
+        "median_price": null,
+        "rating": null,
+        "sample_size": 0,
+        "event_date": null,
+        "source_url": null
+      },
+      "disposition": {
+        "status": "normal",
+        "event_date": "2026-09-07",
+        "source_url": "https://www.tpex.org.tw"
+      }
+    },
+    "updated_at": "2026-09-07"
   },
   "6187": {
+    "schema_version": 2,
     "name": "萬潤",
-    "monthly_rev": "7月營收10.55億元(MoM+4.17%, YoY+73.44%)",
-    "earnings": "Q2 EPS 8.50元，毛利率54.77%",
-    "catalyst": "營運能見度至2027年Q2，先進封裝與矽光子設備為雙成長動能，CPO設備預計Q4交貨。",
-    "target_price": "美林目標價1550元(看多)，中國信託綜合證券目標價1680元(看多)",
-    "disposition": "",
-    "updated_at": "09/04"
+    "monthly_rev": "2026-07營收10.55億元(MoM+4.17%, YoY+73.44%)",
+    "earnings": "2026-Q2 EPS 8.5元，EPS YoY +107.04%，毛利率54.77%",
+    "catalyst": "利多：先進封裝CoWoS設備出貨暢旺，單季獲利創歷史新高；利空：因短線當沖比率及週轉率過高遭列處置股票，每20分鐘撮合一次流動性受限。",
+    "target_price": "",
+    "disposition": "列入處置股(分盤撮合/流動性急凍)",
+    "disposition_checked": true,
+    "audit_data": {
+      "code": "6187",
+      "monthly_revenue": {
+        "period": "2026-07",
+        "amount_text": "10.55億元",
+        "mom_pct": 4.17,
+        "yoy_pct": 73.44,
+        "event_date": "2026-08-07",
+        "source_url": "https://www.nstock.tw/%E8%90%AC%E6%BD%A4%E5%81%9A%E4%BB%80%E9%BA%BC.html"
+      },
+      "earnings": {
+        "period": "2026-Q2",
+        "eps": 8.5,
+        "eps_yoy_pct": 107.04,
+        "gross_margin_pct": 54.77,
+        "event_date": "2026-08-10",
+        "source_url": "https://www.sinotrade.com.tw/richclub/news/6a79a82cb17ee7367874e02d"
+      },
+      "catalyst": {
+        "summary": "利多：先進封裝CoWoS設備出貨暢旺，單季獲利創歷史新高；利空：因短線當沖比率及週轉率過高遭列處置股票，每20分鐘撮合一次流動性受限。",
+        "direction": "neutral",
+        "new_information": true,
+        "event_date": "2026-09-07",
+        "source_url": "https://www.ibfs.com.tw/stock3/measuringstock.aspx?xy=6&xt=1"
+      },
+      "analyst_target": {
+        "median_price": null,
+        "rating": null,
+        "sample_size": 0,
+        "event_date": null,
+        "source_url": null
+      },
+      "disposition": {
+        "status": "disposition",
+        "event_date": "2026-09-07",
+        "source_url": "https://www.ibfs.com.tw/stock3/measuringstock.aspx?xy=6&xt=1"
+      }
+    },
+    "updated_at": "2026-09-07"
   },
   "4979": {
     "name": "華星光",
     "monthly_rev": "7月營收5.09億元(MoM+11.8%, YoY+31.01%)",
-    "earnings": "Q2 EPS 1.29元，毛利率22.4%，累計上半年EPS 2.91元",
-    "catalyst": "800G模組放量、CW/EML擴產、1.6T NPO 2027量產",
+    "earnings": "Q2 EPS 1.29元，毛利率22.44%，累計上半年EPS 2.91元",
+    "catalyst": "800G ZR模組Q3量產放量，CW Laser與EML擴產",
     "target_price": "本土法人目標價800元(買進)",
     "disposition": "",
-    "updated_at": "09/04"
+    "disposition_checked": true,
+    "updated_at": "2026-09-04"
   },
   "2467": {
     "name": "志聖",
@@ -191,5 +363,74 @@
     "target_price": "近三個月無公開機構目標價",
     "disposition": "",
     "updated_at": "09/04"
+  },
+  "2891": {
+    "name": "中信金",
+    "monthly_rev": "7月營收180.46億元(MoM-8.99%, YoY-18.42%)",
+    "earnings": "Q2 EPS 0.78元，毛利率61.73%，累計上半年稅後盈餘395.37億元",
+    "catalyst": "上半年獲利創新高，淨值破7千億，海外擴張",
+    "target_price": "FactSet目標價73.75元(積極樂觀)",
+    "disposition": "",
+    "disposition_checked": true,
+    "updated_at": "2026-09-04"
+  },
+  "2882": {
+    "name": "國泰金",
+    "monthly_rev": "7月營收251.36億元(MoM-22.2%, YoY-69.71%)",
+    "earnings": "Q2 EPS 2.8元，毛利率未揭露，累計獲利765億元",
+    "catalyst": "Q2獲利創高，總經理表示明年股利會更好",
+    "target_price": "中信投顧目標價117元(增加持股)",
+    "disposition": "",
+    "disposition_checked": true,
+    "updated_at": "2026-09-04"
+  },
+  "6207": {
+    "schema_version": 2,
+    "name": "雷科",
+    "monthly_rev": "",
+    "earnings": "2026-Q2 EPS 1.04元，EPS YoY +311.11%",
+    "catalyst": "利多：Q2單季EPS 1.04元較去年大幅翻倍，半導體設備與載帶出貨回溫；利空：7月營收僅年增6.31%，被動元件整體需求復甦力度相對溫和。",
+    "target_price": "",
+    "disposition": "",
+    "disposition_checked": true,
+    "audit_data": {
+      "code": "6207",
+      "monthly_revenue": {
+        "period": "2026-07",
+        "amount_text": "1.13億元",
+        "mom_pct": null,
+        "yoy_pct": 6.31,
+        "event_date": "2026-08-07",
+        "source_url": "https://statementdog.com/analysis/6207/monthly-revenue-growth-rate"
+      },
+      "earnings": {
+        "period": "2026-Q2",
+        "eps": 1.04,
+        "eps_yoy_pct": 311.11,
+        "gross_margin_pct": null,
+        "event_date": "2026-08-14",
+        "source_url": "https://cmnews.com.tw/article/cmoneyaicurator-69dfd561-97c1-11f1-9a3f-4ef68133f061"
+      },
+      "catalyst": {
+        "summary": "利多：Q2單季EPS 1.04元較去年大幅翻倍，半導體設備與載帶出貨回溫；利空：7月營收僅年增6.31%，被動元件整體需求復甦力度相對溫和。",
+        "direction": "neutral",
+        "new_information": true,
+        "event_date": "2026-08-14",
+        "source_url": "https://cmnews.com.tw/article/cmoneyaicurator-69dfd561-97c1-11f1-9a3f-4ef68133f061"
+      },
+      "analyst_target": {
+        "median_price": null,
+        "rating": null,
+        "sample_size": 0,
+        "event_date": null,
+        "source_url": null
+      },
+      "disposition": {
+        "status": "normal",
+        "event_date": "2026-09-07",
+        "source_url": "https://www.tpex.org.tw"
+      }
+    },
+    "updated_at": "2026-09-07"
   }
 }

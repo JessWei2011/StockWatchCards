@@ -405,11 +405,14 @@ def _twse_cache_key(url, params):
 def twse_response_cached(url, params):
     return _twse_cache_key(url, params) in _twse_response_cache
 
-def twse_get(url, params):
+def market_json_get(url, params, headers=None, timeout=12, verify=True):
     with _twse_response_lock:
-        return _twse_get_locked(url, params)
+        return _market_json_get_locked(url, params, headers or HEADERS, timeout, verify)
 
-def _twse_get_locked(url, params):
+def twse_get(url, params):
+    return market_json_get(url, params)
+
+def _market_json_get_locked(url, params, headers, timeout, verify):
     # 法人與融資端點回傳的是「當日全市場」資料。批次更新時同一日期只下載一次，
     # 後續個股直接共用記憶體回應，避免 35 檔上市股重複抓取完全相同的內容。
     cache_key = _twse_cache_key(url, params)
@@ -417,7 +420,7 @@ def _twse_get_locked(url, params):
         return _twse_response_cache[cache_key]
     for _ in range(2):
         try:
-            r = _session.get(url, params=params, headers=HEADERS, timeout=12)
+            r = _session.get(url, params=params, headers=headers, timeout=timeout, verify=verify)
             if r.status_code == 200 and r.text.strip():
                 data = r.json()
                 _twse_response_cache[cache_key] = data
@@ -425,7 +428,14 @@ def _twse_get_locked(url, params):
         except:
             pass
         time.sleep(1.2)
+    # 同一批次內也快取失敗結果。最新交易日尚未公布時，若不做負快取，
+    # 93 檔會針對同一個不存在的日期各自等待兩次逾時。
+    _twse_response_cache[cache_key] = None
     return None
+
+def _twse_get_locked(url, params):
+    """保留舊介面，供既有呼叫與測試使用。"""
+    return _market_json_get_locked(url, params, HEADERS, 12, True)
 
 _otc_company_names_cache = None
 _otc_company_names_lock = threading.Lock()
@@ -782,21 +792,26 @@ def fetch_disposition_info(sid, is_otc=False):
 
     if not is_otc:
         candidates = [
-            ("https://www.twse.com.tw/rwd/zh/announcement/punish", {"response": "json", "startDate": "", "endDate": "", "stockNo": sid}),
-            ("https://www.twse.com.tw/zh/announcement/punish.html", {"startDate": "", "endDate": "", "stockNo": sid}),
+            ("https://www.twse.com.tw/rwd/zh/announcement/punish", {"response": "json", "startDate": "", "endDate": "", "stockNo": ""}, True),
+            ("https://www.twse.com.tw/zh/announcement/punish.html", {"startDate": "", "endDate": "", "stockNo": sid}, False),
         ]
 
-        for url, params in candidates:
+        for url, params, market_wide in candidates:
             try:
-                r = _session.get(url, params=params, headers=HEADERS, timeout=12)
-                txt = r.text.strip()
-                if r.status_code != 200 or not txt:
-                    continue
-
-                try:
-                    data = r.json()
-                except:
-                    data = None
+                if market_wide:
+                    data = market_json_get(url, params, timeout=12)
+                    txt = json.dumps(data, ensure_ascii=False) if data is not None else ""
+                    if data is None:
+                        continue
+                else:
+                    r = _session.get(url, params=params, headers=HEADERS, timeout=12)
+                    txt = r.text.strip()
+                    if r.status_code != 200 or not txt:
+                        continue
+                    try:
+                        data = r.json()
+                    except:
+                        data = None
 
                 rows = []
                 if isinstance(data, dict):
@@ -826,6 +841,9 @@ def fetch_disposition_info(sid, is_otc=False):
 
                 if result["start"] and result["end"]:
                     break
+                if market_wide:
+                    # 全市場清單已成功取得，未出現在清單內就是目前沒有處置公告。
+                    break
 
                 if sid in txt:
                     pattern = rf"{sid}.*?(\d{{2,3}}/\d{{1,2}}/\d{{1,2}}\s*[~～\-]\s*\d{{2,3}}/\d{{1,2}}/\d{{1,2}})"
@@ -845,26 +863,30 @@ def fetch_disposition_info(sid, is_otc=False):
 
     else:
         candidates = [
-            ("https://www.tpex.org.tw/openapi/v1/tpex_mainboard_disposal_securities_information", None),
-            ("https://www.tpex.org.tw/openapi/v1/tpex_esb_disposal_securities_information", None),
-            ("https://www.tpex.org.tw/web/bulletin/disposal_information/disposal_information_result.php", {"l": "zh-tw", "o": "json", "stkno": sid}),
+            ("https://www.tpex.org.tw/openapi/v1/tpex_mainboard_disposal_securities_information", None, True),
+            ("https://www.tpex.org.tw/web/bulletin/disposal_information/disposal_information_result.php", {"l": "zh-tw", "o": "json", "stkno": sid}, False),
         ]
 
         otc_hdrs = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
 
-        for url, params in candidates:
+        for url, params, market_wide in candidates:
             try:
-                r = _session.get(url, params=params, headers=otc_hdrs, timeout=12, verify=False)
-                txt = r.text.strip()
-                if r.status_code != 200 or not txt:
-                    continue
-
-                try:
-                    data = r.json()
-                except:
-                    data = None
+                if market_wide:
+                    data = market_json_get(url, params, headers=otc_hdrs, timeout=12, verify=False)
+                    txt = json.dumps(data, ensure_ascii=False) if data is not None else ""
+                    if data is None:
+                        continue
+                else:
+                    r = _session.get(url, params=params, headers=otc_hdrs, timeout=12, verify=False)
+                    txt = r.text.strip()
+                    if r.status_code != 200 or not txt:
+                        continue
+                    try:
+                        data = r.json()
+                    except:
+                        data = None
 
                 rows = []
                 if isinstance(data, list):
@@ -906,6 +928,8 @@ def fetch_disposition_info(sid, is_otc=False):
                         break
 
                 if result["start"] and result["end"]:
+                    break
+                if market_wide:
                     break
 
                 if sid in txt:
@@ -975,13 +999,8 @@ def fetch_inst(sid, dates, is_otc=False, cache=None):
                 break
         else:
             url = "https://www.tpex.org.tw/web/stock/3insti/daily_trade/3itrade_hedge_result.php"
-            try:
-                r = _session.get(url, params={"l": "zh-tw", "o": "json", "se": "AL", "t": "D", "d": to_roc_date(d)},
-                                 headers=otc_hdrs, timeout=10, verify=False)
-                r.encoding = 'utf-8'
-                data = r.json() if r.status_code == 200 else {}
-            except:
-                data = {}
+            params = {"l": "zh-tw", "o": "json", "se": "AL", "t": "D", "d": to_roc_date(d)}
+            data = market_json_get(url, params, headers=otc_hdrs, timeout=10, verify=False) or {}
 
             data_list = data.get("tables", [])
             if not data_list:
@@ -998,8 +1017,7 @@ def fetch_inst(sid, dates, is_otc=False, cache=None):
 
         if len(rows) >= DAYS_LOOKBACK:
             break
-        if not reused_market_response:
-            time.sleep(0.8)
+        # 上市與上櫃端點都回傳整個市場；批次內只抓一次並共用。
 
     return rows[:DAYS_LOOKBACK]
 
@@ -1045,12 +1063,8 @@ def fetch_margin(sid, dates, is_otc=False, cache=None):
 
         else:
             url = "https://www.tpex.org.tw/web/stock/margin_trading/margin_balance/margin_bal_result.php"
-            try:
-                r = _session.get(url, params={"l": "zh-tw", "o": "json", "d": to_roc_date(d)}, headers=otc_hdrs, timeout=10, verify=False)
-                r.encoding = 'utf-8'
-                data = r.json() if r.status_code == 200 else {}
-            except:
-                data = {}
+            params = {"l": "zh-tw", "o": "json", "d": to_roc_date(d)}
+            data = market_json_get(url, params, headers=otc_hdrs, timeout=10, verify=False) or {}
 
             data_list = data.get("tables", [])
             if not data_list:
@@ -1068,12 +1082,29 @@ def fetch_margin(sid, dates, is_otc=False, cache=None):
 
         if len(rows) >= DAYS_LOOKBACK:
             break
-        if not reused_market_response:
-            time.sleep(0.8)
+        # 全市場回應由同批次共用，避免同日期被每檔股票重抓與等待。
 
     return rows[:DAYS_LOOKBACK]
 
 # ── 主程式 ────────────────────────────────────────────
+def preferred_yahoo_symbols(sid):
+    """既有報表已記錄上市/上櫃別，直接使用正確 Yahoo 後綴，避免先錯抓再等逾時。"""
+    matches = glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*.html"), recursive=True)
+    if any("(TWO)" in os.path.basename(path) for path in matches):
+        return [sid + ".TWO"]
+    if any("(TW)" in os.path.basename(path) for path in matches):
+        return [sid + ".TW"]
+    return [sid + ".TW", sid + ".TWO"]
+
+
+def download_market_history(symbol):
+    """用可控逾時的 download 介面取代 Ticker.history 的長時間隱性重試。"""
+    return yf.download(
+        symbol, period="1y", interval="1d", auto_adjust=True,
+        progress=False, threads=False, timeout=8, multi_level_index=False,
+    )
+
+
 def run(ticker_input):
     raw = ticker_input.strip()
     sid = raw.upper().replace(".TW", "").replace(".TWO", "")
@@ -1100,31 +1131,40 @@ def run(ticker_input):
     df = pd.DataFrame()
     today_key = datetime.now().strftime("%Y-%m-%d")
     market_cache = cache.get("market", {})
-    info = dict(market_cache.get("info") or {}) if market_cache.get("date") == today_key else {}
-    symbol = sid + ".TW"
-
+    info = dict(market_cache.get("info") or {})
+    cached_info_date = str(market_cache.get("date") or "")
     try:
-        symbol = sid + ".TW"
-        stok = yf.Ticker(symbol)
-        df = stok.history(period="1y", interval="1d", auto_adjust=True)
-        if not df.empty and not info:
-            info = stok.info or {}
-    except Exception:
-        pass
+        info_age_days = (datetime.strptime(today_key, "%Y-%m-%d") - datetime.strptime(cached_info_date, "%Y-%m-%d")).days
+    except (TypeError, ValueError):
+        info_age_days = 999
+    refresh_info = not info or info_age_days >= 7
+    symbol = preferred_yahoo_symbols(sid)[0]
 
-    if df.empty:
+    for candidate_symbol in preferred_yahoo_symbols(sid):
         try:
-            symbol = sid + ".TWO"
-            stok = yf.Ticker(symbol)
-            df = stok.history(period="1y", interval="1d", auto_adjust=True)
-            if not df.empty and not info:
-                info = stok.info or {}
+            candidate_df = download_market_history(candidate_symbol)
+            if not candidate_df.empty:
+                symbol = candidate_symbol
+                df = candidate_df
+                if refresh_info:
+                    try:
+                        info = yf.Ticker(symbol).info or info
+                    except Exception:
+                        pass
+                break
         except Exception:
-            pass
+            continue
 
     if df.empty:
         print(" ❌ 失敗 (查無此代碼或已下市)，停止後續動作。\n")
         return False
+
+    # 日 K 每次都下載完整一年，報表仍顯示最近 180 個交易日。
+    # 只有 PE/PB/市值等低頻基本欄位最多沿用七天，減少每日 ALL 的慢速 metadata 請求。
+    try:
+        info["currentPrice"] = float(df["Close"].iloc[-1])
+    except Exception:
+        pass
 
     print(f" ✅ OK (成功抓取: {symbol})")
 
@@ -1600,16 +1640,20 @@ def run_batch(tickers):
 
     results_by_index = {}
     completed = 0
+    remaining = {str(ticker) for ticker in tickers}
     with ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="stock-update") as executor:
         future_map = {executor.submit(run_one, ticker): (index, ticker) for index, ticker in enumerate(tickers)}
         for future in as_completed(future_map):
             index, ticker = future_map[future]
             ok, error = future.result()
             completed += 1
+            remaining.discard(str(ticker))
             print(f"\n[{completed}/{total}] {ticker}")
             if error:
                 print(f"❌ {ticker} 發生錯誤: {error}")
             print(f"{'✅ OK' if ok else '❌ 失敗'} [{completed}/{total}] {ticker}")
+            if remaining:
+                print("🔄 尚在處理：" + "、".join(sorted(remaining)))
             results_by_index[index] = (ticker, ok)
 
     gc.collect()
