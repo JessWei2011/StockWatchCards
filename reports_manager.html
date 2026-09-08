@@ -3183,6 +3183,25 @@
     50%{ transform:scale(1.12); box-shadow:0 0 14px rgba(255,50,0,1), 0 0 24px rgba(255,220,0,0.85); }
   }
 
+
+  /* 1 列 x 3 欄 人工 AI 反證與風險研究卡面板 */
+  .ai-research-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 900px) {
+    .ai-research-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+  .custom-toast {
+    animation: toastSlideIn 0.3s ease-out forwards;
+  }
+  @keyframes toastSlideIn {
+    from { opacity: 0; transform: translateY(-12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 </style>
 <link rel="stylesheet" href="pattern_viewer/css/viewer.css?v=90">
 </head>
@@ -5481,9 +5500,298 @@
     }
   }
 
+  // =========================================================================
+  // 🔬 單一步驟人工 AI 反證與風險研究卡接力模組 (無外部 API 依賴)
+  // =========================================================================
+  let aiResearchState = {
+    status: 'idle',
+    prompt_id: null,
+    prompt: '',
+    expected_codes: [],
+    created_at: null,
+    completed_at: null,
+    error: null,
+    events: [],
+    isOpen: false
+  };
+
+  function showToast(message, type = 'success', duration = 4000) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toast-container';
+      container.style.cssText = 'position:fixed; top:24px; right:24px; z-index:999999; display:flex; flex-direction:column; gap:10px; pointer-events:none;';
+      document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = `custom-toast toast-${type}`;
+    toast.style.cssText = `pointer-events:auto; min-width:300px; max-width:460px; padding:14px 18px; border-radius:8px; box-shadow:0 12px 30px rgba(0,0,0,0.45); font-size:14px; font-weight:750; display:flex; align-items:center; justify-content:space-between; gap:12px; transition:all 0.3s ease; ${type === 'success' ? 'background:#065f46; color:#a7f3d0; border:1.5px solid #10b981;' : 'background:#881337; color:#fecdd3; border:1.5px solid #f43f5e;'}`;
+    toast.innerHTML = `<span>${escapeHtml(message)}</span><button type="button" style="background:none; border:none; color:inherit; font-size:16px; cursor:pointer; padding:0 4px;" onclick="this.parentElement.remove()">✕</button>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(-10px)';
+      setTimeout(() => toast.remove(), 350);
+    }, duration);
+  }
+
+  async function openAiResearchBox() {
+    aiResearchState.isOpen = true;
+    renderAiResearchUI();
+    try {
+      const res = await fetch('/api/ai-research/status', {cache: 'no-store'});
+      const data = await res.json();
+      if (data.ok) {
+        aiResearchState = { ...aiResearchState, ...data, isOpen: true };
+        if (data.status === 'idle') {
+          await startAiResearch();
+        } else {
+          renderAiResearchUI();
+        }
+      }
+    } catch (e) {
+      console.error('Fetch ai research status error:', e);
+    }
+  }
+
+  function closeAiResearchBox() {
+    aiResearchState.isOpen = false;
+    renderAiResearchUI();
+  }
+
+  async function startAiResearch() {
+    const btn = document.getElementById('ai-research-start-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '產生中...'; }
+    aiResearchState.status = 'validating';
+    renderAiResearchUI();
+    try {
+      const res = await fetch('/api/ai-research/start', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || '產生 Prompt 失敗');
+      aiResearchState = {
+        ...aiResearchState,
+        status: 'awaiting_response',
+        prompt_id: data.prompt_id,
+        prompt: data.prompt,
+        expected_codes: data.expected_codes,
+        created_at: data.created_at,
+        error: null,
+        events: [{timestamp: new Date().toTimeString().slice(0, 8), event: 'Prompt 已建立', detail: `共 ${data.count} 檔`}],
+        isOpen: true
+      };
+    } catch (err) {
+      aiResearchState.status = 'error';
+      aiResearchState.error = err.message;
+      aiResearchState.events.push({timestamp: new Date().toTimeString().slice(0, 8), event: '產生失敗', detail: err.message});
+    }
+    renderAiResearchUI();
+  }
+
+  async function copyAiPrompt() {
+    if (!aiResearchState.prompt) return;
+    try {
+      await navigator.clipboard.writeText(aiResearchState.prompt);
+      const btn = document.getElementById('ai-copy-prompt-btn');
+      if (btn) {
+        btn.textContent = '✅ 已複製！';
+        setTimeout(() => {
+          if (btn) btn.textContent = '📋 複製 Prompt';
+        }, 2500);
+      }
+      aiResearchState.events.push({
+        timestamp: new Date().toTimeString().slice(0, 8),
+        event: 'Prompt 已複製',
+        detail: '已成功複製至系統剪貼簿'
+      });
+      renderAiResearchUI();
+    } catch (e) {
+      alert('瀏覽器權限限制，請在下方展開的查看框中手動複製');
+    }
+  }
+
+  async function submitAiResearchResponse() {
+    const textarea = document.getElementById('ai-response-input');
+    const rawText = textarea ? textarea.value.trim() : '';
+    if (!rawText) {
+      const errDiv = document.getElementById('ai-submit-error');
+      if (errDiv) errDiv.textContent = '請先貼上 AI 回覆的完整 JSON';
+      return;
+    }
+    if (!aiResearchState.prompt_id) {
+      const errDiv = document.getElementById('ai-submit-error');
+      if (errDiv) errDiv.textContent = '尚未產生 Prompt，請先點擊產生 Prompt';
+      return;
+    }
+
+    const submitBtn = document.getElementById('ai-submit-response-btn');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '驗證中...'; }
+    if (textarea) textarea.disabled = true;
+
+    aiResearchState.status = 'validating';
+    aiResearchState.events.push({
+      timestamp: new Date().toTimeString().slice(0, 8),
+      event: '收到回覆',
+      detail: `字元數: ${rawText.length}`
+    });
+    renderAiResearchUI();
+
+    try {
+      const res = await fetch('/api/ai-research/submit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          prompt_id: aiResearchState.prompt_id,
+          response: rawText
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || '驗證失敗');
+      }
+
+      aiResearchState.status = 'completed';
+      aiResearchState.completed_at = data.completed_at;
+      aiResearchState.error = null;
+      aiResearchState.events.push(
+        {timestamp: new Date().toTimeString().slice(0, 8), event: 'JSON 解析成功', detail: ''},
+        {timestamp: new Date().toTimeString().slice(0, 8), event: '股票完整性通過', detail: ''},
+        {timestamp: new Date().toTimeString().slice(0, 8), event: '研究卡已保存', detail: `共 ${data.saved_count} 檔`},
+        {timestamp: new Date().toTimeString().slice(0, 8), event: '畫面已更新', detail: '量化排名未受影響'}
+      );
+
+      renderAiResearchUI();
+      showToast('AI 研究卡更新完成；量化排名未受影響', 'success', 4000);
+
+      // 重新讀取下方研究卡及排行榜，不整頁刷新
+      await loadWinrateRankingReport('evolution');
+    } catch (err) {
+      aiResearchState.status = 'error';
+      aiResearchState.error = err.message;
+      aiResearchState.events.push({
+        timestamp: new Date().toTimeString().slice(0, 8),
+        event: '驗證失敗',
+        detail: err.message
+      });
+      renderAiResearchUI();
+
+      // 保留輸入文字
+      const errDiv = document.getElementById('ai-submit-error');
+      if (errDiv) errDiv.textContent = err.message;
+      const reTextarea = document.getElementById('ai-response-input');
+      if (reTextarea) {
+        reTextarea.disabled = false;
+        reTextarea.value = rawText;
+      }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '驗證並更新研究卡';
+      }
+    }
+  }
+
+  function renderAiResearchUI() {
+    const container = document.getElementById('ai-research-container');
+    if (!container) return;
+    if (!aiResearchState.isOpen) {
+      container.innerHTML = '';
+      return;
+    }
+
+    const st = aiResearchState;
+    const statusLabels = {
+      idle: {text: '尚未開始', bg: 'rgba(148,163,184,0.15)', color: '#94a3b8'},
+      awaiting_response: {text: '等待貼回', bg: 'rgba(234,179,8,0.2)', color: '#facc15'},
+      validating: {text: '驗證中', bg: 'rgba(56,189,248,0.2)', color: '#38bdf8'},
+      completed: {text: '完成', bg: 'rgba(34,197,94,0.2)', color: '#4ade80'},
+      error: {text: '錯誤', bg: 'rgba(239,68,68,0.2)', color: '#f87171'}
+    };
+    const badge = statusLabels[st.status] || statusLabels.idle;
+    const promptShortId = st.prompt_id ? `#${st.prompt_id.slice(0, 8)}` : '無';
+    const hasPrompt = !!st.prompt && st.status !== 'idle';
+    const isValidating = st.status === 'validating';
+
+    container.innerHTML = `
+    <div id="ai-research-box" style="margin:12px 0 16px; padding:14px; border:1.5px solid var(--border); border-radius:10px; background:var(--card-bg, #1e293b); box-shadow:0 6px 20px rgba(0,0,0,0.18);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+        <div style="font-size:15px; font-weight:800; display:flex; align-items:center; gap:8px;">
+          <span>🔬</span> 人工 AI 反證與風險研究卡接力
+          <span style="font-size:12px; font-weight:750; padding:2px 10px; border-radius:12px; background:${badge.bg}; color:${badge.color};">
+            ${badge.text}
+          </span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button type="button" class="btn" onclick="startAiResearch()" id="ai-research-start-btn" style="padding:4px 10px; font-size:12.5px; font-weight:750; background:#2563eb; color:#fff;" ${isValidating ? 'disabled' : ''}>
+            🚀 產生最新 Prompt
+          </button>
+          <button type="button" class="btn" onclick="closeAiResearchBox()" style="padding:2px 8px; font-size:13px;" title="關閉研究接力面板">✕</button>
+        </div>
+      </div>
+
+      <div class="ai-research-grid">
+        <!-- 左欄：1. 複製 AI Prompt -->
+        <div class="ai-research-col" style="display:flex; flex-direction:column; background:rgba(15,23,42,0.35); padding:12px; border-radius:8px; border:1px solid var(--border);">
+          <div style="font-weight:800; font-size:13.5px; margin-bottom:8px; color:#38bdf8;">1. 複製 AI Prompt</div>
+          <div style="font-size:12px; color:var(--text-dim, #94a3b8); margin-bottom:10px; line-height:1.6;">
+            ${hasPrompt ? `
+              <div>候選數量：<strong style="color:#fff;">${st.expected_codes?.length || 0}</strong> 檔標的</div>
+              <div>產生時間：<span style="color:#cbd5e1;">${escapeHtml(st.created_at || '-')}</span></div>
+              <div>Prompt ID：<code style="color:#fde047; font-size:11.5px;">${promptShortId}</code></div>
+            ` : `尚未產生 Prompt。請點擊右上「🚀 產生最新 Prompt」。`}
+          </div>
+          <button type="button" class="btn primary" id="ai-copy-prompt-btn" onclick="copyAiPrompt()" ${!hasPrompt ? 'disabled' : ''} style="width:100%; padding:7px; font-weight:800; margin-bottom:8px;">
+            📋 複製 Prompt
+          </button>
+          <div style="font-size:11.5px; color:#94a3b8; margin-bottom:6px;">
+            複製後貼至 Gemini 或 ChatGPT 網頁版，取得回覆 JSON。
+          </div>
+          <details style="margin-top:auto; font-size:11.5px; color:var(--text-dim, #94a3b8);">
+            <summary style="cursor:pointer; user-select:none;">查看 Prompt (除錯用)</summary>
+            <textarea id="ai-prompt-preview" readonly style="width:100%; height:110px; font-size:11px; margin-top:6px; background:#0f172a; color:#cbd5e1; border:1px solid var(--border); border-radius:4px; box-sizing:border-box; padding:6px; font-family:monospace;">${escapeHtml(st.prompt || '')}</textarea>
+          </details>
+        </div>
+
+        <!-- 中欄：2. 貼上 AI 回覆 -->
+        <div class="ai-research-col" style="display:flex; flex-direction:column; background:rgba(15,23,42,0.35); padding:12px; border-radius:8px; border:1px solid var(--border);">
+          <div style="font-weight:800; font-size:13.5px; margin-bottom:8px; color:#fde047;">2. 貼上 AI 回覆</div>
+          <textarea id="ai-response-input" placeholder="貼上 Gemini / ChatGPT 回覆的完整 JSON..." ${!hasPrompt || isValidating ? 'disabled' : ''} style="width:100%; flex:1; min-height:140px; box-sizing:border-box; background:#0f172a; color:#fff; border:1px solid var(--border); border-radius:6px; padding:8px; font-family:monospace; font-size:12px; resize:vertical;"></textarea>
+          <div id="ai-submit-error" style="color:#f87171; font-size:12px; margin-top:6px; min-height:16px; word-break:break-all;">
+            ${escapeHtml(st.error || '')}
+          </div>
+          <button type="button" class="btn" id="ai-submit-response-btn" onclick="submitAiResearchResponse()" ${!hasPrompt || isValidating ? 'disabled' : ''} style="margin-top:6px; font-weight:800; padding:8px 12px; background:#10b981; color:#fff;">
+            ${isValidating ? '驗證中...' : '驗證並更新研究卡'}
+          </button>
+        </div>
+
+        <!-- 右欄：3. 執行狀態 -->
+        <div class="ai-research-col" style="display:flex; flex-direction:column; background:rgba(15,23,42,0.35); padding:12px; border-radius:8px; border:1px solid var(--border);">
+          <div style="font-weight:800; font-size:13.5px; margin-bottom:8px; color:#4ade80;">3. 執行狀態</div>
+          <div style="font-size:12.5px; font-weight:750; margin-bottom:8px; color:#e2e8f0;">
+            當前狀態：<span style="color:${badge.color}">${badge.text}</span>
+          </div>
+          <div id="ai-timeline" style="font-size:12px; color:var(--text-dim, #94a3b8); flex:1; overflow-y:auto; max-height:150px; line-height:1.7; background:#0f172a; padding:8px; border-radius:6px; border:1px solid var(--border);">
+            ${(st.events && st.events.length) ? st.events.map(ev => `<div><span style="color:#64748b;">${escapeHtml(ev.timestamp)}</span> <strong style="color:#cbd5e1;">${escapeHtml(ev.event)}</strong> ${ev.detail ? `<span style="color:#94a3b8;">(${escapeHtml(ev.detail)})</span>` : ''}</div>`).join('') : '<div style="color:#64748b;">• 尚未開始</div>'}
+          </div>
+          <details style="margin-top:auto; font-size:11.5px; color:var(--text-dim, #64748b);">
+            <summary style="cursor:pointer; user-select:none;">診斷詳情</summary>
+            <div id="ai-debug-info" style="white-space:pre-wrap; word-break:break-all; max-height:80px; overflow-y:auto; margin-top:4px; font-family:monospace; font-size:11px; color:#94a3b8;">${st.error ? `錯誤：${escapeHtml(st.error)}` : (st.completed_at ? `完成於：${st.completed_at}` : '無異常')}</div>
+          </details>
+        </div>
+      </div>
+    </div>
+    `;
+  }
+
   let _evolutionPollingTimer = null;
   let evolutionStatus = null, evolutionStartedAt = null, evolutionBefore = null, evolutionHandoff = null;
-  let evolutionResult = '', evolutionPollBusy = false;
+  let evolutionResult = '', evolutionPollBusy = false, evolutionClientDebug = [];
+  function addEvolutionDebug(message){
+    const stamp = new Date().toLocaleTimeString('zh-TW', {hour12:false});
+    evolutionClientDebug.push(`[${stamp}] ${message}`);
+    evolutionClientDebug = evolutionClientDebug.slice(-20);
+  }
   function renderEvolutionProgress(){
     const box = document.getElementById('evolution-progress');
     if (!box || !evolutionStatus) return;
@@ -5498,29 +5806,40 @@
     const seconds = duration ? Math.round(Number(duration[1])) : start ? Math.max(0, Math.floor((st.finished_at || Date.now()/1000)-start)) : null;
     const wait = st.last_output_at ? Math.max(0, Math.floor(Date.now()/1000-st.last_output_at)) : null;
     const waitingManual = evolutionHandoff?.status === 'awaiting_response';
-    const title = st.running ? '⏳ AI 查核進行中' : waitingManual ? '📋 等待 Gemini 網頁版回覆' : st.done ? (st.returncode === 0 ? '✅ 執行完成' : '❌ 執行失敗，請查看紀錄') : '尚未執行';
+    const serverDebug = (st.debug_events || []).map(x => `[後端] ${x}`);
+    const debugLines = [...evolutionClientDebug, ...serverDebug].slice(-30);
+    const title = st.running
+      ? (st.research_enabled ? '⏳ AI 研究中' : '⏳ 量化計算中')
+      : waitingManual
+        ? '📋 等待 Gemini 網頁版回覆'
+        : st.done
+          ? (st.returncode === 0 ? '✅ 執行完成' : '❌ 執行失敗，請查看紀錄')
+          : '尚未執行';
     const current = checks.length ? `${checks.at(-1)}（目前 ${checks.length}/${total ? total[1] : '?'} 檔）` : '';
     box.innerHTML = `<div style="padding:12px;border:1px solid var(--border);border-radius:8px;margin:10px 0" role="status">
       <strong>${title}</strong> ${seconds == null ? '' : `｜耗時 ${Math.floor(seconds/60)} 分 ${seconds%60} 秒`}
       <div>${escapeHtml(stage)}</div><div>${escapeHtml(current)}</div>
       ${st.running && wait != null ? `<div>距上次進度訊息 ${wait} 秒；正在等待處理，並非剩餘時間。</div>` : ''}
       <div>${escapeHtml(evolutionResult)}</div>
+      <details ${(st.done && (st.returncode !== 0 || !st.research_updated)) ? 'open' : ''} style="margin-top:8px">
+        <summary>啟動診斷資訊</summary>
+        <pre style="white-space:pre-wrap;max-height:220px;overflow:auto">${escapeHtml(debugLines.join('\n') || '尚無診斷訊息')}</pre>
+      </details>
       ${waitingManual ? `<div style="margin-top:12px;padding:12px;border:1px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.08)">
-        <div style="font-weight:850;color:#fde047;margin-bottom:6px">第 ${Number(evolutionHandoff.step || 1)}/${Number(evolutionHandoff.total_steps || 2)} 階段｜${escapeHtml(evolutionHandoff.kind || 'LLM 查核')}｜人工接力</div>
-        <div style="margin-bottom:8px">① 複製 Prompt 到 Gemini 網頁版　② 將完整 JSON 回覆貼到下方　③ 送回 Python 繼續評分</div>
-        <textarea id="evolution-handoff-prompt" readonly style="width:100%;height:180px;box-sizing:border-box;background:#0f172a;color:#cbd5e1;border:1px solid var(--border);border-radius:6px;padding:8px">${escapeHtml(evolutionHandoff.prompt || '')}</textarea>
-        <button type="button" class="btn" onclick="copyEvolutionPrompt()" style="margin:7px 0">📋 複製完整 Prompt</button>
-        <textarea id="evolution-handoff-response" placeholder="貼上 Gemini 回覆的完整 JSON…" style="width:100%;height:160px;box-sizing:border-box;background:#0f172a;color:#fff;border:1px solid var(--border);border-radius:6px;padding:8px"></textarea>
-        <button type="button" class="btn primary" onclick="submitEvolutionResponse()" style="margin-top:7px">送回 Python 並繼續評分</button>
+        <div style="font-weight:850;color:#fde047;margin-bottom:6px">💡 檢測到進行中之人工接力任務</div>
+        <button type="button" class="btn primary" onclick="openAiResearchBox()">開啟 AI 研究卡接力面板</button>
       </div>` : ''}
       <details ${st.running || st.returncode ? 'open' : ''}><summary>最近執行紀錄</summary><pre style="white-space:pre-wrap;max-height:220px;overflow:auto">${escapeHtml(lines.slice(-12).join('\n'))}</pre></details></div>`;
     const btn = document.getElementById('evolution-run-button');
-    if (btn) { btn.disabled = !!st.running; btn.textContent = st.running ? '⏳ AI 查核中' : '🔄 重新執行 AI 進化'; }
+    if (btn) { btn.disabled = !!st.running; btn.textContent = st.running ? '⏳ AI 研究中' : '🔄 更新 AI 研究卡'; }
+    const qbtn = document.getElementById('evolution-quant-run-button');
+    if (qbtn) { qbtn.disabled = !!st.running; qbtn.textContent = st.running ? '⏳ 計算中' : '📊 重新計算量化排名'; }
   }
   async function pollEvolutionProgress(){
     if (evolutionPollBusy) return;
     evolutionPollBusy = true;
     try {
+      addEvolutionDebug('查詢後端執行狀態');
       const [response, handoffResponse] = await Promise.all([
         fetch('/api/batch-scanner-evolution/status', {cache:'no-store', signal:AbortSignal.timeout(10000)}),
         fetch('/api/llm-handoff', {cache:'no-store', signal:AbortSignal.timeout(10000)})
@@ -5531,21 +5850,40 @@
       evolutionHandoff = handoffData.handoff || null;
       const wasRunning = evolutionStatus?.running;
       evolutionStatus = st;
+      addEvolutionDebug(`狀態回覆：running=${!!st.running}, done=${!!st.done}, returncode=${st.returncode}, research_updated=${!!st.research_updated}`);
       if (st.running && !_evolutionPollingTimer) _evolutionPollingTimer = setInterval(pollEvolutionProgress, 2000);
       if (!st.running && _evolutionPollingTimer) { clearInterval(_evolutionPollingTimer); _evolutionPollingTimer = null; }
       if (st.done && wasRunning && st.returncode === 0) {
         await loadWinrateRankingReport('evolution');
         const after = winrateParsedData.evolution?.momentumItems || [];
+        if (st.research_enabled) {
+          if (st.research_updated) {
+            evolutionResult = '✅ AI 研究卡已更新；量化排名不受影響。';
+          } else if (st.warning) {
+            evolutionResult = `⚠️ 量化排名完成，但 AI 研究卡未更新：${st.warning}。`;
+          } else {
+            evolutionResult = '⚠️ 量化排名完成，但未偵測到新研究卡寫入。';
+          }
+        } else {
+          evolutionResult = '✅ 量化排名重新計算完成（純量化模式，未啟動 AI 研究）。';
+        }
+
         if (evolutionBefore) {
           const added = after.filter(x => !evolutionBefore.some(y => y.code === x.code));
           const removed = evolutionBefore.filter(x => !after.some(y => y.code === x.code));
           const moved = after.filter((x,i) => { const old = evolutionBefore.findIndex(y => y.code === x.code); return old >= 0 && old !== i; });
-          evolutionResult = `新進：${added.map(x => x.code).join('、') || '無'}；退出：${removed.map(x => x.code).join('、') || '無'}；名次變動 ${moved.length} 檔。`;
-          if (!added.length && !removed.length && !moved.length) evolutionResult += ' 名單與順序相同；可查看分數及查核資料是否更新。';
+          let diffMsg = `新進：${added.map(x => x.code).join('、') || '無'}；退出：${removed.map(x => x.code).join('、') || '無'}；名次變動 ${moved.length} 檔。`;
+          if (!added.length && !removed.length && !moved.length) {
+            diffMsg += ' 名單與順序相同；可查看研究卡的產生時間與內容確認最新分析。';
+          }
+          evolutionResult += ' ' + diffMsg;
         }
+      } else if (st.done && wasRunning && st.returncode !== 0) {
+        evolutionResult = `❌ 執行失敗 (代碼 ${st.returncode})：${st.warning || '請查看下方執行紀錄'}。`;
       }
       renderEvolutionProgress();
     } catch(error) {
+      addEvolutionDebug(`狀態查詢失敗：${error.message}`);
       evolutionResult = `狀態連線失敗：${error.message}；不代表背景任務停止，將繼續重試。`;
       renderEvolutionProgress();
     } finally { evolutionPollBusy = false; }
@@ -5567,9 +5905,9 @@
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.error || '送出失敗');
-      evolutionResult = '✅ JSON 已接收，Python 正在接續查核與評分。';
+      evolutionResult = '✅ JSON 已接收，Python 正在接續產生研究卡。';
       evolutionHandoff = null;
-      evolutionStatus = {running:true, lines:[], started_at:Date.now()/1000};
+      evolutionStatus = {running:true, lines:[], started_at:Date.now()/1000, research_enabled:true};
       if (!_evolutionPollingTimer) _evolutionPollingTimer = setInterval(pollEvolutionProgress, 2000);
       renderEvolutionProgress();
       await pollEvolutionProgress();
@@ -5578,24 +5916,36 @@
       renderEvolutionProgress();
     }
   }
-  async function startEvolutionRun(){
+  async function startEvolutionRun(research = true){
     if (evolutionStatus?.running) return;
     evolutionBefore = (winrateParsedData.evolution?.momentumItems || []).map(x => ({...x}));
     evolutionStartedAt = Date.now()/1000;
     evolutionResult = '';
-    evolutionStatus = {running:true, lines:[]};
+    evolutionClientDebug = [];
+    addEvolutionDebug(`按鈕已觸發；research=${!!research}`);
+    evolutionStatus = {running:true, lines:[], research_enabled:!!research};
     renderEvolutionProgress();
     try {
-      const response = await fetch('/api/batch-scanner-evolution', {method:'POST', signal:AbortSignal.timeout(10000)});
+      const response = await fetch('/api/batch-scanner-evolution', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({research: !!research}),
+        signal:AbortSignal.timeout(10000)
+      });
+      addEvolutionDebug(`啟動 API 回覆：HTTP ${response.status}`);
       const result = await response.json();
       if (!result.ok) throw new Error(result.error || '啟動失敗');
-    } catch(error) { evolutionResult = `啟動回應：${error.message}；正在確認後端狀態。`; }
+      addEvolutionDebug(`後端已接受任務；research_enabled=${!!result.research_enabled}`);
+    } catch(error) {
+      addEvolutionDebug(`啟動失敗：${error.message}`);
+      evolutionResult = `啟動回應：${error.message}；正在確認後端狀態。`;
+    }
     if (!_evolutionPollingTimer) _evolutionPollingTimer = setInterval(pollEvolutionProgress, 2000);
     await pollEvolutionProgress();
   }
   function triggerScannerRun(source){
     if (source === 'evolution') {
-      startEvolutionRun();
+      startEvolutionRun(true);
     } else if (source === 'gemini') {
       fetch('/api/batch-scanner-gemini', { method: 'POST' }).then(() => {
         alert('🚀 Gemini 掃描器已在背景啟動，約 3~5 秒後請點擊重新整理！');
@@ -5919,12 +6269,18 @@
           
           <div class="ranking-refresh-action" style="display:flex; gap:6px; flex-shrink:0;">
             <button type="button" class="btn ranking-log-btn" style="padding:4px 10px; font-size:13.5px; font-weight:850; border:1.5px solid #fbbf24; color:#fde047; background:rgba(251,191,36,0.12); white-space:nowrap; cursor:pointer;" onclick="showEvolutionLog();" title="在新分頁開啟全螢幕覆盤日記 (大版面深度閱讀)">📖 覆盤日記 ↗</button>
-            <button type="button" class="btn" style="padding:4px 9px; font-size:13px; font-weight:750; white-space:nowrap;" id="${isEvolution ? 'evolution-run-button' : 'ranking-other-run-button'}" onclick="triggerScannerRun('${source}');">🔄 重新執行 ${isEvolution ? 'AI 進化' : (isGemini ? 'Gemini' : 'ChatGPT')}</button>
+            ${isEvolution ? `
+            <button type="button" class="btn" style="padding:4px 9px; font-size:13px; font-weight:750; white-space:nowrap;" id="evolution-quant-run-button" onclick="startEvolutionRun(false);" title="僅以本機多因子模型重新計算量化分數與排名，不發送 AI 請求">📊 重新計算量化排名</button>
+            <button type="button" class="btn" style="padding:4px 9px; font-size:13px; font-weight:750; white-space:nowrap; background:#2563eb; color:#fff;" id="evolution-run-button" onclick="openAiResearchBox();" title="開啟單一步驟人工 AI 接力，產生 Prompt 並貼回反證研究卡">🔄 更新 AI 研究卡</button>
+            ` : `
+            <button type="button" class="btn" style="padding:4px 9px; font-size:13px; font-weight:750; white-space:nowrap;" id="ranking-other-run-button" onclick="triggerScannerRun('${source}');">🔄 重新執行 ${isGemini ? 'Gemini' : 'ChatGPT'}</button>
+            `}
           </div>
         </div>
 
         <!-- 搜尋列 -->
         ${isEvolution ? '<div id="evolution-progress"></div>' : ''}
+        <div id="ai-research-container"></div>
         <div class="ranking-filter-bar" style="margin-bottom:10px;">
           <div class="search-box" style="flex:1;">
             <span>🔍</span>
@@ -7708,7 +8064,12 @@
 
   function institutionalRows(card){
     const rows = Array.isArray(card.institutionalFlow) ? card.institutionalFlow : [];
-    if (rows.length) return rows.slice(0, 15);
+    if (rows.length) {
+      // 與技術線型一致：時間由左至右前進，舊日期在左、最新日期在右。
+      return rows.slice()
+        .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))
+        .slice(-15);
+    }
     const latest = latestInstitutionalFlow(card);
     if (![latest.foreign, latest.trust, latest.dealer].some(Number.isFinite)) return [];
     return [{ date: card.date || '', ...latest }];

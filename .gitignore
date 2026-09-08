@@ -19,6 +19,7 @@
 !batch_scanner_gemini.bat
 !evolution_engine.py
 !test_evolution_engine.py
+!test_reports_manager_server.py
 !每日盤後覆盤與進化.bat
 !stock_winrate_ranking.md
 !stock_winrate_ranking_gemini.md

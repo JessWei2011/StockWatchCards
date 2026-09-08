@@ -34,6 +34,9 @@ if sys.stdout.encoding != "utf-8":
 
 ROOT_DIR = Path(__file__).resolve().parent
 REPORTS_DIR = ROOT_DIR / "reports"
+EVOLUTION_RANKING_FILE = ROOT_DIR / "stock_winrate_ranking_evolution.md"
+AI_RESEARCH_CARDS_FILE = ROOT_DIR / "ai_research_cards.json"
+AI_RESEARCH_TEMP_FILE = ROOT_DIR / "ai_research_cards.tmp"
 WATCHLIST_FILE = ROOT_DIR / "watchlist.json"
 MACRO_DIR = ROOT_DIR / "指標數據"
 MACRO_DATA_FILE = MACRO_DIR / "macro_data.json"
@@ -46,9 +49,29 @@ REPORTS_DIR.mkdir(exist_ok=True)
 
 
 def validate_manual_llm_response(handoff, payload):
-    """在重啟評分前攔下漏股或漏區塊的人工 JSON。"""
+    """在重啟研究前攔下漏股或漏區塊的人工 JSON。"""
     if not isinstance(payload, dict):
         raise ValueError("Gemini 回覆必須是 JSON 物件")
+    prompt = str(handoff.get('prompt') or '')
+    is_research_cards = (
+        handoff.get('response_schema') == 'research_cards'
+        or ('"cards"' in prompt and 'counter_evidence_and_risks' in prompt)
+    )
+    if is_research_cards:
+        cards = payload.get('cards')
+        if not isinstance(cards, list):
+            raise ValueError("缺少 cards 陣列")
+        expected = [str(code) for code in handoff.get('expected_codes', [])]
+        actual = [str(item.get('code') or '') for item in cards if isinstance(item, dict)]
+        if expected and actual != expected:
+            raise ValueError("cards 股票代號或順序與 Prompt 不同")
+        required = ('code', 'name', 'as_of_date', 'data_cutoff', 'sources',
+                    'supporting_facts', 'counter_evidence_and_risks',
+                    'questions_for_human_review', 'data_quality_flags', 'disclaimer')
+        for index, card in enumerate(cards, 1):
+            if not isinstance(card, dict) or any(key not in card for key in required):
+                raise ValueError(f"cards 第 {index} 筆欄位不完整")
+        return
     if int(handoff.get('step') or 0) == 1:
         if not isinstance(payload.get('market_overview'), str):
             raise ValueError("缺少 market_overview")
@@ -67,7 +90,7 @@ def validate_manual_llm_response(handoff, payload):
     expected = [str(code) for code in handoff.get('expected_codes', [])]
     if not expected:
         expected = list(dict.fromkeys(re.findall(
-            r'"code"\s*:\s*"(\d{4,6})"', str(handoff.get('prompt') or '')
+            r'"code"\s*:\s*"(\d{4,6})"', prompt
         )))
     actual = [str(item.get('code') or '') for item in stocks if isinstance(item, dict)]
     if expected and actual != expected:
@@ -853,6 +876,14 @@ def _new_batch_scanner_job():
         "lines": [],
         "done": False,
         "returncode": None,
+        "started_at": None,
+        "finished_at": None,
+        "last_output_at": None,
+        "research_enabled": False,
+        "research_updated": False,
+        "warning": None,
+        "debug_events": [],
+        "command": [],
     }
 
 
@@ -867,13 +898,31 @@ LLM_HANDOFF_FILE = ROOT_DIR / "llm_manual_handoff.json"
 EVOLUTION_ENGINE_LOCK = threading.Lock()
 evolution_engine_job = _new_batch_scanner_job()
 
-def _run_evolution_engine():
+
+def build_evolution_engine_cmd(research_enabled: bool = True) -> list[str]:
+    """組裝啟動 evolution_engine.py 的完整命令列參數。
+
+    research_enabled: 為 True 時加入 --research 明確啟動不計分之反證與風險研究卡產出。
+    """
+    cmd = [sys.executable, str(EVOLUTION_ENGINE_SCRIPT)]
+    if research_enabled:
+        cmd.append("--research")
+    return cmd
+
+
+def _run_evolution_engine(research_enabled: bool = True):
     global evolution_engine_job
     child_env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
     rc = -1
+    cmd = build_evolution_engine_cmd(research_enabled=research_enabled)
+    with EVOLUTION_ENGINE_LOCK:
+        evolution_engine_job["command"] = [str(part) for part in cmd]
+        evolution_engine_job["debug_events"].append(
+            f"準備啟動子程序；research={research_enabled}；argv={' '.join(str(part) for part in cmd)}"
+        )
     try:
         proc = subprocess.Popen(
-            [sys.executable, str(EVOLUTION_ENGINE_SCRIPT)],
+            cmd,
             cwd=ROOT_DIR,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -883,6 +932,8 @@ def _run_evolution_engine():
             errors="replace",
             env=child_env,
         )
+        with EVOLUTION_ENGINE_LOCK:
+            evolution_engine_job["debug_events"].append(f"子程序已啟動；pid={proc.pid}")
         for raw_line in proc.stdout:
             with EVOLUTION_ENGINE_LOCK:
                 line = re.sub(r'key=[^\s&]+', 'key=[REDACTED]', raw_line.rstrip("\n"))
@@ -890,11 +941,23 @@ def _run_evolution_engine():
                 line = re.sub(r'AQ\.[\w-]+', '[REDACTED]', line)
                 evolution_engine_job["lines"].append(line)
                 evolution_engine_job["last_output_at"] = time.time()
+                if "已保存" in line and "份 AI 研究卡" in line:
+                    evolution_engine_job["research_updated"] = True
+                if "未設定 GEMINI_API_KEY" in line or "未檢測到 GEMINI_API_KEY" in line:
+                    evolution_engine_job["warning"] = "未設定 GEMINI_API_KEY，略過 AI 研究卡產出"
+                elif "配額" in line or "quota" in line.lower() or "429" in line:
+                    evolution_engine_job["warning"] = "Gemini API 配額受限或逾時"
+                elif "保存研究卡失敗" in line or "生成研究卡失敗" in line:
+                    evolution_engine_job["warning"] = line.strip()
         proc.wait()
         rc = proc.returncode
+        with EVOLUTION_ENGINE_LOCK:
+            evolution_engine_job["debug_events"].append(f"子程序結束；returncode={rc}")
     except Exception as e:
         with EVOLUTION_ENGINE_LOCK:
-            evolution_engine_job["lines"].append(f"❌ 執行 AI 進化失敗: {e}")
+            evolution_engine_job["lines"].append(f"❌ 執行 AI 進化/研究引擎失敗: {e}")
+            evolution_engine_job["warning"] = f"執行失敗: {e}"
+            evolution_engine_job["debug_events"].append(f"子程序啟動或執行例外：{type(e).__name__}: {e}")
         rc = -1
     finally:
         with EVOLUTION_ENGINE_LOCK:
@@ -902,6 +965,246 @@ def _run_evolution_engine():
             evolution_engine_job["done"] = True
             evolution_engine_job["returncode"] = rc
             evolution_engine_job["finished_at"] = time.time()
+
+
+# =========================================================================
+# 🔬 單一步驟人工 AI 反證與風險研究卡接力模組 (無外部 API 依賴)
+# =========================================================================
+AI_RESEARCH_LOCK = threading.RLock()
+AI_RESEARCH_EVENTS = []
+
+
+def _log_ai_research_event(event_type: str, detail: str = ""):
+    with AI_RESEARCH_LOCK:
+        AI_RESEARCH_EVENTS.append({
+            "timestamp": datetime.datetime.now().strftime("%H:%M:%S"),
+            "event": event_type,
+            "detail": detail
+        })
+        if len(AI_RESEARCH_EVENTS) > 30:
+            AI_RESEARCH_EVENTS.pop(0)
+
+
+def load_evolution_candidates() -> tuple[str, list[dict]]:
+    """讀取當前最新量化實戰勝率榜候選名單與截止日。"""
+    md_file = EVOLUTION_RANKING_FILE
+    as_of_date = ""
+    candidates = []
+    if md_file.exists():
+        content = md_file.read_text(encoding="utf-8", errors="replace")
+        for line in content.splitlines():
+            line = line.strip()
+            if not as_of_date and "資料截止日" in line:
+                m = re.search(r'資料截止日[：:]\s*([0-9\/-]+)', line)
+                if m:
+                    as_of_date = m.group(1)
+            if line.startswith("|") and line.endswith("|"):
+                parts = [c.strip() for c in line.split("|")[1:-1]]
+                if len(parts) >= 7 and parts[0].replace("*", "").isdigit():
+                    code = parts[1].replace("`", "").strip()
+                    name = parts[2].replace("*", "").strip()
+                    cat = parts[3].strip()
+                    price = parts[4].strip()
+                    today_pct = parts[5].strip()
+                    score = parts[6].replace("*", "").strip()
+                    feat = parts[8].strip() if len(parts) > 8 else ""
+                    candidates.append({
+                        "code": code,
+                        "name": name,
+                        "category": cat,
+                        "price": price,
+                        "today_pct": today_pct,
+                        "score": score,
+                        "feature": feat
+                    })
+    if not as_of_date:
+        as_of_date = datetime.date.today().isoformat()
+    return as_of_date, candidates
+
+
+def build_ai_research_prompt(candidates: list[dict], as_of_date: str) -> str:
+    """產生單一步驟人工接力所需的 AI 反證與風險研究 Prompt。"""
+    stock_lines = []
+    for c in candidates:
+        stock_lines.append(
+            f"- 代號：{c['code']}，名稱：{c['name']}，類群：{c.get('category', '未分類')}，"
+            f"收盤價：{c.get('price', '-')}，今日漲跌：{c.get('today_pct', '-')}，量化規則分：{c.get('score', '-')}"
+        )
+    stocks_text = "\n".join(stock_lines)
+    example_code = candidates[0]['code'] if candidates else '3491'
+    example_name = candidates[0]['name'] if candidates else '昇達科'
+
+    prompt = f"""【台股量化候選名單・AI 反證與風險研究卡查核任務】
+
+資料基準截止日：{as_of_date}
+分析標的名單（共 {len(candidates)} 檔）：
+{stocks_text}
+
+【你的角色與任務目標】
+你是一位專注於「下行風險、反向證據、盲點挖掘」的獨立風險查核員，並非投資顧問或題材推銷員。
+以上股票是由本機可重現的量價/多因子規則模型篩選出的候選股。你的唯一任務是為每一檔標的挖掘客觀風險警訊與待確認事項。
+
+【嚴格紀律規範】
+1. 嚴禁任何推薦、建議買進/賣出、目標價預估、預期報酬或主觀評分。
+2. 每一檔標的必須提供至少一項具體之反向證據或下行風險（如：原物料暴漲、同業殺價擴產、客戶砍單、高本益比修正、董監持股偏低、法說會保守展望等）。
+3. 優先參考公司重大訊息、公開資訊觀測站(MOPS)、最新財報與官方公告等一手來源；若引用新聞或第三方研調，來源缺漏請標示 "unknown"，不可憑空捏造。
+4. 若市場普遍存在「受惠 AI」、「概念股」等泛泛題材宣傳，必須在 data_quality_flags 加入 "news_lag"，嚴禁直接轉為正面結論。
+5. 輸出格式必須是完全合法的單一 JSON 物件，頂層欄位名稱為 "cards"，包含各股票研究卡陣列。不要添加任何開場白、結尾或 Markdown 贅字。
+
+【輸出 JSON Schema】
+{{
+  "cards": [
+    {{
+      "code": "{example_code}",
+      "name": "{example_name}",
+      "as_of_date": "{as_of_date}",
+      "data_cutoff": "{as_of_date}",
+      "sources": [
+        {{
+          "url": "https://... 或 unknown",
+          "publisher": "發布單位或 unknown",
+          "published_at": "YYYY-MM-DD 或 unknown",
+          "source_type": "official|news|unknown"
+        }}
+      ],
+      "supporting_facts": [
+        "可查核之一手或客觀事實（若無請留空陣列）"
+      ],
+      "counter_evidence_and_risks": [
+        "至少列出一項反向證據或下行風險警訊（必填）"
+      ],
+      "questions_for_human_review": [
+        "投資人或研究員在下次財報/營收公告應重點確認之提問"
+      ],
+      "data_quality_flags": [
+        "news_lag|duplicate_source|no_primary_source|unknown"
+      ],
+      "disclaimer": "此研究卡不參與評分、排序或投資建議。"
+    }}
+  ]
+}}
+"""
+    return prompt.strip()
+
+
+def validate_ai_research_cards(payload: dict, expected_codes: list[str]) -> list[dict]:
+    """嚴格驗證 AI 回覆的研究卡 JSON，確保完整性、順序與欄位正確。"""
+    if not isinstance(payload, dict):
+        raise ValueError("AI 回覆必須是 JSON 物件（最外層為包含 'cards' 的物件）")
+    cards = payload.get("cards")
+    if not isinstance(cards, list):
+        raise ValueError("缺少 'cards' 陣列")
+    if not cards:
+        raise ValueError("'cards' 陣列不可為空")
+
+    actual_codes = [str(c.get("code", "")).strip() for c in cards if isinstance(c, dict)]
+    if actual_codes != expected_codes:
+        missing = [c for c in expected_codes if c not in actual_codes]
+        extra = [c for c in actual_codes if c not in expected_codes]
+        errs = []
+        if missing:
+            errs.append(f"缺少股票：{', '.join(missing)}")
+        if extra:
+            errs.append(f"多出未請求股票：{', '.join(extra)}")
+        if not errs:
+            errs.append("股票順序與要求不一致")
+        raise ValueError("股票名單不符：" + "；".join(errs))
+
+    validated_cards = []
+    for i, c in enumerate(cards, 1):
+        if not isinstance(c, dict):
+            raise ValueError(f"第 {i} 筆研究卡不是有效的物件")
+        code = str(c.get("code", "")).strip()
+        name = str(c.get("name", "")).strip()
+        if not code:
+            raise ValueError(f"第 {i} 筆研究卡缺少股票代號 (code)")
+        if not name:
+            raise ValueError(f"第 {i} 筆股票 {code} 缺少名稱 (name)")
+
+        risks = c.get("counter_evidence_and_risks")
+        if not isinstance(risks, list) or not any(str(r).strip() for r in risks):
+            raise ValueError(f"股票 {code} 缺少反證與風險提示 (counter_evidence_and_risks 至少需有 1 項)")
+
+        facts = c.get("supporting_facts") if isinstance(c.get("supporting_facts"), list) else []
+        questions = c.get("questions_for_human_review") if isinstance(c.get("questions_for_human_review"), list) else []
+        raw_sources = c.get("sources") if isinstance(c.get("sources"), list) else []
+        sources = []
+        for s in raw_sources:
+            if isinstance(s, dict):
+                sources.append({
+                    "url": str(s.get("url", "unknown")),
+                    "publisher": str(s.get("publisher", "unknown")),
+                    "published_at": str(s.get("published_at", "unknown")),
+                    "source_type": str(s.get("source_type", "unknown")),
+                })
+        flags = [str(f).strip() for f in c.get("data_quality_flags", []) if str(f).strip()]
+        if not flags:
+            flags = ["unknown"]
+
+        card = {
+            "code": code,
+            "name": name,
+            "as_of_date": str(c.get("as_of_date", "")).strip() or "unknown",
+            "data_cutoff": str(c.get("data_cutoff", "")).strip() or "unknown",
+            "sources": sources,
+            "supporting_facts": [str(f).strip() for f in facts if str(f).strip()],
+            "counter_evidence_and_risks": [str(r).strip() for r in risks if str(r).strip()],
+            "questions_for_human_review": [str(q).strip() for q in questions if str(q).strip()],
+            "data_quality_flags": flags,
+            "disclaimer": str(c.get("disclaimer", "此研究卡不參與評分、排序或投資建議。"))
+        }
+        validated_cards.append(card)
+
+    return validated_cards
+
+
+def save_ai_research_cards_atomically(cards: list[dict]):
+    """原子化寫入 ai_research_cards.json，避免半寫入或損壞。"""
+    cards_file = AI_RESEARCH_CARDS_FILE
+    temp_file = AI_RESEARCH_TEMP_FILE
+    data = json.dumps(cards, ensure_ascii=False, indent=2)
+    temp_file.write_text(data, encoding="utf-8")
+    temp_file.replace(cards_file)
+
+
+def update_evolution_ranking_md_research_cards(cards: list[dict]):
+    """更新 stock_winrate_ranking_evolution.md 中的 AI 研究卡區塊，不影響上方量化榜單。"""
+    md_file = EVOLUTION_RANKING_FILE
+    if not md_file.exists():
+        return
+    content = md_file.read_text(encoding="utf-8", errors="replace")
+    split_marker = "### 🔬 【AI 研究卡（不計分）】"
+    if split_marker in content:
+        top_part = content.split(split_marker)[0]
+    else:
+        top_part = content.rstrip() + "\n\n---\n\n"
+
+    lines = [split_marker, ""]
+    lines.append("> ⚠️ **免責聲明**：以下研究卡僅供投資人查核反向證據與潛在下行風險，**完全不參與選股評分、排序或買賣建議**。所有資訊請以公司公開申報與官方公告為準。\n")
+    for card in cards:
+        lines.append(f"#### 📌 `{card['code']}` {card['name']}")
+        lines.append(f"- **資料截止日**：{card.get('data_cutoff', card.get('as_of_date', ''))} ｜ **產生時間**：{card.get('as_of_date', '')}")
+        flags_str = ', '.join(card.get('data_quality_flags', [])) or '無特定標記'
+        lines.append(f"- **資料品質標記**：`{flags_str}`")
+        lines.append("- **客觀事實**：")
+        for fact in card.get('supporting_facts', []):
+            lines.append(f"  - {fact}")
+        if not card.get('supporting_facts'):
+            lines.append("  - (無已核實之額外數據)")
+        lines.append("- **反證與風險提示**：")
+        for risk in card.get('counter_evidence_and_risks', []):
+            lines.append(f"  - ⚠️ {risk}")
+        lines.append("- **人工審查待確認事項**：")
+        for q in card.get('questions_for_human_review', []):
+            lines.append(f"  - ❓ {q}")
+        if card.get('sources'):
+            lines.append("- **參考來源**：")
+            for src in card.get('sources', []):
+                lines.append(f"  - [{src.get('publisher', '來源')}]({src.get('url', '#')}) ({src.get('source_type', 'unknown')}, {src.get('published_at', '')})")
+        lines.append(f"> 免責聲明：{card.get('disclaimer', '此研究卡不參與評分、排序或投資建議。')}\n")
+
+    new_content = top_part.rstrip() + "\n\n" + "\n".join(lines).strip() + "\n"
+    md_file.write_text(new_content, encoding="utf-8")
 
 DEPLOY_MOBILE_BAT = ROOT_DIR / "發布手機版.bat"
 DEPLOY_MOBILE_LOCK = threading.Lock()
@@ -1499,6 +1802,38 @@ class Handler(SimpleHTTPRequestHandler):
             with EVOLUTION_ENGINE_LOCK:
                 self._json(200, {"ok": True, **evolution_engine_job})
             return
+        if parsed.path == "/api/ai-research/status":
+            with AI_RESEARCH_LOCK:
+                if not LLM_HANDOFF_FILE.exists():
+                    self._json(200, {
+                        "ok": True,
+                        "status": "idle",
+                        "prompt_id": None,
+                        "expected_codes": [],
+                        "created_at": None,
+                        "completed_at": None,
+                        "error": None,
+                        "events": list(AI_RESEARCH_EVENTS)
+                    })
+                    return
+                try:
+                    handoff = json.loads(LLM_HANDOFF_FILE.read_text(encoding="utf-8"))
+                    self._json(200, {
+                        "ok": True,
+                        "status": handoff.get("status", "idle"),
+                        "prompt_id": handoff.get("prompt_id"),
+                        "expected_codes": handoff.get("expected_codes", []),
+                        "created_at": handoff.get("created_at"),
+                        "completed_at": handoff.get("completed_at"),
+                        "error": handoff.get("error"),
+                        "events": list(AI_RESEARCH_EVENTS)
+                    })
+                except Exception as error:
+                    self._json(500, {"ok": False, "status": "error", "error": f"讀取狀態失敗: {error}"})
+            return
+
+
+
         if parsed.path == "/api/llm-handoff":
             if not LLM_HANDOFF_FILE.exists():
                 self._json(200, {"ok": True, "handoff": None})
@@ -1668,16 +2003,135 @@ class Handler(SimpleHTTPRequestHandler):
 
         if parsed.path == "/api/batch-scanner-evolution":
             global evolution_engine_job
+            try:
+                body = self._read_json_body()
+            except Exception:
+                body = {}
+            research_param = body.get("research")
+            if research_param is None:
+                qs = parse_qs(parsed.query)
+                if "research" in qs:
+                    research_param = qs.get("research", ["1"])[0].lower() not in ("0", "false", "no")
+                else:
+                    research_param = True
+            else:
+                research_param = bool(research_param)
+
             with EVOLUTION_ENGINE_LOCK:
                 if evolution_engine_job["running"]:
-                    self._json(409, {"ok": False, "error": "AI 進化引擎正在執行中，請稍候"})
+                    self._json(409, {"ok": False, "error": "AI 進化/研究引擎正在執行中，請稍候"})
                     return
                 evolution_engine_job = _new_batch_scanner_job()
                 evolution_engine_job["running"] = True
+                evolution_engine_job["research_enabled"] = research_param
                 evolution_engine_job["started_at"] = time.time()
                 evolution_engine_job["last_output_at"] = time.time()
-            threading.Thread(target=_run_evolution_engine, daemon=True).start()
-            self._json(200, {"ok": True})
+                evolution_engine_job["debug_events"].append(
+                    f"API 已接收啟動請求；research={research_param}"
+                )
+            threading.Thread(target=_run_evolution_engine, args=(research_param,), daemon=True).start()
+            self._json(200, {"ok": True, "research_enabled": research_param})
+            return
+
+        if parsed.path == "/api/ai-research/start":
+            with AI_RESEARCH_LOCK:
+                as_of_date, candidates = load_evolution_candidates()
+                if not candidates:
+                    self._json(400, {"ok": False, "status": "error", "error": "尚未有量化候選名單，請先計算量化排名"})
+                    return
+                import uuid
+                prompt_id = uuid.uuid4().hex[:12]
+                prompt_text = build_ai_research_prompt(candidates, as_of_date)
+                now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                handoff = {
+                    "status": "awaiting_response",
+                    "prompt_id": prompt_id,
+                    "kind": "AI 反證與風險研究卡",
+                    "expected_codes": [c["code"] for c in candidates],
+                    "prompt": prompt_text,
+                    "created_at": now_str,
+                    "completed_at": None,
+                    "error": None
+                }
+                LLM_HANDOFF_FILE.write_text(json.dumps(handoff, ensure_ascii=False, indent=2), encoding="utf-8")
+                AI_RESEARCH_EVENTS.clear()
+                _log_ai_research_event("Prompt 已建立", f"標的數量: {len(candidates)}, prompt_id: #{prompt_id[:8]}")
+                self._json(200, {
+                    "ok": True,
+                    "status": "awaiting_response",
+                    "prompt_id": prompt_id,
+                    "expected_codes": handoff["expected_codes"],
+                    "count": len(candidates),
+                    "created_at": now_str,
+                    "prompt": prompt_text
+                })
+            return
+
+        if parsed.path == "/api/ai-research/submit":
+            try:
+                body = self._read_json_body()
+                prompt_id = str(body.get("prompt_id") or "").strip()
+                response_text = str(body.get("response") or "").strip()
+                if not response_text:
+                    self._json(400, {"ok": False, "status": "error", "error": "請貼上 AI 回覆的 JSON"})
+                    return
+
+                with AI_RESEARCH_LOCK:
+                    if not LLM_HANDOFF_FILE.exists():
+                        self._json(400, {"ok": False, "status": "error", "error": "尚未建立 Prompt，請先按產生 Prompt"})
+                        return
+                    handoff = json.loads(LLM_HANDOFF_FILE.read_text(encoding="utf-8"))
+                    if handoff.get("prompt_id") != prompt_id:
+                        _log_ai_research_event("驗證失敗", "Prompt 已更新，請使用最新 Prompt")
+                        self._json(400, {"ok": False, "status": "error", "error": "Prompt 已更新，請使用最新 Prompt"})
+                        return
+
+                    _log_ai_research_event("收到回覆", f"字元數: {len(response_text)}")
+                    cleaned = re.sub(r'^```(?:json)?\s*|\s*```$', '', response_text, flags=re.I | re.S).strip()
+                    try:
+                        parsed_response = json.loads(cleaned)
+                    except json.JSONDecodeError as err:
+                        handoff["status"] = "error"
+                        handoff["error"] = f"JSON 語法錯誤：{err}"
+                        LLM_HANDOFF_FILE.write_text(json.dumps(handoff, ensure_ascii=False, indent=2), encoding="utf-8")
+                        _log_ai_research_event("JSON 解析失敗", str(err))
+                        self._json(400, {"ok": False, "status": "error", "error": f"JSON 語法錯誤：{err}"})
+                        return
+
+                    _log_ai_research_event("JSON 解析成功")
+
+                    try:
+                        cards = validate_ai_research_cards(parsed_response, handoff.get("expected_codes", []))
+                    except ValueError as err:
+                        handoff["status"] = "error"
+                        handoff["error"] = str(err)
+                        LLM_HANDOFF_FILE.write_text(json.dumps(handoff, ensure_ascii=False, indent=2), encoding="utf-8")
+                        _log_ai_research_event("股票完整性驗證失敗", str(err))
+                        self._json(400, {"ok": False, "status": "error", "error": str(err)})
+                        return
+
+                    _log_ai_research_event("股票完整性通過", f"共 {len(cards)} 檔研究卡")
+
+                    save_ai_research_cards_atomically(cards)
+                    _log_ai_research_event("研究卡已保存", "已原子化寫入 ai_research_cards.json")
+
+                    update_evolution_ranking_md_research_cards(cards)
+                    _log_ai_research_event("畫面已更新", "已更新排行榜研究卡區塊，量化排名未受影響")
+
+                    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    handoff["status"] = "completed"
+                    handoff["completed_at"] = now_str
+                    handoff["error"] = None
+                    LLM_HANDOFF_FILE.write_text(json.dumps(handoff, ensure_ascii=False, indent=2), encoding="utf-8")
+
+                    self._json(200, {
+                        "ok": True,
+                        "status": "completed",
+                        "saved_count": len(cards),
+                        "completed_at": now_str
+                    })
+            except Exception as e:
+                self._json(500, {"ok": False, "status": "error", "error": f"處理回覆失敗: {e}"})
             return
 
         if parsed.path == "/api/llm-handoff":
@@ -1702,14 +2156,15 @@ class Handler(SimpleHTTPRequestHandler):
                 return
             with EVOLUTION_ENGINE_LOCK:
                 if evolution_engine_job["running"]:
-                    self._json(409, {"ok": False, "error": "AI 進化引擎仍在執行中"})
+                    self._json(409, {"ok": False, "error": "AI 進化/研究引擎仍在執行中"})
                     return
                 evolution_engine_job = _new_batch_scanner_job()
                 evolution_engine_job["running"] = True
+                evolution_engine_job["research_enabled"] = True
                 evolution_engine_job["started_at"] = time.time()
                 evolution_engine_job["last_output_at"] = time.time()
-            threading.Thread(target=_run_evolution_engine, daemon=True).start()
-            self._json(200, {"ok": True, "restarted": True})
+            threading.Thread(target=_run_evolution_engine, args=(True,), daemon=True).start()
+            self._json(200, {"ok": True, "restarted": True, "research_enabled": True})
             return
 
         if parsed.path == "/api/deploy-mobile":

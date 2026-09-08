@@ -122,13 +122,145 @@ class RankingPolicyTests(unittest.TestCase):
         self.assertFalse(engine.evidence_is_recent({**valid, 'event_date': '2026-09-05'}, '2026-09-04', 14))
         self.assertFalse(engine.evidence_is_recent({**valid, 'source_url': None}, '2026-09-04', 14))
 
-    def test_negative_catalyst_is_not_rewarded(self):
-        base = {'score': 100, 'reasons': [], 'category': '', 'name': '', 'price': 100,
-                'session_date': '2026-09-04', 'semantic_tags': [], 'audit_data': {
-                    'catalyst': {'direction': 'negative', 'new_information': True,
-                                 'event_date': '2026-09-01', 'source_url': 'https://example.com/news'}}}
-        result = engine.evaluate_holistic_score(base, [])
-        self.assertEqual(result['holistic_score'], 85.0)  # 搜尋無結果不扣分、負事件 -15
+    def test_hot_sectors_do_not_affect_scoring(self):
+        candidate = {
+            'code': '3231', 'name': '緯創', 'category': '伺服器', 'score': 120.0,
+            'reasons': ['突破月線', '成交量放大'], 'price': 100.0, 'setup_stage': '剛突破起漲'
+        }
+        cand_empty = copy.deepcopy(candidate)
+        cand_hot = copy.deepcopy(candidate)
+        hot_sectors = [{
+            'sector_name': '伺服器', 'heat_level': 5, 'stage': 'accelerating',
+            'catalysts': 'AI伺服器爆發', 'event_date': '2026-09-01',
+            'source_url': 'https://example.com/srv', 'related_tags': ['伺服器']
+        }]
+        res_empty = engine.evaluate_holistic_score(cand_empty, [])
+        res_hot = engine.evaluate_holistic_score(cand_hot, hot_sectors)
+        self.assertEqual(res_empty['holistic_score'], 120.0)
+        self.assertEqual(res_hot['holistic_score'], 120.0)
+        self.assertEqual(res_empty['holistic_score'], res_hot['holistic_score'])
+        self.assertEqual(res_hot['holistic_score'], candidate['score'])
+        self.assertEqual(res_hot['holistic_reasons'], candidate['reasons'])
+
+    def test_llm_audit_data_does_not_affect_scoring(self):
+        cand_positive = {
+            'code': '1111', 'name': '正向股', 'category': '電子', 'score': 110.0,
+            'setup_stage': '剛突破起漲', 'reasons': ['技術守穩'], 'price': 100.0,
+            'audit_data': {
+                'monthly_revenue': {'yoy_pct': 150.0, 'mom_pct': 50.0, 'event_date': '2026-09-01', 'source_url': 'https://example.com/rev'},
+                'earnings': {'eps': 10.0, 'eps_yoy_pct': 200.0, 'event_date': '2026-08-15', 'source_url': 'https://example.com/eps'},
+                'catalyst': {'direction': 'positive', 'new_information': True, 'event_date': '2026-09-01', 'source_url': 'https://example.com/cat'},
+                'analyst_target': {'median_price': 300.0, 'rating': '強力買進', 'sample_size': 10, 'event_date': '2026-08-20', 'source_url': 'https://example.com/tp'}
+            }
+        }
+        cand_negative = {
+            'code': '1111', 'name': '正向股', 'category': '電子', 'score': 110.0,
+            'setup_stage': '剛突破起漲', 'reasons': ['技術守穩'], 'price': 100.0,
+            'audit_data': {
+                'monthly_revenue': {'yoy_pct': -80.0, 'mom_pct': -50.0, 'event_date': '2026-09-01', 'source_url': 'https://example.com/rev'},
+                'earnings': {'eps': -5.0, 'eps_yoy_pct': -100.0, 'event_date': '2026-08-15', 'source_url': 'https://example.com/eps'},
+                'catalyst': {'direction': 'negative', 'new_information': True, 'event_date': '2026-09-01', 'source_url': 'https://example.com/cat'},
+                'analyst_target': {'median_price': 50.0, 'rating': '賣出', 'sample_size': 10, 'event_date': '2026-08-20', 'source_url': 'https://example.com/tp'}
+            }
+        }
+        res_pos = engine.evaluate_holistic_score(cand_positive, [])
+        res_neg = engine.evaluate_holistic_score(cand_negative, [])
+        self.assertEqual(res_pos['holistic_score'], 110.0)
+        self.assertEqual(res_neg['holistic_score'], 110.0)
+        self.assertEqual(res_pos['holistic_score'], res_neg['holistic_score'])
+
+        ranked_pos = engine.select_actionable_candidates([res_pos])
+        ranked_neg = engine.select_actionable_candidates([res_neg])
+        self.assertEqual([x['code'] for x in ranked_pos], [x['code'] for x in ranked_neg])
+        self.assertEqual([x['holistic_score'] for x in ranked_pos], [x['holistic_score'] for x in ranked_neg])
+        self.assertEqual([x['selection_tier'] for x in ranked_pos], [x['selection_tier'] for x in ranked_neg])
+
+    def test_candidate_pools_unaffected_by_hot_sectors(self):
+        fake_candidates = [
+            {'code': '1001', 'name': '突破股A', 'category': '伺服器', 'score': 120.0,
+             'setup_stage': '剛突破起漲', 'pivot_distance': 1.0, 'today_pct': 2.0, 'ret5': 4.0},
+            {'code': '1002', 'name': '蓄勢股B', 'category': '被動元件', 'score': 115.0,
+             'setup_stage': '壓縮蓄勢待突破', 'pivot_distance': -1.0, 'today_pct': 1.0, 'ret5': 2.0},
+            {'code': '1003', 'name': '觀察股C', 'category': '網通', 'score': 85.0,
+             'setup_stage': '趨勢中段／訊號未明', 'pivot_distance': -3.0, 'today_pct': 1.5, 'ret5': 3.0},
+            {'code': '1004', 'name': '冷門股D', 'category': '傳統', 'score': 125.0,
+             'setup_stage': '剛突破起漲', 'pivot_distance': 0.5, 'today_pct': 3.0, 'ret5': 5.0}
+        ]
+        hot_sectors = [{
+            'sector_name': '伺服器', 'heat_level': 5, 'stage': 'accelerating',
+            'catalysts': '伺服器需求擴張', 'event_date': '2026-09-01',
+            'source_url': 'https://example.com/srv', 'related_tags': ['伺服器']
+        }]
+        pool_without_hot = engine.build_candidate_pools(fake_candidates, hot_sectors=None)
+        pool_with_hot = engine.build_candidate_pools(fake_candidates, hot_sectors=hot_sectors)
+        self.assertEqual([c['code'] for c in pool_without_hot], [c['code'] for c in pool_with_hot])
+        self.assertEqual([c['score'] for c in pool_without_hot], [c['score'] for c in pool_with_hot])
+
+    def test_default_execution_without_api_key(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            ranking_md = tmp_path / 'ranking.md'
+            cards_json = tmp_path / 'cards.json'
+            with patch.object(engine, 'OUTPUT_EVO_MD', ranking_md), \
+                 patch.object(engine, 'RESEARCH_CARDS_FILE', cards_json), \
+                 patch.object(engine, 'call_gemini_search') as mock_search, \
+                 patch.object(engine, 'call_gemini_rest') as mock_rest, \
+                 patch.object(engine, 'get_gemini_api_key', return_value=None):
+                engine.main([])
+                mock_search.assert_not_called()
+                mock_rest.assert_not_called()
+                self.assertTrue(ranking_md.exists())
+                text = ranking_md.read_text(encoding='utf-8')
+                self.assertIn('量化規則分數', text)
+                self.assertIn('未執行 AI 研究；不影響排名', text)
+
+    def test_research_mode_isolation(self):
+        fake_cards_response = json.dumps({
+            'cards': [{
+                'code': '3231', 'name': '緯創', 'as_of_date': '2026-09-07',
+                'data_cutoff': '2026-09-07', 'sources': [{'url': 'https://example.com/w', 'publisher': '測試', 'published_at': '2026-09-01', 'source_type': 'official'}],
+                'supporting_facts': ['2026-07營收年增60%'],
+                'counter_evidence_and_risks': ['GB200出貨放量節奏待觀察'],
+                'questions_for_human_review': ['下季毛利率走勢'],
+                'data_quality_flags': ['news_lag'],
+                'disclaimer': '此研究卡不參與評分、排序或投資建議。'
+            }]
+        }, ensure_ascii=False)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            ranking_md_default = tmp_path / 'ranking_default.md'
+            ranking_md_research = tmp_path / 'ranking_research.md'
+            cards_json = tmp_path / 'cards.json'
+
+            with patch.object(engine, 'OUTPUT_EVO_MD', ranking_md_default), \
+                 patch.object(engine, 'call_gemini_search') as mock_search_def, \
+                 patch.object(engine, 'call_gemini_rest') as mock_rest_def, \
+                 patch.object(engine, 'get_gemini_api_key', return_value='fake-key'):
+                engine.main([])
+                mock_search_def.assert_not_called()
+                mock_rest_def.assert_not_called()
+
+            with patch.object(engine, 'OUTPUT_EVO_MD', ranking_md_research), \
+                 patch.object(engine, 'RESEARCH_CARDS_FILE', cards_json), \
+                 patch.object(engine, 'call_gemini_search', return_value=(fake_cards_response, 'gemini-3.8-flash')) as mock_search_res, \
+                 patch.object(engine, 'call_gemini_rest', return_value=('覆盤內容', 'gemini-3.8-flash')) as mock_rest_res, \
+                 patch.object(engine, 'get_gemini_api_key', return_value='fake-key'):
+                engine.main(['--research'])
+                mock_search_res.assert_called()
+
+            text_def = ranking_md_default.read_text(encoding='utf-8')
+            text_res = ranking_md_research.read_text(encoding='utf-8')
+
+            codes_def = [line.split('|')[2].strip() for line in text_def.splitlines() if line.startswith('| **')]
+            codes_res = [line.split('|')[2].strip() for line in text_res.splitlines() if line.startswith('| **')]
+            self.assertEqual(codes_def, codes_res)
+
+            scores_def = [line.split('|')[7].strip() for line in text_def.splitlines() if line.startswith('| **')]
+            scores_res = [line.split('|')[7].strip() for line in text_res.splitlines() if line.startswith('| **')]
+            self.assertEqual(scores_def, scores_res)
+
+            self.assertTrue(cards_json.exists())
 
     def test_structured_audit_is_parsed_and_cached(self):
         response = '''{"monthly_revenue":{"period":"8月","amount_text":"10億元","mom_pct":5,"yoy_pct":20,"event_date":"2026-09-03","source_url":"https://example.com/rev"},"earnings":{"period":"Q2","eps":2.5,"eps_yoy_pct":12,"gross_margin_pct":30,"event_date":"2026-08-10","source_url":"https://example.com/eps"},"catalyst":{"summary":"取得新訂單","direction":"positive","new_information":true,"event_date":"2026-09-01","source_url":"https://example.com/news"},"analyst_target":{"median_price":120,"rating":"買進","sample_size":3,"event_date":"2026-08-20","source_url":"https://example.com/tp"},"disposition":{"status":"normal","event_date":"2026-09-04","source_url":"https://example.com/twse"}}'''

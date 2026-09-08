@@ -261,7 +261,21 @@ def parse_evolution_ranking(text: str) -> tuple[str, list[dict], str]:
         if not re.fullmatch(r"\d{4,6}", code):
             continue
 
-        if current_section == "evolution" and len(cells) >= 11:
+        if current_section == "evolution" and len(cells) >= 7:
+            score = cells[6]
+            if len(cells) >= 12:
+                monthly_rev = cells[7]
+                earnings = cells[8]
+                catalyst = cells[9]
+                target_price = cells[10]
+                feature = " ； ".join(cells[11:])
+            else:
+                monthly_rev = ""
+                earnings = ""
+                catalyst = ""
+                target_price = ""
+                feature = cells[8] if len(cells) >= 9 else ""
+
             evolution_items.append({
                 "rank": cells[0],
                 "code": code,
@@ -269,12 +283,12 @@ def parse_evolution_ranking(text: str) -> tuple[str, list[dict], str]:
                 "category": cells[3],
                 "price": cells[4],
                 "changePct": cells[5],
-                "score": cells[6],
-                "monthlyRev": cells[7],
-                "earnings": cells[8],
-                "catalyst": cells[9],
-                "targetPrice": cells[10],
-                "feature": " ； ".join(cells[11:]) if len(cells) > 11 else "",
+                "score": score,
+                "monthlyRev": monthly_rev,
+                "earnings": earnings,
+                "catalyst": catalyst,
+                "targetPrice": target_price,
+                "feature": feature,
                 "isEvolution": True
             })
 
