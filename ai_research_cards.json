@@ -1,0 +1,200 @@
+[
+  {
+    "code": "3545",
+    "name": "敦泰",
+    "as_of_date": "2026-09-08",
+    "data_cutoff": "2026-09-08",
+    "sources": [
+      {
+        "url": "https://blog.fugle.tw/post/earnings-call-3545-2026-05-08",
+        "publisher": "富果研究團隊（公司法說會備忘）",
+        "published_at": "2026-05-08",
+        "source_type": "official"
+      },
+      {
+        "url": "https://finance.biggo.com.tw/quote/3545.TW/earnings-call/TW_3545.TW_2026-08-07",
+        "publisher": "BigGo財經（2026Q2法說會摘要）",
+        "published_at": "2026-08-07",
+        "source_type": "official"
+      }
+    ],
+    "supporting_facts": [
+      "2026年第二季合併營收27.55億元，受手機市場疲弱影響年減9.7%；毛利率為22.3%，較第一季微幅下滑0.7個百分點。",
+      "2026年第一季營業淨損達1.46億元，本業獲利體質仍顯脆弱。"
+    ],
+    "counter_evidence_and_risks": [
+      "中低階智慧型手機與驅動IC（TDDI）市場持續面臨中國同業激烈的價格競爭，手機面板驅動IC毛利修復空間受限。",
+      "車用與工控等非手機非TDDI新應用佔比提升速度仍偏慢，短期本業營業利益率難以擺脫微利或損益兩平邊緣拉鋸。"
+    ],
+    "questions_for_human_review": [
+      "即將公告的8月及9月營收中，中國手機品牌新機拉貨動能是否出現提早轉弱？",
+      "AMOLED觸控與車用TDDI出貨比重是否足以抵銷傳統LCD TDDI價格續跌的侵蝕？"
+    ],
+    "data_quality_flags": [
+      "news_lag"
+    ],
+    "disclaimer": "此研究卡不參與評分、排序或投資建議。"
+  },
+  {
+    "code": "2344",
+    "name": "華邦電",
+    "as_of_date": "2026-09-08",
+    "data_cutoff": "2026-09-08",
+    "sources": [
+      {
+        "url": "https://www.sinotrade.com.tw/richclub/hotstock/華邦電法說-26Q2-EPS-5-4元創高-記憶體營收季增73--CMS營收年增467--股市話題-6a7442da68efc90ac5dce6ff",
+        "publisher": "永豐金證券法說會摘要",
+        "published_at": "2026-08-21",
+        "source_type": "official"
+      }
+    ],
+    "supporting_facts": [
+      "2026年第二季合併營收達598.43億元，毛利率衝上66.2%，單季每股盈餘達5.40元，獲利基期已墊至歷史極高點。",
+      "2026年資本支出大幅擴增至405億元以上，加速擴充產能。"
+    ],
+    "counter_evidence_and_risks": [
+      "記憶體具高度週期性，目前毛利率高達66%主要由合約報價激增推升，下游客戶存在預期心理之重複下單（Overbooking）風險。",
+      "高雄廠大幅資本支出擴產後，未來數季將面臨高額折舊費用負擔；一旦報價漲勢放緩或轉折向下，獲利回調壓力將極具槓桿效果。"
+    ],
+    "questions_for_human_review": [
+      "下半年客戶拉貨週期是否出現提前滿足跡象，NOR Flash現貨價漲勢是否鈍化？",
+      "龐大資本支出推升的折舊費用認列時程，是否將在合約價見頂後劇烈侵蝕營業利益率？"
+    ],
+    "data_quality_flags": [
+      "news_lag"
+    ],
+    "disclaimer": "此研究卡不參與評分、排序或投資建議。"
+  },
+  {
+    "code": "2408",
+    "name": "南亞科",
+    "as_of_date": "2026-09-08",
+    "data_cutoff": "2026-09-08",
+    "sources": [
+      {
+        "url": "https://today.line.me/tw/v3/article/YaKJGGP",
+        "publisher": "LINE TODAY（公司法說會報導）",
+        "published_at": "2026-07-10",
+        "source_type": "news"
+      },
+      {
+        "url": "https://www.sinotrade.com.tw/richclub/hotstock/南亞科法說-繳出近年最強單季成績單-Q1獲利爆發-私募注資確認AI記憶體新定位-每股配發1-35元-股市話題-69ddb9e7afb40b0a6927f7bb",
+        "publisher": "永豐金證券法說會摘要",
+        "published_at": "2026-04-13",
+        "source_type": "official"
+      }
+    ],
+    "supporting_facts": [
+      "2026年第二季毛利率攀升至79.5%創歷史新高，營收驅動力主要來自平均銷售單價（ASP）暴漲而非出貨量顯著放大。",
+      "2026年9月8日收盤價達531.00元，股價已高度反映DRAM超額定價紅利。"
+    ],
+    "counter_evidence_and_risks": [
+      "獲利結構過度依賴大廠產能移轉HBM導致的傳統DDR4/DDR5供應真空與ASP暴增，出貨位元量並未顯著激增，量價背離潛藏週期反噬風險。",
+      "國際記憶體三大原廠製程升級轉換完成後，若標準型DRAM產能回流釋出，供需缺口收斂將促使暴利級毛利率快速向均值回歸。"
+    ],
+    "questions_for_human_review": [
+      "1B/1C製程自研轉換與量產良率進度，是否能擺脫依賴純漲價效應的盈利結構？",
+      "終端PC與智慧型手機市場在記憶體大漲後是否引發整機減配，進而壓抑後續拉貨動能？"
+    ],
+    "data_quality_flags": [
+      "news_lag"
+    ],
+    "disclaimer": "此研究卡不參與評分、排序或投資建議。"
+  },
+  {
+    "code": "6187",
+    "name": "萬潤",
+    "as_of_date": "2026-09-08",
+    "data_cutoff": "2026-09-08",
+    "sources": [
+      {
+        "url": "https://wantrich.chinatimes.com/news/20260827900239-420101",
+        "publisher": "旺得富理財網",
+        "published_at": "2026-08-27",
+        "source_type": "news"
+      }
+    ],
+    "supporting_facts": [
+      "2026年第二季合併營收23.54億元，單季每股純益達8.5元，前7月賺逾1.5個股本。",
+      "2026年9月8日收盤價高達1385.00元，位處歷史超高價位區間。"
+    ],
+    "counter_evidence_and_risks": [
+      "營收與獲利極度高度依賴晶圓代工龍頭之CoWoS及先進封裝單一資本支出擴廠排程，設備驗收具有季度入帳不均勻特性。",
+      "千元以上高股價已提前將2026至2027年先進封裝擴產預期定價完畢，一旦龍頭廠下修外包或設備交期遞延，估值恐面臨劇烈壓縮。"
+    ],
+    "questions_for_human_review": [
+      "主要客戶在下半年至明年初之設備交機驗收時程是否出現任何延期或排程調整？",
+      "非台積電體系之封測代工（OSAT）客戶訂單比重與毛利表現是否能有效分散集中度？"
+    ],
+    "data_quality_flags": [
+      "news_lag"
+    ],
+    "disclaimer": "此研究卡不參與評分、排序或投資建議。"
+  },
+  {
+    "code": "3006",
+    "name": "晶豪科",
+    "as_of_date": "2026-09-08",
+    "data_cutoff": "2026-09-08",
+    "sources": [
+      {
+        "url": "https://news.cnyes.com/news/id/6595429",
+        "publisher": "鉅亨網",
+        "published_at": "2026-09-02",
+        "source_type": "news"
+      }
+    ],
+    "supporting_facts": [
+      "2026年8月合併營收達79.05億元，年增率達605.24%，營收處於週期爆發峰值。",
+      "2026年第一季營業毛利率回升至47.52%，單季每股純益達7.22元。"
+    ],
+    "counter_evidence_and_risks": [
+      "利基型記憶體無自有晶圓廠，產能與晶圓取得成本（Wafer Cost）受制於代工廠合約條款，在景氣高檔容易面臨投片成本墊高的滯後侵蝕。",
+      "下游消費性網通與物聯網客戶在合約價急漲後，庫存水位已顯著提高，採購力道具備週期突波結束後的急踩煞車風險。"
+    ],
+    "questions_for_human_review": [
+      "後續晶圓代工夥伴調漲代工價格對第四季毛利率之滯後性成本衝擊程度？",
+      "下游客戶對利基型DRAM合約長約的承諾履行度與提貨率是否維持穩健？"
+    ],
+    "data_quality_flags": [
+      "news_lag"
+    ],
+    "disclaimer": "此研究卡不參與評分、排序或投資建議。"
+  },
+  {
+    "code": "2467",
+    "name": "志聖",
+    "as_of_date": "2026-09-08",
+    "data_cutoff": "2026-09-08",
+    "sources": [
+      {
+        "url": "https://blog.fugle.tw/post/earnings-call-2467-2026-08-12",
+        "publisher": "富果研究團隊（公司法說會備忘）",
+        "published_at": "2026-08-12",
+        "source_type": "official"
+      },
+      {
+        "url": "https://readmo.cmoney.tw/article/ca5a47d0-091e-46d3-a55e-7e276fe2057f",
+        "publisher": "CMoney理財寶",
+        "published_at": "2026-08-15",
+        "source_type": "news"
+      }
+    ],
+    "supporting_facts": [
+      "2026年上半年累計合併營收50.44億元（年增78.9%），毛利率49.1%，每股純益達7.16元。",
+      "2026年9月8日收盤價為610.00元，單日回檔1.45%。"
+    ],
+    "counter_evidence_and_risks": [
+      "目前股價高達610元，市場多以2026全年預估EPS約15至16元作為高倍數定價基準，已深度預支CoWoS及高階熱處理設備未來成長潛力。",
+      "PCB與載板傳統設備業務毛利率顯著低於半導體設備，若半導體設備交機認列進度因客戶無塵室裝機時程拉長而遞延，整體產品組合毛利率將出現波動。"
+    ],
+    "questions_for_human_review": [
+      "半導體高階熱處理解決方案在在手訂單與合約負債中之實質交付轉認列進度？",
+      "載板與PCB設備市場復甦力道是否疲弱，拖累整體設備營收認列步調？"
+    ],
+    "data_quality_flags": [
+      "news_lag"
+    ],
+    "disclaimer": "此研究卡不參與評分、排序或投資建議。"
+  }
+]

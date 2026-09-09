@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "as_of_date": "2026-09-04",
+  "generated_at": "2026-09-07T15:59:44+08:00",
+  "holding_horizon": "3-5 trading days",
+  "entry_assumption": "next trading day open",
+  "hot_sectors": [],
+  "selected_codes": [],
+  "candidates": []
+}

@@ -1,0 +1,46 @@
+{
+  "schema_version": 2,
+  "as_of_date": "2026-09-07",
+  "overview": "外資大幅回補激勵權值與低基期電子股，被動元件漲價潮與半導體先進封裝成為盤面資金輪動焦點。",
+  "hot_sectors": [
+    {
+      "sector_name": "被動元件（MLCC與特種材料）",
+      "heat_level": 5,
+      "stage": "accelerating",
+      "catalysts": "國際大廠三星電機啟動產品調漲，帶動MLCC漲價題材全面擴散，外資連續回補禾伸堂、信昌電與華新科放量攻漲停，族群由點擴面啟動主升加速行情。",
+      "event_date": "2026-09-07",
+      "source_url": "https://www.ctee.com.tw/news/20260907700848-430201",
+      "related_tags": [
+        "MLCC漲價",
+        "被動元件",
+        "車用與工控材料"
+      ]
+    },
+    {
+      "sector_name": "半導體先進封測與廠務設備",
+      "heat_level": 4,
+      "stage": "emerging",
+      "catalysts": "AI強勁需求推動先進封裝擴產，信紘科在手訂單達230億元能見度直達2028年，日月光投控與京元電子帶量重回均線之上，法人籌碼長線布局增溫。",
+      "event_date": "2026-09-07",
+      "source_url": "https://www.ctee.com.tw/news/20260907700848-430201",
+      "related_tags": [
+        "CoWoS/先進封裝",
+        "半導體設備",
+        "廠務工程"
+      ]
+    },
+    {
+      "sector_name": "伺服器管理晶片（BMC）與高速傳輸",
+      "heat_level": 3,
+      "stage": "emerging",
+      "catalysts": "信驊公布8月營收創歷史新高並宣布Q4因應市場強勁需求將調漲產品售價達雙位數，龍頭率先表態突圍，帶動高階伺服器控制IC族群醞釀轉機動能。",
+      "event_date": "2026-09-07",
+      "source_url": "https://www.ctee.com.tw/news/20260907700848-430201",
+      "related_tags": [
+        "BMC晶片",
+        "伺服器規格升級",
+        "高價股指標"
+      ]
+    }
+  ]
+}

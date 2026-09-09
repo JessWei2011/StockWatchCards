@@ -6,9 +6,12 @@
 # Documentation
 !CLAUDE.md
 !GEMINI.md
+!AGENTS.md
+!AI_B_HANDOFF.md
 !AI_SCORING_RULES.md
 !AI_DOUBLE_CHECK.md
 !CHATGPT_PROJECT_INSTRUCTIONS.md
+!.env.example
 
 # Web app and source scripts
 !render-shared.js
@@ -42,6 +45,15 @@
 !reports_manager_server.py
 !reports_manager.bat
 !evolution_log.html
+!build_portable.py
+!ai_research_cards.json
+!llm_manual_handoff.json
+!market_hot_sectors_cache.json
+!scratch_stocks_summary.json
+
+# Ranking history
+!ranking_history/
+!ranking_history/**
 
 # Pattern viewer app
 !pattern_viewer/

@@ -1,0 +1,618 @@
+{
+  "schema_version": 1,
+  "as_of_date": "2026-09-07",
+  "generated_at": "2026-09-08T18:37:50+08:00",
+  "holding_horizon": "3-5 trading days",
+  "entry_assumption": "next trading day open",
+  "hot_sectors": [
+    {
+      "sector_name": "被動元件（MLCC與特種材料）",
+      "heat_level": 5,
+      "stage": "accelerating",
+      "catalysts": "國際大廠三星電機啟動產品調漲，帶動MLCC漲價題材全面擴散，外資連續回補禾伸堂、信昌電與華新科放量攻漲停，族群由點擴面啟動主升加速行情。",
+      "event_date": "2026-09-07",
+      "source_url": "https://www.ctee.com.tw/news/20260907700848-430201",
+      "related_tags": [
+        "MLCC漲價",
+        "被動元件",
+        "車用與工控材料"
+      ]
+    },
+    {
+      "sector_name": "半導體先進封測與廠務設備",
+      "heat_level": 4,
+      "stage": "emerging",
+      "catalysts": "AI強勁需求推動先進封裝擴產，信紘科在手訂單達230億元能見度直達2028年，日月光投控與京元電子帶量重回均線之上，法人籌碼長線布局增溫。",
+      "event_date": "2026-09-07",
+      "source_url": "https://www.ctee.com.tw/news/20260907700848-430201",
+      "related_tags": [
+        "CoWoS/先進封裝",
+        "半導體設備",
+        "廠務工程"
+      ]
+    },
+    {
+      "sector_name": "伺服器管理晶片（BMC）與高速傳輸",
+      "heat_level": 3,
+      "stage": "emerging",
+      "catalysts": "信驊公布8月營收創歷史新高並宣布Q4因應市場強勁需求將調漲產品售價達雙位數，龍頭率先表態突圍，帶動高階伺服器控制IC族群醞釀轉機動能。",
+      "event_date": "2026-09-07",
+      "source_url": "https://www.ctee.com.tw/news/20260907700848-430201",
+      "related_tags": [
+        "BMC晶片",
+        "伺服器規格升級",
+        "高價股指標"
+      ]
+    }
+  ],
+  "selected_codes": [
+    "3231",
+    "3491",
+    "6207",
+    "2377"
+  ],
+  "candidates": [
+    {
+      "code": "2377",
+      "name": "微星",
+      "category": "電腦板卡",
+      "semantic_tags": [
+        "PC",
+        "工業電腦",
+        "顯示卡",
+        "微星",
+        "AI PC",
+        "主機板",
+        "Edge AI",
+        "電競",
+        "電競筆電",
+        "筆電"
+      ],
+      "price": 158.5,
+      "today_pct": -1.86,
+      "s5": 0.45,
+      "s20": 0.26,
+      "bias_20": 5.6,
+      "rsi14": 60.4,
+      "vol_ratio": 0.9,
+      "ret3": 2.3,
+      "ret5": 2.3,
+      "ret10": 10.1,
+      "atr_pct": 3.6,
+      "pivot_price": 168.5,
+      "pivot_distance": -5.9,
+      "range5": 9.0,
+      "range10": 16.3,
+      "setup_stage": "趨勢中段／訊號未明",
+      "score": 91.0,
+      "reasons": [
+        "🎯階段:趨勢中段／訊號未明(+0分)",
+        "📈短中均線多頭(+15分)",
+        "投信買超(4/5日,+10分)",
+        "📊股票池相對強度PR69(+6分)"
+      ],
+      "stop_loss": 148.6,
+      "target_price": "90日內法人目標價中位數145元(中立, 1筆)",
+      "technical_target_price": 179.91,
+      "rr_ratio": 2.2,
+      "above_5ma": true,
+      "session_date": "2026-09-07",
+      "date": "09/07",
+      "score_before_disposition": 91.0,
+      "reasons_before_disposition": [
+        "🎯階段:趨勢中段／訊號未明(+0分)",
+        "📈短中均線多頭(+15分)",
+        "投信買超(4/5日,+10分)",
+        "📊股票池相對強度PR69(+6分)"
+      ],
+      "disposition": "",
+      "universe_rs_percentile": 69.1,
+      "pre_audit_score": 97.0,
+      "pre_matched_sector": "伺服器管理晶片（BMC）與高速傳輸",
+      "sector_match_strength": 65.0,
+      "monthly_rev": "",
+      "earnings": "2026-Q2 EPS 7.59元，毛利率15.97%",
+      "catalyst": "利多：Q2毛利率達15.97%創歷史新高，AI平台整合Nvidia開源模型跨入AI Agent；利空：7月營收年減0.02%，PC/板卡終端消費需求復甦節奏平緩。",
+      "audit_data": {
+        "code": "2377",
+        "monthly_revenue": {
+          "period": "2026-07",
+          "amount_text": "193.42億元",
+          "mom_pct": null,
+          "yoy_pct": -0.02,
+          "event_date": "2026-08-07",
+          "source_url": "https://news.cnyes.com/news/print/6565694"
+        },
+        "earnings": {
+          "period": "2026-Q2",
+          "eps": 7.59,
+          "eps_yoy_pct": null,
+          "gross_margin_pct": 15.97,
+          "event_date": "2026-08-12",
+          "source_url": "https://www.top1markets.com/tw/news/msi-2377-earnings-ai-agent-stock-analysis-fm26"
+        },
+        "catalyst": {
+          "summary": "利多：Q2毛利率達15.97%創歷史新高，AI平台整合Nvidia開源模型跨入AI Agent；利空：7月營收年減0.02%，PC/板卡終端消費需求復甦節奏平緩。",
+          "direction": "positive",
+          "new_information": true,
+          "event_date": "2026-08-12",
+          "source_url": "https://www.top1markets.com/tw/news/msi-2377-earnings-ai-agent-stock-analysis-fm26"
+        },
+        "analyst_target": {
+          "median_price": 145.0,
+          "rating": "中立",
+          "sample_size": 1,
+          "event_date": "2026-08-15",
+          "source_url": "https://readmo.cmoney.tw/article/22c942f4-3f58-4f05-8e99-0b6dfb44e75f"
+        },
+        "disposition": {
+          "status": "normal",
+          "event_date": "2026-09-07",
+          "source_url": "https://www.twse.com.tw"
+        }
+      },
+      "verification_status": "LLM證據已查核",
+      "matched_sector": "伺服器管理晶片（BMC）與高速傳輸",
+      "holistic_score": 108.0,
+      "holistic_reasons": [
+        "🔥踩中市場主流風口:【伺服器管理晶片（BMC）與高速傳輸】(+12分)",
+        "🎯階段:趨勢中段／訊號未明(+0分)",
+        "📈短中均線多頭(+15分)",
+        "投信買超(4/5日,+10分)",
+        "📊股票池相對強度PR69(+6分)",
+        "📢30日內新正向催化(+15分)"
+      ],
+      "selection_tier": "觀察候選（尚待突破觸發）"
+    },
+    {
+      "code": "6187",
+      "name": "萬潤",
+      "category": "半導體設備",
+      "semantic_tags": [
+        "貼合設備",
+        "設備",
+        "半導體設備",
+        "HANDLER",
+        "先進封裝設備",
+        "封裝設備",
+        "萬潤",
+        "點膠機",
+        "COWOS設備",
+        "分選機",
+        "CoWoS設備"
+      ],
+      "price": 1370.0,
+      "today_pct": 4.98,
+      "s5": 0.38,
+      "s20": 1.1,
+      "bias_20": 6.3,
+      "rsi14": 59.0,
+      "vol_ratio": 0.6,
+      "ret3": 2.2,
+      "ret5": 1.9,
+      "ret10": 13.7,
+      "atr_pct": 7.4,
+      "pivot_price": 1455.0,
+      "pivot_distance": -5.8,
+      "range5": 10.2,
+      "range10": 24.9,
+      "setup_stage": "趨勢中段／訊號未明",
+      "score": 57.0,
+      "reasons": [
+        "🎯階段:趨勢中段／訊號未明(+0分)",
+        "🛡️站穩上升月線(+8分)",
+        "✨MACD轉強(+10分)",
+        "投信買超(4/5日,+10分)",
+        "📊股票池相對強度PR67(+6分)",
+        "🚨列入處置股(分盤撮合/流動性急凍)（處置扣27分）"
+      ],
+      "stop_loss": 1289.29,
+      "target_price": "",
+      "technical_target_price": 1657.86,
+      "rr_ratio": 3.6,
+      "above_5ma": true,
+      "session_date": "2026-09-07",
+      "date": "09/07",
+      "score_before_disposition": 84.0,
+      "reasons_before_disposition": [
+        "🎯階段:趨勢中段／訊號未明(+0分)",
+        "🛡️站穩上升月線(+8分)",
+        "✨MACD轉強(+10分)",
+        "投信買超(4/5日,+10分)",
+        "📊股票池相對強度PR67(+6分)"
+      ],
+      "disposition": "列入處置股(分盤撮合/流動性急凍)",
+      "universe_rs_percentile": 66.6,
+      "pre_audit_score": 96.0,
+      "pre_matched_sector": "半導體先進封測與廠務設備",
+      "sector_match_strength": 135.0,
+      "monthly_rev": "2026-07營收10.55億元(MoM+4.17%, YoY+73.44%)",
+      "earnings": "2026-Q2 EPS 8.5元，EPS YoY +107.04%，毛利率54.77%",
+      "catalyst": "利多：先進封裝CoWoS設備出貨暢旺，單季獲利創歷史新高；利空：因短線當沖比率及週轉率過高遭列處置股票，每20分鐘撮合一次流動性受限。",
+      "audit_data": {
+        "code": "6187",
+        "monthly_revenue": {
+          "period": "2026-07",
+          "amount_text": "10.55億元",
+          "mom_pct": 4.17,
+          "yoy_pct": 73.44,
+          "event_date": "2026-08-07",
+          "source_url": "https://www.nstock.tw/%E8%90%AC%E6%BD%A4%E5%81%9A%E4%BB%80%E9%BA%BC.html"
+        },
+        "earnings": {
+          "period": "2026-Q2",
+          "eps": 8.5,
+          "eps_yoy_pct": 107.04,
+          "gross_margin_pct": 54.77,
+          "event_date": "2026-08-10",
+          "source_url": "https://www.sinotrade.com.tw/richclub/news/6a79a82cb17ee7367874e02d"
+        },
+        "catalyst": {
+          "summary": "利多：先進封裝CoWoS設備出貨暢旺，單季獲利創歷史新高；利空：因短線當沖比率及週轉率過高遭列處置股票，每20分鐘撮合一次流動性受限。",
+          "direction": "neutral",
+          "new_information": true,
+          "event_date": "2026-09-07",
+          "source_url": "https://www.ibfs.com.tw/stock3/measuringstock.aspx?xy=6&xt=1"
+        },
+        "analyst_target": {
+          "median_price": null,
+          "rating": null,
+          "sample_size": 0,
+          "event_date": null,
+          "source_url": null
+        },
+        "disposition": {
+          "status": "disposition",
+          "event_date": "2026-09-07",
+          "source_url": "https://www.ibfs.com.tw/stock3/measuringstock.aspx?xy=6&xt=1"
+        }
+      },
+      "verification_status": "LLM證據已查核",
+      "matched_sector": "半導體先進封測與廠務設備",
+      "holistic_score": 109.0,
+      "holistic_reasons": [
+        "🔥踩中市場主流風口:【半導體先進封測與廠務設備】(+19分)",
+        "🎯階段:趨勢中段／訊號未明(+0分)",
+        "🛡️站穩上升月線(+8分)",
+        "✨MACD轉強(+10分)",
+        "投信買超(4/5日,+10分)",
+        "📊股票池相對強度PR67(+6分)",
+        "🚨列入處置股(分盤撮合/流動性急凍)（處置扣27分）"
+      ]
+    },
+    {
+      "code": "3491",
+      "name": "昇達科",
+      "category": "低軌衛星",
+      "semantic_tags": [
+        "毫米波",
+        "地面站",
+        "射頻",
+        "LEO",
+        "昇達科",
+        "低軌衛星",
+        "PA",
+        "毫米波元件",
+        "衛星地面站",
+        "衛星天線"
+      ],
+      "price": 1510.0,
+      "today_pct": 0.33,
+      "s5": 1.8,
+      "s20": 1.02,
+      "bias_20": 10.8,
+      "rsi14": 60.1,
+      "vol_ratio": 1.0,
+      "ret3": 4.5,
+      "ret5": 9.4,
+      "ret10": 17.1,
+      "atr_pct": 6.7,
+      "pivot_price": 1555.0,
+      "pivot_distance": -2.9,
+      "range5": 12.0,
+      "range10": 27.5,
+      "setup_stage": "趨勢中段／訊號未明",
+      "score": 95.0,
+      "reasons": [
+        "🎯階段:趨勢中段／訊號未明(+0分)",
+        "📈短中均線多頭(+15分)",
+        "投信買超(4/5日,+10分)",
+        "📊股票池相對強度PR88(+10分)"
+      ],
+      "stop_loss": 1376.79,
+      "target_price": "",
+      "technical_target_price": 1757.86,
+      "rr_ratio": 1.9,
+      "above_5ma": true,
+      "session_date": "2026-09-07",
+      "date": "09/07",
+      "score_before_disposition": 95.0,
+      "reasons_before_disposition": [
+        "🎯階段:趨勢中段／訊號未明(+0分)",
+        "📈短中均線多頭(+15分)",
+        "投信買超(4/5日,+10分)",
+        "📊股票池相對強度PR88(+10分)"
+      ],
+      "disposition": "",
+      "universe_rs_percentile": 87.6,
+      "pre_audit_score": 95.0,
+      "pre_matched_sector": "",
+      "sector_match_strength": 0.0,
+      "monthly_rev": "",
+      "earnings": "",
+      "catalyst": "利多：LEO低軌衛星元件需求高成長，7月營收年增82%；利空：第二季營收季減11.58%為近兩季低點，毛利率較上季略降。",
+      "audit_data": {
+        "code": "3491",
+        "monthly_revenue": {
+          "period": "2026-07",
+          "amount_text": "2.30億元",
+          "mom_pct": null,
+          "yoy_pct": 82.02,
+          "event_date": "2026-08-05",
+          "source_url": "https://www.capitalim.com.tw/newsite/stock-news/stock-news/c875df32-69aa-48bb-a8c9-27c7519807eb;page=1(popup:login)"
+        },
+        "earnings": {
+          "period": "2026-Q2",
+          "eps": null,
+          "eps_yoy_pct": null,
+          "gross_margin_pct": 55.6,
+          "event_date": "2026-08-14",
+          "source_url": "https://cmnews.com.tw/article/cmoneyaicurator-6699bc61-97c1-11f1-8316-c971ea7ef1c8"
+        },
+        "catalyst": {
+          "summary": "利多：LEO低軌衛星元件需求高成長，7月營收年增82%；利空：第二季營收季減11.58%為近兩季低點，毛利率較上季略降。",
+          "direction": "positive",
+          "new_information": true,
+          "event_date": "2026-09-05",
+          "source_url": "https://money.udn.com/money/story/12040/9732923"
+        },
+        "analyst_target": {
+          "median_price": null,
+          "rating": null,
+          "sample_size": 0,
+          "event_date": null,
+          "source_url": null
+        },
+        "disposition": {
+          "status": "normal",
+          "event_date": "2026-09-07",
+          "source_url": "https://www.tpex.org.tw"
+        }
+      },
+      "verification_status": "LLM證據已查核",
+      "holistic_score": 120.0,
+      "holistic_reasons": [
+        "🎯階段:趨勢中段／訊號未明(+0分)",
+        "📈短中均線多頭(+15分)",
+        "投信買超(4/5日,+10分)",
+        "📊股票池相對強度PR88(+10分)",
+        "📢30日內新正向催化(+15分)"
+      ],
+      "selection_tier": "觀察候選（尚待突破觸發）"
+    },
+    {
+      "code": "3231",
+      "name": "緯創",
+      "category": "伺服器",
+      "semantic_tags": [
+        "GPU基板",
+        "GB200",
+        "AI伺服器",
+        "OEM",
+        "機架",
+        "SERVER",
+        "緯創",
+        "系統組裝",
+        "ODM",
+        "白牌伺服器",
+        "伺服器"
+      ],
+      "price": 197.0,
+      "today_pct": -0.51,
+      "s5": 2.04,
+      "s20": 0.11,
+      "bias_20": 6.4,
+      "rsi14": 65.3,
+      "vol_ratio": 1.3,
+      "ret3": 6.2,
+      "ret5": 10.7,
+      "ret10": 12.3,
+      "atr_pct": 3.9,
+      "pivot_price": 206.0,
+      "pivot_distance": -4.4,
+      "range5": 12.6,
+      "range10": 16.2,
+      "setup_stage": "趨勢中段／訊號未明",
+      "score": 88.0,
+      "reasons": [
+        "🎯階段:趨勢中段／訊號未明(+0分)",
+        "🛡️站穩上升月線(+8分)",
+        "投信買超(5/5日,+10分)",
+        "📊股票池相對強度PR91(+10分)"
+      ],
+      "stop_loss": 181.31,
+      "target_price": "90日內法人目標價中位數277.5元(買進, 19筆)",
+      "technical_target_price": 221.36,
+      "rr_ratio": 1.6,
+      "above_5ma": true,
+      "session_date": "2026-09-07",
+      "date": "09/07",
+      "score_before_disposition": 88.0,
+      "reasons_before_disposition": [
+        "🎯階段:趨勢中段／訊號未明(+0分)",
+        "🛡️站穩上升月線(+8分)",
+        "投信買超(5/5日,+10分)",
+        "📊股票池相對強度PR91(+10分)"
+      ],
+      "disposition": "",
+      "universe_rs_percentile": 90.7,
+      "pre_audit_score": 94.0,
+      "pre_matched_sector": "伺服器管理晶片（BMC）與高速傳輸",
+      "sector_match_strength": 120.0,
+      "monthly_rev": "2026-07營收3082.19億元(MoM-4.23%, YoY+60.76%)",
+      "earnings": "2026-Q2 EPS 4.72元",
+      "catalyst": "利多：AI伺服器基板大量出貨，單季EPS 4.72元創歷史新高且分析師陸續上修獲利；利空：7月營收因基期高月減4.23%，GB200出貨放量節奏待觀察。",
+      "audit_data": {
+        "code": "3231",
+        "monthly_revenue": {
+          "period": "2026-07",
+          "amount_text": "3082.19億元",
+          "mom_pct": -4.23,
+          "yoy_pct": 60.76,
+          "event_date": "2026-08-07",
+          "source_url": "https://news.cnyes.com/news/id/6564881"
+        },
+        "earnings": {
+          "period": "2026-Q2",
+          "eps": 4.72,
+          "eps_yoy_pct": null,
+          "gross_margin_pct": null,
+          "event_date": "2026-08-04",
+          "source_url": "https://finance.biggo.com.tw/news/TW_3231.TW_2026-08-04"
+        },
+        "catalyst": {
+          "summary": "利多：AI伺服器基板大量出貨，單季EPS 4.72元創歷史新高且分析師陸續上修獲利；利空：7月營收因基期高月減4.23%，GB200出貨放量節奏待觀察。",
+          "direction": "positive",
+          "new_information": true,
+          "event_date": "2026-09-07",
+          "source_url": "https://today.line.me/tw/v3/article/j7R9vmY"
+        },
+        "analyst_target": {
+          "median_price": 277.5,
+          "rating": "買進",
+          "sample_size": 19,
+          "event_date": "2026-09-07",
+          "source_url": "https://today.line.me/tw/v3/article/j7R9vmY"
+        },
+        "disposition": {
+          "status": "normal",
+          "event_date": "2026-09-07",
+          "source_url": "https://www.twse.com.tw"
+        }
+      },
+      "verification_status": "LLM證據已查核",
+      "matched_sector": "伺服器管理晶片（BMC）與高速傳輸",
+      "holistic_score": 141.0,
+      "holistic_reasons": [
+        "🔥踩中市場主流風口:【伺服器管理晶片（BMC）與高速傳輸】(+12分)",
+        "🎯階段:趨勢中段／訊號未明(+0分)",
+        "🛡️站穩上升月線(+8分)",
+        "投信買超(5/5日,+10分)",
+        "📊股票池相對強度PR91(+10分)",
+        "📢30日內新正向催化(+15分)",
+        "🎯法人目標價溢價空間巨大(+41%)"
+      ],
+      "selection_tier": "觀察候選（尚待突破觸發）"
+    },
+    {
+      "code": "6207",
+      "name": "雷科",
+      "category": "被動元件",
+      "semantic_tags": [
+        "被動元件",
+        "固態電容",
+        "電阻",
+        "被動元件包材",
+        "雷射修阻機",
+        "高容值電容",
+        "保護元件",
+        "雷科",
+        "電感",
+        "MLCC",
+        "電容",
+        "CoWoS設備"
+      ],
+      "price": 112.5,
+      "today_pct": 1.35,
+      "s5": 1.3,
+      "s20": 0.26,
+      "bias_20": 5.3,
+      "rsi14": 53.4,
+      "vol_ratio": 1.4,
+      "ret3": 1.8,
+      "ret5": 6.6,
+      "ret10": 12.5,
+      "atr_pct": 6.7,
+      "pivot_price": 117.0,
+      "pivot_distance": -3.8,
+      "range5": 11.7,
+      "range10": 19.5,
+      "setup_stage": "趨勢中段／訊號未明",
+      "score": 75.0,
+      "reasons": [
+        "🎯階段:趨勢中段／訊號未明(+0分)",
+        "📈短中均線多頭(+15分)",
+        "📊股票池相對強度PR78(+6分)"
+      ],
+      "stop_loss": 104.33,
+      "target_price": "",
+      "technical_target_price": 132.07,
+      "rr_ratio": 2.4,
+      "above_5ma": true,
+      "session_date": "2026-09-07",
+      "date": "09/07",
+      "score_before_disposition": 75.0,
+      "reasons_before_disposition": [
+        "🎯階段:趨勢中段／訊號未明(+0分)",
+        "📈短中均線多頭(+15分)",
+        "📊股票池相對強度PR78(+6分)"
+      ],
+      "disposition": "",
+      "universe_rs_percentile": 78.1,
+      "pre_audit_score": 93.0,
+      "pre_matched_sector": "被動元件（MLCC與特種材料）",
+      "sector_match_strength": 100.0,
+      "monthly_rev": "",
+      "earnings": "2026-Q2 EPS 1.04元，EPS YoY +311.11%",
+      "catalyst": "利多：Q2單季EPS 1.04元較去年大幅翻倍，半導體設備與載帶出貨回溫；利空：7月營收僅年增6.31%，被動元件整體需求復甦力度相對溫和。",
+      "audit_data": {
+        "code": "6207",
+        "monthly_revenue": {
+          "period": "2026-07",
+          "amount_text": "1.13億元",
+          "mom_pct": null,
+          "yoy_pct": 6.31,
+          "event_date": "2026-08-07",
+          "source_url": "https://statementdog.com/analysis/6207/monthly-revenue-growth-rate"
+        },
+        "earnings": {
+          "period": "2026-Q2",
+          "eps": 1.04,
+          "eps_yoy_pct": 311.11,
+          "gross_margin_pct": null,
+          "event_date": "2026-08-14",
+          "source_url": "https://cmnews.com.tw/article/cmoneyaicurator-69dfd561-97c1-11f1-9a3f-4ef68133f061"
+        },
+        "catalyst": {
+          "summary": "利多：Q2單季EPS 1.04元較去年大幅翻倍，半導體設備與載帶出貨回溫；利空：7月營收僅年增6.31%，被動元件整體需求復甦力度相對溫和。",
+          "direction": "neutral",
+          "new_information": true,
+          "event_date": "2026-08-14",
+          "source_url": "https://cmnews.com.tw/article/cmoneyaicurator-69dfd561-97c1-11f1-9a3f-4ef68133f061"
+        },
+        "analyst_target": {
+          "median_price": null,
+          "rating": null,
+          "sample_size": 0,
+          "event_date": null,
+          "source_url": null
+        },
+        "disposition": {
+          "status": "normal",
+          "event_date": "2026-09-07",
+          "source_url": "https://www.tpex.org.tw"
+        }
+      },
+      "verification_status": "LLM證據已查核",
+      "matched_sector": "被動元件（MLCC與特種材料）",
+      "holistic_score": 118.0,
+      "holistic_reasons": [
+        "🔥踩中市場主流風口:【被動元件（MLCC與特種材料）】(+25分)",
+        "🎯階段:趨勢中段／訊號未明(+0分)",
+        "📈短中均線多頭(+15分)",
+        "📊股票池相對強度PR78(+6分)"
+      ],
+      "selection_tier": "觀察候選（尚待突破觸發）"
+    }
+  ]
+}

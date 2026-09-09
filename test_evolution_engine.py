@@ -203,6 +203,7 @@ class RankingPolicyTests(unittest.TestCase):
             cards_json = tmp_path / 'cards.json'
             with patch.object(engine, 'OUTPUT_EVO_MD', ranking_md), \
                  patch.object(engine, 'RESEARCH_CARDS_FILE', cards_json), \
+                 patch.object(engine, 'RANKING_HISTORY_DIR', tmp_path / 'ranking_history'), \
                  patch.object(engine, 'call_gemini_search') as mock_search, \
                  patch.object(engine, 'call_gemini_rest') as mock_rest, \
                  patch.object(engine, 'get_gemini_api_key', return_value=None):
@@ -234,6 +235,7 @@ class RankingPolicyTests(unittest.TestCase):
             cards_json = tmp_path / 'cards.json'
 
             with patch.object(engine, 'OUTPUT_EVO_MD', ranking_md_default), \
+                 patch.object(engine, 'RANKING_HISTORY_DIR', tmp_path / 'ranking_history'), \
                  patch.object(engine, 'call_gemini_search') as mock_search_def, \
                  patch.object(engine, 'call_gemini_rest') as mock_rest_def, \
                  patch.object(engine, 'get_gemini_api_key', return_value='fake-key'):
@@ -243,6 +245,7 @@ class RankingPolicyTests(unittest.TestCase):
 
             with patch.object(engine, 'OUTPUT_EVO_MD', ranking_md_research), \
                  patch.object(engine, 'RESEARCH_CARDS_FILE', cards_json), \
+                 patch.object(engine, 'RANKING_HISTORY_DIR', tmp_path / 'ranking_history'), \
                  patch.object(engine, 'call_gemini_search', return_value=(fake_cards_response, 'gemini-3.8-flash')) as mock_search_res, \
                  patch.object(engine, 'call_gemini_rest', return_value=('覆盤內容', 'gemini-3.8-flash')) as mock_rest_res, \
                  patch.object(engine, 'get_gemini_api_key', return_value='fake-key'):
