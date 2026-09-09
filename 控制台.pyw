@@ -1,5 +1,6 @@
 """統一控制台：低負載的系統匣服務管理器。"""
 import ctypes
+import os
 import socket
 import subprocess
 import sys
@@ -15,9 +16,13 @@ from PIL import Image, ImageDraw
 
 BASE_DIR = Path(__file__).resolve().parent
 MACRO_DIR = BASE_DIR / "指標數據"
-PYTHONW = Path(sys.executable).with_name("pythonw.exe")
-if not PYTHONW.exists():
-    PYTHONW = Path(sys.executable)
+# pythonw.exe 只存在於 Windows。macOS 以目前的 Python 解譯器啟動子程序，
+# 避免將 Windows 專用路徑帶到另一個平台。
+PYTHONW = Path(sys.executable)
+if os.name == "nt":
+    windows_pythonw = PYTHONW.with_name("pythonw.exe")
+    if windows_pythonw.exists():
+        PYTHONW = windows_pythonw
 
 SERVERS = {
     "stock": {
@@ -126,12 +131,19 @@ def make_icon_image() -> Image.Image:
 
 def main() -> None:
     # Windows 命名 mutex：從啟動資料夾、桌面捷徑或手動雙擊開啟，都只保留一個控制器。
+    # macOS 沒有 ctypes.windll；服務本身以連接埠去重即可。
     global instance_mutex
-    instance_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\Stock2UnifiedController")
-    if not instance_mutex or ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
-        return
+    if os.name == "nt":
+        instance_mutex = ctypes.windll.kernel32.CreateMutexW(
+            None, False, "Local\\Stock2UnifiedController"
+        )
+        if not instance_mutex or ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
+            return
     try:
         ensure_servers()
+        # Windows 的舊啟動批次檔會另外開瀏覽器；macOS 的 .command 不會，
+        # 因此統一由控制台在服務就緒後開啟分析頁面。
+        show_stock()
         menu = pystray.Menu(
             pystray.MenuItem("開啟個股分析中心", show_stock, default=True),
             pystray.MenuItem("啟動所有服務", start_all),
@@ -145,7 +157,7 @@ def main() -> None:
         # 右鍵退出以外的結束路徑也不能留下服務或 mutex。
         stop_servers()
         wait_for_servers_to_stop()
-        if instance_mutex:
+        if os.name == "nt" and instance_mutex:
             ctypes.windll.kernel32.CloseHandle(instance_mutex)
 
 

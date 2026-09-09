@@ -36,6 +36,14 @@
 !breakout_watchlist_gemini.md
 !控制台.pyw
 !啟動控制台.bat
+!launch_stock2.py
+!啟動Stock2.command
+!安裝相依套件.command
+!安裝相依套件.bat
+!deploy_mobile.py
+!發布手機版.command
+!requirements.txt
+!README.md
 !設定開機啟動.bat
 !設定開機啟動.ps1
 !同步所有專案.bat

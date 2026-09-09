@@ -1206,7 +1206,7 @@ def update_evolution_ranking_md_research_cards(cards: list[dict]):
     new_content = top_part.rstrip() + "\n\n" + "\n".join(lines).strip() + "\n"
     md_file.write_text(new_content, encoding="utf-8")
 
-DEPLOY_MOBILE_BAT = ROOT_DIR / "發布手機版.bat"
+DEPLOY_MOBILE_SCRIPT = ROOT_DIR / "deploy_mobile.py"
 DEPLOY_MOBILE_LOCK = threading.Lock()
 
 
@@ -1224,19 +1224,13 @@ deploy_mobile_job = _new_deploy_mobile_job()
 
 def _run_deploy_mobile():
     global deploy_mobile_job
-    node_paths = [
-        r"C:\Users\User\AppData\Local\OpenAI\Codex\runtimes\cua_node\415ffebf3d576e9b\bin",
-        r"C:\Users\User\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin"
-    ]
-    augmented_path = ";".join(node_paths) + ";" + os.environ.get("PATH", "")
     child_env = {
         **os.environ,
         "PYTHONIOENCODING": "utf-8",
-        "PATH": augmented_path
     }
     try:
         proc = subprocess.Popen(
-            ["cmd.exe", "/c", str(DEPLOY_MOBILE_BAT), "--no-pause"],
+            [sys.executable, str(DEPLOY_MOBILE_SCRIPT)],
             cwd=ROOT_DIR,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -1248,7 +1242,7 @@ def _run_deploy_mobile():
         )
     except OSError as e:
         with DEPLOY_MOBILE_LOCK:
-            deploy_mobile_job["lines"].append(f"❌ 無法啟動 發布手機版.bat: {e}")
+            deploy_mobile_job["lines"].append(f"❌ 無法啟動 deploy_mobile.py: {e}")
             deploy_mobile_job["done"] = True
             deploy_mobile_job["running"] = False
         return

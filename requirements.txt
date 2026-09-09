@@ -1,0 +1,10 @@
+# Windows 與 macOS 共用；需要 Python 3.10 以上。
+requests>=2.31
+urllib3>=1.26
+numpy>=1.24
+pandas>=2.0
+yfinance>=0.2
+matplotlib>=3.7
+mplfinance>=0.12
+Pillow>=10.0
+pystray>=0.19
