@@ -5452,9 +5452,10 @@
   }
 
   window.winrateMapByCode = {};
-  let winrateRankingSource = 'evolution'; // 'evolution' | 'gemini' | 'chatgpt'
+  let winrateRankingSource = 'chatgpt'; // 'gemini' | 'chatgpt'
   let winrateActiveTrack = 'momentum';
-  const STOCK_NAMES_MAP = {"1101": "台泥", "1102": "亞泥", "1216": "統一", "1301": "台塑", "1303": "南亞", "1326": "台化", "1504": "東元", "1513": "中興電", "1514": "亞力", "1519": "華城", "1528": "恩德", "1590": "亞德客-KY", "1815": "富喬", "2029": "盛餘", "2049": "上銀", "2059": "川湖", "2301": "光寶科", "2303": "聯電", "2308": "台達電", "2317": "鴻海", "2324": "仁寶", "2327": "國巨", "2330": "台積電", "2344": "華邦電", "2345": "智邦", "2356": "英業達", "2357": "華碩", "2368": "金像電", "2376": "技嘉", "2377": "微星", "2379": "瑞昱", "2382": "廣達", "2383": "台光電", "2395": "研華", "2408": "南亞科", "2412": "中華電", "2426": "鼎元", "2454": "聯發科", "2455": "全新", "2467": "志聖", "2478": "大毅", "2481": "強茂", "2486": "一詮", "2492": "華新科", "2603": "長榮", "2609": "陽明", "2615": "萬海", "2727": "王品", "2881": "富邦金", "2882": "國泰金", "2891": "中信金", "3006": "晶豪科", "3008": "大立光", "3017": "奇鋐", "3022": "威強電", "3026": "禾伸堂", "3034": "聯詠", "3035": "智原", "3037": "欣興", "3044": "健鼎", "3055": "蔚華科", "3081": "聯亞", "3105": "穩懋", "3163": "波若威", "3189": "景碩", "3231": "緯創", "3234": "光環", "3264": "欣銓", "3324": "雙鴻", "3362": "先進光", "3363": "上詮", "3374": "精材", "3406": "玉晶光", "3441": "聯一光", "3443": "創意", "3450": "聯鈞", "3491": "昇達科", "3529": "力旺", "3532": "台勝科", "3624": "光頡", "3653": "健策", "3661": "世芯-KY", "3665": "貿聯-KY", "3693": "營邦", "3711": "日月光投控", "4760": "勤凱", "4919": "新唐", "4931": "新盛力", "4938": "和碩", "4958": "臻鼎-KY", "4966": "譜瑞-KY", "4977": "眾達-KY", "5269": "祥碩", "5274": "信驊", "5284": "jpp-KY", "5289": "宜鼎", "5309": "系統電", "5328": "華容", "5347": "世界", "5386": "青雲", "5425": "台半", "5483": "中美晶", "5536": "聖暉", "6125": "廣運", "6147": "頎邦", "6155": "鈞寶", "6173": "信昌電", "6182": "合晶", "6187": "萬潤", "6207": "雷科", "6213": "聯茂", "6214": "精誠", "6217": "中探針", "6223": "旺矽", "6226": "光鼎", "6239": "力成", "6265": "方土昶", "6274": "台燿", "6446": "藥華藥", "6449": "鈺邦", "6488": "環球晶", "6515": "穎崴", "6531": "愛普", "6584": "南俊國際", "6669": "緯穎", "6683": "雍智科技", "6781": "AES-KY", "6805": "富世達", "7769": "鴻勁", "8021": "尖點", "8039": "台虹", "8046": "南電", "8069": "元太", "8150": "南茂", "8227": "巨有科技", "8261": "富鼎", "8299": "群聯", "8358": "金居", "8996": "高力"};
+  const STOCK_NAMES_MAP = {"1101": "台泥", "1102": "亞泥", "1216": "統一", "1301": "台塑", "1303": "南亞", "1326": "台化", "1504": "東元", "1513": "中興電", "1514": "亞力", "1519": "華城", "1528": "恩德", "1590": "亞德客-KY", "1815": "富喬", "2029": "盛餘", "2049": "上銀", "2059": "川湖", "2301": "光寶科", "2303": "聯電", "2308": "台達電", "2317": "鴻海", "2324": "仁寶", "2327": "國巨", "2330": "台積電", "2344": "華邦電", "2345": "智邦", "2356": "英業達", "2357": "華碩", "2368": "金像電", "2376": "技嘉", "2377": "微星", "2379": "瑞昱", "2382": "廣達", "2383": "台光電", "2395": "研華", "2408": "南亞科", "2412": "中華電", "2426": "鼎元", "2454": "聯發科", "2455": "全新", "2467": "志聖", "2478": "大毅", "2481": "強茂", "2486": "一詮", "2492": "華新科", "2603": "長榮", "2609": "陽明", "2615": "萬海", "2727": "王品", "2881": "富邦金", "2882": "國泰金", "2891": "中信金", "3006": "晶豪科", "3008": "大立光", "3017": "奇鋐", "3022": "威強電", "3026": "禾伸堂", "3034": "聯詠", "3035": "智原", "3037": "欣興", "3044": "健鼎", "3055": "蔚華科", "3081": "聯亞", "3105": "穩懋", "3163": "波若威", "3189": "景碩", "3231": "緯創", "3234": "光環", "3264": "欣銓", "3324": "雙鴻", "3362": "先進光", "3363": "上詮", "3374": "精材", "3406": "玉晶光", "3441": "聯一光", "3443": "創意", "3450": "聯鈞", "3491": "昇達科", "3529": "力旺", "3532": "台勝科", "3605": "宏致", "3624": "光頡", "3653": "健策", "3661": "世芯-KY", "3665": "貿聯-KY", "3693": "營邦", "3711": "日月光投控", "4760": "勤凱", "4919": "新唐", "4931": "新盛力", "4938": "和碩", "4958": "臻鼎-KY", "4966": "譜瑞-KY", "4977": "眾達-KY", "5269": "祥碩", "5274": "信驊", "5284": "jpp-KY", "5289": "宜鼎", "5309": "系統電", "5328": "華容", "5347": "世界", "5386": "青雲", "5425": "台半", "5483": "中美晶", "5536": "聖暉", "6125": "廣運", "6147": "頎邦", "6155": "鈞寶", "6173": "信昌電", "6182": "合晶", "6187": "萬潤", "6207": "雷科", "6213": "聯茂", "6214": "精誠", "6217": "中探針", "6223": "旺矽", "6226": "光鼎", "6239": "力成", "6265": "方土昶", "6274": "台燿", "6446": "藥華藥", "6449": "鈺邦", "6488": "環球晶", "6515": "穎崴", "6531": "愛普", "6584": "南俊國際", "6669": "緯穎", "6683": "雍智科技", "6781": "AES-KY", "6805": "富世達", "7769": "鴻勁", "8021": "尖點", "8039": "台虹", "8046": "南電", "8069": "元太", "8150": "南茂", "8227": "巨有科技", "8261": "富鼎", "8299": "群聯", "8358": "金居", "8996": "高力"};
+  Object.assign(STOCK_NAMES_MAP, {"2464": "盟立", "3376": "新日興", "3605": "宏致"});
  // 'momentum' | 'defensive'
   let winrateParsedData = { evolution: null, gemini: null, chatgpt: null };
   let winrateFilterDecision = 'all';
@@ -6062,9 +6063,105 @@
     return { title, scanDate, momentumItems, defensiveItems, source };
   }
 
+  let rssDisplayRange = 'today';
+  let rssCurrentCodes = [];
+  let rssCurrentManualCode = '';
+
+  function renderRssNews(items, contextText){
+    const target = document.getElementById('ranking-rss-results');
+    if (!target) return;
+    if (!items.length) {
+      target.innerHTML = '<div style="padding:14px;color:var(--text-dim);">目前沒有可顯示的 RSS 訊息。</div>';
+      return;
+    }
+    const grouped = new Map();
+    items.forEach(item => {
+      const key = `${item.code}|${item.name || ''}`;
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(item);
+    });
+    target.innerHTML = `<div style="font-size:13px;color:var(--text-dim);margin:2px 0 9px;">${escapeHtml(contextText)}・僅供資訊查閱，不影響排行榜與評分</div>${[...grouped.entries()].map(([key, entries]) => {
+      const [code, name] = key.split('|');
+      return `<section style="border-top:1px solid var(--border);padding:10px 0;"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:850;margin-bottom:7px;"><span style="display:inline-flex;align-items:center;gap:8px;padding:4px 9px;border:2px solid #60a5fa;border-radius:7px;background:rgba(59,130,246,.12);color:#fff;line-height:1.2;"><span class="stock-code ${getStockMarketClass(code)}">${escapeHtml(code)}</span><button type="button" class="rss-stock-name-btn" data-code="${escapeHtml(code)}" title="開啟 ${escapeHtml(name || STOCK_NAMES_MAP[code] || '')} 專業看盤" style="border:0;border-left:1px solid rgba(147,197,253,.7);padding-left:8px;background:transparent;color:#fff;font:inherit;font-weight:850;cursor:pointer;">${escapeHtml(name || STOCK_NAMES_MAP[code] || '')}</button></span><button type="button" class="btn rss-summary-btn" data-code="${escapeHtml(code)}" style="padding:3px 8px;font-size:12px;white-space:nowrap;">✨ Gemini 統整</button></div><div id="rss-summary-${escapeHtml(code)}"></div>${entries.map(item => `<a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer" style="display:block;color:var(--text);text-decoration:none;padding:5px 0;line-height:1.45;"><span style="display:inline-block;font-size:12px;padding:1px 6px;border-radius:10px;background:rgba(59,130,246,.16);color:#93c5fd;margin-right:6px;">${escapeHtml(item.label)}</span>${escapeHtml(item.title)}<div style="font-size:12px;color:var(--text-dim);margin:3px 0 0 4px;">${escapeHtml(item.source)}　${escapeHtml(item.published)}</div></a>`).join('')}</section>`;
+    }).join('')}`;
+    target.querySelectorAll('.rss-summary-btn').forEach(button => button.addEventListener('click', () => loadRssSummary(button.dataset.code)));
+    target.querySelectorAll('.rss-stock-name-btn').forEach(button => button.addEventListener('click', () => openPatternForStock(button.dataset.code)));
+  }
+
+  async function loadRssSummary(code){
+    const target = document.getElementById(`rss-summary-${code}`);
+    if (!target) return;
+    target.innerHTML = '<div style="padding:6px 0;color:var(--text-dim);">⏳ Gemini 正在統整 RSS…</div>';
+    try {
+      const response = await fetch('/api/rss-summary', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({code, range:rssDisplayRange})});
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || '統整失敗');
+      const summary = data.summary || {};
+      const list = values => values?.length ? `<ul style="margin:5px 0 0;padding-left:20px;">${values.map(value => `<li>${escapeHtml(value)}</li>`).join('')}</ul>` : '';
+      target.innerHTML = `<div style="margin:7px 0;padding:8px 10px;border-left:3px solid #8b5cf6;background:rgba(139,92,246,.1);font-size:13px;line-height:1.5;"><b style="color:#c4b5fd;">Gemini RSS 統整</b><div>${escapeHtml(summary.summary || '未能產生摘要。')}</div>${summary.facts?.length ? `<b>可確認事實</b>${list(summary.facts)}` : ''}${summary.watch_items?.length ? `<b>待確認</b>${list(summary.watch_items)}` : ''}<div style="color:var(--text-dim);margin-top:4px;">引用 RSS：${(summary.source_indices || []).map(index => `#${index}`).join('、') || '未標示'}；不影響評分。</div></div>`;
+    } catch (error) {
+      target.innerHTML = `<div style="padding:6px 0;color:#fca5a5;">Gemini 統整失敗：${escapeHtml(error.message)}</div>`;
+    }
+  }
+
+  async function loadRankingRss(codes, manualCode = ''){
+    const target = document.getElementById('ranking-rss-results');
+    if (!target) return;
+    target.innerHTML = '<div style="padding:14px;color:var(--text-dim);">⏳ 正在載入 RSS 訊息…</div>';
+    if (codes.length || manualCode) {
+      rssCurrentCodes = codes;
+      rssCurrentManualCode = manualCode;
+    }
+    const params = new URLSearchParams();
+    if (manualCode) params.set('code', manualCode);
+    else params.set('codes', codes.join(','));
+    params.set('range', rssDisplayRange);
+    try {
+      const response = await fetch(`/api/rss-news?${params}`, {cache:'no-store'});
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || 'RSS 載入失敗');
+      renderRssNews(data.items || [], `${manualCode ? `${manualCode} 個股查詢` : `排行榜前 ${codes.length} 檔不重複個股`}・${rssDisplayRange === 'today' ? '今天' : '近三天'}`);
+    } catch (error) {
+      target.innerHTML = `<div style="padding:14px;color:#fca5a5;">RSS 載入失敗：${escapeHtml(error.message)}</div>`;
+    }
+  }
+
   function renderWinrateRankingUI(){
     const container = document.getElementById('ranking-content');
     if (!container) return;
+    const columns = [
+      ['Gemini 暴漲動能 TOP 10', '#f87171', winrateParsedData.gemini?.momentumItems || []],
+      ['Gemini 穩健防守 TOP 10', '#4ade80', winrateParsedData.gemini?.defensiveItems || []],
+      ['ChatGPT 攻擊型 TOP 10', '#f97316', winrateParsedData.chatgpt?.momentumItems || []],
+      ['ChatGPT 穩健型 TOP 10', '#38bdf8', winrateParsedData.chatgpt?.defensiveItems || []],
+    ];
+    const rssCodes = [...new Set(columns.flatMap(([, , items]) => items.slice(0, 10).map(item => item.code)))].slice(0, 20);
+    const snapshotDate = winrateParsedData.chatgpt?.scanDate || winrateParsedData.gemini?.scanDate || '最新';
+    const renderSnapshot = ([title, color, items]) => `
+      <section class="mini-overview-col" style="flex:1;min-width:200px;background:rgba(0,0,0,.4);border:2px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px;">
+        <div style="text-align:center;border-bottom:1.5px solid rgba(255,255,255,.12);padding-bottom:6px;margin-bottom:6px;color:${color};font-weight:900;font-size:16.5px;white-space:nowrap;">${title}</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          ${items.length ? items.slice(0, 10).map((item, index) => `<button type="button" class="mini-overview-row" data-stock-code="${escapeHtml(item.code)}" title="開啟 ${escapeHtml(item.name)} (${escapeHtml(item.code)}) 專業看盤" style="display:flex;width:100%;border:0;align-items:center;justify-content:space-between;padding:3px 7px;border-radius:6px;background:rgba(255,255,255,.035);color:var(--text);font-size:15px;min-height:28px;box-sizing:border-box;cursor:pointer;text-align:left;"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><b style="color:var(--text-dim);display:inline-block;width:24px;text-align:right;margin-right:7px;">${index + 1}</b><span class="stock-code ${getStockMarketClass(item.code)}" style="font-family:monospace;font-weight:850;">${escapeHtml(item.code)}</span>　<b>${escapeHtml(item.name)}</b></span><b style="color:${color};white-space:nowrap;margin-left:8px;">${escapeHtml(item.price || item.score || '')}</b></button>`).join('') : '<div style="color:var(--text-dim);padding:10px;text-align:center;">無資料</div>'}
+        </div>
+      </section>`;
+    container.innerHTML = `<div class="ranking-card"><div class="ranking-overview-panel" style="background:#11161f;border:1.5px solid rgba(125,180,255,.3);border-radius:12px;padding:12px 14px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;"><div class="ranking-overview-title" style="font-size:17px;font-weight:900;color:#fff;"><span style="font-size:20px;">🏆</span> 四大榜單快照</div><div class="ranking-overview-date" style="font-size:14px;color:var(--text-dim);">資料截止日：<strong style="color:#93c5fd;font-size:15px;">${escapeHtml(snapshotDate)}</strong></div></div><div style="display:flex;gap:10px;flex-wrap:wrap;">${columns.map(renderSnapshot).join('')}</div></div><section class="ranking-overview-panel" style="margin-top:14px;background:#11161f;border:1.5px solid rgba(125,180,255,.3);border-radius:12px;padding:12px 14px;"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><div style="font-size:17px;font-weight:900;color:#fff;">📰 RSS 個股動態</div><div style="display:flex;gap:6px;"><select id="ranking-rss-range" aria-label="RSS 時間範圍" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg);color:var(--text);"><option value="today">今天</option><option value="3d">近三天</option></select><form id="ranking-rss-form" style="display:flex;gap:6px;"><input id="ranking-rss-code" inputmode="numeric" maxlength="6" pattern="[0-9]{4,6}" placeholder="輸入股號查詢" aria-label="輸入股號查詢 RSS" style="width:130px;padding:6px 9px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg);color:var(--text);"><button type="submit" class="btn" style="padding:5px 10px;">查詢</button></form></div></div><div id="ranking-rss-results"></div></section></div>`;
+    document.getElementById('ranking-rss-range').value = rssDisplayRange;
+    document.getElementById('ranking-rss-range')?.addEventListener('change', event => {
+      rssDisplayRange = event.target.value;
+      loadRankingRss(rssCurrentCodes, rssCurrentManualCode);
+    });
+    document.getElementById('ranking-rss-form')?.addEventListener('submit', event => {
+      event.preventDefault();
+      const code = document.getElementById('ranking-rss-code')?.value.trim() || '';
+      if (!/^\d{4,6}$/.test(code)) {
+        document.getElementById('ranking-rss-results').innerHTML = '<div style="padding:14px;color:#fca5a5;">請輸入 4 至 6 碼股票代號。</div>';
+        return;
+      }
+      loadRankingRss([], code);
+    });
+    container.querySelectorAll('.mini-overview-row[data-stock-code]').forEach(row => row.addEventListener('click', () => openPatternForStock(row.dataset.stockCode)));
+    loadRankingRss(rssCodes);
+    return;
     const currentData = winrateParsedData[winrateRankingSource];
     if (!currentData) {
       loadWinrateRankingReport();

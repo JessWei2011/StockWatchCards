@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 import reports_manager_server as server
 
 
+@unittest.skip("AI 選股與研究卡功能已移除")
 class TestReportsManagerServerFinalHandoff(unittest.TestCase):
     def setUp(self):
         # 確保環境不含 GEMINI_API_KEY
@@ -268,18 +269,59 @@ class TestReportsManagerServerFinalHandoff(unittest.TestCase):
         # 2. 包含 Toast 函式
         self.assertIn("function showToast(", html_text)
 
-        # 3. 包含三大標題
-        self.assertIn("1. 複製 AI Prompt", html_text)
-        self.assertIn("2. 貼上 AI 回覆", html_text)
-        self.assertIn("3. 執行狀態", html_text)
-        self.assertIn("驗證並更新研究卡", html_text)
 
-        # 4. 沒有殘留多階段或舊字串
-        self.assertNotIn("第 1/2 階段", html_text)
-        self.assertNotIn("第 1／2 階段", html_text)
-        self.assertNotIn("繼續評分", html_text)
-        self.assertNotIn("API 配額不足", html_text)
-        self.assertNotIn("等待模型重試", html_text)
+class TestAiStockPickingRemoval(unittest.TestCase):
+    def _make_handler(self, path):
+        handler = server.Handler.__new__(server.Handler)
+        handler.path = path
+        handler._read_json_body = MagicMock(return_value={})
+        handler._json = MagicMock()
+        return handler
+
+    def test_ai_stock_picking_endpoints_are_disabled(self):
+        for path in ("/api/batch-scanner-evolution", "/api/ai-research/start", "/api/ai-research/submit"):
+            handler = self._make_handler(path)
+            handler.do_POST()
+            self.assertEqual(handler._json.call_args[0][0], 410)
+            self.assertEqual(handler._json.call_args[0][1]["error"], "AI 選股功能已移除")
+
+    def test_ranking_page_has_read_only_four_board_snapshot(self):
+        html_text = (server.ROOT_DIR / "reports_manager.html").read_text(encoding="utf-8")
+        self.assertIn("四大榜單快照", html_text)
+        start = html_text.index("function renderWinrateRankingUI")
+        renderer = html_text[start:html_text.index("    return;", start)]
+        self.assertNotIn("AI 獨有勝率", renderer)
+        self.assertNotIn("onclick=", renderer)
+
+    @patch.object(server.requests, "get")
+    def test_rss_news_parses_stock_items_without_scoring(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.content = b'''<?xml version="1.0"?><rss><channel><item><title>2330 test announcement</title><link>https://example.com/news</link><pubDate>Wed, 10 Sep 2026 10:00:00 GMT</pubDate><source>Example News</source></item></channel></rss>'''
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+        server.RSS_CACHE.clear()
+
+        items = server.fetch_rss_news(["2330"])
+
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["code"], "2330")
+        self.assertEqual(items[0]["source"], "Example News")
+        self.assertIn("label", items[0])
+
+    @patch.object(server, "get_gemini_api_key", return_value="test-key")
+    @patch.object(server.requests, "post")
+    def test_gemini_rss_summary_is_structured_and_not_a_score(self, mock_post, _mock_key):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"candidates": [{"content": {"parts": [{"text": '{"summary":"公司發布營收資訊","facts":["來源提及營收"],"watch_items":["待確認細節"],"source_indices":[1]}'}]}}]}
+        mock_post.return_value = mock_response
+        server.RSS_SUMMARY_CACHE.clear()
+
+        summary = server.summarize_rss_with_gemini("2330", [{"title": "營收公告", "source": "Example", "published": "today"}])
+
+        self.assertEqual(summary["summary"], "公司發布營收資訊")
+        self.assertEqual(summary["source_indices"], [1])
+        self.assertNotIn("score", summary)
 
 
 if __name__ == "__main__":

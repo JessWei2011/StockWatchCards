@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo
 ROOT_DIR = Path(__file__).resolve().parent
 REPORTS_DIR = ROOT_DIR / "reports"
 WATCHLIST_FILE = ROOT_DIR / "watchlist.json"
+STOCK_NAME_DICT_FILE = ROOT_DIR / "stock_name_dict.json"
 PUBLIC_DIR = ROOT_DIR / "mobile_web" / "public"
 OUTPUT_DIR = PUBLIC_DIR / "data"
 DEFAULT_CODE = "3324"
@@ -27,6 +28,16 @@ RANKING_SOURCES = {
 }
 
 REPORT_RE = re.compile(r"^(\d+)_(.+?)\((TW|TWO)\)(.*?)\.html$", re.I)
+
+
+def load_stock_names() -> dict[str, str]:
+    try:
+        return json.loads(STOCK_NAME_DICT_FILE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+STOCK_NAMES = load_stock_names()
 
 
 def load_watchlist() -> set[str]:
@@ -59,7 +70,7 @@ def discover_latest_reports() -> dict[str, dict]:
         _canonical, _mtime, path, raw_name, market = choices[0]
         discovered[code] = {
             "path": path,
-            "name": raw_name,
+            "name": STOCK_NAMES.get(code, raw_name),
             "market": market,
             "group": path.parent.name,
         }
@@ -219,7 +230,7 @@ def parse_dual_track_ranking(text: str, source: str) -> tuple[str, dict[str, lis
         tracks[current_track].append({
             "rank": cells[0],
             "code": code,
-            "name": cells[2],
+            "name": STOCK_NAMES.get(code, cells[2]),
             "price": cells[4],
         })
 
@@ -279,7 +290,7 @@ def parse_evolution_ranking(text: str) -> tuple[str, list[dict], str]:
             evolution_items.append({
                 "rank": cells[0],
                 "code": code,
-                "name": cells[2],
+                "name": STOCK_NAMES.get(code, cells[2]),
                 "category": cells[3],
                 "price": cells[4],
                 "changePct": cells[5],

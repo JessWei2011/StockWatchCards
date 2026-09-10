@@ -22,6 +22,9 @@ import sys
 import threading
 import time
 import datetime
+import email.utils
+import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from http.server import SimpleHTTPRequestHandler
 from pathlib import Path
 from socketserver import ThreadingTCPServer
@@ -44,6 +47,162 @@ MACRO_STATUS_FILE = MACRO_DIR / "macro_update_status.json"
 MACRO_UPDATE_SCRIPT = MACRO_DIR / "update_macro_data.py"
 PORT = 8935
 AUDIT_BLOCKS = ('monthly_revenue', 'earnings', 'catalyst', 'analyst_target', 'disposition')
+RSS_CACHE_SECONDS = 600
+RSS_MAX_CODES = 20
+RSS_CACHE = {}
+RSS_CACHE_LOCK = threading.RLock()
+RSS_SUMMARY_CACHE_SECONDS = 21600
+RSS_SUMMARY_CACHE = {}
+RSS_SUMMARY_LOCK = threading.RLock()
+GEMINI_RSS_MODELS = ('gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.5-flash-lite')
+
+
+def _rss_event_label(title: str) -> str:
+    text = title.lower()
+    rules = (
+        ('重大訊息', ('重大訊息', '重訊', '公告')),
+        ('營收／財報', ('營收', '財報', 'eps', '獲利', '虧損')),
+        ('法說／展望', ('法說', '展望', '接單', '訂單', '擴產')),
+        ('風險事件', ('處置', '注意股', '訴訟', '停工', '下修', '違約', '虧損')),
+    )
+    return next((label for label, keywords in rules if any(word in text for word in keywords)), '新聞動態')
+
+
+def _rss_stock_name(code: str) -> str:
+    try:
+        names = json.loads((ROOT_DIR / 'stock_name_dict.json').read_text(encoding='utf-8'))
+        return str(names.get(code, ''))
+    except (OSError, json.JSONDecodeError):
+        return ''
+
+
+def _fetch_stock_rss(code: str) -> list[dict]:
+    now = time.time()
+    with RSS_CACHE_LOCK:
+        cached = RSS_CACHE.get(code)
+        if cached and now - cached['timestamp'] < RSS_CACHE_SECONDS:
+            return cached['items']
+
+    name = _rss_stock_name(code)
+    query = f'{name} 股票 when:3d' if name else f'{code} 台股 when:3d'
+    cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=72)
+    try:
+        response = requests.get(
+            'https://news.google.com/rss/search',
+            params={'q': query, 'hl': 'zh-TW', 'gl': 'TW', 'ceid': 'TW:zh-Hant'},
+            headers={'User-Agent': 'StockAnalysisRSS/1.0'}, timeout=8,
+        )
+        response.raise_for_status()
+        channel = ET.fromstring(response.content).find('channel')
+        entries = []
+        for item in (channel.findall('item') if channel is not None else [])[:3]:
+            title = (item.findtext('title') or '').strip()
+            link = (item.findtext('link') or '').strip()
+            source_node = item.find('source')
+            source = (source_node.text or '').strip() if source_node is not None else 'Google News RSS'
+            published = (item.findtext('pubDate') or '').strip()
+            try:
+                published_at = email.utils.parsedate_to_datetime(published)
+                if published_at.tzinfo is None:
+                    published_at = published_at.replace(tzinfo=datetime.timezone.utc)
+            except (TypeError, ValueError, IndexError):
+                continue
+            if title and link and published_at >= cutoff:
+                entries.append({'code': code, 'name': name, 'title': title, 'link': link,
+                                'source': source or 'Google News RSS', 'published': published,
+                                'label': _rss_event_label(title)})
+    except (requests.RequestException, ET.ParseError):
+        entries = []
+    with RSS_CACHE_LOCK:
+        RSS_CACHE[code] = {'timestamp': now, 'items': entries}
+    return entries
+
+
+def filter_rss_items(items: list[dict], range_key: str) -> list[dict]:
+    if range_key == '3d':
+        return items
+    taipei_today = (datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).date())
+    filtered = []
+    for item in items:
+        try:
+            published_at = email.utils.parsedate_to_datetime(item['published'])
+            if published_at.tzinfo is None:
+                published_at = published_at.replace(tzinfo=datetime.timezone.utc)
+            if published_at.astimezone(datetime.timezone(datetime.timedelta(hours=8))).date() == taipei_today:
+                filtered.append(item)
+        except (TypeError, ValueError, IndexError, KeyError):
+            continue
+    return filtered
+
+
+def fetch_rss_news(codes: list[str], range_key: str = 'today') -> list[dict]:
+    unique_codes = list(dict.fromkeys(code for code in codes if re.fullmatch(r'\d{4,6}', code)))[:RSS_MAX_CODES]
+    items = []
+    with ThreadPoolExecutor(max_workers=min(5, len(unique_codes) or 1)) as executor:
+        futures = [executor.submit(_fetch_stock_rss, code) for code in unique_codes]
+        for future in as_completed(futures):
+            items.extend(filter_rss_items(future.result(), range_key))
+    return items
+
+
+def get_gemini_api_key() -> str | None:
+    api_key = os.environ.get('GEMINI_API_KEY', '').strip()
+    if api_key:
+        return api_key
+    env_file = ROOT_DIR / '.env'
+    if not env_file.exists():
+        return None
+    for line in env_file.read_text(encoding='utf-8-sig', errors='ignore').splitlines():
+        if line.strip().startswith('GEMINI_API_KEY='):
+            value = line.split('=', 1)[1].strip().strip('"\'')
+            return value or None
+    return None
+
+
+def summarize_rss_with_gemini(code: str, items: list[dict]) -> dict:
+    if not items:
+        return {'summary': '目前沒有可統整的 RSS 訊息。', 'facts': [], 'watch_items': [], 'source_indices': []}
+    fingerprint = '|'.join(item['title'] for item in items)
+    cache_key = f'{code}:{fingerprint}'
+    now = time.time()
+    with RSS_SUMMARY_LOCK:
+        cached = RSS_SUMMARY_CACHE.get(cache_key)
+        if cached and now - cached['timestamp'] < RSS_SUMMARY_CACHE_SECONDS:
+            return cached['summary']
+    api_key = get_gemini_api_key()
+    if not api_key:
+        raise RuntimeError('未設定 GEMINI_API_KEY')
+    sources = '\n'.join(f'[{index}] {item["title"]}｜{item["source"]}｜{item["published"]}' for index, item in enumerate(items, 1))
+    prompt = f'''你是台股資訊整理員。僅能根據下列 RSS 標題與來源整理 {code} 的資訊。
+嚴禁給出買進、賣出、目標價、漲跌預測、評分或投資建議；不得補充來源未明示的事實。
+請只輸出 JSON：{{"summary":"不超過90字的中性摘要","facts":["最多3項可由來源支持的事實"],"watch_items":["最多2項待確認事項，沒有則空陣列"],"source_indices":[引用來源編號]}}。
+RSS 來源：
+{sources}'''
+    last_error = 'Gemini 暫時無法回應'
+    for model in GEMINI_RSS_MODELS:
+        try:
+            response = requests.post(
+                f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}',
+                json={'contents': [{'parts': [{'text': prompt}]}], 'generationConfig': {'responseMimeType': 'application/json'}},
+                timeout=25,
+            )
+            if response.status_code != 200:
+                last_error = f'Gemini HTTP {response.status_code}'
+                continue
+            text = response.json()['candidates'][0]['content']['parts'][0]['text']
+            result = json.loads(text)
+            summary = {
+                'summary': str(result.get('summary', '')).strip(),
+                'facts': [str(value).strip() for value in result.get('facts', [])][:3],
+                'watch_items': [str(value).strip() for value in result.get('watch_items', [])][:2],
+                'source_indices': [int(value) for value in result.get('source_indices', []) if str(value).isdigit() and 1 <= int(value) <= len(items)],
+            }
+            with RSS_SUMMARY_LOCK:
+                RSS_SUMMARY_CACHE[cache_key] = {'timestamp': now, 'summary': summary}
+            return summary
+        except (requests.RequestException, KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as error:
+            last_error = f'Gemini 統整失敗：{error}'
+    raise RuntimeError(last_error)
 
 REPORTS_DIR.mkdir(exist_ok=True)
 
@@ -1693,6 +1852,18 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path == "/api/rss-news":
+            qs = parse_qs(parsed.query)
+            codes = re.findall(r'\d{4,6}', ','.join(qs.get('code', []) + qs.get('codes', [])))
+            range_key = (qs.get('range') or ['today'])[0]
+            if not codes:
+                self._json(400, {"ok": False, "error": "請輸入 4 至 6 碼股票代號"})
+                return
+            if range_key not in ('today', '3d'):
+                self._json(400, {"ok": False, "error": "不支援的 RSS 時間範圍"})
+                return
+            self._json(200, {"ok": True, "items": fetch_rss_news(codes, range_key), "max_codes": RSS_MAX_CODES, "range": range_key})
+            return
         if parsed.path == "/api/macro/data":
             try:
                 self._json(200, {"ok": True, "entries": read_macro_data()})
@@ -1920,6 +2091,21 @@ class Handler(SimpleHTTPRequestHandler):
     def do_POST(self):
         parsed = urlparse(self.path)
 
+        if parsed.path == "/api/rss-summary":
+            try:
+                body = self._read_json_body()
+                code = str(body.get('code') or '').strip()
+                range_key = str(body.get('range') or 'today')
+                if not re.fullmatch(r'\d{4,6}', code):
+                    raise ValueError('請輸入 4 至 6 碼股票代號')
+                if range_key not in ('today', '3d'):
+                    raise ValueError('不支援的 RSS 時間範圍')
+                items = filter_rss_items(_fetch_stock_rss(code), range_key)
+                self._json(200, {"ok": True, "code": code, "summary": summarize_rss_with_gemini(code, items)})
+            except (ValueError, RuntimeError) as error:
+                self._json(400, {"ok": False, "error": str(error)})
+            return
+
         if parsed.path == "/api/shutdown":
             self._json(200, {"ok": True})
             _shutdown_application()
@@ -1996,6 +2182,8 @@ class Handler(SimpleHTTPRequestHandler):
             return
 
         if parsed.path == "/api/batch-scanner-evolution":
+            self._json(410, {"ok": False, "error": "AI 選股功能已移除"})
+            return
             global evolution_engine_job
             try:
                 body = self._read_json_body()
@@ -2028,6 +2216,8 @@ class Handler(SimpleHTTPRequestHandler):
             return
 
         if parsed.path == "/api/ai-research/start":
+            self._json(410, {"ok": False, "error": "AI 選股功能已移除"})
+            return
             with AI_RESEARCH_LOCK:
                 as_of_date, candidates = load_evolution_candidates()
                 if not candidates:
@@ -2062,6 +2252,8 @@ class Handler(SimpleHTTPRequestHandler):
             return
 
         if parsed.path == "/api/ai-research/submit":
+            self._json(410, {"ok": False, "error": "AI 選股功能已移除"})
+            return
             try:
                 body = self._read_json_body()
                 prompt_id = str(body.get("prompt_id") or "").strip()
