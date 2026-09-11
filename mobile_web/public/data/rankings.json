@@ -98,6 +98,96 @@
           "targetPrice": "",
           "feature": "觀察候選（尚待突破觸發）・突破觸發價643.00元 ； 📈短中均線多頭(+15分) ； 法人回補(4/5日,+6分)",
           "isEvolution": true
+        },
+        {
+          "rank": "1",
+          "code": "3545",
+          "name": "敦泰",
+          "category": "IC設計",
+          "price": "51.10",
+          "changePct": "+0.20%",
+          "score": "105.0",
+          "monthlyRev": "",
+          "earnings": "",
+          "catalyst": "",
+          "targetPrice": "",
+          "feature": "正式起漲候選・突破觸發價52.80元 ； 🛡️站穩上升月線(+8分) ； 💎結構內量縮(0.8x,+10分)",
+          "isEvolution": true
+        },
+        {
+          "rank": "2",
+          "code": "2344",
+          "name": "華邦電",
+          "category": "記憶體",
+          "price": "188.00",
+          "changePct": "+4.44%",
+          "score": "88.0",
+          "monthlyRev": "",
+          "earnings": "",
+          "catalyst": "",
+          "targetPrice": "",
+          "feature": "觀察候選（尚待突破觸發）・突破觸發價193.00元 ； 🛡️站穩上升月線(+8分) ； ✨MACD轉強(+10分)",
+          "isEvolution": true
+        },
+        {
+          "rank": "3",
+          "code": "2408",
+          "name": "南亞科",
+          "category": "記憶體",
+          "price": "531.00",
+          "changePct": "+2.71%",
+          "score": "88.0",
+          "monthlyRev": "",
+          "earnings": "",
+          "catalyst": "",
+          "targetPrice": "",
+          "feature": "觀察候選（尚待突破觸發）・突破觸發價569.00元 ； 🛡️站穩上升月線(+8分) ； ✨MACD轉強(+10分)",
+          "isEvolution": true
+        },
+        {
+          "rank": "4",
+          "code": "6187",
+          "name": "萬潤",
+          "category": "半導體設備",
+          "price": "1385.00",
+          "changePct": "+1.09%",
+          "score": "88.0",
+          "monthlyRev": "",
+          "earnings": "",
+          "catalyst": "",
+          "targetPrice": "",
+          "feature": "觀察候選（尚待突破觸發）・突破觸發價1455.00元 ； 🛡️站穩上升月線(+8分) ； ✨MACD轉強(+10分)",
+          "isEvolution": true
+        },
+        {
+          "rank": "5",
+          "code": "3006",
+          "name": "晶豪科",
+          "category": "記憶體",
+          "price": "298.50",
+          "changePct": "+0.51%",
+          "score": "85.0",
+          "monthlyRev": "",
+          "earnings": "",
+          "catalyst": "",
+          "targetPrice": "",
+          "feature": "觀察候選（尚待突破觸發）・突破觸發價309.50元 ； 📈短中均線多頭(+15分)",
+          "isEvolution": true
+        },
+        {
+          "rank": "6",
+          "code": "2467",
+          "name": "志聖",
+          "category": "電子零組件",
+          "price": "610.00",
+          "changePct": "-1.45%",
+          "score": "75.0",
+          "monthlyRev": "",
+          "earnings": "",
+          "catalyst": "",
+          "targetPrice": "",
+          "feature": "觀察候選（尚待突破觸發）・突破觸發價643.00元 ； 📈短中均線多頭(+15分) ； 法人回補(4/5日,+6分)",
+          "isEvolution": true
         }
       ]
     },
@@ -121,7 +211,7 @@
         {
           "rank": "3",
           "code": "3374",
-          "name": "精材 (處置)",
+          "name": "精材",
           "price": "475.00"
         },
         {
@@ -249,7 +339,7 @@
         {
           "rank": "2",
           "code": "3374",
-          "name": "精材 (處置)",
+          "name": "精材",
           "price": "475.00"
         },
         {
@@ -297,7 +387,7 @@
         {
           "rank": "10",
           "code": "3406",
-          "name": "玉晶光 (處置)",
+          "name": "玉晶光",
           "price": "1010.00"
         }
       ]
@@ -358,7 +448,7 @@
         {
           "rank": "9",
           "code": "3605",
-          "name": "ACES Electronics Co., Ltd",
+          "name": "宏致",
           "price": "124.00"
         },
         {

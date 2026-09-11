@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 {
   "version": 2,
   "stock": {
@@ -33,3 +34,41 @@
     "action": "交易方向：做多；建議評級：觀望 / 逢低佈局；策略：右側突破跟隨；目標價：76.1 元；停損：48.20 元。"
   }
 }
+=======
+{
+  "version": 2,
+  "stock": {
+    "code": "3545",
+    "name": "敦泰",
+    "group": "IC設計",
+    "market": "TW",
+    "date": "2026-09-08",
+    "isStarred": false
+  },
+  "latestAnalysis": {
+    "date": "2026-09-08",
+    "current": "51.10",
+    "decision": "觀望 / 逢低佈局",
+    "winRate": "45%",
+    "pattern": "高檔旗形箱型整理 (Flag / Consolidation)",
+    "confidence": "完全確認",
+    "entry": "50.08",
+    "stop": "48.20",
+    "resist": "62.5",
+    "target": "76.1",
+    "bullish": [
+      "K線：💡 守穩10MA (短線回測有守)",
+      "成交量：📈 較昨日增量換手",
+      "RSI：RSI(14): 53.5 多空平衡",
+      "MACD：⚪ MACD 反彈動能趨緩 (紅柱縮小整理)",
+      "KD：📈 KD 多方強勢推進",
+      "籌碼：📈 近5日法人積極集資 (3/5日買超)"
+    ],
+    "bearish": [
+      "K線：⚠️ 跌破5MA (短線動能拉回)",
+      "風控停損：48.20 元"
+    ],
+    "action": "交易方向：做多；建議評級：觀望 / 逢低佈局；策略：右側突破跟隨；目標價：76.1 元；停損：48.20 元。"
+  }
+}
+>>>>>>> Stashed changes

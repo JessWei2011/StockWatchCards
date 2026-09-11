@@ -29,6 +29,16 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
+# Reuse the legacy five-factor score only for the displayed report win rate.
+# The dual-track scores remain the ranking signals in this scanner.
+try:
+    import batch_scanner as legacy_scanner
+    # Historical report rows must not be silently amended with today's bar.
+    legacy_scanner.fetch_latest_bar = lambda _symbol: None
+    calculate_report_winrate = legacy_scanner.calculate_winrate
+except Exception:
+    calculate_report_winrate = None
+
 # 處理 Windows 主機 Unicode 輸出編碼
 if sys.platform == 'win32':
     try:
@@ -1418,7 +1428,9 @@ def save_stage4_report(r):
     fib382 = round(r['swing_high'] - 0.382 * diff, 2)
     target_price = round(r['swing_high'] + 0.618 * diff, 2)
     
-    win_rate = int(min(95, max(45, r['momo_score'] * 0.65)))
+    win_rate = r.get('report_win_rate')
+    if win_rate is None:
+        win_rate = int(min(95, max(45, r['momo_score'] * 0.65)))
     action = "強烈買入 (動能爆發)" if r['momo_score'] >= 120 else ("買入 (多頭順勢)" if r['momo_score'] >= 90 else "觀望 / 逢低佈局")
     entry_zone = f"{r['price'] * 0.98:.2f} 元 - {r['price']:.2f} 元" if win_rate < 70 else f"現價 {r['price']:.2f} 元 或 突破買進"
 
@@ -1534,6 +1546,18 @@ def save_stage4_report(r):
     lines.append("---")
     lines.append("\n*本報告由 batch_scanner_gemini 依據最新行情數據自動生成。*")
 
+    # Replace only the report's displayed win-rate line.  Use a Unicode-escape
+    # literal so this source remains safe in Windows terminals with mixed encodings.
+    if r.get('report_total_score') is not None:
+        rate_token = f"`{win_rate}%`"
+        replacement = (
+            f"\u3010\u9810\u671f\u52dd\u7387\u3011\uff1a**{rate_token}** "
+            f"(\u4e94\u7dad\u7e3d\u5206: {r['report_total_score']} / 100)"
+        )
+        for index, report_line in enumerate(lines):
+            if rate_token in report_line:
+                lines[index] = replacement
+                break
     content = "\n".join(lines)
     if output_path.exists():
         try:
@@ -1624,6 +1648,14 @@ def main():
     def _eval_and_save(info):
         res = evaluate_dual_strategy(info, all_category_counts=cat_counts, as_of=as_of)
         if res:
+            if calculate_report_winrate is not None:
+                try:
+                    report_score = calculate_report_winrate(info)
+                    if report_score is not None:
+                        res['report_win_rate'] = report_score['win_rate']
+                        res['report_total_score'] = report_score['total_score']
+                except Exception:
+                    pass
             try:
                 save_stage4_report(res)
             except Exception:

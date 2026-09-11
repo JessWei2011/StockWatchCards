@@ -52,6 +52,9 @@
 !reports_manager.html
 !reports_manager_server.py
 !reports_manager.bat
+!report_manager.html
+!報表檔案管理.bat
+!test_report_file_manager.py
 !evolution_log.html
 !build_portable.py
 !ai_research_cards.json

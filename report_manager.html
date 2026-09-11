@@ -1,0 +1,2414 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>獨立報表檔案管理 - 下拉分類與拖曳介面</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-main: #0b0f19;
+    --bg-card: #151b28;
+    --bg-card-header: #1a2234;
+    --bg-item: #111723;
+    --bg-item-hover: #1e293b;
+    --border: #222d42;
+    --border-light: #2d3b55;
+    --border-active: #38bdf8;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent: #38bdf8;
+    --accent-hover: #0ea5e9;
+    --accent-glow: rgba(56, 189, 248, 0.2);
+    --danger: #ef4444;
+    --danger-bg: rgba(239, 68, 68, 0.12);
+    --success: #10b981;
+    --success-bg: rgba(16, 185, 129, 0.12);
+    --badge-html: #0284c7;
+    --badge-md: #8b5cf6;
+    --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    --market-tw-color: #38bdf8;
+    --market-two-color: #c084fc;
+  }
+
+  [data-theme="light"] {
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-card-header: #f1f5f9;
+    --bg-item: #ffffff;
+    --bg-item-hover: #f8fafc;
+    --border: #e2e8f0;
+    --border-light: #cbd5e1;
+    --border-active: #0284c7;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --accent: #0284c7;
+    --accent-hover: #0369a1;
+    --accent-glow: rgba(2, 132, 199, 0.15);
+    --danger: #dc2626;
+    --danger-bg: rgba(220, 38, 38, 0.1);
+    --success: #16a34a;
+    --success-bg: rgba(22, 163, 74, 0.1);
+    --badge-html: #0284c7;
+    --badge-md: #7c3aed;
+    --shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* 頂部導航列 */
+  header.app-header {
+    height: 56px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 1.15rem;
+  }
+  .brand-tag {
+    font-size: 0.75rem;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* 按鈕通用樣式 */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    transition: all 0.15s ease;
+    text-decoration: none;
+  }
+  .btn:hover {
+    background: var(--bg-item-hover);
+    border-color: var(--border-light);
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+    border: none;
+  }
+  .btn-primary:hover {
+    background: var(--accent-hover);
+  }
+  .btn-danger {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+  .btn-danger:hover {
+    background: var(--danger);
+    color: #fff;
+  }
+  .btn-sm {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+
+  /* 工具條 */
+  .toolbar-bar {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .search-input {
+    width: 260px;
+    padding: 6px 12px 6px 30px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-main);
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    outline: none;
+    transition: all 0.15s ease;
+  }
+  .search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+  .search-wrapper {
+    position: relative;
+  }
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  /* 主要主體區 */
+  main.main-viewport {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* 雙欄整理工作區：左側個股來源，右側資料夾投放區 */
+  .manager-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) 8px minmax(220px, 360px);
+    gap: 0;
+    padding: 16px 20px 20px;
+    overflow: hidden;
+  }
+  .manager-panel {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .pane-resizer {
+    cursor: col-resize;
+    position: relative;
+    touch-action: none;
+  }
+  .pane-resizer::before {
+    content: "";
+    position: absolute;
+    top: 12px;
+    bottom: 12px;
+    left: 3px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--border-light);
+    transition: background .15s ease, width .15s ease;
+  }
+  .pane-resizer:hover::before, .pane-resizer.is-dragging::before {
+    left: 1px;
+    width: 6px;
+    background: var(--accent);
+  }
+  body.is-resizing { cursor: col-resize; }
+  body.is-resizing * { cursor: col-resize !important; user-select: none !important; }
+  .panel-titlebar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--bg-card-header);
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-title { font-size: 1rem; font-weight: 700; }
+  .panel-subtitle { color: var(--text-muted); font-size: .78rem; }
+  .stock-list, .folder-target-list {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 12px;
+  }
+  .stock-list { display: flex; flex-direction: column; gap: 8px; }
+  .folder-target-list { display: flex; flex-direction: column; gap: 9px; }
+  .folder-target {
+    flex: 0 0 auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-item);
+    overflow: hidden;
+    transition: border-color .15s ease, background .15s ease, transform .15s ease;
+  }
+  .folder-target.drag-over { border: 2px dashed var(--accent); background: var(--accent-glow); transform: scale(1.015); }
+  .folder-target-row { min-height: 48px; display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+  .folder-target-name { flex: 1; min-width: 0; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .folder-target-count { color: var(--text-muted); font-size: .78rem; white-space: nowrap; }
+  .folder-target .expand-btn { flex: 0 0 auto; }
+  .folder-target-preview { display: none; padding: 0 10px 10px; border-top: 1px solid var(--border); }
+  .folder-target.expanded .folder-target-preview { display: block; }
+  .folder-preview-stock { padding: 7px 2px; border-bottom: 1px solid var(--border); font-size: .82rem; color: var(--text-secondary); }
+  .folder-preview-stock:last-child { border-bottom: 0; }
+  .folder-target-empty { padding: 8px 2px 2px; color: var(--text-muted); font-size: .8rem; }
+  .source-folder { color: var(--text-muted); font-size: .76rem; white-space: nowrap; }
+
+  /* 與個股分析中心 (reports_manager.html) 一致的樹狀清單樣式 */
+  .tree-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+    flex-shrink: 0;
+  }
+  .tree-toolbar button {
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-item);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .tree-toolbar button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .tree-toolbar button.active {
+    background: rgba(250,204,21,0.15);
+    border-color: #facc15;
+    color: #facc15;
+    font-weight: 700;
+  }
+  .market-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 750;
+    color: var(--text-muted);
+    user-select: none;
+    padding: 2px 7px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    margin-left: auto;
+  }
+  .market-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: default;
+  }
+  .market-legend-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .market-legend-dot.tw {
+    background: #38bdf8;
+    box-shadow: 0 0 6px rgba(56, 189, 248, 0.85);
+  }
+  .market-legend-dot.two {
+    background: #c084fc;
+    box-shadow: 0 0 6px rgba(192, 132, 252, 0.85);
+  }
+
+  .organizer-tree { min-height: 0; overflow-y: auto; padding: 10px; }
+  .tree-node { user-select: none; }
+  .tree-row {
+    display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 6px;
+    cursor: pointer; font-size: 13.5px; transition: background 0.15s ease;
+  }
+  .tree-row .tree-label {
+    flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700;
+  }
+  .tree-row:hover { background: var(--bg-item-hover); }
+  .tree-row.active { background: var(--accent); color: #000; font-weight: 700; }
+  .tree-row.dragover { outline: 2px dashed var(--accent); outline-offset: -2px; }
+  .tree-children { margin-left: 16px; }
+  .tree-children.collapsed { display: none; }
+  .tree-toggle {
+    width: 14px; flex-shrink: 0; text-align: center; color: var(--text-muted); font-size: 11px; cursor: pointer;
+  }
+  .tree-toggle:hover { color: var(--accent); }
+  .tree-actions { margin-left: auto; display: none; gap: 4px; }
+  .tree-row:hover .tree-actions { display: flex; }
+  .tree-actions button {
+    background: none; border: none; color: inherit; opacity: 0.7; cursor: pointer; font-size: 12px; padding: 2px 4px;
+  }
+  .tree-actions button:hover { opacity: 1; }
+
+  .tree-report-row {
+    display: flex; align-items: center; gap: 5px; padding: 4px 8px 4px 18px; border-radius: 6px;
+    cursor: grab; font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .tree-report-row:hover { background: var(--bg-item-hover); color: var(--text-primary); }
+  .tree-report-row.dragging { opacity: 0.4; }
+  .tree-report-row.is-starred {
+    background: rgba(250,204,21,0.08);
+  }
+  .tree-report-row.is-starred:hover {
+    background: rgba(250,204,21,0.15);
+  }
+  .tree-report-row.is-starred .name {
+    color: #fef08a;
+    font-weight: 700;
+  }
+  .tree-report-row.is-today-new {
+    background: rgba(239, 68, 68, 0.08);
+  }
+  .tree-report-row.is-today-new:hover {
+    background: rgba(239, 68, 68, 0.16);
+  }
+  .tree-report-row.is-today-new.is-starred {
+    background: rgba(250, 204, 21, 0.12);
+  }
+
+  .tree-new-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+    color: #ffffff !important;
+    font-family: 'JetBrains Mono', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 8.5px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    padding: 1px 4.5px;
+    border-radius: 4px;
+    line-height: 1.15;
+    box-shadow: 0 1px 4px rgba(239, 68, 68, 0.45);
+    user-select: none;
+    flex-shrink: 0;
+    margin-right: 3px;
+  }
+  .folder-new-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(239, 68, 68, 0.16);
+    border: 1px solid rgba(239, 68, 68, 0.55);
+    color: #fca5a5;
+    font-family: 'JetBrains Mono', 'Inter', sans-serif;
+    font-size: 8.5px;
+    font-weight: 850;
+    padding: 0 4px;
+    border-radius: 4px;
+    margin-left: 6px;
+    line-height: 14px;
+    vertical-align: middle;
+    letter-spacing: 0.4px;
+    flex-shrink: 0;
+    user-select: none;
+  }
+
+  .tree-star-btn {
+    width: 17px; height: 17px; padding: 0; border-radius: 4px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: 1px solid rgba(147,197,253,0.45); color: #93c5fd;
+    font-size: 11px; line-height: 1; cursor: pointer; flex-shrink: 0; margin-right: 1px;
+    transition: all 0.15s ease;
+  }
+  .tree-star-btn:hover {
+    border-color: #93c5fd;
+    background: rgba(147,197,253,0.15);
+    color: #bfdbfe;
+    transform: scale(1.1);
+  }
+  .tree-star-btn.active {
+    background: #facc15;
+    border-color: #facc15;
+    color: #000000;
+    font-weight: 900;
+    box-shadow: 0 0 6px rgba(250,204,21,0.5);
+  }
+  .tree-star-btn.active:hover {
+    background: #fde047;
+    border-color: #fde047;
+    color: #000000;
+    transform: scale(1.15);
+  }
+
+  .tree-report-row .code {
+    flex-shrink: 0; width: 38px;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums; font-size: 12.5px;
+    font-weight: 750;
+    transition: color 0.15s ease;
+  }
+  .tree-report-row .code.market-tw {
+    color: var(--market-tw-color) !important;
+    text-shadow: 0 0 10px rgba(56, 189, 248, 0.28);
+  }
+  .tree-report-row .code.market-two {
+    color: var(--market-two-color) !important;
+    text-shadow: 0 0 10px rgba(192, 132, 252, 0.28);
+  }
+  .tree-report-row .name {
+    flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .stock-disposal-badge {
+    display: inline-flex; align-items: center; font-size: 11px; font-weight: 800; padding: 1px 5px;
+    border-radius: 4px; margin-left: 5px; vertical-align: middle; line-height: 1.2; white-space: nowrap;
+  }
+  .stock-disposal-badge.upcoming { background: #ef4444; color: #fff; border: 1px solid #f87171; }
+  .stock-disposal-badge.active { background: #ca8a04; color: #fff; border: 1px solid #eab308; }
+  .stock-disposal-badge.notice { background: #0284c7; color: #fff; border: 1px solid #38bdf8; }
+
+  .tree-stat-pills {
+    display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; flex-shrink: 0; margin-left: auto;
+  }
+  .tree-quick-actions { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .tree-quick-btn {
+    height: 19px; padding: 0; border-radius: 5px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.05); border: 1px solid var(--border); font-size: 11px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .tree-quick-btn.delete {
+    width: 22px; color: #fca5a5; border-color: rgba(248,113,113,.5);
+  }
+  .tree-quick-btn.delete:hover {
+    color: #fff; background: rgba(239,68,68,.3); border-color: #f87171;
+  }
+  .tree-quick-btn:hover { background: rgba(255,255,255,.16); }
+
+  .tree-stat-pill {
+    display: inline-flex; align-items: center; justify-content: center;
+    box-sizing: border-box; height: 19px; border-radius: 5px;
+    font-size: 10.5px; font-weight: 800; line-height: 1;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums; text-align: center;
+  }
+  .tree-stat-pill.winrate { width: 40px; color: #fca5a5; border: 1px solid rgba(239,68,68,.4); background: rgba(239,68,68,.14); }
+  .tree-stat-pill.winrate.high { color: #f87171; border: 1px solid rgba(239,68,68,.65); background: rgba(239,68,68,.25); }
+  .tree-stat-pill.change { min-width: 48px; padding: 0 4px; font-weight: 850; }
+  .tree-stat-pill.change.up { color: #fca5a5; border: 1px solid rgba(239,68,68,.45); background: rgba(239,68,68,.18); }
+  .tree-stat-pill.change.down { color: #86efac; border: 1px solid rgba(34,197,94,.45); background: rgba(34,197,94,.18); }
+  .tree-stat-pill.change.flat { color: #cbd5e1; border: 1px solid rgba(148,163,184,.3); background: rgba(148,163,184,.1); }
+  .tree-stat-pill.price { min-width: 46px; padding: 0 4px; font-weight: 850; }
+  .tree-stat-pill.price.up { color: #fca5a5; border: 1px solid rgba(239,68,68,.45); background: rgba(239,68,68,.18); }
+  .tree-stat-pill.price.down { color: #86efac; border: 1px solid rgba(34,197,94,.45); background: rgba(34,197,94,.18); }
+  .tree-stat-pill.price.flat { color: #cbd5e1; border: 1px solid rgba(148,163,184,.3); background: rgba(148,163,184,.1); }
+  .tree-stat-pill.pe { width: 38px; min-width: 38px; padding: 0 3px; color: #c4b5fd; border: 1px solid rgba(168,85,247,.4); background: rgba(168,85,247,.14); }
+  .tree-stat-pill.missing.winrate-missing { width: 40px; }
+  .tree-stat-pill.missing.change-missing { min-width: 48px; }
+  .tree-stat-pill.missing.price-missing { min-width: 46px; }
+  .tree-stat-pill.missing.pe-missing { width: 38px; }
+  .tree-stat-pill.missing { color: var(--text-dim, #94a3b8); border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03); }
+
+  .destination-row { cursor: default; }
+  .destination-row > *:not(.destination-actions):not(.destination-actions *) { pointer-events: none; }
+  .destination-row.drag-over { outline: 2px dashed var(--accent); outline-offset: -2px; background: var(--accent-glow) !important; }
+  .destination-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+  .destination-row:hover .destination-actions { opacity: 1; }
+  .tree-row > * { pointer-events: none; }
+  .tree-row > .tree-toggle, .tree-row > .tree-actions, .tree-row > .tree-actions * { pointer-events: auto; }
+  .tree-row.dragover { outline: 2px dashed var(--accent); outline-offset: -2px; background: var(--accent-glow) !important; }
+
+  /* Light theme 對應覆蓋 */
+  [data-theme="light"] .tree-toolbar { background: #ffffff !important; border-bottom: 1px solid #e2e8f0 !important; }
+  [data-theme="light"] .tree-toolbar button { background: #ffffff !important; border: 1px solid #cbd5e1 !important; color: #0f172a !important; font-weight: 700 !important; }
+  [data-theme="light"] .tree-toolbar button:hover { background: #f8fafc !important; border-color: #94a3b8 !important; }
+  [data-theme="light"] .tree-row { color: #0f172a !important; }
+  [data-theme="light"] .tree-row:hover { background: #f8fafc !important; }
+  [data-theme="light"] .tree-report-row { color: #334155 !important; }
+  [data-theme="light"] .tree-report-row:hover { background: #f1f5f9 !important; color: #000000 !important; }
+  [data-theme="light"] .tree-report-row.is-starred { background: #fefce8 !important; border: 1px solid #fef08a !important; }
+  [data-theme="light"] .tree-report-row.is-starred .name { color: #854d0e !important; font-weight: 800 !important; }
+  [data-theme="light"] .tree-new-badge { background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%) !important; color: #ffffff !important; box-shadow: 0 1px 4px rgba(220, 38, 38, 0.35) !important; }
+  [data-theme="light"] .folder-new-badge { background: #fef2f2 !important; border-color: #f87171 !important; color: #dc2626 !important; }
+  [data-theme="light"] .tree-report-row.is-today-new { background: #fef2f2 !important; }
+  [data-theme="light"] .tree-report-row.is-today-new:hover { background: #fee2e2 !important; }
+  [data-theme="light"] .tree-stat-pill { font-weight: 800 !important; }
+  [data-theme="light"] .tree-stat-pill.change.up,
+  [data-theme="light"] .tree-stat-pill.price.up,
+  [data-theme="light"] .tree-stat-pill.winrate,
+  [data-theme="light"] .tree-stat-pill.winrate.high { background: #fef2f2 !important; color: #b91c1c !important; border: 1px solid #f87171 !important; }
+  [data-theme="light"] .tree-stat-pill.change.down,
+  [data-theme="light"] .tree-stat-pill.price.down { background: #f0fdf4 !important; color: #15803d !important; border: 1px solid #4ade80 !important; }
+  [data-theme="light"] .tree-stat-pill.pe { background: #faf5ff !important; color: #7e22ce !important; border: 1px solid #c084fc !important; }
+  [data-theme="light"] .tree-stat-pill.change.flat,
+  [data-theme="light"] .tree-stat-pill.price.flat { background: #f1f5f9 !important; color: #475569 !important; border: 1px solid #cbd5e1 !important; }
+  [data-theme="light"] .tree-stat-pill.missing { background: #f8fafc !important; color: #94a3b8 !important; border: 1px solid #e2e8f0 !important; }
+
+  /* 資料夾折疊卡片組件 (Accordion Folder Card) */
+  .folder-block {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    flex: 0 0 auto;
+    box-shadow: var(--shadow);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .folder-block.drag-over {
+    border: 2px dashed var(--accent) !important;
+    background: var(--accent-glow) !important;
+    box-shadow: 0 0 16px var(--accent-glow);
+    transform: scale(1.008);
+  }
+
+  /* 資料夾標題欄 */
+  .folder-header {
+    padding: 12px 16px;
+    background: var(--bg-card-header);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+    transition: background 0.15s ease;
+  }
+  .folder-header:hover {
+    background: var(--bg-item-hover);
+  }
+  .folder-block.expanded .folder-header {
+    border-bottom-color: var(--border);
+  }
+  .folder-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .expand-btn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.15s ease;
+  }
+  .expand-btn:hover {
+    background: var(--border);
+    color: var(--text-primary);
+  }
+  .folder-block.expanded .expand-btn {
+    transform: rotate(90deg);
+  }
+  .folder-title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .folder-count-badge {
+    background: var(--border);
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+  }
+  .folder-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .folder-depth-1 { margin-left: 18px; }
+  .folder-depth-2 { margin-left: 36px; }
+  .folder-depth-3 { margin-left: 54px; }
+
+  /* 下拉展開後的個股清單容器 */
+  .folder-body {
+    display: none;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    flex-direction: column;
+    gap: 8px;
+    min-height: 50px;
+  }
+  .folder-block.expanded .folder-body {
+    display: flex;
+  }
+
+  /* 空資料夾提示 / 拖曳放置提示 */
+  .folder-empty {
+    padding: 18px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    background: rgba(0,0,0,0.05);
+  }
+
+  /* 單檔股票列 (Stock Item) */
+  .stock-item {
+    background: var(--bg-item);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.18s ease;
+    cursor: grab;
+    position: relative;
+  }
+  .stock-item:hover {
+    background: var(--bg-item-hover);
+    border-color: var(--border-light);
+    transform: translateX(3px);
+  }
+  .stock-item:active {
+    cursor: grabbing;
+  }
+  .stock-item.dragging {
+    opacity: 0.4;
+    border: 2px dashed var(--accent);
+    transform: scale(0.98);
+  }
+  .stock-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .drag-handle {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    cursor: grab;
+    line-height: 1;
+  }
+  .stock-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 60px;
+  }
+  .stock-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .stock-market {
+    font-size: 0.72rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--border);
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  .stock-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .badge-file {
+    font-size: 0.74rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+  }
+  .badge-html {
+    background: rgba(2, 132, 199, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+  }
+  .badge-html:hover {
+    background: rgba(2, 132, 199, 0.3);
+  }
+  .badge-md {
+    background: rgba(139, 92, 246, 0.15);
+    color: #c084fc;
+    border: 1px solid rgba(192, 132, 252, 0.35);
+  }
+  .badge-md:hover {
+    background: rgba(139, 92, 246, 0.3);
+  }
+
+  .stock-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  @media (max-width: 760px) {
+    header.app-header { height: auto; min-height: 56px; padding: 10px 14px; gap: 10px; flex-wrap: wrap; }
+    .brand { font-size: 1rem; }
+    .brand-tag { display: none; }
+    .toolbar-bar { padding: 10px 14px; align-items: stretch; flex-direction: column; gap: 10px; }
+    .toolbar-left { flex-wrap: wrap; gap: 8px; }
+    .search-wrapper, .search-input { width: 100%; }
+    main.main-viewport { padding: 12px; }
+    .manager-layout { grid-template-columns: minmax(0, 1fr) 148px !important; gap: 8px; padding: 8px; }
+    .pane-resizer { display: none; }
+    .panel-titlebar { padding: 9px; }
+    .panel-title { font-size: .88rem; }
+    .panel-subtitle { display: none; }
+    .stock-list, .folder-target-list { padding: 8px; }
+    .folder-target-list { gap: 7px; }
+    .folder-target-row { min-height: 42px; padding: 6px; }
+    .folder-target-name { font-size: .84rem; }
+    .folder-target .btn { display: none; }
+    .organizer-tree { padding: 6px; }
+    .organizer-row { padding: 5px; font-size: .84rem; }
+    .organizer-children { margin-left: 11px; }
+    .organizer-stock { padding-left: 12px; gap: 5px; font-size: .8rem; }
+    .organizer-stock-actions, .destination-actions { display: none; }
+    .folder-header { padding: 10px 12px; gap: 8px; }
+    .folder-header-actions .btn { padding: 4px 7px; }
+    .folder-header-actions .btn:not(.btn-danger) { display: none; }
+    .folder-title { font-size: .95rem; overflow: hidden; }
+    .folder-title > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .folder-depth-1, .folder-depth-2, .folder-depth-3 { margin-left: 0; }
+    .stock-item { align-items: flex-start; gap: 10px; padding: 10px; }
+    .stock-left { min-width: 0; gap: 8px; flex-wrap: wrap; }
+    .stock-code { min-width: auto; font-size: 1rem; }
+    .stock-name { overflow-wrap: anywhere; }
+    .stock-actions { flex-shrink: 0; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .stock-badges { display: none; }
+    .preview-drawer { max-width: 100vw; width: 100vw; }
+  }
+
+  /* 抽屜預覽面板 */
+  .preview-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 640px;
+    max-width: 90vw;
+    height: 100%;
+    background: var(--bg-card);
+    border-left: 1px solid var(--border);
+    box-shadow: -6px 0 24px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 50;
+  }
+  .preview-drawer.open {
+    transform: translateX(0);
+  }
+  .preview-header {
+    height: 52px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-card-header);
+  }
+  .preview-title {
+    font-weight: 700;
+    font-size: 0.98rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .preview-body {
+    flex: 1;
+    overflow: auto;
+    background: #ffffff;
+    color: #111;
+  }
+  .preview-body iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+  .preview-markdown {
+    padding: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: #1e293b;
+    white-space: pre-wrap;
+    word-break: break-word;
+    user-select: text;
+  }
+
+  /* 浮動提示 Toast */
+  #toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--bg-card-header);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+    border-left: 4px solid var(--accent);
+    padding: 12px 18px;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: auto;
+    max-width: 400px;
+  }
+  .toast.success { border-left-color: var(--success); }
+  .toast.danger { border-left-color: var(--danger); }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 彈窗 Modal */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    width: 420px;
+    max-width: 90vw;
+    padding: 24px;
+    box-shadow: 0 16px 36px rgba(0,0,0,0.5);
+    animation: modalScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes modalScale {
+    from { transform: scale(0.92); }
+    to { transform: scale(1); }
+  }
+  .modal-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .modal-body {
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .modal-input {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-main);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    margin-top: 10px;
+    outline: none;
+  }
+  .modal-input:focus {
+    border-color: var(--accent);
+  }
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+</style>
+</head>
+<body>
+
+<!-- 頂部導航列 -->
+<header class="app-header">
+  <div class="brand">
+    <span>📂 報表分類與檔案管理</span>
+    <span class="brand-tag">下拉清單與滑鼠拖曳版</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-sm" id="btn-theme-toggle" title="切換白天/深色模式">🌓 切換外觀</button>
+    <a href="/reports_manager.html" class="btn btn-sm" title="返回主分析中心">📊 股票分析中心</a>
+  </div>
+</header>
+
+<!-- 工具欄列 -->
+<div class="toolbar-bar">
+  <div class="toolbar-left">
+    <button class="btn btn-primary" id="btn-create-folder">＋ 新增資料夾</button>
+    <button class="btn" id="btn-expand-all">展開全部</button>
+    <button class="btn" id="btn-collapse-all">折疊全部</button>
+    <button class="btn" id="btn-refresh" title="重新整理所有資料夾與報表">🔄 重新整理</button>
+  </div>
+  <div class="search-wrapper">
+    <span class="search-icon">🔍</span>
+    <input type="text" class="search-input" id="search-input" placeholder="即時搜尋代號、名稱、分類...">
+  </div>
+</div>
+
+<!-- 主要內容：左側拖曳個股，右側投放資料夾 -->
+<main class="manager-layout">
+  <section class="manager-panel" aria-label="可整理的個股">
+    <div class="panel-titlebar">
+      <div>
+        <div class="panel-title">📄 可拖曳個股</div>
+        <div class="panel-subtitle" id="stocks-summary">從這裡直接拖曳到右側資料夾</div>
+      </div>
+    </div>
+    <div class="tree-toolbar">
+      <button type="button" id="expand-all-btn" title="展開所有分類資料夾">🔽 全開</button>
+      <button type="button" id="collapse-all-btn" title="收合所有分類資料夾">🔼 全收</button>
+      <button type="button" id="filter-starred-btn" title="切換：僅顯示重點標注關注股票 / 顯示全部">⭐ 重點</button>
+      <span class="market-legend" title="股號顏色說明：天藍色為上市 (TWSE)，紫色為上櫃/櫃買 (TPEx)">
+        <span class="market-legend-item"><span class="market-legend-dot tw"></span>上市</span>
+        <span class="market-legend-item"><span class="market-legend-dot two"></span>上櫃</span>
+      </span>
+    </div>
+    <div class="organizer-tree" id="stocks-container"></div>
+  </section>
+  <div class="pane-resizer" id="pane-resizer" role="separator" aria-label="調整個股與資料夾清單寬度" aria-orientation="vertical"></div>
+  <aside class="manager-panel" aria-label="資料夾投放目標">
+    <div class="panel-titlebar">
+      <div>
+        <div class="panel-title">📂 資料夾清單</div>
+        <div class="panel-subtitle">將個股拖曳到想要的分類</div>
+      </div>
+      <button class="btn btn-sm btn-primary" id="btn-create-folder-side">＋ 新增</button>
+    </div>
+    <div class="organizer-tree" id="folders-container"></div>
+  </aside>
+</main>
+
+<!-- 右側抽屜預覽 -->
+<div class="preview-drawer" id="preview-drawer">
+  <div class="preview-header">
+    <div class="preview-title">
+      <span id="preview-icon">📄</span>
+      <span id="preview-filename">報告預覽</span>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <a id="preview-open-link" href="#" target="_blank" class="btn btn-sm">新分頁開啟 ↗</a>
+      <button class="btn btn-sm" id="btn-close-preview">✕ 關閉</button>
+    </div>
+  </div>
+  <div class="preview-body" id="preview-content"></div>
+</div>
+
+<!-- 浮動提示 Toast -->
+<div id="toast-container"></div>
+
+<!-- 通用 Modal 彈窗 -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-title" id="modal-title">標題</div>
+    <div class="modal-body" id="modal-body">內容</div>
+    <div class="modal-footer" id="modal-footer">
+      <button class="btn" id="modal-cancel">取消</button>
+      <button class="btn btn-primary" id="modal-confirm">確定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// 全域狀態
+let state = {
+  tree: null,
+  expandedFolders: new Set([""]), // 預設展開根目錄，其他資料夾記錄在 Set
+  collapsedSourceFolders: new Set(),
+  collapsedDestinationFolders: new Set(),
+  searchQuery: "",
+  starredOnlyMode: false,
+  draggedStock: null // 正在拖曳的股票資訊 { code, base, name, fromFolder }
+};
+
+let cardsByCode = {};
+window.cardsByCode = cardsByCode;
+window.STOCK_MARKET_MAP = {};
+window.TODAY_NEW_STOCKS = new Set();
+window.DISPOSAL_NOTICE_MAP = {};
+let starredStocksCache = null;
+
+const STARRED_KEY = 'stockCardsWatchlist';
+const TODAY_NEW_STOCKS_STORAGE_KEY = 'stock_manager_today_new_stocks';
+
+function getTodayLocalDateString() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function loadTodayNewStocksFromStorage() {
+  try {
+    const raw = localStorage.getItem(TODAY_NEW_STOCKS_STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    const todayStr = getTodayLocalDateString();
+    if (data && data.date === todayStr && Array.isArray(data.codes)) {
+      data.codes.forEach(c => {
+        const clean = String(c || '').trim().toUpperCase();
+        if (clean) window.TODAY_NEW_STOCKS.add(clean);
+      });
+    } else {
+      localStorage.removeItem(TODAY_NEW_STOCKS_STORAGE_KEY);
+      window.TODAY_NEW_STOCKS.clear();
+    }
+  } catch (e) {
+    console.warn('載入今日新增個股失敗:', e);
+  }
+}
+
+function saveTodayNewStocksToStorage() {
+  try {
+    const todayStr = getTodayLocalDateString();
+    const payload = {
+      date: todayStr,
+      codes: Array.from(window.TODAY_NEW_STOCKS)
+    };
+    localStorage.setItem(TODAY_NEW_STOCKS_STORAGE_KEY, JSON.stringify(payload));
+  } catch (e) {
+    console.warn('儲存今日新增個股失敗:', e);
+  }
+}
+
+async function syncTodayNewStocksFromServer() {
+  loadTodayNewStocksFromStorage();
+  try {
+    const res = await fetch('/api/new-stocks-today');
+    if (res.ok) {
+      const json = await res.json();
+      const todayStr = getTodayLocalDateString();
+      if (json && json.ok && json.date === todayStr && Array.isArray(json.codes)) {
+        json.codes.forEach(c => {
+          const clean = String(c || '').trim().toUpperCase();
+          if (clean) window.TODAY_NEW_STOCKS.add(clean);
+        });
+        saveTodayNewStocksToStorage();
+      }
+    }
+  } catch (e) {}
+}
+
+function isStockNewToday(code) {
+  if (!code) return false;
+  return window.TODAY_NEW_STOCKS.has(String(code).trim().toUpperCase());
+}
+
+function removeStockFromNewToday(code) {
+  const clean = String(code || '').trim().toUpperCase();
+  if (clean && window.TODAY_NEW_STOCKS.has(clean)) {
+    window.TODAY_NEW_STOCKS.delete(clean);
+    saveTodayNewStocksToStorage();
+  }
+}
+
+function getStarredStocks() {
+  if (starredStocksCache !== null) return starredStocksCache;
+  try {
+    const raw = localStorage.getItem(STARRED_KEY);
+    if (!raw) {
+      starredStocksCache = new Set();
+    } else {
+      const list = JSON.parse(raw);
+      starredStocksCache = new Set(Array.isArray(list) ? list.map(String) : []);
+    }
+  } catch(e) {
+    starredStocksCache = new Set();
+  }
+  return starredStocksCache;
+}
+
+async function syncWatchlistFromServer() {
+  try {
+    const res = await fetch('/api/watchlist', { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.ok && Array.isArray(data.starred)) {
+        starredStocksCache = new Set(data.starred.map(String));
+        localStorage.setItem(STARRED_KEY, JSON.stringify(Array.from(starredStocksCache)));
+        return starredStocksCache;
+      }
+    }
+  } catch(e) {
+    console.warn('無法從伺服器載入 watchlist.json，使用本地快取', e);
+  }
+  return getStarredStocks();
+}
+
+async function pushWatchlistToServer(list) {
+  try {
+    await fetch('/api/watchlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ starred: list })
+    });
+  } catch(e) {
+    console.warn('儲存 watchlist.json 失敗', e);
+  }
+}
+
+function isStockStarred(code) {
+  if (!code) return false;
+  return getStarredStocks().has(String(code).trim());
+}
+
+async function toggleStarredStock(code) {
+  const normCode = String(code || '').trim();
+  if (!normCode) return;
+  const starred = getStarredStocks();
+  const isNowStarred = !starred.has(normCode);
+  if (isNowStarred) {
+    starred.add(normCode);
+  } else {
+    starred.delete(normCode);
+  }
+  const starredArr = Array.from(starred);
+  localStorage.setItem(STARRED_KEY, JSON.stringify(starredArr));
+
+  document.querySelectorAll(`.tree-star-btn[data-code="${CSS.escape(normCode)}"]`).forEach(btn => {
+    btn.classList.toggle('active', isNowStarred);
+    btn.title = isNowStarred ? '已標注重點關注 (點擊取消)' : '標注重點關注';
+    const row = btn.closest('.tree-report-row');
+    if (row) row.classList.toggle('is-starred', isNowStarred);
+  });
+
+  if (state.starredOnlyMode) {
+    renderAllFolders();
+  }
+  await pushWatchlistToServer(starredArr);
+}
+
+function getStockMarket(code, fallbackItem = null) {
+  const clean = String(code || '').split('.')[0].trim();
+  if (window.STOCK_MARKET_MAP && window.STOCK_MARKET_MAP[clean]) {
+    return window.STOCK_MARKET_MAP[clean];
+  }
+  if (fallbackItem) {
+    if (fallbackItem.market) return fallbackItem.market;
+    if (fallbackItem.base && fallbackItem.base.includes('(TWO)')) return 'TWO';
+    if (fallbackItem.html && fallbackItem.html.includes('(TWO)')) return 'TWO';
+    if (fallbackItem.name && fallbackItem.name.includes('(TWO)')) return 'TWO';
+    if (fallbackItem.path && fallbackItem.path.includes('(TWO)')) return 'TWO';
+  }
+  if (cardsByCode[clean] && cardsByCode[clean].market) {
+    return cardsByCode[clean].market;
+  }
+  return 'TW';
+}
+
+function populateMarketMapFromTree(node) {
+  if (!node) return;
+  if (node.reports && Array.isArray(node.reports)) {
+    node.reports.forEach(r => {
+      if (r.code) {
+        const mkt = r.market || (r.base && r.base.includes('(TWO)') ? 'TWO' : 'TW');
+        window.STOCK_MARKET_MAP[r.code] = mkt;
+      }
+    });
+  }
+  if (node.children && Array.isArray(node.children)) {
+    node.children.forEach(c => populateMarketMapFromTree(c));
+  }
+}
+
+function formatDisposalPeriodShort(dispInfo) {
+  if (!dispInfo) return '';
+  const startStr = String(dispInfo.start_date || '').trim();
+  const endStr = String(dispInfo.end_date || '').trim();
+  if (startStr && endStr) {
+    const s = startStr.split('-');
+    const e = endStr.split('-');
+    if (s.length >= 3 && e.length >= 3) {
+      const sm = parseInt(s[1], 10);
+      const sd = parseInt(s[2], 10);
+      const em = parseInt(e[1], 10);
+      const ed = parseInt(e[2], 10);
+      if (!isNaN(sm) && !isNaN(sd) && !isNaN(em) && !isNaN(ed)) {
+        return `${sm}/${sd}~${em}/${ed}`;
+      }
+    }
+  }
+  const raw = String(dispInfo.period_raw || '');
+  if (raw) {
+    const m = raw.match(/(\d{1,2})[/-](\d{1,2})\s*[～~\-至]\s*(?:(?:\d{2,4}[/-])?(\d{1,2})[/-])?(\d{1,2})/);
+    if (m) {
+      const sm = parseInt(m[1], 10);
+      const sd = parseInt(m[2], 10);
+      const em = m[3] ? parseInt(m[3], 10) : sm;
+      const ed = parseInt(m[4], 10);
+      if (!isNaN(sm) && !isNaN(sd) && !isNaN(em) && !isNaN(ed)) {
+        return `${sm}/${sd}~${em}/${ed}`;
+      }
+    }
+  }
+  return '';
+}
+
+function isCommonStock(code, name) {
+  code = String(code || '').trim();
+  name = String(name || '').trim();
+  if (code.length === 6 && /^\d+$/.test(code)) return false;
+  if (code.length === 5 && /^\d+$/.test(code)) return false;
+  if (code.length > 5) return false;
+  if (/(?:購\d{2}|售\d{2}|牛\d{2}|熊\d{2}|認購|認售|權證|公司債|可轉債|\bCB\b)/.test(name)) return false;
+  if (code.length !== 4 && /[一二三四五六七八九十]$/.test(name)) return false;
+  return /^\d{4}[A-Za-z]?$/.test(code);
+}
+
+async function loadDisposalNoticeData() {
+  try {
+    const resp = await fetch('/api/disposal-notice');
+    const json = await resp.json();
+    if (json && json.ok && json.data) {
+      const filteredMap = {};
+      Object.keys(json.data.map || {}).forEach(k => {
+        const item = json.data.map[k];
+        if (isCommonStock(k, item?.name)) {
+          filteredMap[k] = item;
+        }
+      });
+      window.DISPOSAL_NOTICE_MAP = filteredMap;
+      renderAllFolders();
+    }
+  } catch(e) {}
+}
+
+async function loadCards() {
+  try {
+    const res = await fetch(`/api/cards?_t=${Date.now()}`, { cache: "no-store" });
+    const json = await res.json();
+    if (json && json.ok) {
+      cardsByCode = json.cards || {};
+      window.cardsByCode = cardsByCode;
+      Object.values(cardsByCode).forEach(c => {
+        if (c && c.code && c.market) window.STOCK_MARKET_MAP[c.code] = c.market;
+      });
+      renderAllFolders();
+    }
+  } catch(e) {}
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function nodeHasTodayNewStocks(node) {
+  if (!node || window.TODAY_NEW_STOCKS.size === 0) return false;
+  if (node.reports && Array.isArray(node.reports)) {
+    for (const r of node.reports) {
+      if (r && r.code && isStockNewToday(r.code)) return true;
+    }
+  }
+  if (node.children && Array.isArray(node.children)) {
+    for (const child of node.children) {
+      if (nodeHasTodayNewStocks(child)) return true;
+    }
+  }
+  return false;
+}
+
+// 載入資料庫結構
+async function loadData() {
+  try {
+    const res = await fetch(`/api/tree?_t=${Date.now()}`, { cache: "no-store" });
+    const json = await res.json();
+    if (json.ok) {
+      state.tree = json.tree;
+      if (state.tree && Array.isArray(state.tree.todayNewStocks)) {
+        state.tree.todayNewStocks.forEach(c => {
+          const clean = String(c || '').trim().toUpperCase();
+          if (clean) window.TODAY_NEW_STOCKS.add(clean);
+        });
+        saveTodayNewStocksToStorage();
+      }
+      populateMarketMapFromTree(state.tree);
+      renderAllFolders();
+    } else {
+      showToast(json.error || "讀取資料失敗", "danger");
+    }
+  } catch (err) {
+    showToast("無法連接後端: " + err, "danger");
+  }
+}
+
+// 移動或重大變更後全域重新整理
+async function refreshAllData() {
+  await Promise.all([
+    loadData(),
+    loadCards(),
+    syncTodayNewStocksFromServer()
+  ]);
+}
+
+// 渲染雙欄整理介面：左邊是來源個股，右邊永遠保留所有資料夾作為投放目標。
+function renderAllFolders() {
+  const stockContainer = document.getElementById("stocks-container");
+  const folderContainer = document.getElementById("folders-container");
+  stockContainer.innerHTML = "";
+  folderContainer.innerHTML = "";
+  if (!state.tree) return;
+  const sourceNode = createSourceTree(state.tree, true);
+  if (sourceNode) stockContainer.appendChild(sourceNode);
+  folderContainer.appendChild(createDestinationTree(state.tree, true));
+  document.getElementById("stocks-summary").textContent = "拖曳個股到右側資料夾即可分類";
+}
+
+function createSourceTree(folder, isRoot = false) {
+  const node = document.createElement("div");
+  node.className = "organizer-node tree-node";
+  const reports = (folder.reports || []).filter(r => matchSearch(r, folder.name || "根目錄"));
+  const hasTodayNew = !isRoot && nodeHasTodayNewStocks(folder);
+  if (hasTodayNew) {
+    state.collapsedSourceFolders.delete(folder.path || "");
+  }
+
+  const collapsed = state.collapsedSourceFolders.has(folder.path || "");
+  const row = document.createElement("div");
+  row.className = `organizer-row tree-row${isRoot ? " organizer-root" : ""}`;
+  row.dataset.path = folder.path || "";
+
+  const toggle = document.createElement("span");
+  toggle.className = "organizer-toggle tree-toggle";
+  toggle.onclick = (e) => {
+    e.stopPropagation();
+    const key = folder.path || "";
+    if (state.collapsedSourceFolders.has(key)) state.collapsedSourceFolders.delete(key);
+    else state.collapsedSourceFolders.add(key);
+    renderAllFolders();
+  };
+
+  const label = document.createElement("span");
+  label.className = "organizer-label tree-label";
+  label.textContent = isRoot ? "🗂️ reports" : `📁 ${folder.name}`;
+  if (hasTodayNew) {
+    const nb = document.createElement("span");
+    nb.className = "folder-new-badge";
+    nb.textContent = "NEW!";
+    nb.title = "此分類內有今日新增歸檔的個股";
+    label.appendChild(nb);
+  }
+
+  row.append(toggle, label);
+
+  // 左側資料夾列同時支援作為放置目標 (Drop Target)
+  row.ondragover = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    row.classList.add("dragover");
+  };
+  row.ondragleave = () => {
+    row.classList.remove("dragover");
+  };
+  row.ondrop = async (e) => {
+    e.preventDefault();
+    row.classList.remove("dragover");
+    try {
+      let data = null;
+      const jsonRaw = e.dataTransfer.getData("application/json");
+      if (jsonRaw) {
+        try { data = JSON.parse(jsonRaw); } catch(err) {}
+      }
+      if (!data && state.draggedStock) {
+        data = state.draggedStock;
+      }
+      if (!data) {
+        const textBase = e.dataTransfer.getData("text/plain");
+        const fromPath = e.dataTransfer.getData("application/x-from-path") || "";
+        if (textBase) {
+          data = { base: textBase, fromFolder: fromPath };
+        }
+      }
+      if (data && (data.base || data.code)) {
+        await executeMove(data, folder.path || "");
+      }
+    } catch (err) {
+      console.error("Tree row drop error:", err);
+    }
+  };
+
+  node.appendChild(row);
+
+  const children = document.createElement("div");
+  children.className = `organizer-children tree-children${collapsed ? " is-collapsed collapsed" : ""}`;
+
+  let visibleCount = 0;
+  (folder.children || []).forEach(child => {
+    const cNode = createSourceTree(child);
+    if (cNode && cNode.style.display !== "none") {
+      visibleCount++;
+      children.appendChild(cNode);
+    }
+  });
+
+  reports.forEach(report => {
+    const item = renderTreeReport(report, folder.path || "");
+    if (item) {
+      visibleCount++;
+      children.appendChild(item);
+    }
+  });
+
+  const hasChildren = (folder.children && folder.children.length > 0) || reports.length > 0;
+  toggle.textContent = hasChildren ? (collapsed ? "▸" : "▾") : "";
+
+  if (state.starredOnlyMode && !isRoot && visibleCount === 0) {
+    node.style.display = "none";
+    return node;
+  }
+
+  if (hasChildren) {
+    node.appendChild(children);
+  }
+  return node;
+}
+
+function renderTreeReport(r, folderPath) {
+  const code = String(r.code || '').trim();
+  const isStarred = isStockStarred(code);
+
+  if (state.starredOnlyMode && !isStarred) {
+    return null;
+  }
+
+  const item = document.createElement('div');
+  const isNew = isStockNewToday(code);
+  item.className = 'tree-report-row' + (isStarred ? ' is-starred' : '') + (isNew ? ' is-today-new' : '');
+  item.draggable = true;
+  if (code) item.dataset.code = code;
+
+  const newBadge = isNew
+    ? `<span class="tree-new-badge" title="今日新增個股 (今日有效，明日自動清除)">NEW!</span>`
+    : '';
+
+  const card = cardsByCode[code] || {};
+  const hasNumber = value => value !== null && value !== '' && Number.isFinite(Number(value));
+  let winRateVal = hasNumber(card.winRate) ? String(card.winRate) : null;
+  let peVal = hasNumber(card.pe) ? String(card.pe) : null;
+
+  if (winRateVal && !isNaN(parseFloat(winRateVal))) {
+    winRateVal = parseFloat(winRateVal).toFixed(1);
+  }
+  if (peVal && !isNaN(parseFloat(peVal))) {
+    peVal = parseFloat(peVal).toFixed(1);
+  }
+
+  let priceVal = null;
+  let priceCls = 'flat';
+  let priceTitle = '尚無最新收盤價資料';
+  let changeVal = null;
+  let changeCls = 'flat';
+  let changeTitle = '尚無最新漲跌幅資料';
+
+  if (hasNumber(card.price)) {
+    const p = Number(card.price);
+    priceVal = p >= 1000 ? p.toFixed(0) : (p >= 100 ? p.toFixed(1) : p.toFixed(2));
+    const chg = hasNumber(card.change) ? Number(card.change) : null;
+    const pct = hasNumber(card.changePct) ? Number(card.changePct) : null;
+    if (pct !== null && pct > 0) {
+      changeCls = 'up';
+      priceCls = 'up';
+      changeVal = `+${pct.toFixed(pct >= 10 ? 1 : 2)}%`;
+      changeTitle = `當日漲跌：▲ +${chg !== null ? chg : ''} (+${pct.toFixed(2)}%)`;
+      priceTitle = `最新收盤價：${p} 元 (▲ +${chg !== null ? chg : ''} / +${pct.toFixed(2)}%)`;
+    } else if (pct !== null && pct < 0) {
+      changeCls = 'down';
+      priceCls = 'down';
+      changeVal = `${pct.toFixed(pct <= -10 ? 1 : 2)}%`;
+      changeTitle = `當日漲跌：▼ ${chg !== null ? chg : ''} (${pct.toFixed(2)}%)`;
+      priceTitle = `最新收盤價：${p} 元 (▼ ${chg !== null ? chg : ''} / ${pct.toFixed(2)}%)`;
+    } else {
+      changeCls = 'flat';
+      priceCls = 'flat';
+      changeVal = '0.00%';
+      changeTitle = `當日漲跌：平盤 0.00%`;
+      priceTitle = `最新收盤價：${p} 元 (平盤 0.00%)`;
+    }
+  }
+
+  const winRateTitle = winRateVal ? `預期勝率：${winRateVal}%` : `尚未進行勝率掃描`;
+  const peTitle = peVal ? `本益比 (PE)：${peVal} 倍` : `尚無本益比資料`;
+
+  const winPill = winRateVal
+    ? `<span class="tree-stat-pill winrate ${parseFloat(winRateVal)>=60 ? 'high' : ''}" title="${escapeHtml(winRateTitle)}">${escapeHtml(winRateVal)}</span>`
+    : `<span class="tree-stat-pill missing winrate-missing" title="${escapeHtml(winRateTitle)}">—</span>`;
+
+  const changePill = changeVal
+    ? `<span class="tree-stat-pill change ${changeCls}" title="${escapeHtml(changeTitle)}">${escapeHtml(changeVal)}</span>`
+    : `<span class="tree-stat-pill missing change-missing" title="${escapeHtml(changeTitle)}">—</span>`;
+
+  const pricePill = priceVal
+    ? `<span class="tree-stat-pill price ${priceCls}" title="${escapeHtml(priceTitle)}">${escapeHtml(priceVal)}</span>`
+    : `<span class="tree-stat-pill missing price-missing" title="${escapeHtml(priceTitle)}">—</span>`;
+
+  const pePill = peVal
+    ? `<span class="tree-stat-pill pe" title="${escapeHtml(peTitle)}">${escapeHtml(peVal)}</span>`
+    : `<span class="tree-stat-pill missing pe-missing" title="${escapeHtml(peTitle)}">—</span>`;
+
+  const quickActions = code ? `
+    <span class="tree-quick-actions">
+      <button type="button" class="tree-quick-btn delete" data-action="delete" title="刪除 ${escapeHtml(r.name || code)} 的 HTML 與 Markdown 報表" aria-label="刪除 ${escapeHtml(r.name || code)}">🗑️</button>
+    </span>` : '';
+
+  const starBtn = code ? `
+    <button type="button" class="tree-star-btn ${isStarred ? 'active' : ''}" data-code="${escapeHtml(code)}" title="${isStarred ? '已標注重點關注 (點擊取消)' : '標注重點關注'}">★</button>` : '';
+
+  const dispInfo = window.DISPOSAL_NOTICE_MAP && window.DISPOSAL_NOTICE_MAP[code];
+  let dispBadge = '';
+  if (dispInfo) {
+    const shortPeriod = formatDisposalPeriodShort(dispInfo);
+    if (dispInfo.type === 'disposal' && dispInfo.status === 'upcoming') {
+      const text = shortPeriod ? `明日 ${shortPeriod}` : '明日處置';
+      dispBadge = `<span class="stock-disposal-badge upcoming" title="🚨 已公告明日進處置 (${escapeHtml(dispInfo.period_raw || `${dispInfo.start_date || ''}~${dispInfo.end_date || ''}`)})">${escapeHtml(text)}</span>`;
+    } else if (dispInfo.type === 'disposal' && dispInfo.status === 'active') {
+      const text = shortPeriod ? `處置 ${shortPeriod}` : '處置中';
+      dispBadge = `<span class="stock-disposal-badge active" title="🔒 處置中 (${escapeHtml(dispInfo.period_raw || `${dispInfo.start_date || ''}~${dispInfo.end_date || ''}`)})">${escapeHtml(text)}</span>`;
+    } else if (dispInfo.type === 'notice') {
+      dispBadge = `<span class="stock-disposal-badge notice" title="👀 注意股票 (${escapeHtml(dispInfo.info || '')})">注意</span>`;
+    }
+  }
+
+  const displayName = r.name || r.base;
+  const market = getStockMarket(code, r);
+  const marketClass = market === 'TWO' ? 'market-two' : 'market-tw';
+  const marketLabel = market === 'TWO' ? '上櫃' : '上市';
+  const marketTitle = `[${marketLabel}] ${code} ${displayName}`;
+
+  item.innerHTML = `${newBadge}${starBtn}<span class="code ${marketClass}" title="${escapeHtml(marketTitle)}">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>${dispBadge}<span class="tree-stat-pills">${quickActions}${winPill}${changePill}${pricePill}${pePill}</span>`;
+
+  // 點擊開啟報告預覽
+  item.addEventListener('click', (e) => {
+    if (e.target.closest('.tree-star-btn') || e.target.closest('.tree-quick-btn')) return;
+    const folderPrefix = folderPath ? `${folderPath}/` : '';
+    const htmlUrl = `/reports/${folderPrefix}${encodeURIComponent(r.html || `${r.base}.html`)}`;
+    openPreview(htmlUrl, `${r.code || ''} ${r.name || r.base}`, 'html');
+  });
+
+  const starBtnEl = item.querySelector('.tree-star-btn');
+  if (starBtnEl) {
+    starBtnEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      toggleStarredStock(code);
+    });
+    starBtnEl.addEventListener('mousedown', e => e.stopPropagation());
+    starBtnEl.addEventListener('dragstart', e => e.preventDefault());
+  }
+
+  item.querySelectorAll('.tree-quick-btn').forEach(button => {
+    button.addEventListener('click', event => {
+      event.stopPropagation();
+      if (button.dataset.action === 'delete') confirmDeleteStock(r, folderPath);
+    });
+    button.addEventListener('mousedown', event => event.stopPropagation());
+    button.addEventListener('dragstart', event => event.preventDefault());
+  });
+
+  item.addEventListener('dragstart', (e) => {
+    item.classList.add('dragging');
+    const stockInfo = { base: r.base, code: r.code, name: r.name, fromFolder: folderPath };
+    state.draggedStock = stockInfo;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("application/json", JSON.stringify(stockInfo));
+    e.dataTransfer.setData("text/plain", r.base);
+    e.dataTransfer.setData("application/x-from-path", folderPath);
+  });
+  item.addEventListener('dragend', () => {
+    item.classList.remove('dragging');
+    state.draggedStock = null;
+  });
+
+  return item;
+}
+
+function createDestinationTree(folder, isRoot = false) {
+  const node = document.createElement("div");
+  node.className = "organizer-node";
+  const hasChildren = (folder.children || []).length > 0;
+  const key = folder.path || "";
+  const collapsed = state.collapsedDestinationFolders.has(key);
+  const row = document.createElement("div");
+  row.className = `organizer-row destination-row${isRoot ? " organizer-root" : ""}`;
+  const toggle = document.createElement("span");
+  toggle.className = "organizer-toggle";
+  toggle.textContent = hasChildren ? (collapsed ? "▸" : "▾") : "";
+  toggle.onclick = (e) => {
+    e.stopPropagation();
+    if (state.collapsedDestinationFolders.has(key)) state.collapsedDestinationFolders.delete(key);
+    else state.collapsedDestinationFolders.add(key);
+    renderAllFolders();
+  };
+  const label = document.createElement("span");
+  label.className = "organizer-label";
+  label.textContent = isRoot ? "🗂️ reports（未分類）" : `📁 ${folder.name}`;
+  row.append(toggle, label);
+  if (!isRoot) {
+    const actions = document.createElement("span");
+    actions.className = "destination-actions";
+    const add = document.createElement("button"); add.className = "btn btn-sm"; add.textContent = "＋"; add.title = "建立子資料夾"; add.onclick = (e) => { e.stopPropagation(); createFolder(key); };
+    const rename = document.createElement("button"); rename.className = "btn btn-sm"; rename.textContent = "✎"; rename.title = "重新命名"; rename.onclick = (e) => { e.stopPropagation(); renameFolder(key, folder.name); };
+    const remove = document.createElement("button"); remove.className = "btn btn-sm btn-danger"; remove.textContent = "🗑"; remove.title = "刪除資料夾"; remove.onclick = (e) => { e.stopPropagation(); confirmDeleteFolder(key, folder.name, countReports(folder)); };
+    actions.append(add, rename, remove); row.appendChild(actions);
+  }
+  let dragDepth = 0;
+  row.ondragover = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; row.classList.add("drag-over"); };
+  row.ondragenter = (e) => { e.preventDefault(); dragDepth += 1; row.classList.add("drag-over"); };
+  row.ondragleave = () => { dragDepth -= 1; if (dragDepth <= 0) { dragDepth = 0; row.classList.remove("drag-over"); } };
+  row.ondrop = async (e) => {
+    e.preventDefault(); dragDepth = 0; row.classList.remove("drag-over");
+    try {
+      let data = null;
+      const jsonRaw = e.dataTransfer.getData("application/json");
+      if (jsonRaw) {
+        try { data = JSON.parse(jsonRaw); } catch(err) {}
+      }
+      if (!data && state.draggedStock) {
+        data = state.draggedStock;
+      }
+      if (!data) {
+        const textBase = e.dataTransfer.getData("text/plain");
+        const fromPath = e.dataTransfer.getData("application/x-from-path") || "";
+        if (textBase) {
+          data = { base: textBase, fromFolder: fromPath };
+        }
+      }
+      if (data && (data.base || data.code)) await executeMove(data, key);
+    }
+    catch (err) { console.error("Drop error:", err); }
+  };
+  node.appendChild(row);
+  if (hasChildren) {
+    const children = document.createElement("div");
+    children.className = `organizer-children${collapsed ? " is-collapsed" : ""}`;
+    (folder.children || []).forEach(child => children.appendChild(createDestinationTree(child)));
+    node.appendChild(children);
+  }
+  return node;
+}
+
+function createFolderTarget(folder, folderPath, folderName, depth, canDelete) {
+  const target = document.createElement("div");
+  target.className = "folder-target";
+  target.dataset.path = folderPath;
+  target.style.marginLeft = `${Math.min(depth, 3) * 12}px`;
+  if (state.expandedFolders.has(folderPath)) target.classList.add("expanded");
+
+  const row = document.createElement("div");
+  row.className = "folder-target-row";
+  const expand = document.createElement("button");
+  expand.type = "button";
+  expand.className = "expand-btn";
+  expand.title = "顯示／收合此資料夾內的個股";
+  expand.textContent = "▶";
+  const name = document.createElement("span");
+  name.className = "folder-target-name";
+  name.textContent = folderPath ? `📂 ${folderName}` : "📁 根目錄（未分類）";
+  const count = document.createElement("span");
+  count.className = "folder-target-count";
+  count.textContent = `${(folder.reports || []).length} 檔`;
+  row.append(expand, name, count);
+
+  expand.onclick = (e) => {
+    e.stopPropagation();
+    const expanded = target.classList.toggle("expanded");
+    if (expanded) state.expandedFolders.add(folderPath);
+    else state.expandedFolders.delete(folderPath);
+  };
+
+  if (canDelete) {
+    const add = document.createElement("button");
+    add.className = "btn btn-sm";
+    add.title = "建立子資料夾";
+    add.textContent = "＋";
+    add.onclick = (e) => { e.stopPropagation(); createFolder(folderPath); };
+    const rename = document.createElement("button");
+    rename.className = "btn btn-sm";
+    rename.title = "重新命名資料夾";
+    rename.textContent = "✎";
+    rename.onclick = (e) => { e.stopPropagation(); renameFolder(folderPath, folderName); };
+    const remove = document.createElement("button");
+    remove.className = "btn btn-sm btn-danger";
+    remove.title = "刪除資料夾";
+    remove.textContent = "🗑";
+    remove.onclick = (e) => { e.stopPropagation(); confirmDeleteFolder(folderPath, folderName, countReports(folder)); };
+    row.append(add, rename, remove);
+  }
+
+  const preview = document.createElement("div");
+  preview.className = "folder-target-preview";
+  if ((folder.reports || []).length) {
+    folder.reports.forEach(report => {
+      const entry = document.createElement("div");
+      entry.className = "folder-preview-stock";
+      entry.textContent = `${report.code || "---"} ${report.name || report.base}`;
+      preview.appendChild(entry);
+    });
+  } else {
+    preview.innerHTML = '<div class="folder-target-empty">可將左側個股拖曳到這裡</div>';
+  }
+  target.append(row, preview);
+
+  let dragDepth = 0;
+  target.ondragover = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; target.classList.add("drag-over"); };
+  target.ondragenter = (e) => { e.preventDefault(); dragDepth += 1; target.classList.add("drag-over"); };
+  target.ondragleave = () => { dragDepth -= 1; if (dragDepth <= 0) { dragDepth = 0; target.classList.remove("drag-over"); } };
+  target.ondrop = async (e) => {
+    e.preventDefault();
+    dragDepth = 0;
+    target.classList.remove("drag-over");
+    try {
+      let data = null;
+      const jsonRaw = e.dataTransfer.getData("application/json");
+      if (jsonRaw) {
+        try { data = JSON.parse(jsonRaw); } catch(err) {}
+      }
+      if (!data) {
+        const textBase = e.dataTransfer.getData("text/plain");
+        const fromPath = e.dataTransfer.getData("application/x-from-path") || "";
+        if (textBase) {
+          data = { base: textBase, fromFolder: fromPath };
+        }
+      }
+      if (data && (data.base || data.code)) await executeMove(data, folderPath);
+    } catch (err) { console.error("Drop error:", err); }
+  };
+  return target;
+}
+
+function matchSearch(report, folderName) {
+  const q = state.searchQuery.toLowerCase().trim();
+  if (!q) return true;
+  const code = (report.code || "").toLowerCase();
+  const name = (report.name || "").toLowerCase();
+  const base = (report.base || "").toLowerCase();
+  const f = (folderName || "").toLowerCase();
+  return code.includes(q) || name.includes(q) || base.includes(q) || f.includes(q);
+}
+
+// 建立可下拉展開的資料夾 Block
+function createFolderBlock(folderPath, displayName, reports, canDelete, rawName = "", depth = 0, folder = null) {
+  const block = document.createElement("div");
+  block.className = "folder-block";
+  if (depth > 0) block.classList.add(`folder-depth-${Math.min(depth, 3)}`);
+  block.dataset.path = folderPath;
+  const totalCount = countReports(folder || { reports });
+
+  // 如果在搜尋中，預設展開符合的資料夾；或者在 state.expandedFolders 裡有記錄
+  const isExpanded = state.searchQuery ? true : state.expandedFolders.has(folderPath);
+  if (isExpanded) {
+    block.classList.add("expanded");
+  }
+
+  // 資料夾 Header
+  const header = document.createElement("div");
+  header.className = "folder-header";
+  header.title = "點選以展開/折疊此分類";
+
+  const infoLeft = document.createElement("div");
+  infoLeft.className = "folder-info";
+
+  const arrow = document.createElement("span");
+  arrow.className = "folder-arrow";
+  arrow.textContent = "▶";
+
+  const icon = document.createElement("span");
+  icon.className = "folder-icon";
+  icon.textContent = folderPath ? "📂" : "🗂️";
+
+  const title = document.createElement("span");
+  title.className = "folder-title";
+  title.textContent = displayName;
+
+  const countBadge = document.createElement("span");
+  countBadge.className = "badge badge-count";
+  countBadge.textContent = `${totalCount} 檔個股`;
+
+  infoLeft.append(arrow, icon, title, countBadge);
+
+  const actionsRight = document.createElement("div");
+  actionsRight.className = "folder-header-actions";
+
+  if (canDelete) {
+    const btnAddSub = document.createElement("button");
+    btnAddSub.className = "btn btn-sm";
+    btnAddSub.title = "在此建立子分類資料夾";
+    btnAddSub.textContent = "＋子分類";
+    btnAddSub.onclick = (e) => {
+      e.stopPropagation();
+      createFolder(folderPath);
+    };
+
+    const btnRename = document.createElement("button");
+    btnRename.className = "btn btn-sm";
+    btnRename.title = "重新命名此資料夾";
+    btnRename.textContent = "✎ 改名";
+    btnRename.onclick = (e) => {
+      e.stopPropagation();
+      renameFolder(folderPath, rawName || displayName);
+    };
+
+    const btnDelete = document.createElement("button");
+    btnDelete.className = "btn btn-sm btn-danger";
+    btnDelete.title = "刪除此資料夾 (會一併刪除內部個股)";
+    btnDelete.textContent = "🗑️ 刪除";
+    btnDelete.onclick = (e) => {
+      e.stopPropagation();
+      confirmDeleteFolder(folderPath, rawName || displayName, totalCount);
+    };
+
+    actionsRight.append(btnAddSub, btnRename, btnDelete);
+  }
+
+  header.append(infoLeft, actionsRight);
+
+  // 點擊展開/折疊
+  header.onclick = () => {
+    const nowExpanded = block.classList.toggle("expanded");
+    if (nowExpanded) {
+      state.expandedFolders.add(folderPath);
+    } else {
+      state.expandedFolders.delete(folderPath);
+    }
+  };
+
+  // 資料夾 Body (個股清單)
+  const body = document.createElement("div");
+  body.className = "folder-body";
+
+  if (reports && reports.length > 0) {
+    reports.forEach(r => {
+      body.appendChild(createStockItem(r, folderPath, displayName));
+    });
+  } else if (!folder || !(folder.children && folder.children.length)) {
+    const empty = document.createElement("div");
+    empty.className = "folder-empty";
+    empty.textContent = "此資料夾內尚無個股。從左側將個股拖曳至此即可加入分類！";
+    body.appendChild(empty);
+  }
+
+  block.append(header, body);
+
+  // ───────────────────────────────────────────────
+  // 滑鼠拖曳放置目標 (Drag & Drop Drop-zone)
+  // 整個 block (包含標題列與內容區) 都可以作為 Drop 目標！
+  // ───────────────────────────────────────────────
+  block.ondragover = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    block.classList.add("drag-over");
+  };
+  let dragDepth = 0;
+  block.ondragenter = (e) => {
+    e.preventDefault();
+    dragDepth += 1;
+    block.classList.add("drag-over");
+  };
+  block.ondragleave = (e) => {
+    e.preventDefault();
+    dragDepth -= 1;
+    if (dragDepth <= 0) {
+      dragDepth = 0;
+      block.classList.remove("drag-over");
+    }
+  };
+  block.ondrop = async (e) => {
+    e.preventDefault();
+    dragDepth = 0;
+    block.classList.remove("drag-over");
+    try {
+      let data = null;
+      const jsonRaw = e.dataTransfer.getData("application/json");
+      if (jsonRaw) {
+        try { data = JSON.parse(jsonRaw); } catch(err) {}
+      }
+      if (!data) {
+        const textBase = e.dataTransfer.getData("text/plain");
+        const fromPath = e.dataTransfer.getData("application/x-from-path") || "";
+        if (textBase) {
+          data = { base: textBase, fromFolder: fromPath };
+        }
+      }
+      if (data && (data.base || data.code)) {
+        await executeMove(data, folderPath);
+      }
+    } catch (err) {
+      console.error("Drop error:", err);
+    }
+  };
+
+  return block;
+}
+
+function countReports(folder) {
+  return (folder.reports || []).length + (folder.children || []).reduce((sum, child) => sum + countReports(child), 0);
+}
+
+// 建立單檔股票項目 (可直接滑鼠拖曳)
+function createStockItem(report, folderPath, folderName = "根目錄（未分類）") {
+  const item = document.createElement("div");
+  item.className = "stock-item";
+  item.draggable = true;
+
+  // 拖曳開始
+  item.ondragstart = (e) => {
+    item.classList.add("dragging");
+    state.draggedStock = {
+      base: report.base,
+      code: report.code,
+      name: report.name,
+      fromFolder: folderPath
+    };
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("application/json", JSON.stringify(state.draggedStock));
+    e.dataTransfer.setData("text/plain", report.base);
+    e.dataTransfer.setData("application/x-from-path", folderPath);
+  };
+  item.ondragend = () => {
+    item.classList.remove("dragging");
+    state.draggedStock = null;
+  };
+
+  const folderPrefix = folderPath ? `${folderPath}/` : '';
+  const htmlUrl = `/reports/${folderPrefix}${encodeURIComponent(report.html)}`;
+  const mdUrl = report.md ? `/reports/${folderPrefix}${encodeURIComponent(report.md)}` : null;
+
+  item.innerHTML = `
+    <div class="stock-left">
+      <span class="drag-handle" title="按住可拖曳到其他資料夾">⠿</span>
+      <span class="stock-code">${report.code || '---'}</span>
+      <span class="stock-name">${report.name || report.base}</span>
+      <span class="stock-market">${report.market || 'TW'}</span>
+      <span class="source-folder" title="目前所在資料夾">📂 ${folderName}</span>
+    </div>
+    <div class="stock-actions">
+      <div class="stock-badges">
+        <span class="badge-file badge-html" data-action="preview-html" title="點選預覽 HTML 報告">
+          📄 HTML 報告
+        </span>
+        ${report.hasMd ? `
+          <span class="badge-file badge-md" data-action="preview-md" title="點選預覽 MD 分析報告">
+            📝 MD 分析
+          </span>
+        ` : `
+          <span class="badge-file" style="background: var(--border); color: var(--text-muted);">無 .md</span>
+        `}
+      </div>
+      <button class="btn btn-sm btn-danger" data-action="delete" title="刪除個股 (一併刪除 .html 與 .md)">🗑️ 刪除</button>
+    </div>
+  `;
+
+  // 操作按鈕綁定
+  item.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-action]");
+    if (!btn) return;
+    const act = btn.dataset.action;
+    if (act === "preview-html") {
+      openPreview(htmlUrl, `${report.code || ''} ${report.name || ''} - HTML 報告`, 'html');
+    } else if (act === "preview-md" && mdUrl) {
+      openPreview(mdUrl, `${report.code || ''} ${report.name || ''} - MD 分析`, 'md');
+    } else if (act === "delete") {
+      confirmDeleteStock(report, folderPath);
+    }
+  });
+
+  return item;
+}
+
+// 核心移動邏輯：呼叫後端 /api/report/move (同步搬移 HTML 與 MD)
+async function executeMove(stockData, toFolder) {
+  if (!stockData) return;
+  const fromPath = (stockData.fromFolder || "").trim();
+  const targetPath = (toFolder || "").trim();
+
+  if (fromPath === targetPath) {
+    showToast("來源與目標資料夾相同，略過移動", "normal");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/report/move", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: fromPath,
+        to: targetPath,
+        base: stockData.base || "",
+        code: stockData.code || ""
+      })
+    });
+    const json = await res.json();
+    if (json.ok) {
+      const destName = targetPath === "" ? "根目錄 (未分類)" : targetPath;
+      const displayName = stockData.name || stockData.code || stockData.base || "個股";
+      showToast(`✅ [${displayName}] 及其報表已成功移至 [${destName}]！`, "success");
+      // 確保目標資料夾展開以便看見成果
+      state.expandedFolders.add(targetPath);
+      state.collapsedDestinationFolders.delete(targetPath);
+      state.collapsedSourceFolders.delete(targetPath);
+      await refreshAllData();
+    } else {
+      showToast(`移動失敗: ${json.error || '未知錯誤'}`, "danger");
+    }
+  } catch (err) {
+    showToast(`移動失敗: ${err}`, "danger");
+  }
+}
+
+// 核心刪除邏輯：呼叫後端 /api/report/delete (同步刪除 HTML 與 MD)
+function confirmDeleteStock(report, folderPath) {
+  showModal({
+    title: `🗑️ 刪除個股 [${report.code || ''} ${report.name || report.base}]`,
+    body: `確定要刪除 <strong>[${report.code || ''} ${report.name || report.base}]</strong> 嗎？<br><br>⚠️ 系統將<strong>一併刪除該股票在此資料夾下的 .html 與 .md 報告檔案</strong>，無法復原！`,
+    confirmText: "確認刪除 (HTML + MD)",
+    isDanger: true,
+    onConfirm: async () => {
+      try {
+        const res = await fetch("/api/report/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            folder: folderPath,
+            code: report.code,
+            base: report.base
+          })
+        });
+        const json = await res.json();
+        if (json.ok) {
+          showToast(`已成功刪除 [${report.code || ''} ${report.name || report.base}] 及其關聯檔案 (共 ${json.deletedFiles} 個檔案)`, "success");
+          removeStockFromNewToday(report.code);
+          await refreshAllData();
+        } else {
+          showToast(`刪除失敗: ${json.error}`, "danger");
+        }
+      } catch (err) {
+        showToast(`刪除失敗: ${err}`, "danger");
+      }
+    }
+  });
+}
+
+// 新增資料夾
+document.getElementById("btn-create-folder").onclick = () => createFolder("");
+document.getElementById("btn-create-folder-side").onclick = () => createFolder("");
+
+function createFolder(parentPath) {
+  showModal({
+    title: parentPath ? "📁 建立子分類資料夾" : "📁 建立新分類資料夾",
+    body: "請輸入新資料夾名稱（例如：CPO光模組、矽晶圓、IC載板）：",
+    showInput: true,
+    inputPlaceholder: "例如：散熱模組",
+    confirmText: "建立資料夾",
+    onConfirm: async (folderName) => {
+      if (!folderName) {
+        showToast("資料夾名稱不能為空", "danger");
+        return;
+      }
+      try {
+        const res = await fetch("/api/folder/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ parentPath, name: folderName })
+        });
+        const json = await res.json();
+        if (json.ok) {
+          showToast(`資料夾 [${folderName}] 建立成功！`, "success");
+          state.expandedFolders.add(parentPath ? `${parentPath}/${folderName}` : folderName);
+          state.collapsedDestinationFolders.delete(parentPath ? `${parentPath}/${folderName}` : folderName);
+          state.collapsedSourceFolders.delete(parentPath ? `${parentPath}/${folderName}` : folderName);
+          await refreshAllData();
+        } else {
+          showToast(`建立失敗: ${json.error}`, "danger");
+        }
+      } catch (err) {
+        showToast(`建立失敗: ${err}`, "danger");
+      }
+    }
+  });
+}
+
+function renameFolder(folderPath, oldName) {
+  showModal({
+    title: "✎ 重新命名資料夾",
+    body: "請輸入新的資料夾名稱：",
+    showInput: true,
+    inputValue: oldName,
+    confirmText: "重新命名",
+    onConfirm: async (newName) => {
+      if (!newName) return showToast("資料夾名稱不能為空", "danger");
+      try {
+        const res = await fetch("/api/folder/rename", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: folderPath, newName })
+        });
+        const json = await res.json();
+        if (!json.ok) return showToast(`重新命名失敗: ${json.error}`, "danger");
+        showToast("資料夾已重新命名", "success");
+        await refreshAllData();
+      } catch (err) {
+        showToast(`重新命名失敗: ${err}`, "danger");
+      }
+    }
+  });
+}
+
+// 刪除資料夾
+function confirmDeleteFolder(folderPath, folderName, count) {
+  const warningText = count > 0
+    ? `資料夾內尚有 <strong style="color: var(--danger);">${count}</strong> 檔個股報表。<br><br>若刪除此資料夾，<strong>裡面的所有 .html 與 .md 報表將一併永久刪除</strong>！`
+    : `此資料夾為空資料夾，確定要刪除嗎？`;
+
+  showModal({
+    title: `🗑️ 刪除資料夾 [${folderName}]`,
+    body: warningText,
+    confirmText: count > 0 ? "強制刪除資料夾與全部報表" : "確認刪除",
+    isDanger: true,
+    onConfirm: async () => {
+      try {
+        const res = await fetch("/api/folder/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: folderPath, force: true })
+        });
+        const json = await res.json();
+        if (json.ok) {
+          showToast(`資料夾 [${folderName}] 已刪除`, "success");
+          state.expandedFolders.delete(folderPath);
+          state.collapsedDestinationFolders.delete(folderPath);
+          state.collapsedSourceFolders.delete(folderPath);
+          await refreshAllData();
+        } else {
+          showToast(`刪除失敗: ${json.error}`, "danger");
+        }
+      } catch (err) {
+        showToast(`刪除失敗: ${err}`, "danger");
+      }
+    }
+  });
+}
+
+// 展開全部 / 折疊全部
+const expandAllBtn = document.getElementById("btn-expand-all");
+if (expandAllBtn) {
+  expandAllBtn.onclick = () => {
+    state.collapsedSourceFolders.clear();
+    state.collapsedDestinationFolders.clear();
+    renderAllFolders();
+  };
+}
+
+const collapseAllBtn = document.getElementById("btn-collapse-all");
+if (collapseAllBtn) {
+  collapseAllBtn.onclick = () => {
+    const collapseAll = (folder) => {
+      const key = folder.path || "";
+      state.collapsedSourceFolders.add(key);
+      state.collapsedDestinationFolders.add(key);
+      (folder.children || []).forEach(collapseAll);
+    };
+    if (state.tree) collapseAll(state.tree);
+    renderAllFolders();
+  };
+}
+
+// 左側樹狀工具列（全開、全收、重點篩選）
+const treeExpandBtn = document.getElementById("expand-all-btn");
+if (treeExpandBtn) {
+  treeExpandBtn.onclick = () => {
+    state.collapsedSourceFolders.clear();
+    renderAllFolders();
+  };
+}
+
+const treeCollapseBtn = document.getElementById("collapse-all-btn");
+if (treeCollapseBtn) {
+  treeCollapseBtn.onclick = () => {
+    const collapseAll = (folder) => {
+      const key = folder.path || "";
+      state.collapsedSourceFolders.add(key);
+      (folder.children || []).forEach(collapseAll);
+    };
+    if (state.tree) collapseAll(state.tree);
+    renderAllFolders();
+  };
+}
+
+const filterStarredBtn = document.getElementById("filter-starred-btn");
+if (filterStarredBtn) {
+  filterStarredBtn.onclick = () => {
+    state.starredOnlyMode = !state.starredOnlyMode;
+    filterStarredBtn.classList.toggle("active", state.starredOnlyMode);
+    if (state.starredOnlyMode) {
+      state.collapsedSourceFolders.clear(); // 切換為重點模式時展開以便看清股票
+    }
+    renderAllFolders();
+  };
+}
+
+// 重新整理
+document.getElementById("btn-refresh").onclick = async () => {
+  await Promise.all([
+    syncWatchlistFromServer(),
+    syncTodayNewStocksFromServer(),
+    loadData(),
+    loadCards(),
+    loadDisposalNoticeData()
+  ]);
+  showToast("清單已更新", "normal");
+};
+
+// 搜尋過濾
+document.getElementById("search-input").addEventListener("input", (e) => {
+  state.searchQuery = e.target.value;
+  renderAllFolders();
+});
+
+// 預覽面板控制
+async function openPreview(url, title, type) {
+  const drawer = document.getElementById("preview-drawer");
+  const titleEl = document.getElementById("preview-filename");
+  const iconEl = document.getElementById("preview-icon");
+  const contentEl = document.getElementById("preview-content");
+  const linkEl = document.getElementById("preview-open-link");
+
+  titleEl.textContent = title;
+  iconEl.textContent = type === 'html' ? '📄' : '📝';
+  linkEl.href = url;
+  contentEl.innerHTML = "";
+
+  if (type === 'html') {
+    const iframe = document.createElement("iframe");
+    iframe.src = url;
+    contentEl.appendChild(iframe);
+  } else {
+    try {
+      const res = await fetch(url);
+      const text = await res.text();
+      const div = document.createElement("div");
+      div.className = "preview-markdown";
+      div.textContent = text;
+      contentEl.appendChild(div);
+    } catch (err) {
+      contentEl.innerHTML = `<div style="padding: 20px; color: red;">載入 Markdown 失敗: ${err}</div>`;
+    }
+  }
+
+  drawer.classList.add("open");
+}
+
+document.getElementById("btn-close-preview").onclick = () => {
+  document.getElementById("preview-drawer").classList.remove("open");
+};
+
+// 外觀切換
+document.getElementById("btn-theme-toggle").onclick = () => {
+  const current = document.documentElement.getAttribute("data-theme");
+  const next = current === "light" ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", next);
+  localStorage.setItem("stock2_theme", next);
+};
+
+function initializePaneResizer() {
+  const layout = document.querySelector(".manager-layout");
+  const resizer = document.getElementById("pane-resizer");
+  const savedLeftWidth = Number(localStorage.getItem("report_manager_left_width"));
+  if (savedLeftWidth && window.innerWidth > 760) setPaneWidths(savedLeftWidth);
+
+  let layoutRect = null;
+  resizer.addEventListener("pointerdown", (event) => {
+    if (window.innerWidth <= 760) return;
+    layoutRect = layout.getBoundingClientRect();
+    resizer.setPointerCapture(event.pointerId);
+    resizer.classList.add("is-dragging");
+    document.body.classList.add("is-resizing");
+  });
+  resizer.addEventListener("pointermove", (event) => {
+    if (!layoutRect || !resizer.classList.contains("is-dragging")) return;
+    setPaneWidths(event.clientX - layoutRect.left);
+  });
+  const finishResize = () => {
+    if (!layoutRect) return;
+    const firstTrack = parseFloat(layout.style.gridTemplateColumns);
+    if (Number.isFinite(firstTrack)) localStorage.setItem("report_manager_left_width", String(Math.round(firstTrack)));
+    layoutRect = null;
+    resizer.classList.remove("is-dragging");
+    document.body.classList.remove("is-resizing");
+  };
+  resizer.addEventListener("pointerup", finishResize);
+  resizer.addEventListener("pointercancel", finishResize);
+
+  function setPaneWidths(requestedLeft) {
+    const rect = layout.getBoundingClientRect();
+    const dividerWidth = 8;
+    const minLeft = 280;
+    const minRight = 220;
+    const left = Math.max(minLeft, Math.min(requestedLeft, rect.width - dividerWidth - minRight));
+    const right = Math.max(minRight, rect.width - dividerWidth - left);
+    layout.style.gridTemplateColumns = `${Math.round(left)}px ${dividerWidth}px ${Math.round(right)}px`;
+  }
+}
+
+// 初始化
+window.addEventListener("DOMContentLoaded", async () => {
+  const savedTheme = localStorage.getItem("stock2_theme") || "dark";
+  document.documentElement.setAttribute("data-theme", savedTheme);
+  initializePaneResizer();
+  await syncWatchlistFromServer();
+  await syncTodayNewStocksFromServer();
+  await loadData();
+  await loadCards();
+  loadDisposalNoticeData();
+});
+</script>
+</body>
+</html>

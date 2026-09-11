@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 [
   {
     "code": "3545",
@@ -197,4 +198,211 @@
     ],
     "disclaimer": "此研究卡不參與評分、排序或投資建議。"
   }
+=======
+[
+  {
+    "code": "3545",
+    "name": "敦泰",
+    "as_of_date": "2026-09-08",
+    "data_cutoff": "2026-09-08",
+    "sources": [
+      {
+        "url": "https://blog.fugle.tw/post/earnings-call-3545-2026-02-26-2",
+        "publisher": "富果直送 / 敦泰法說會",
+        "published_at": "2026-02-27",
+        "source_type": "official"
+      },
+      {
+        "url": "https://blog.fugle.tw/post/earnings-call-3545-2026-05-08",
+        "publisher": "富果直送 / 敦泰法說會",
+        "published_at": "2026-05-09",
+        "source_type": "official"
+      }
+    ],
+    "supporting_facts": [
+      "2025年第四季提列商譽減損12.37億元，致使全年稅後淨損達9.9億元，每股虧損4.64元",
+      "2026年第一季營收24.74億元、單季EPS微幅轉正至0.02元，第二季營收回升至27.55億元但仍受終端手機拉貨結構牽制"
+    ],
+    "counter_evidence_and_risks": [
+      "智慧型手機TDDI及AMOLED驅動IC市場價格競爭劇烈，中國同業殺價與內捲持續壓抑毛利率擴張空間",
+      "本業獲利維持低檔水準，營收與獲利對單一消費性手機景氣連動度過高，非手機車用比重提升速度仍待檢驗"
+    ],
+    "questions_for_human_review": [
+      "第三季AMOLED驅動IC與車用觸控出貨比重是否足以抵銷消費型手機價格走跌衝擊？",
+      "毛利率能否在排除一次性稅務利益後穩定站回25%以上水準？"
+    ],
+    "data_quality_flags": [
+      "news_lag"
+    ],
+    "disclaimer": "此研究卡不參與評分、排序或投資建議。"
+  },
+  {
+    "code": "2344",
+    "name": "華邦電",
+    "as_of_date": "2026-09-08",
+    "data_cutoff": "2026-09-08",
+    "sources": [
+      {
+        "url": "https://www.sinotrade.com.tw/richclub/calendar/%E8%8F%AF%E9%82%A6%E9%9B%BB%E6%B3%95%E8%AA%AA-26Q2-EPS-5-4%E5%85%83%E5%89%B5%E9%AB%98-%E8%A8%98%E6%86%B6%E9%AB%94%E7%87%9F%E6%94%B6%E5%AD%A3%E5%A2%9E73--CMS%E7%87%9F%E6%94%B6%E5%B9%B4%E5%A2%9E467--%E8%82%A1%E5%B8%82%E8%A9%B1%E9%A1%8C-6a7442da68efc90ac5dce6ff",
+        "publisher": "永豐金證券 / 華邦電法說會",
+        "published_at": "2026-08-21",
+        "source_type": "official"
+      }
+    ],
+    "supporting_facts": [
+      "2026年第二季合併營收達598.43億元，單季每股盈餘衝上5.40元，獲利創歷史同期新高",
+      "2026年規劃資本支出超過400億元，大幅擴建高雄廠與新世代製程產能"
+    ],
+    "counter_evidence_and_risks": [
+      "高資本支出（全年逾400億元）將於未來幾季轉化為龐大折舊費用，若景氣自高峰滑落將對毛利率構成槓桿性壓縮",
+      "股價已大幅反映利基型記憶體供需緊俏預期，若三大原廠HBM產能排擠效應趨緩或中國記憶體廠產能開出，供需反轉風險遽增"
+    ],
+    "questions_for_human_review": [
+      "下半年高雄廠新產能開出後的折舊費用對第三季及第四季營業利益率的實際影響為何？",
+      "現貨市場利基型DRAM合約價與現貨價漲勢是否出現利潤封頂或客戶重複下單（Overbooking）現象？"
+    ],
+    "data_quality_flags": [
+      "news_lag"
+    ],
+    "disclaimer": "此研究卡不參與評分、排序或投資建議。"
+  },
+  {
+    "code": "2408",
+    "name": "南亞科",
+    "as_of_date": "2026-09-08",
+    "data_cutoff": "2026-09-08",
+    "sources": [
+      {
+        "url": "https://readmo.cmoney.tw/article/1fea1d8c-95bf-4efb-b19f-becc741c6704",
+        "publisher": "CMoney / 公開市場資訊",
+        "published_at": "2026-01-22",
+        "source_type": "news"
+      },
+      {
+        "url": "https://uanalyze.com.tw/articles/2654534952",
+        "publisher": "優分析產業數據中心",
+        "published_at": "2025-10-13",
+        "source_type": "news"
+      }
+    ],
+    "supporting_facts": [
+      "公司宣布2026年資本支出上限提高至約520億元，全力推進1B製程與DDR5擴產轉型",
+      "2025年下半年受惠DRAM合約報價調漲結束連續虧損，轉虧為盈"
+    ],
+    "counter_evidence_and_risks": [
+      "股價漲幅巨大（收盤價531元），若相較其歷史營運循環，目前評價已將DDR5轉型紅利大幅提前折現",
+      "資本支出自160-192億大幅躍升至520億元，先進製程良率爬坡期及設備折舊認列風險顯著提高，面臨國際大廠於標準型市場之競爭夾擊"
+    ],
+    "questions_for_human_review": [
+      "1B製程轉換良率是否如期達標，DDR5佔整體位元產出比重在第三季末是否達到既定目標？",
+      "PC與消費性終端需求若未全面跟上伺服器與AI成長，主流規格DRAM報價是否有動能鈍化風險？"
+    ],
+    "data_quality_flags": [
+      "news_lag"
+    ],
+    "disclaimer": "此研究卡不參與評分、排序或投資建議。"
+  },
+  {
+    "code": "6187",
+    "name": "萬潤",
+    "as_of_date": "2026-09-08",
+    "data_cutoff": "2026-09-08",
+    "sources": [
+      {
+        "url": "https://statementdog.com/analysis/6187/monthly-revenue-growth-rate",
+        "publisher": "財報狗 / 公開資訊觀測站營收資料",
+        "published_at": "2026-08-10",
+        "source_type": "official"
+      },
+      {
+        "url": "https://histock.tw/stock/6187/%E6%9C%AC%E7%9B%8A%E6%AF%94",
+        "publisher": "嗨投資",
+        "published_at": "2026-05-30",
+        "source_type": "news"
+      }
+    ],
+    "supporting_facts": [
+      "2026年7月單月合併營收突破10.5億元，年增率達73.44%，主要受惠先進封裝擴產拉貨",
+      "收盤價來到1385元歷史高檔區間，歷史本益比曾處於70倍以上極高水準"
+    ],
+    "counter_evidence_and_risks": [
+      "極高本益比與高基期評價使容錯率趨近於零，一旦主要晶圓代工龍頭設備交期遞延或資本支出調整，極易引發本益比劇烈修正",
+      "設備業採驗收認列制，單季營收與現金流波動劇烈，且先進封裝競爭廠商切入可能導致市占率或毛利率遭侵蝕"
+    ],
+    "questions_for_human_review": [
+      "最新合約負債（在手訂單保證金）年增率與季增率是否保持續創新高動能？",
+      "晶圓代工主要客戶對2027年先進封裝擴產指引是否有放緩或調整節奏的跡象？"
+    ],
+    "data_quality_flags": [
+      "news_lag"
+    ],
+    "disclaimer": "此研究卡不參與評分、排序或投資建議。"
+  },
+  {
+    "code": "3006",
+    "name": "晶豪科",
+    "as_of_date": "2026-09-08",
+    "data_cutoff": "2026-09-08",
+    "sources": [
+      {
+        "url": "https://www.sinotrade.com.tw/richclub/hotstock/%E6%99%B6%E8%B1%AA%E7%A7%91%E6%B3%95%E8%AA%AA-%E7%AC%AC%E5%9B%9B%E5%AD%A3EPS-3-68%E5%85%83%E9%80%86%E8%BD%89%E5%8B%9D-%E6%AF%9B%E5%88%A9%E7%8E%8732-33-%E5%89%B5%E6%96%B0%E9%AB%98-2026%E5%B9%B4%E7%94%A2%E8%83%BD%E4%BE%9B%E7%B5%A6%E6%88%90%E6%9C%80%E5%A4%A7%E8%AE%8A%E6%95%B8-%E8%82%A1%E5%B8%82%E8%A9%B1%E9%A1%8C-69afda28ccbe9f6372f63722",
+        "publisher": "永豐金證券 / 晶豪科法說會",
+        "published_at": "2026-03-10",
+        "source_type": "official"
+      }
+    ],
+    "supporting_facts": [
+      "2025年第四季單季毛利率達32.33%，單季每股盈餘3.68元，帶動全年順利轉虧為盈",
+      "2026年受惠晶圓代工與記憶體封裝產能吃緊，利基型記憶體報價持續維持高檔"
+    ],
+    "counter_evidence_and_risks": [
+      "晶豪科為Fabless IC設計廠，極度依賴晶圓代工廠投片配額，法說會直指產能供給為最大營運變數，面臨產能取得成本上升與交期受制風險",
+      "主要產品線仍集中於DDR3/DDR2等舊世代利基產品與IoT Flash，若消費性電子（網通、機上盒、IoT）實體拉貨減緩，報價溢價將快速收斂"
+    ],
+    "questions_for_human_review": [
+      "下半年取得之晶圓代工配額產能能否如期滿足客戶訂單需求？",
+      "存貨去化週期及存貨跌價損失回沖效應是否已接近尾聲？"
+    ],
+    "data_quality_flags": [
+      "news_lag"
+    ],
+    "disclaimer": "此研究卡不參與評分、排序或投資建議。"
+  },
+  {
+    "code": "2467",
+    "name": "志聖",
+    "as_of_date": "2026-09-08",
+    "data_cutoff": "2026-09-08",
+    "sources": [
+      {
+        "url": "https://news.cnyes.com/news/id/6600698",
+        "publisher": "鉅亨網 / 公開資訊觀測站",
+        "published_at": "2026-09-08",
+        "source_type": "official"
+      },
+      {
+        "url": "https://cmnews.com.tw/article/cmoney-689145aa-965d-11f1-b4f3-1192371dc488",
+        "publisher": "CMoney 財報分析",
+        "published_at": "2026-08-12",
+        "source_type": "news"
+      }
+    ],
+    "supporting_facts": [
+      "2026年1-8月累計營收達70.77億元、年增83.37%，上半年累計EPS達7.16元超越去年全年",
+      "2026年8月單月營收為8.66億元，月減25.84%，反映單月設備交機入帳節奏起伏"
+    ],
+    "counter_evidence_and_risks": [
+      "8月單月營收出現月減25.84%大幅波動，突顯設備廠入帳不連續性風險",
+      "市場普遍以未來兩至三年之高成長樂觀預估定價（本益比已推升至35-40倍以上高檔），一旦載板與先進封裝設備拉貨進入高原期，將引發估值回落"
+    ],
+    "questions_for_human_review": [
+      "8月營收月減是否屬於短期驗收時程遞延，第三季季底能否回補認列？",
+      "傳統PCB與面板設備之營收佔比是否持續受景氣疲弱拖累，壓抑整體平均毛利率？"
+    ],
+    "data_quality_flags": [
+      "news_lag"
+    ],
+    "disclaimer": "此研究卡不參與評分、排序或投資建議。"
+  }
+>>>>>>> Stashed changes
 ]

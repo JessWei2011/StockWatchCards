@@ -762,8 +762,18 @@ def list_folder(path):
             chart_name = base + "_chart.png"
             m = TRACKED_FILENAME_RE.match(entry)
             code = m.group(1) if m else None
+            if not code:
+                parts = base.split("_")
+                if parts and 2 <= len(parts[0]) <= 6:
+                    code = parts[0]
             name = get_stock_name(code, m.group(2)) if (m and code) else (m.group(2) if m else None)
             market = m.group(3) if m else ("TWO" if "(TWO)" in entry else "TW")
+            md_name = None
+            if code:
+                md_matches = list(path.glob(f"{code}_*.md"))
+                if md_matches:
+                    md_name = md_matches[0].name
+            stat_info = full.stat()
             reports.append({
                 "base": base,
                 "code": code,
@@ -771,7 +781,10 @@ def list_folder(path):
                 "market": market,
                 "html": entry,
                 "chart": chart_name if (path / chart_name).exists() else None,
-                "mtime": full.stat().st_mtime,
+                "md": md_name,
+                "hasMd": bool(md_name),
+                "mtime": stat_info.st_mtime,
+                "size": stat_info.st_size,
             })
     return folders, reports
 
@@ -2472,65 +2485,234 @@ class Handler(SimpleHTTPRequestHandler):
             if parsed.path == "/api/report/move":
                 src_dir = resolve_safe_path(body.get("from", ""))
                 dest_dir = resolve_safe_path(body.get("to", ""))
-                base = body.get("base", "")
-                if not base or any(ch in base for ch in FORBIDDEN_NAME_CHARS):
+                base = (body.get("base") or "").strip()
+                code = (body.get("code") or "").strip()
+                if not base and not code:
+                    self._json(400, {"ok": False, "error": "無效的報表名稱或股票代號"})
+                    return
+                if base and any(ch in base for ch in FORBIDDEN_NAME_CHARS):
                     self._json(400, {"ok": False, "error": "無效的報表名稱"})
                     return
                 if src_dir == dest_dir:
-                    self._json(200, {"ok": True})
+                    self._json(200, {"ok": True, "message": "來源與目標相同，略過移動"})
                     return
                 if not dest_dir.is_dir():
                     self._json(404, {"ok": False, "error": "目標資料夾不存在"})
                     return
 
-                html_name = base + ".html"
-                chart_name = base + "_chart.png"
-                src_html = src_dir / html_name
-                src_chart = src_dir / chart_name
-                if not src_html.exists():
-                    self._json(404, {"ok": False, "error": "找不到來源報表"})
-                    return
-                if (dest_dir / html_name).exists() or (dest_dir / chart_name).exists():
-                    self._json(409, {"ok": False, "error": "目標資料夾已有同名報表，請先處理後再移動"})
+                html_name = (base + ".html") if base else ""
+                chart_name = (base + "_chart.png") if base else ""
+                src_html = (src_dir / html_name) if html_name else None
+                src_chart = (src_dir / chart_name) if chart_name else None
+
+                if (not src_html or not src_html.exists()) and code:
+                    html_matches = list(src_dir.glob(f"{code}_*.html"))
+                    if html_matches:
+                        src_html = html_matches[0]
+                        html_name = src_html.name
+                        base = src_html.stem
+                        chart_name = base + "_chart.png"
+                        src_chart = src_dir / chart_name
+
+                if not code and base:
+                    m = TRACKED_FILENAME_RE.match(html_name or (base + ".html"))
+                    if m:
+                        code = m.group(1)
+                    else:
+                        parts = base.split("_")
+                        if parts and 2 <= len(parts[0]) <= 6:
+                            code = parts[0]
+
+                files_to_move = []
+                if src_html and src_html.exists():
+                    files_to_move.append(src_html)
+                if src_chart and src_chart.exists():
+                    files_to_move.append(src_chart)
+
+                if code:
+                    for md_file in src_dir.glob(f"{code}_*.md"):
+                        if md_file not in files_to_move:
+                            files_to_move.append(md_file)
+                    for extra_chart in src_dir.glob(f"{code}_*_chart.png"):
+                        if extra_chart not in files_to_move:
+                            files_to_move.append(extra_chart)
+
+                if not files_to_move:
+                    self._json(404, {"ok": False, "error": "找不到可移動的來源報表檔案"})
                     return
 
-                shutil.move(str(src_html), str(dest_dir / html_name))
-                if src_chart.exists():
-                    shutil.move(str(src_chart), str(dest_dir / chart_name))
-                m = TRACKED_FILENAME_RE.match(html_name)
-                if m:
-                    code = m.group(1)
-                    for md_file in src_dir.glob(f"{code}_*.md"):
-                        try:
-                            shutil.move(str(md_file), str(dest_dir / md_file.name))
-                        except Exception:
-                            pass
+                conflicts = [f.name for f in files_to_move if (dest_dir / f.name).exists()]
+                if conflicts:
+                    self._json(409, {
+                        "ok": False,
+                        "error": "目標資料夾已有同名檔案，為避免覆蓋已取消移動",
+                        "conflicts": conflicts,
+                    })
+                    return
+
+                moved_names = []
+                for f in files_to_move:
+                    dest_file = dest_dir / f.name
+                    try:
+                        shutil.move(str(f), str(dest_file))
+                        moved_names.append(f.name)
+                    except Exception as e:
+                        print(f"[move-error] 移動 {f.name} 失敗: {e}")
+
                 invalidate_all_caches()
-                self._json(200, {"ok": True})
+                self._json(200, {"ok": True, "moved": moved_names})
                 return
 
             if parsed.path == "/api/report/delete":
                 code = (body.get("code") or "").strip()
-                if not code or any(ch in code for ch in FORBIDDEN_NAME_CHARS):
-                    self._json(400, {"ok": False, "error": "無效的股票代號"})
+                folder = body.get("folder") if "folder" in body else body.get("path")
+                base = (body.get("base") or "").strip()
+                if not code and base:
+                    m = TRACKED_FILENAME_RE.match(base + ".html")
+                    if m:
+                        code = m.group(1)
+                    else:
+                        parts = base.split("_")
+                        if parts and 2 <= len(parts[0]) <= 6:
+                            code = parts[0]
+
+                if not code and not base:
+                    self._json(400, {"ok": False, "error": "無效的股票代號或報表名稱"})
                     return
-                # 用代號遞迴找整個 reports/ (含所有子資料夾)，不用先知道報表放在哪個分類，
-                # 排行榜上的股票不一定跟目前選取的資料夾在同一層。只刪報表檔本身
-                # (html+md，若有殘留 png 也一併清理)。
-                matches = (
-                    list(REPORTS_DIR.rglob(f"{code}_*.html"))
-                    + list(REPORTS_DIR.rglob(f"{code}_*.md"))
-                    + list(REPORTS_DIR.rglob(f"{code}_*_chart.png"))
-                )
+
+                target_dir = resolve_safe_path(folder) if folder is not None else None
+                matches = set()
+                if target_dir is not None:
+                    if code:
+                        matches.update(target_dir.glob(f"{code}_*.html"))
+                        matches.update(target_dir.glob(f"{code}_*.md"))
+                        matches.update(target_dir.glob(f"{code}_*_chart.png"))
+                    if base:
+                        f_html = target_dir / f"{base}.html"
+                        if f_html.exists():
+                            matches.add(f_html)
+                        f_chart = target_dir / f"{base}_chart.png"
+                        if f_chart.exists():
+                            matches.add(f_chart)
+                else:
+                    if code:
+                        matches.update(REPORTS_DIR.rglob(f"{code}_*.html"))
+                        matches.update(REPORTS_DIR.rglob(f"{code}_*.md"))
+                        matches.update(REPORTS_DIR.rglob(f"{code}_*_chart.png"))
+                    if base:
+                        matches.update(REPORTS_DIR.rglob(f"{base}.html"))
+                        matches.update(REPORTS_DIR.rglob(f"{base}_chart.png"))
+
                 deleted = 0
-                for path_obj in matches:
+                deleted_names = []
+                for path_obj in sorted(matches):
                     try:
-                        path_obj.unlink(missing_ok=True)
-                        deleted += 1
+                        if path_obj.exists():
+                            path_obj.unlink()
+                            deleted += 1
+                            deleted_names.append(path_obj.name)
                     except OSError:
                         pass
                 invalidate_all_caches()
-                self._json(200, {"ok": True, "deletedFiles": deleted})
+                self._json(200, {"ok": True, "deletedFiles": deleted, "deletedNames": deleted_names})
+                return
+
+            if parsed.path == "/api/report/batch-move":
+                items = body.get("items", [])
+                default_to = body.get("to", "")
+                if not items:
+                    self._json(400, {"ok": False, "error": "沒有指定要移動的項目"})
+                    return
+                all_moved = []
+                errors = []
+                for item in items:
+                    src_dir_path = item.get("from", "")
+                    dest_dir_path = item.get("to") or default_to
+                    base = (item.get("base") or "").strip()
+                    code = (item.get("code") or "").strip()
+                    try:
+                        src_dir = resolve_safe_path(src_dir_path)
+                        dest_dir = resolve_safe_path(dest_dir_path)
+                        if src_dir == dest_dir:
+                            continue
+                        if not dest_dir.is_dir():
+                            errors.append(f"{base or code}: 目標資料夾不存在")
+                            continue
+                        files_to_move = []
+                        if base:
+                            h = src_dir / f"{base}.html"
+                            c = src_dir / f"{base}_chart.png"
+                            if h.exists():
+                                files_to_move.append(h)
+                            if c.exists():
+                                files_to_move.append(c)
+                        if not code and base:
+                            parts = base.split("_")
+                            if parts and 2 <= len(parts[0]) <= 6:
+                                code = parts[0]
+                        if code:
+                            for h in src_dir.glob(f"{code}_*.html"):
+                                if h not in files_to_move:
+                                    files_to_move.append(h)
+                            for m in src_dir.glob(f"{code}_*.md"):
+                                if m not in files_to_move:
+                                    files_to_move.append(m)
+                            for c in src_dir.glob(f"{code}_*_chart.png"):
+                                if c not in files_to_move:
+                                    files_to_move.append(c)
+                        conflicts = [f.name for f in files_to_move if (dest_dir / f.name).exists()]
+                        if conflicts:
+                            errors.append(f"{base or code}: 目標已有同名檔案（未移動）")
+                            continue
+                        for f in files_to_move:
+                            df = dest_dir / f.name
+                            shutil.move(str(f), str(df))
+                            all_moved.append(f.name)
+                    except Exception as e:
+                        errors.append(f"{base or code}: {e}")
+                invalidate_all_caches()
+                self._json(200, {"ok": True, "moved": all_moved, "errors": errors})
+                return
+
+            if parsed.path == "/api/report/batch-delete":
+                items = body.get("items", [])
+                if not items:
+                    self._json(400, {"ok": False, "error": "沒有指定要刪除的項目"})
+                    return
+                all_deleted = []
+                for item in items:
+                    folder = item.get("folder") if "folder" in item else item.get("path")
+                    code = (item.get("code") or "").strip()
+                    base = (item.get("base") or "").strip()
+                    if not code and base:
+                        parts = base.split("_")
+                        if parts and 2 <= len(parts[0]) <= 6:
+                            code = parts[0]
+                    target_dir = resolve_safe_path(folder) if folder is not None else None
+                    matches = set()
+                    if target_dir is not None:
+                        if code:
+                            matches.update(target_dir.glob(f"{code}_*.html"))
+                            matches.update(target_dir.glob(f"{code}_*.md"))
+                            matches.update(target_dir.glob(f"{code}_*_chart.png"))
+                        if base:
+                            f_html = target_dir / f"{base}.html"
+                            if f_html.exists():
+                                matches.add(f_html)
+                    else:
+                        if code:
+                            matches.update(REPORTS_DIR.rglob(f"{code}_*.html"))
+                            matches.update(REPORTS_DIR.rglob(f"{code}_*.md"))
+                            matches.update(REPORTS_DIR.rglob(f"{code}_*_chart.png"))
+                    for path_obj in matches:
+                        try:
+                            if path_obj.exists():
+                                path_obj.unlink()
+                                all_deleted.append(path_obj.name)
+                        except OSError:
+                            pass
+                invalidate_all_caches()
+                self._json(200, {"ok": True, "deletedFiles": len(all_deleted), "deletedNames": all_deleted})
                 return
 
             self._json(404, {"ok": False, "error": "未知的 API"})
