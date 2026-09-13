@@ -92,6 +92,9 @@ margin_data.db
 .DS_Store
 
 # Mobile web app
+.DS_Store
+
+# Mobile web app
 !export_mobile_site.py
 !發布手機版.bat
 !mobile_web/
@@ -101,3 +104,8 @@ mobile_web/.wrangler/
 mobile_web/.dev.vars
 mobile_web/pnpm-lock.yaml
 
+# Always ignore macOS metadata
+._*
+**/*._*
+.DS_Store
+**/.DS_Store
