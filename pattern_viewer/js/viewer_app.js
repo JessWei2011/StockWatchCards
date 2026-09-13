@@ -7,6 +7,133 @@
 (function () {
   'use strict';
 
+  function chipSnapshotFromReport(data) {
+    const marginRows = Array.isArray(data && data.marginFlow) ? data.marginFlow.slice()
+      .sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))) : [];
+    const rates = {};
+    [1, 5, 20].forEach(days => {
+      const rows = marginRows.slice(0, days);
+      if (rows.length !== days) return;
+      const change = rows.reduce((sum, row) => sum + Number(row.marginChange || 0), 0);
+      const base = Number(rows[0].marginBalance) - change;
+      if (base > 0) rates[days] = (change / base) * 100;
+    });
+    const holders = Array.isArray(data && data.holderFlow) ? data.holderFlow.slice()
+      .sort((a, b) => String(a.date || '').localeCompare(String(b.date || ''))) : [];
+    const previous = holders[holders.length - 2];
+    const latest = holders[holders.length - 1];
+    return {
+      marginChangeRates: rates,
+      big400Change: previous && latest ? Number(latest.big400Pct) - Number(previous.big400Pct) : null,
+      big1000Change: previous && latest ? Number(latest.big1000Pct) - Number(previous.big1000Pct) : null
+    };
+  }
+
+  function chipSnapshotHtml(snapshot) {
+    const value = (number, suffix) => {
+      const n = Number(number);
+      if (!Number.isFinite(n)) return '—';
+      const tone = n > 0 ? 'up' : (n < 0 ? 'down' : 'flat');
+      return `<span class="chip-snapshot-value ${tone}">${n > 0 ? '+' : ''}${n.toFixed(2)}${suffix}</span>`;
+    };
+    const holders = [
+      ['400張大戶', snapshot && snapshot.big400Change],
+      ['1000張大戶', snapshot && snapshot.big1000Change]
+    ].map(([label, number]) => `<span class="chip-snapshot-item"><b>${label}</b>${value(number, 'pp')}</span>`);
+    return holders.join('');
+  }
+
+  function holderRows(card, reportData) {
+    const rows = (card && Array.isArray(card.holderFlow) && card.holderFlow.length
+      ? card.holderFlow : (reportData && reportData.holderFlow)) || [];
+    return rows.slice()
+      .filter(row => Number.isFinite(Number(row.big400Pct)) && Number.isFinite(Number(row.big1000Pct)))
+      .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))
+      .slice(-6);
+  }
+
+  function holderTrendHtml(rows) {
+    if (rows.length < 2) return '<span class="inst-chart-empty">尚無足夠的集保週資料繪製趨勢</span>';
+    const barChart = (key, color, label) => {
+      const width = 180;
+      const height = 54;
+      const top = 12;
+      const bottom = 42;
+      const values = rows.map(row => Number(row[key]));
+      const min = Math.floor((Math.min(...values) - 1) / 5) * 5;
+      const max = Math.ceil((Math.max(...values) + 1) / 5) * 5;
+      const range = max - min || 1;
+      const gap = 3;
+      const barWidth = (width - gap * (rows.length + 1)) / rows.length;
+      const bar = (row, index) => {
+        const value = Number(row[key]);
+        const x = gap + index * (barWidth + gap);
+        const y = top + (max - value) / range * (bottom - top);
+        const labelY = Math.max(9, y - 2);
+        const date = String(row.date || '').slice(5).replace('-', '/');
+        return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${(bottom - y).toFixed(1)}" rx="1.5" fill="${color}" opacity=".88"><title>${row.date}｜${label} ${value.toFixed(2)}%</title></rect><text x="${(x + barWidth / 2).toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" fill="#e2e8f0" font-size="7.5">${value.toFixed(1)}%</text><text x="${(x + barWidth / 2).toFixed(1)}" y="51" text-anchor="middle" fill="#94a3b8" font-size="7">${date}</text>`;
+      };
+      return `<section class="holder-bar-card"><div class="holder-bar-title" style="color:${color}">${label}</div><svg class="holder-bar-chart" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${label}近${rows.length}週持股比例長條圖"><line x1="0" y1="${bottom}" x2="${width}" y2="${bottom}" stroke="rgba(148,163,184,.28)"/>${rows.map(bar).join('')}</svg></section>`;
+    };
+    return `<div class="holder-trend-head"><b>集保大戶近${rows.length}週持股比例</b><span>柱頂為持股比例</span></div><div class="holder-bar-grid">${barChart('big400Pct', '#fb923c', '400張以上')}${barChart('big1000Pct', '#38bdf8', '1000張以上')}</div>`;
+  }
+  window.renderHolderTrend = holderTrendHtml;
+
+  function marginRows(card, reportData) {
+    const rows = (card && Array.isArray(card.marginFlow) && card.marginFlow.length
+      ? card.marginFlow : (reportData && reportData.marginFlow)) || [];
+    return rows.slice()
+      .filter(row => Number.isFinite(Number(row.marginBalance)) && Number.isFinite(Number(row.marginChange)))
+      .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))
+      .slice(-15);
+  }
+
+  function marginSummaryHtml(rows) {
+    if (!rows.length) return '<div class="inst-chart-empty">尚無融資日資料可彙整</div>';
+    const balance = value => Math.round(Number(value)).toLocaleString('zh-TW');
+    const change = value => {
+      const number = Number(value);
+      const tone = number > 0 ? 'buy' : (number < 0 ? 'sell' : 'flat');
+      return `<span class="inst-flow-value ${tone}">${number > 0 ? '+' : ''}${Math.round(number).toLocaleString('zh-TW')}</span>`;
+    };
+    return `<div class="inst-flow-scroll"><table class="inst-flow-table" aria-label="近15日融資餘額與增減，單位張">
+      <thead><tr><th>融資＼日期</th>${rows.map(row => `<th>${String(row.date || '').slice(5).replace('-', '/')}</th>`).join('')}</tr></thead>
+      <tbody><tr><td>融資餘額</td>${rows.map(row => `<td>${balance(row.marginBalance)}</td>`).join('')}</tr>
+      <tr><td>融資增減</td>${rows.map(row => `<td>${change(row.marginChange)}</td>`).join('')}</tr></tbody>
+    </table></div>`;
+  }
+
+  function updateMarginSummary(root, reportData, card) {
+    if (!root) return;
+    const rows = marginRows(card, reportData);
+    const content = marginSummaryHtml(rows);
+    root.querySelectorAll('#patternMarginTableWrapper, #reports-patternMarginTableWrapper').forEach(slot => {
+      slot.innerHTML = content;
+    });
+    root.querySelectorAll('#patternMarginContainer, #reports-patternMarginContainer').forEach(container => {
+      container.style.display = rows.length ? 'block' : 'none';
+    });
+  }
+
+  function updateChipSnapshot(root, reportData, card) {
+    if (!root) return;
+    const content = holderTrendHtml(holderRows(card, reportData));
+    const slots = Array.from(root.querySelectorAll('#statChipSnapshot, #patternChipSnapshot, #reports-patternChipSnapshot'));
+    if (!slots.length) {
+      const chipTags = root.querySelector('#statChipTags');
+      if (chipTags && chipTags.parentElement) {
+        chipTags.insertAdjacentHTML('afterend', '<div id="statChipSnapshot" class="pattern-chip-snapshot" style="margin-top:9px;"></div>');
+      }
+      const instTable = root.querySelector('#patternInstTableWrapper, .pattern-inst-table-wrapper');
+      if (instTable && instTable.parentElement) {
+        instTable.insertAdjacentHTML('afterend', '<div id="patternChipSnapshot" class="pattern-chip-snapshot"></div>');
+      }
+    }
+    root.querySelectorAll('#patternChipSnapshot, #reports-patternChipSnapshot').forEach(slot => {
+      slot.innerHTML = content;
+    });
+  }
+
   class PatternViewerApp {
     constructor(root, options = {}) {
       this.root = typeof root === 'string' ? document.querySelector(root) : root;
@@ -650,6 +777,11 @@
           statChipTags.innerHTML = `<span class="tag-pill tag-neutral">法人籌碼中性</span>`;
         }
       }
+      if (typeof window.updatePatternChipSnapshot === 'function') {
+        window.updatePatternChipSnapshot(this.currentCode);
+      }
+      updateChipSnapshot(this.root, this.currentStockData, card);
+      updateMarginSummary(this.root, this.currentStockData, card);
       // 渲染「三大法人近15日逐日買賣超概數」表格 (放置於 KD 指標下方)
       const patternInstTableWrapper = this.q('#patternInstTableWrapper') || document.getElementById('patternInstTableWrapper');
       const patternInstContainer = this.q('#patternInstContainer') || document.getElementById('patternInstContainer');

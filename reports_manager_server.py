@@ -751,6 +751,10 @@ def list_folder(path):
         return folders, reports
 
     for entry in entries:
+        # macOS 會在外接磁碟或非 APFS 檔案系統產生 AppleDouble 中繼檔（._*）。
+        # 這些不是使用者的報表，不應出現在管理清單。
+        if entry.startswith("._") or entry == ".DS_Store":
+            continue
         full = path / entry
         if full.is_dir():
             folders.append(entry)
@@ -797,6 +801,8 @@ def list_reports_recursive(path):
     for dirpath, _dirnames, filenames in os.walk(path):
         seen_bases = set()
         for fn in sorted(filenames, key=str.lower):
+            if fn.startswith("._") or fn == ".DS_Store":
+                continue
             if not fn.lower().endswith(".html"):
                 continue
             base = fn[:-5]
@@ -904,6 +910,54 @@ def _report_table_rows(report_text, heading_pattern, value_keys):
     return parsed
 
 
+def _report_holder_rows(report_text):
+    """擷取集保週報的 400 張與 1000 張以上持股比例。"""
+    match = re.search(
+        r"<h2[^>]*>[^<]*大戶持股比例[^<]*</h2>.*?<table[^>]*>(.*?)</table>",
+        report_text,
+        re.I | re.S,
+    )
+    if not match:
+        return []
+    rows = []
+    for row_html in re.findall(r"<tr[^>]*>(.*?)</tr>", match.group(1), re.I | re.S):
+        cells = [_cell_text(cell) for cell in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row_html, re.I | re.S)]
+        if len(cells) < 5 or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", cells[0]):
+            continue
+        try:
+            rows.append({
+                "date": cells[0],
+                "big400Pct": float(cells[1].replace("%", "").strip()),
+                "big1000Pct": float(cells[4].replace("%", "").strip()),
+            })
+        except ValueError:
+            continue
+    return rows
+
+
+def _chip_snapshot(margin_rows, holder_rows):
+    """組合首頁與專業看盤共用的籌碼快照。"""
+    margin_change_rates = {}
+    for days in (1, 5, 20):
+        period_rows = margin_rows[:days]
+        if len(period_rows) < days:
+            continue
+        change = sum(row["marginChange"] for row in period_rows)
+        base = period_rows[0]["marginBalance"] - change
+        if base > 0:
+            margin_change_rates[str(days)] = round(change / base * 100, 2)
+
+    snapshot = {"marginChangeRates": margin_change_rates, "big400Change": None, "big1000Change": None}
+    if len(holder_rows) >= 2:
+        previous, latest = holder_rows[-2], holder_rows[-1]
+        snapshot.update({
+            "holdersDate": latest["date"],
+            "big400Change": round(latest["big400Pct"] - previous["big400Pct"], 2),
+            "big1000Change": round(latest["big1000Pct"] - previous["big1000Pct"], 2),
+        })
+    return snapshot
+
+
 def _report_close_prices(report_text):
     """擷取技術資料表中的每日收盤價，以 MM-DD 為 key 供法人日期對齊。"""
     prices = {}
@@ -976,6 +1030,8 @@ def attach_report_flows(cards_by_code):
             card["changePct"] = None
             card["institutionalFlow"] = []
             card["marginFlow"] = []
+            card["holderFlow"] = []
+            card["chipSnapshot"] = _chip_snapshot([], [])
             continue
         try:
             report_text = (REPORTS_DIR / report["path"]).read_text(encoding="utf-8")
@@ -986,6 +1042,8 @@ def attach_report_flows(cards_by_code):
             card["changePct"] = None
             card["institutionalFlow"] = []
             card["marginFlow"] = []
+            card["holderFlow"] = []
+            card["chipSnapshot"] = _chip_snapshot([], [])
             continue
         card["pe"] = _report_pe(report_text)
         kline_sum = _report_recent_kline_summary(report_text)
@@ -1002,7 +1060,9 @@ def attach_report_flows(cards_by_code):
         card["institutionalFlow"] = institutional
         card["marginFlow"] = _report_table_rows(
             report_text, "融資融券", ("marginBalance", "marginChange", "shortBalance", "shortChange")
-        )[:5]
+        )
+        card["holderFlow"] = _report_holder_rows(report_text)
+        card["chipSnapshot"] = _chip_snapshot(card["marginFlow"], card["holderFlow"])
 
 
 def count_contents(path):

@@ -245,6 +245,8 @@ window.PatternParser = {
 
     // Parse 三大法人 table if present
     const institutionalFlow = [];
+    const marginFlow = [];
+    const holderFlow = [];
     for (const table of tables) {
       const headers = Array.from(table.querySelectorAll('th')).map(th => th.innerText.trim());
       if (headers.includes('外資') && headers.includes('投信')) {
@@ -262,6 +264,32 @@ window.PatternParser = {
           }
         });
         break;
+      }
+    }
+
+    for (const table of tables) {
+      const headers = Array.from(table.querySelectorAll('th')).map(th => th.innerText.trim());
+      if (headers.includes('融資餘額') && headers.includes('融資增減')) {
+        Array.from(table.querySelectorAll('tr')).slice(1).forEach(tr => {
+          const tds = Array.from(tr.querySelectorAll('td')).map(td => td.innerText.trim());
+          if (tds.length < 3 || !/^\d{4}-\d{2}-\d{2}$/.test(tds[0])) return;
+          const marginBalance = Number(tds[1].replace(/,/g, ''));
+          const marginChange = Number(tds[2].replace(/,/g, ''));
+          if (Number.isFinite(marginBalance) && Number.isFinite(marginChange)) {
+            marginFlow.push({ date: tds[0], marginBalance, marginChange });
+          }
+        });
+      }
+      if (headers.includes('400張以上') && headers.includes('1000張以上')) {
+        Array.from(table.querySelectorAll('tr')).slice(1).forEach(tr => {
+          const tds = Array.from(tr.querySelectorAll('td')).map(td => td.innerText.trim());
+          if (tds.length < 5 || !/^\d{4}-\d{2}-\d{2}$/.test(tds[0])) return;
+          const big400Pct = Number(tds[1].replace('%', ''));
+          const big1000Pct = Number(tds[4].replace('%', ''));
+          if (Number.isFinite(big400Pct) && Number.isFinite(big1000Pct)) {
+            holderFlow.push({ date: tds[0], big400Pct, big1000Pct });
+          }
+        });
       }
     }
 
@@ -288,7 +316,9 @@ window.PatternParser = {
       bollUpper,
       bollMid,
       bollLower,
-      institutionalFlow
+      institutionalFlow,
+      marginFlow,
+      holderFlow
     };
   }
 };

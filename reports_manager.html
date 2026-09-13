@@ -2637,6 +2637,29 @@
   .inst-flow-value.sell{ color:#4ade80; }
   .inst-flow-value.flat{ color:#94a3b8; }
   .inst-chart-empty{ color:var(--text-dim); font-size:11.5px; padding:12px 0; }
+  .pattern-chip-snapshot{
+    display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; padding-top:10px;
+    border-top:1px dashed rgba(148,163,184,.28); font-size:12px;
+  }
+  .chip-snapshot-item{
+    padding:4px 7px; border-radius:5px; background:rgba(255,255,255,.045);
+    border:1px solid rgba(148,163,184,.2); color:#cbd5e1; font-variant-numeric:tabular-nums;
+  }
+  .chip-snapshot-item b{ color:#fdba74; margin-right:3px; }
+  .chip-snapshot-value.up{ color:#f87171; font-weight:800; }
+  .chip-snapshot-value.down{ color:#4ade80; font-weight:800; }
+  .chip-snapshot-value.flat{ color:#94a3b8; font-weight:800; }
+  .holder-trend-head{
+    width:100%; display:flex; justify-content:space-between; align-items:center; gap:8px;
+    color:#cbd5e1; font-size:11px;
+  }
+  .holder-trend-head b{ color:#fdba74; }
+  .holder-trend-head span{ color:#94a3b8; white-space:nowrap; }
+  .holder-trend-head i{ display:inline-block; width:7px; height:7px; margin:0 3px 0 7px; border-radius:50%; }
+  .holder-bar-grid{ width:min(100%, 520px); display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:4px; }
+  .holder-bar-card{ min-width:0; padding:3px 5px 2px; border:1px solid rgba(148,163,184,.16); border-radius:5px; background:rgba(56,189,248,.04); }
+  .holder-bar-title{ font-size:10px; font-weight:800; line-height:1.1; }
+  .holder-bar-chart{ display:block; width:100%; height:54px; overflow:visible; }
 
   /* ── 台股大盤三大法人買賣金額看板 ── */
   .market-inst-card{
@@ -3316,6 +3339,14 @@
               <span class="inst-chart-note" style="font-size:12.5px; color:#94a3b8;">日期橫向排列｜<span style="color:#f87171; font-weight:700;">紅色買超</span>・<span style="color:#4ade80; font-weight:700;">綠色賣超</span></span>
             </div>
             <div id="reports-patternInstTableWrapper" class="pattern-inst-table-wrapper"></div>
+            <div id="reports-patternChipSnapshot" class="pattern-chip-snapshot"></div>
+          </div>
+          <div id="reports-patternMarginContainer" class="inst-mini-chart" style="display:none; margin-top:16px; margin-bottom:20px; padding:14px 16px; background:#141721; border:1px solid rgba(249,115,22,0.3); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+            <div class="inst-chart-head" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">
+              <span class="rank-detail-label" style="font-weight:800; color:#fdba74; font-size:17px; display:inline-flex; align-items:center; gap:6px;"><span>💳</span> 融資近15日逐日餘額／增減</span>
+              <span class="inst-chart-note" style="font-size:12.5px; color:#94a3b8;">日期橫向排列｜<span style="color:#f87171; font-weight:700;">紅色增加</span>・<span style="color:#4ade80; font-weight:700;">綠色減少</span>｜單位：張</span>
+            </div>
+            <div id="reports-patternMarginTableWrapper" class="pattern-margin-table-wrapper"></div>
           </div>
         </main>
       </div>
@@ -3485,7 +3516,8 @@
             </div>
             <div class="stat-box full" id="statChipBox" style="margin-top:7px; padding:8px 12px; background:rgba(249,115,22,0.06); border:1px solid rgba(249,115,22,0.2); border-radius:6px;">
               <div class="stat-label" style="color:#fdba74; font-size:15px; font-weight:800;">🏛️ 籌碼指標狀態</div>
-              <div id="statChipTags" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">—</div>
+            <div id="statChipTags" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">—</div>
+              <div id="statChipSnapshot" class="pattern-chip-snapshot" style="margin-top:9px;"></div>
             </div>
           </div>
 
@@ -3545,6 +3577,14 @@
               <span class="inst-chart-note" style="font-size:12.5px; color:#94a3b8;">日期橫向排列｜<span style="color:#f87171; font-weight:700;">紅色買超</span>・<span style="color:#4ade80; font-weight:700;">綠色賣超</span></span>
             </div>
             <div id="patternInstTableWrapper"></div>
+            <div id="patternChipSnapshot" class="pattern-chip-snapshot"></div>
+          </div>
+          <div id="patternMarginContainer" class="inst-mini-chart" style="display:none; margin-top:16px; margin-bottom:20px; padding:14px 16px; background:#141721; border:1px solid rgba(249,115,22,0.3); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+            <div class="inst-chart-head" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">
+              <span class="rank-detail-label" style="font-weight:800; color:#fdba74; font-size:17px; display:inline-flex; align-items:center; gap:6px;"><span>💳</span> 融資近15日逐日餘額／增減</span>
+              <span class="inst-chart-note" style="font-size:12.5px; color:#94a3b8;">日期橫向排列｜<span style="color:#f87171; font-weight:700;">紅色增加</span>・<span style="color:#4ade80; font-weight:700;">綠色減少</span>｜單位：張</span>
+            </div>
+            <div id="patternMarginTableWrapper" class="pattern-margin-table-wrapper"></div>
           </div>
         </main>
       </div>
@@ -4568,10 +4608,10 @@
 
 <script src="pattern_viewer/js/vendor/echarts.min.js"></script>
 <script>if(typeof echarts==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"><\/script>');}</script>
-<script src="pattern_viewer/js/parser.js?v=77"></script>
+<script src="pattern_viewer/js/parser.js?v=78"></script>
 <script src="pattern_viewer/js/pattern_engine.js?v=77"></script>
 <script src="pattern_viewer/js/chart_engine.js?v=87"></script>
-<script src="pattern_viewer/js/viewer_app.js?v=88"></script>
+<script src="pattern_viewer/js/viewer_app.js?v=96"></script>
 <script src="render-shared.js?v=77"></script>
 <script>
   const DISPLAY_SCALE_KEY = 'stock-analysis-display-scale';
@@ -8207,6 +8247,23 @@
     </table></div>`;
   }
 
+  function renderChipSnapshot(card){
+    const rows = card && Array.isArray(card.holderFlow) ? card.holderFlow : [];
+    if (typeof window.renderHolderTrend === 'function') return window.renderHolderTrend(rows);
+    return '<span class="inst-chart-empty">尚無集保週資料可繪製趨勢</span>';
+  }
+
+  function updatePatternChipSnapshot(code){
+    const cleanCode = String(code || '').split('.')[0].trim();
+    const card = cardsByCode[cleanCode] || cardsByCode[code] || null;
+    const content = renderChipSnapshot(card);
+    document.querySelectorAll('#patternChipSnapshot, #reports-patternChipSnapshot').forEach(el => {
+      el.innerHTML = content;
+    });
+  }
+  window.updatePatternChipSnapshot = updatePatternChipSnapshot;
+  window.renderChipSnapshot = renderChipSnapshot;
+
   function updatePatternInstitutionalSummary(code){
     const cleanCode = String(code || '').split('.')[0].trim();
     const card = cardsByCode[cleanCode] || cardsByCode[code] || null;
@@ -8218,6 +8275,7 @@
     document.querySelectorAll('#patternInstContainer, #reports-patternInstContainer, .inst-mini-chart').forEach(el => {
       el.style.display = 'block';
     });
+    updatePatternChipSnapshot(code);
   }
   window.updatePatternInstitutionalSummary = updatePatternInstitutionalSummary;
   window.renderInstitutionSummary = renderInstitutionSummary;
