@@ -38,6 +38,7 @@ if sys.stdout.encoding != "utf-8":
 ROOT_DIR = Path(__file__).resolve().parent
 REPORTS_DIR = ROOT_DIR / "reports"
 EVOLUTION_RANKING_FILE = ROOT_DIR / "stock_winrate_ranking_evolution.md"
+INSTITUTIONAL_STRATEGY_RANKING_FILE = ROOT_DIR / "institutional_chip_strategy_ranking.md"
 AI_RESEARCH_CARDS_FILE = ROOT_DIR / "ai_research_cards.json"
 AI_RESEARCH_TEMP_FILE = ROOT_DIR / "ai_research_cards.tmp"
 WATCHLIST_FILE = ROOT_DIR / "watchlist.json"
@@ -2158,6 +2159,20 @@ class Handler(SimpleHTTPRequestHandler):
                 })
             except Exception as e:
                 self._json(500, {"ok": False, "error": f"讀取排行榜失敗: {e}"})
+            return
+        if parsed.path == "/api/institutional-chip-strategy":
+            if not INSTITUTIONAL_STRATEGY_RANKING_FILE.exists():
+                self._json(404, {"ok": False, "error": "尚未產生法人籌碼策略榜，請先執行「法人籌碼策略榜」。"})
+                return
+            try:
+                self._json(200, {
+                    "ok": True,
+                    "filename": INSTITUTIONAL_STRATEGY_RANKING_FILE.name,
+                    "content": INSTITUTIONAL_STRATEGY_RANKING_FILE.read_text(encoding="utf-8", errors="replace"),
+                    "mtime": os.path.getmtime(INSTITUTIONAL_STRATEGY_RANKING_FILE),
+                })
+            except Exception as e:
+                self._json(500, {"ok": False, "error": f"讀取法人籌碼策略榜失敗: {e}"})
             return
         super().do_GET()
 

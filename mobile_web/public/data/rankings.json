@@ -393,6 +393,220 @@
       ]
     },
     {
+      "id": "institutional-foreign-trust",
+      "title": "🏦 外資＋投信同步買超 TOP 10",
+      "tone": "institutional-foreign-trust",
+      "items": [
+        {
+          "rank": "1",
+          "code": "2609",
+          "name": "陽明",
+          "foreign": 22998.0,
+          "trust": 102.0,
+          "dealer": 647.0,
+          "total": 23748.0,
+          "displayValue": "合計 +23,748 張"
+        },
+        {
+          "rank": "2",
+          "code": "2892",
+          "name": "第一金",
+          "foreign": 8457.0,
+          "trust": 9874.0,
+          "dealer": 506.0,
+          "total": 18836.0,
+          "displayValue": "合計 +18,836 張"
+        },
+        {
+          "rank": "3",
+          "code": "2801",
+          "name": "彰銀",
+          "foreign": 10396.0,
+          "trust": 7592.0,
+          "dealer": 473.0,
+          "total": 18461.0,
+          "displayValue": "合計 +18,461 張"
+        },
+        {
+          "rank": "4",
+          "code": "2883",
+          "name": "凱基金",
+          "foreign": 16651.0,
+          "trust": 261.0,
+          "dealer": 435.0,
+          "total": 17346.0,
+          "displayValue": "合計 +17,346 張"
+        },
+        {
+          "rank": "5",
+          "code": "2886",
+          "name": "兆豐金",
+          "foreign": 3945.0,
+          "trust": 9393.0,
+          "dealer": 533.0,
+          "total": 13870.0,
+          "displayValue": "合計 +13,870 張"
+        },
+        {
+          "rank": "6",
+          "code": "2887",
+          "name": "台新新光金",
+          "foreign": 9777.0,
+          "trust": 921.0,
+          "dealer": 1642.0,
+          "total": 12340.0,
+          "displayValue": "合計 +12,340 張"
+        },
+        {
+          "rank": "7",
+          "code": "2884",
+          "name": "玉山金",
+          "foreign": 9208.0,
+          "trust": 1514.0,
+          "dealer": 502.0,
+          "total": 11225.0,
+          "displayValue": "合計 +11,225 張"
+        },
+        {
+          "rank": "8",
+          "code": "2412",
+          "name": "中華電",
+          "foreign": 9937.0,
+          "trust": 113.0,
+          "dealer": -64.0,
+          "total": 9986.0,
+          "displayValue": "合計 +9,986 張"
+        },
+        {
+          "rank": "9",
+          "code": "2618",
+          "name": "長榮航",
+          "foreign": 8039.0,
+          "trust": 240.0,
+          "dealer": 151.0,
+          "total": 8430.0,
+          "displayValue": "合計 +8,430 張"
+        },
+        {
+          "rank": "10",
+          "code": "2610",
+          "name": "華航",
+          "foreign": 6370.0,
+          "trust": 325.0,
+          "dealer": 201.0,
+          "total": 6897.0,
+          "displayValue": "合計 +6,897 張"
+        }
+      ]
+    },
+    {
+      "id": "institutional-trust-buy",
+      "title": "🏦 投信買超 TOP 10",
+      "tone": "institutional-trust-buy",
+      "items": [
+        {
+          "rank": "1",
+          "code": "2892",
+          "name": "第一金",
+          "foreign": 8457.0,
+          "trust": 9874.0,
+          "dealer": 506.0,
+          "total": 18836.0,
+          "displayValue": "投信 +9,874 張"
+        },
+        {
+          "rank": "2",
+          "code": "2886",
+          "name": "兆豐金",
+          "foreign": 3945.0,
+          "trust": 9393.0,
+          "dealer": 533.0,
+          "total": 13870.0,
+          "displayValue": "投信 +9,393 張"
+        },
+        {
+          "rank": "3",
+          "code": "2890",
+          "name": "永豐金",
+          "foreign": -2754.0,
+          "trust": 7980.0,
+          "dealer": 755.0,
+          "total": 5982.0,
+          "displayValue": "投信 +7,980 張"
+        },
+        {
+          "rank": "4",
+          "code": "1815",
+          "name": "富喬",
+          "foreign": -5552.0,
+          "trust": 7612.0,
+          "dealer": -92.0,
+          "total": 1968.0,
+          "displayValue": "投信 +7,612 張"
+        },
+        {
+          "rank": "5",
+          "code": "2801",
+          "name": "彰銀",
+          "foreign": 10396.0,
+          "trust": 7592.0,
+          "dealer": 473.0,
+          "total": 18461.0,
+          "displayValue": "投信 +7,592 張"
+        },
+        {
+          "rank": "6",
+          "code": "6505",
+          "name": "台塑化",
+          "foreign": -13534.0,
+          "trust": 5199.0,
+          "dealer": -1160.0,
+          "total": -9495.0,
+          "displayValue": "投信 +5,199 張"
+        },
+        {
+          "rank": "7",
+          "code": "3624",
+          "name": "光頡",
+          "foreign": -83.0,
+          "trust": 2304.0,
+          "dealer": 349.0,
+          "total": 2570.0,
+          "displayValue": "投信 +2,304 張"
+        },
+        {
+          "rank": "8",
+          "code": "2027",
+          "name": "大成鋼",
+          "foreign": 3477.0,
+          "trust": 2040.0,
+          "dealer": -1720.0,
+          "total": 3797.0,
+          "displayValue": "投信 +2,040 張"
+        },
+        {
+          "rank": "9",
+          "code": "2637",
+          "name": "慧洋-KY",
+          "foreign": 158.0,
+          "trust": 1886.0,
+          "dealer": -9.0,
+          "total": 2035.0,
+          "displayValue": "投信 +1,886 張"
+        },
+        {
+          "rank": "10",
+          "code": "3374",
+          "name": "精材",
+          "foreign": -143.0,
+          "trust": 1732.0,
+          "dealer": -546.0,
+          "total": 1043.0,
+          "displayValue": "投信 +1,732 張"
+        }
+      ]
+    },
+    {
       "id": "gemini-defensive",
       "title": "🌱 Gemini 穩健防守 TOP 10",
       "tone": "gemini-defensive",

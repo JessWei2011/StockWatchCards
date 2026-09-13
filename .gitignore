@@ -41,6 +41,10 @@
 !安裝相依套件.command
 !安裝相依套件.bat
 !deploy_mobile.py
+!institutional_chip_strategy.py
+!institutional_chip_strategy_ranking.md
+!法人籌碼策略榜.bat
+!法人籌碼策略榜.command
 !發布手機版.command
 !requirements.txt
 !README.md

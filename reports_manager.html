@@ -5509,6 +5509,7 @@
   Object.assign(STOCK_NAMES_MAP, {"2464": "盟立", "3376": "新日興", "3605": "宏致"});
  // 'momentum' | 'defensive'
   let winrateParsedData = { evolution: null, gemini: null, chatgpt: null };
+  let institutionalStrategyMarkdown = '';
   let winrateFilterDecision = 'all';
   let winrateSearchQuery = '';
 
@@ -5524,15 +5525,17 @@
         if (cardsRes?.ok) reportTagCardsByCode = cardsRes.cards || {};
       }
       // 同時取得 Evolution, Gemini 與 ChatGPT 三份資料
-      const [resE, resG, resC] = await Promise.all([
+      const [resE, resG, resC, institutionalRes] = await Promise.all([
         fetch('/api/winrate-ranking-report?source=evolution', {cache:'no-store'}).then(r => r.json()).catch(() => null),
         fetch('/api/winrate-ranking-report?source=gemini').then(r => r.json()).catch(() => null),
-        fetch('/api/winrate-ranking-report?source=chatgpt').then(r => r.json()).catch(() => null)
+        fetch('/api/winrate-ranking-report?source=chatgpt').then(r => r.json()).catch(() => null),
+        fetch('/api/institutional-chip-strategy', {cache:'no-store'}).then(r => r.json()).catch(() => null)
       ]);
 
       if (resE && resE.ok) winrateParsedData.evolution = parseDualTrackRankingMd(resE.content, 'evolution');
       if (resG && resG.ok) winrateParsedData.gemini = parseDualTrackRankingMd(resG.content, 'gemini');
       if (resC && resC.ok) winrateParsedData.chatgpt = parseDualTrackRankingMd(resC.content, 'chatgpt');
+      if (institutionalRes && institutionalRes.ok) institutionalStrategyMarkdown = institutionalRes.content || '';
 
       const currentData = winrateParsedData[winrateRankingSource] || winrateParsedData.gemini || winrateParsedData.chatgpt;
       if (!currentData) {
@@ -6328,6 +6331,26 @@
       return `<section id="holder-change-leaderboard" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.12);"><div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:10px;"><b style="font-size:16px; color:#e2e8f0; display:flex; align-items:center; gap:6px;"><span style="font-size:18px;">🏦</span> 集保大戶籌碼本週變動排行榜</b><span style="font-size:12px; color:var(--text-dim);">本週相對前週，單位：百分點（pp）</span></div><div class="ranking-overview-row" style="margin-bottom:0;">${configs.map(column).join('')}</div></section>`;
     }
 
+    function renderInstitutionalStrategyLeaderboard(){
+      if (!institutionalStrategyMarkdown) return '';
+      const boards = { sync: [], trust: [] };
+      let active = '';
+      let asOf = '';
+      institutionalStrategyMarkdown.split(/\r?\n/).forEach(raw => {
+        const line = raw.trim();
+        const date = line.match(/資料日期[：:]\s*(\d{4}-\d{2}-\d{2})/);
+        if (date) asOf = date[1];
+        if (line.startsWith('##') && line.includes('外資、投信同步買超')) active = 'sync';
+        else if (line.startsWith('##') && line.includes('投信買超')) active = 'trust';
+        else if (active && line.startsWith('|') && line.endsWith('|')) {
+          const cells = line.split('|').slice(1, -1).map(v => v.trim().replace(/`/g, ''));
+          if (cells.length === 7 && /^\d+$/.test(cells[0]) && /^\d{4}$/.test(cells[1])) boards[active].push(cells);
+        }
+      });
+      const column = (title, color, items, valueIndex, label) => `<div style="min-width:0; width:100%; box-sizing:border-box; background:rgba(0,0,0,.28); border:1px solid ${color}66; border-radius:10px; padding:10px 12px;"><div style="color:${color}; font-size:15px; font-weight:900; padding-bottom:7px; border-bottom:1.5px solid rgba(255,255,255,.12);">${title}</div><div style="display:flex; flex-direction:column; gap:4px; margin-top:7px;">${items.length ? items.map(cells => `<div class="institutional-strategy-item" data-stock-code="${escapeHtml(cells[1])}" style="display:flex; justify-content:space-between; align-items:center; padding:3px 7px; border-radius:6px; background:rgba(255,255,255,.035); font-size:15px; min-height:28px; cursor:pointer;"><span style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><b style="display:inline-block; width:20px; color:var(--text-dim);">${escapeHtml(cells[0])}</b><span class="stock-code ${getStockMarketClass(cells[1])}" style="font-family:monospace; font-weight:850;">${escapeHtml(cells[1])}</span>　<b>${escapeHtml(cells[2])}</b></span><b style="color:${color}; white-space:nowrap;">${label} ${escapeHtml(cells[valueIndex])}</b></div>`).join('') : '<div style="padding:10px; text-align:center; color:var(--text-dim);">當日無符合標的</div>'}</div></div>`;
+      return `<section id="institutional-strategy-leaderboard" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.12);"><div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:10px;"><b style="font-size:16px; color:#fde68a;">🏦 法人籌碼策略榜</b><span style="font-size:12px; color:var(--text-dim);">資料日：${escapeHtml(asOf || '—')}｜單位：張</span></div><div class="ranking-overview-row" style="margin-bottom:0;">${column('外資＋投信同步買超｜合計 ≥ 300 張', '#fbbf24', boards.sync, 6, '合計')}${column('投信買超 TOP 10', '#c084fc', boards.trust, 4, '投信')}</div></section>`;
+    }
+
     let html = `
       <div class="ranking-card">
         <!-- 🚀 四大榜單快照全景一覽 (Master Overview) -->
@@ -6347,6 +6370,7 @@
             ${renderMiniOverviewCol('ChatGPT 穩健型 TOP 10', '🌱', '#38bdf8', cDef, 'chatgpt', 'defensive')}
           </div>
           ${renderHolderChangeLeaderboard()}
+          ${renderInstitutionalStrategyLeaderboard()}
         </div>
       </div>
     `;
@@ -6354,7 +6378,7 @@
     container.innerHTML = html;
 
     // 點擊股票列開啟專業看盤
-    container.querySelectorAll('.mini-overview-row[data-stock-code], .holder-change-ranking-col [data-stock-code], .holder-change-item[data-stock-code]').forEach(row => {
+    container.querySelectorAll('.mini-overview-row[data-stock-code], .holder-change-ranking-col [data-stock-code], .holder-change-item[data-stock-code], .institutional-strategy-item[data-stock-code]').forEach(row => {
       row.addEventListener('click', (e) => {
         if (e.target.closest('button')) return;
         const sel = window.getSelection ? window.getSelection().toString() : '';

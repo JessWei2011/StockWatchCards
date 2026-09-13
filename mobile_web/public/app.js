@@ -371,7 +371,7 @@
             <button type="button" class="ranking-item" data-code="${escapeHtml(item.code)}" aria-label="查看 ${escapeHtml(item.code)} ${escapeHtml(item.name)} 的個股快照">
               <span class="ranking-position">${escapeHtml(item.rank)}</span>
               <span class="ranking-name">${escapeHtml(item.code)} ${escapeHtml(item.name)}</span>
-              <span class="ranking-price">${escapeHtml(formatNumber(item.price))}</span>
+              <span class="ranking-price">${escapeHtml(item.displayValue || formatNumber(item.price))}</span>
             </button>
           `).join('')}
         </div>

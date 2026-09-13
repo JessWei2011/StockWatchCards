@@ -26,6 +26,7 @@ RANKING_SOURCES = {
     "gemini": ROOT_DIR / "stock_winrate_ranking_gemini.md",
     "chatgpt": ROOT_DIR / "stock_winrate_ranking.md",
 }
+INSTITUTIONAL_STRATEGY_FILE = ROOT_DIR / "institutional_chip_strategy_ranking.md"
 
 REPORT_RE = re.compile(r"^(\d+)_(.+?)\((TW|TWO)\)(.*?)\.html$", re.I)
 
@@ -306,6 +307,40 @@ def parse_evolution_ranking(text: str) -> tuple[str, list[dict], str]:
     return scan_date, evolution_items, market_overview
 
 
+def parse_institutional_strategy_ranking(text: str) -> tuple[str, dict[str, list[dict]]]:
+    """解析法人籌碼策略榜 Markdown，供手機版榜單直接使用。"""
+    boards = {"foreign-trust": [], "trust-buy": []}
+    current = ""
+    as_of = ""
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        date_match = re.search(r"資料日期[：:]\s*(\d{4}-\d{2}-\d{2})", line)
+        if date_match:
+            as_of = date_match.group(1)
+        if line.startswith("##") and "外資、投信同步買超" in line:
+            current = "foreign-trust"
+            continue
+        if line.startswith("##") and "投信買超" in line:
+            current = "trust-buy"
+            continue
+        if not current or not (line.startswith("|") and line.endswith("|")):
+            continue
+        cells = [cell.strip().replace("`", "") for cell in line.split("|")[1:-1]]
+        if len(cells) != 7 or not cells[0].isdigit() or not re.fullmatch(r"\d{4}", cells[1]):
+            continue
+        def number(value: str) -> float:
+            try:
+                return float(value.replace(",", "").replace("+", ""))
+            except ValueError:
+                return 0.0
+        boards[current].append({
+            "rank": cells[0], "code": cells[1], "name": cells[2],
+            "foreign": number(cells[3]), "trust": number(cells[4]),
+            "dealer": number(cells[5]), "total": number(cells[6]),
+        })
+    return as_of, boards
+
+
 def export_all_rankings() -> None:
     evolution_path = ROOT_DIR / "stock_winrate_ranking_evolution.md"
     evo_items = []
@@ -364,6 +399,30 @@ def export_all_rankings() -> None:
             "tone": "gemini-momentum",
             "items": parsed["gemini"]["momentum"][:10]
         })
+
+    if INSTITUTIONAL_STRATEGY_FILE.is_file():
+        try:
+            institutional_date, institutional_boards = parse_institutional_strategy_ranking(
+                INSTITUTIONAL_STRATEGY_FILE.read_text(encoding="utf-8")
+            )
+            if institutional_date:
+                scan_dates.append(institutional_date)
+            boards.extend([
+                {
+                    "id": "institutional-foreign-trust",
+                    "title": "🏦 外資＋投信同步買超 TOP 10",
+                    "tone": "institutional-foreign-trust",
+                    "items": [{**item, "displayValue": f"合計 {item['total']:+,.0f} 張"} for item in institutional_boards["foreign-trust"]],
+                },
+                {
+                    "id": "institutional-trust-buy",
+                    "title": "🏦 投信買超 TOP 10",
+                    "tone": "institutional-trust-buy",
+                    "items": [{**item, "displayValue": f"投信 {item['trust']:+,.0f} 張"} for item in institutional_boards["trust-buy"]],
+                },
+            ])
+        except Exception as error:
+            print(f"Warning parsing institutional strategy ranking: {error}")
         boards.append({
             "id": "gemini-defensive",
             "title": "🌱 Gemini 穩健防守 TOP 10",
