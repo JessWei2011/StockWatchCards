@@ -16,6 +16,7 @@
 # Web app and source scripts
 !render-shared.js
 !stock_report_generator.py
+!market_report_generator.py
 !batch_scanner.py
 !batch_scanner_gemini.py
 !batch_scanner.bat

@@ -3,7 +3,7 @@
 台股分析工具 - 精簡Token版 (上市/上櫃 完美整合版 + 處置期間判斷)
 用法: python tw_analysis.py 6182
 """
-import sys, time, warnings, os, re, json, logging, glob, threading, gc, shutil
+import sys, time, warnings, os, re, json, logging, glob, threading, gc, shutil, subprocess
 from pathlib import Path
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -1670,11 +1670,31 @@ def run_batch(tickers):
     print(f"⏱️ 總更新耗時：{t_end - t_start:.2f} 秒")
     print('='*60)
 
+
+def should_update_market_reports(items):
+    """ALL/FORCE 的日報流程也產生市場指數報表，避免排程漏掉該資料夾。"""
+    aliases = {"ALL", "全部", ALL_TRACKED_INPUT, "999", "FORCE", "FORCE_ALL", FORCE_ALL_TRACKED_INPUT, "998"}
+    return any(str(item).strip().upper() in aliases for item in items)
+
+
+def run_market_reports():
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "market_report_generator.py")
+    if not os.path.isfile(script):
+        print("⚠️ 找不到 market_report_generator.py，略過市場指數報表")
+        return
+    print("\n🌐 更新市場指數 K 線報表…")
+    result = subprocess.run([sys.executable, script], cwd=os.path.dirname(script), check=False)
+    if result.returncode:
+        print("❌ 市場指數報表更新失敗")
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         tracked = scan_tracked_stocks()
-        tickers = resolve_tracked_indices(sys.argv[1:], tracked)
+        inputs = sys.argv[1:]
+        tickers = resolve_tracked_indices(inputs, tracked)
         run_batch(tickers)
+        if should_update_market_reports(inputs):
+            run_market_reports()
     else:
         while True:
             tracked = scan_tracked_stocks()
@@ -1685,5 +1705,8 @@ if __name__ == "__main__":
                 break
             if not raw:
                 continue
-            tickers = resolve_tracked_indices(parse_tickers(raw), tracked)
+            inputs = parse_tickers(raw)
+            tickers = resolve_tracked_indices(inputs, tracked)
             run_batch(tickers)
+            if should_update_market_reports(inputs):
+                run_market_reports()

@@ -273,7 +273,8 @@
           name: item.name || (card ? card.name : code),
           group: (card && card.group) ? card.group : (item.path ? item.path.split('/')[0] : '未分類'),
           decision: card ? card.decision : '技術指標',
-          winRate: card ? (card.winRate || 0) : 0
+          winRate: card ? (card.winRate || 0) : 0,
+          reportType: item.reportType || 'stock'
         });
       });
 
@@ -308,8 +309,11 @@
             const reportMark = hasRep ? '' : '｜尚無報表';
             const rep = availableMap.get(String(card.code));
             const mkt = (rep && rep.market) || (card && card.market) || ((rep && rep.path && rep.path.includes('(TWO)')) ? 'TWO' : 'TW');
-            const mktTag = mkt === 'TWO' ? '🟪[上櫃]' : '🟦[上市]';
-            option.textContent = `${mktTag} ${card.code} ${card.name || ''} (${card.decision || '技術指標'}${reportMark})`;
+            const isMarket = (rep && rep.reportType === 'market') || card.reportType === 'market';
+            const mktTag = isMarket ? '🌐[市場]' : (mkt === 'TWO' ? '🟪[上櫃]' : '🟦[上市]');
+            option.textContent = isMarket
+              ? `${mktTag} ${card.name || ''}${reportMark}`
+              : `${mktTag} ${card.code} ${card.name || ''} (${card.decision || '技術指標'}${reportMark})`;
             optgroup.appendChild(option);
           });
         select.appendChild(optgroup);
@@ -329,7 +333,8 @@
           .forEach(card => {
             const rep = availableMap.get(String(card.code));
             const mkt = (rep && rep.market) || (card && card.market) || ((rep && rep.path && rep.path.includes('(TWO)')) ? 'TWO' : 'TW');
-            const mktLabel = mkt === 'TWO' ? '上櫃' : '上市';
+            const mktLabel = (rep && rep.reportType === 'market') || card.reportType === 'market'
+              ? '市場指數' : (mkt === 'TWO' ? '上櫃' : '上市');
             const option = document.createElement('option');
             option.value = `${card.code} ${card.name || ''} [${mktLabel}]`.trim();
             suggestions.appendChild(option);
@@ -585,12 +590,34 @@
       const code = String(this.currentCode || '').split('.')[0].trim();
       const rep = (this.reportsIndex || []).find(item => String(item.code) === code);
       const card = this.cardByCode && this.cardByCode[code];
+      const isMarketReport = this.currentStockData.reportType === 'market' || (rep && rep.reportType === 'market');
       const mkt = (rep && rep.market) || (card && card.market) || (window.STOCK_MARKET_MAP && window.STOCK_MARKET_MAP[code]) || ((rep && rep.path && rep.path.includes('(TWO)')) ? 'TWO' : 'TW');
       const mktClass = mkt === 'TWO' ? 'market-two' : 'market-tw';
       const mktLabel = mkt === 'TWO' ? '上櫃' : '上市';
 
       const chartTitle = this.q('#chartTitle');
-      if (chartTitle) chartTitle.innerHTML = `<span class="market-badge ${mktClass}">${mktLabel}</span>${this.currentStockData.title} — K線 / RSI / MACD / KD / 成交量圖`;
+      if (chartTitle) chartTitle.innerHTML = isMarketReport
+        ? `<span class="market-badge market-tw">市場</span>${this.currentStockData.title} — K線${this.currentStockData.hasVolume ? ' / 市場成交量' : ''}`
+        : `<span class="market-badge ${mktClass}">${mktLabel}</span>${this.currentStockData.title} — K線 / RSI / MACD / KD / 成交量圖`;
+      const viewerSummary = this.root.querySelector('.brand-text p');
+      if (viewerSummary) viewerSummary.textContent = isMarketReport
+        ? `市場指數報表：K 線、均線${this.currentStockData.hasVolume ? '、市場成交量' : ''}`
+        : '真實行情驅動：五層 K 線、均線（MA5/10/20/60/120）、布林通道、成交量、RSI、MACD、KD';
+      const stockSelectLabel = this.root.querySelector('label[for="stockSelect"], label[for="reports-stockSelect"]');
+      if (stockSelectLabel) stockSelectLabel.textContent = isMarketReport ? '🎯 選擇市場／個股：' : '🎯 選擇看盤個股：';
+      const chartSubInfo = this.root.querySelector('.chart-sub-info');
+      if (chartSubInfo) chartSubInfo.textContent = isMarketReport
+        ? '滑鼠移動十字光標可查看市場 OHLC 與均線數值'
+        : '滑鼠移動十字光標可跨圖表同步連動觀察數值';
+      const toggleBoll = this.q('#toggleBoll');
+      if (toggleBoll && toggleBoll.closest('label')) toggleBoll.closest('label').style.display = isMarketReport ? 'none' : '';
+      ['#statKlineBox', '#statVolBox', '#statMacdBox', '#statRsiBox', '#statKdBox', '#statChipBox'].forEach(selector => {
+        const element = this.q(selector);
+        if (element) element.style.display = isMarketReport ? 'none' : '';
+      });
+      this.root.querySelectorAll('.inst-mini-chart').forEach(element => {
+        if (isMarketReport) element.style.display = 'none';
+      });
       this.updateDisposalBadge();
 
       const cardStockName = this.q('#cardStockName');
@@ -621,6 +648,11 @@
           statChangePct.className = 'stat-value';
           statChangePct.textContent = '0.00%';
         }
+      }
+
+      if (isMarketReport) {
+        requestAnimationFrame(() => this.resize());
+        return;
       }
 
       // 🏷️ 方案A 語意化標籤渲染 Helper

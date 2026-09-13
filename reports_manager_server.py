@@ -28,7 +28,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from http.server import SimpleHTTPRequestHandler
 from pathlib import Path
 from socketserver import ThreadingTCPServer
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, quote
 import requests
 
 if sys.stdout.encoding != "utf-8":
@@ -56,6 +56,9 @@ RSS_SUMMARY_CACHE_SECONDS = 21600
 RSS_SUMMARY_CACHE = {}
 RSS_SUMMARY_LOCK = threading.RLock()
 GEMINI_RSS_MODELS = ('gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.5-flash-lite')
+MARKET_PULSE_CACHE_SECONDS = 8
+MARKET_PULSE_CACHE = {}
+MARKET_PULSE_CACHE_LOCK = threading.RLock()
 
 
 def _rss_event_label(title: str) -> str:
@@ -278,7 +281,7 @@ CLIENT_HEARTBEATS = {}
 CLIENTS_HAVE_CONNECTED = False
 LAST_CLIENT_CHANGE = time.monotonic()
 
-TRACKED_FILENAME_RE = re.compile(r'^([0-9A-Za-z]{2,6})_(.+?)\((TW|TWO)\)')
+TRACKED_FILENAME_RE = re.compile(r'^([0-9A-Za-z]{2,6})_(.+?)\((TW|TWO|IDX)\)')
 FORBIDDEN_NAME_CHARS = set('\\/:*?"<>|')
 STOCK_NAME_DICT_PATH = ROOT_DIR / "stock_name_dict.json"
 STOCK_NAME_DICT = {}
@@ -295,6 +298,11 @@ def get_stock_name(code, default=None):
     if not code:
         return default
     return STOCK_NAME_DICT.get(str(code), default)
+
+
+def report_type_for(code, market):
+    """市場指數報表和個股共用報表樹，但前端需避免套用個股籌碼／技術欄位。"""
+    return "market" if str(code or "").upper().startswith("MKT") or market == "IDX" else "stock"
 
 
 def read_watchlist():
@@ -790,6 +798,7 @@ def list_folder(path):
                 "hasMd": bool(md_name),
                 "mtime": stat_info.st_mtime,
                 "size": stat_info.st_size,
+                "reportType": report_type_for(code, market),
             })
     return folders, reports
 
@@ -815,7 +824,8 @@ def list_reports_recursive(path):
                 code = m.group(1)
                 name = get_stock_name(code, m.group(2))
                 market = m.group(3) if m else ("TWO" if "(TWO)" in fn else "TW")
-                reports.append({"base": base, "code": code, "name": name, "market": market})
+                reports.append({"base": base, "code": code, "name": name, "market": market,
+                                "reportType": report_type_for(code, market)})
     return reports
 
 
@@ -859,6 +869,7 @@ def build_reports_index():
                 "path": relative_path,
                 "chartPath": chart_path.relative_to(REPORTS_DIR).as_posix() if chart_path.exists() else None,
                 "mtime": html_path.stat().st_mtime,
+                "reportType": report_type_for(code, market),
             }
             candidates_by_code.setdefault(code, []).append(candidate)
 
@@ -1652,6 +1663,176 @@ def fetch_institutional_breakdown():
     return {"date": date_str, "rows": rows}, None
 
 
+def _market_number(value):
+    """把公開行情來源的數字欄位安全轉為 float。"""
+    if value in (None, "", "-", "--"):
+        return None
+    try:
+        return float(str(value).replace(",", ""))
+    except (TypeError, ValueError):
+        return None
+
+
+def _market_quote(key, label, price, previous_close, source, updated_at="", delayed=False, error=None):
+    price = _market_number(price)
+    previous_close = _market_number(previous_close)
+    change = round(price - previous_close, 2) if price is not None and previous_close is not None else None
+    change_pct = round(change / previous_close * 100, 2) if change is not None and previous_close else None
+    return {
+        "key": key,
+        "label": label,
+        "price": price,
+        "previousClose": previous_close,
+        "change": change,
+        "changePct": change_pct,
+        "source": source,
+        "updatedAt": updated_at,
+        "delayed": delayed,
+        "error": error,
+    }
+
+
+def _fetch_twse_market_indexes():
+    """讀取證交所 MIS 的上市、櫃買即時指數。"""
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+        "Referer": "https://mis.twse.com.tw/stock/index.jsp",
+    }
+    response = requests.get(
+        "https://mis.twse.com.tw/stock/api/getStockInfo.jsp",
+        params={"ex_ch": "tse_t00.tw|otc_o00.tw", "json": "1", "delay": "0"},
+        headers=headers,
+        timeout=10,
+    )
+    response.raise_for_status()
+    rows = response.json().get("msgArray", [])
+    index_rows = {
+        f"{row.get('ex', '')}_{str(row.get('ch', '')).split('.')[0]}": row
+        for row in rows
+    }
+    result = {}
+    for key, label, source_key in (("taiex", "台股市場", "tse_t00"), ("otc", "台股櫃買", "otc_o00")):
+        row = index_rows.get(source_key, {})
+        price = row.get("z") or row.get("c") or row.get("y")
+        result[key] = _market_quote(
+            key, label, price, row.get("y"), "TWSE 即時行情",
+            f"{row.get('d', '')} {row.get('t', '')}".strip(),
+            error=None if row else "交易所暫無回應",
+        )
+    return result
+
+
+def _fetch_yahoo_taiwan_futures():
+    """讀取 Yahoo 的 WTX& 台指期近月；該頁面涵蓋日盤與夜盤報價。"""
+    response = requests.get(
+        "https://tw.stock.yahoo.com/quote/WTX%26",
+        headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+        timeout=10,
+    )
+    response.raise_for_status()
+    page = response.text
+
+    def get_value(field):
+        matched = re.search(rf'"{field}":(?:"([^"]+)"|([-0-9.]+))', page)
+        return (matched.group(1) or matched.group(2)) if matched else None
+
+    market_time = _market_number(get_value("regularMarketTime"))
+    updated_at = ""
+    if market_time:
+        updated_at = datetime.datetime.fromtimestamp(
+            market_time, tz=datetime.timezone(datetime.timedelta(hours=8))
+        ).strftime("%Y-%m-%d %H:%M:%S")
+    return _market_quote(
+        "txf", "台指近全", get_value("regularMarketPrice"), get_value("previousClose"),
+        "Yahoo 台指近月全盤", updated_at,
+    )
+
+
+def _fetch_yahoo_us_index(key, label, symbol):
+    """使用 Yahoo Finance 免費圖表資料，取得美股指數最新一分鐘報價。"""
+    response = requests.get(
+        f"https://query1.finance.yahoo.com/v8/finance/chart/{quote(symbol, safe='')}",
+        params={"range": "1d", "interval": "1m", "includePrePost": "true"},
+        headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+        timeout=10,
+    )
+    response.raise_for_status()
+    payload = response.json().get("chart", {}).get("result", [])
+    if not payload:
+        raise ValueError("Yahoo Finance 未回傳行情")
+    meta = payload[0].get("meta", {})
+    timestamps = payload[0].get("timestamp") or []
+    closes = payload[0].get("indicators", {}).get("quote", [{}])[0].get("close", [])
+    last_close = next((value for value in reversed(closes) if value is not None), None)
+    price = meta.get("regularMarketPrice") or last_close
+    previous_close = meta.get("previousClose") or meta.get("chartPreviousClose")
+    updated_at = ""
+    if timestamps:
+        updated_at = datetime.datetime.fromtimestamp(timestamps[-1], tz=datetime.timezone.utc).astimezone(
+            datetime.timezone(datetime.timedelta(hours=8))
+        ).strftime("%Y-%m-%d %H:%M")
+    return _market_quote(key, label, price, previous_close, "Yahoo Finance 延遲行情", updated_at, delayed=True)
+
+
+def fetch_market_pulse(force_refresh=False, markets=None):
+    """依目前開盤市場彙整行情，避免休市時向公開來源發出請求。"""
+    active_markets = set(markets or ("tw", "txf", "us"))
+    active_markets &= {"tw", "txf", "us"}
+    cache_key = ",".join(sorted(active_markets))
+    now = time.time()
+    with MARKET_PULSE_CACHE_LOCK:
+        cached = MARKET_PULSE_CACHE.get(cache_key)
+        if not force_refresh and cached and now - cached["timestamp"] < MARKET_PULSE_CACHE_SECONDS:
+            return cached["data"]
+
+    tasks = {}
+    if "tw" in active_markets:
+        tasks["twse"] = _fetch_twse_market_indexes
+    if "txf" in active_markets:
+        tasks["txf"] = _fetch_yahoo_taiwan_futures
+    if "us" in active_markets:
+        tasks.update({
+            "dji": lambda: _fetch_yahoo_us_index("dow", "道瓊指數", "^DJI"),
+            "ixic": lambda: _fetch_yahoo_us_index("nasdaq", "納斯達克指數", "^IXIC"),
+            "sox": lambda: _fetch_yahoo_us_index("sox", "費城半導體指數", "^SOX"),
+        })
+    fetched = {}
+    with ThreadPoolExecutor(max_workers=max(1, len(tasks))) as executor:
+        futures = {executor.submit(fetcher): name for name, fetcher in tasks.items()}
+        for future in as_completed(futures):
+            name = futures[future]
+            try:
+                fetched[name] = future.result()
+            except Exception as error:
+                fetched[name] = error
+
+    def failed_quote(key, label, source, error):
+        return _market_quote(key, label, None, None, source, error=str(error))
+
+    items = []
+    if "tw" in active_markets:
+        twse_data = fetched.get("twse")
+        twse_error = twse_data if isinstance(twse_data, Exception) else None
+        items.extend([
+            twse_data.get("taiex") if isinstance(twse_data, dict) else failed_quote("taiex", "台股市場", "TWSE 即時行情", twse_error),
+            twse_data.get("otc") if isinstance(twse_data, dict) else failed_quote("otc", "台股櫃買", "TWSE 即時行情", twse_error),
+        ])
+    if "txf" in active_markets:
+        txf_data = fetched.get("txf")
+        items.append(txf_data if not isinstance(txf_data, Exception) else failed_quote("txf", "台指近全", "Yahoo 台指近月全盤", txf_data))
+    if "us" in active_markets:
+        for fetch_key, key, label in (("dji", "dow", "道瓊指數"), ("ixic", "nasdaq", "納斯達克指數"), ("sox", "sox", "費城半導體指數")):
+            quote_data = fetched.get(fetch_key)
+            items.append(quote_data if not isinstance(quote_data, Exception) else failed_quote(key, label, "Yahoo Finance 延遲行情", quote_data))
+    data = {
+        "items": items,
+        "refreshedAt": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    with MARKET_PULSE_CACHE_LOCK:
+        MARKET_PULSE_CACHE[cache_key] = {"timestamp": now, "data": data}
+    return data
+
+
 DISPOSAL_NOTICE_LOCK = threading.Lock()
 DISPOSAL_NOTICE_CACHE = {"timestamp": 0, "data": None}
 DISPOSAL_NOTICE_TTL = 300  # 5 分鐘快取
@@ -1955,6 +2136,12 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json(200, {"ok": True, "data": data})
             else:
                 self._json(502, {"ok": False, "error": error})
+            return
+        if parsed.path == "/api/market-pulse":
+            qs = parse_qs(parsed.query)
+            force = qs.get("refresh", ["0"])[0] == "1"
+            markets = [market for market in ",".join(qs.get("markets", [])).split(",") if market]
+            self._json(200, {"ok": True, "data": fetch_market_pulse(force_refresh=force, markets=markets)})
             return
         if parsed.path == "/api/disposal-notice":
             qs = parse_qs(parsed.query)

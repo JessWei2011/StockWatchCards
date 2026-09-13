@@ -13,6 +13,47 @@ window.PatternParser = {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlText, 'text/html');
 
+    // 市場指數報表只有 OHLC（台股另有市場成交量），不應被迫套用個股的
+    // RSI / MACD / KD 欄位格式。
+    if (doc.querySelector('meta[name="report-kind"][content="market"], [data-report-kind="market"]')) {
+      const h1 = doc.querySelector('h1');
+      const title = h1 ? h1.innerText.trim() : '市場指數';
+      const table = doc.querySelector('table[data-kline-table]') || doc.querySelector('table');
+      if (!table) return null;
+      const headers = Array.from(table.querySelectorAll('th')).map(th => th.innerText.trim());
+      const hasVolume = headers.some(header => /成交量|量/.test(header));
+      const dates = [], candles = [], volumes = [];
+      Array.from(table.querySelectorAll('tr')).slice(1).forEach(row => {
+        const cols = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim());
+        if (cols.length < 5) return;
+        const open = Number(cols[1].replace(/,/g, ''));
+        const high = Number(cols[2].replace(/,/g, ''));
+        const low = Number(cols[3].replace(/,/g, ''));
+        const close = Number(cols[4].replace(/,/g, ''));
+        if (![open, high, low, close].every(Number.isFinite)) return;
+        dates.push(cols[0]);
+        candles.push([open, close, low, high]);
+        volumes.push(hasVolume ? (Number(cols[5]?.replace(/,/g, '')) || 0) : 0);
+      });
+      const movingAverage = period => candles.map((_, index) => {
+        if (index < period - 1) return null;
+        const total = candles.slice(index - period + 1, index + 1).reduce((sum, candle) => sum + candle[1], 0);
+        return Number((total / period).toFixed(2));
+      });
+      const volumeAverage = period => volumes.map((_, index) => {
+        if (!hasVolume || index < period - 1) return null;
+        const total = volumes.slice(index - period + 1, index + 1).reduce((sum, value) => sum + value, 0);
+        return Number((total / period).toFixed(1));
+      });
+      return {
+        title, reportType: 'market', hasVolume, dates, candles, volumes,
+        ma5: movingAverage(5), ma10: movingAverage(10), ma20: movingAverage(20),
+        ma60: movingAverage(60), ma120: movingAverage(120),
+        vma5: volumeAverage(5), vma20: volumeAverage(20),
+        institutionalFlow: [], marginFlow: [], holderFlow: []
+      };
+    }
+
     // Extract title (e.g. "2330 台積電")
     const h1 = doc.querySelector('h1');
     const titleText = h1 ? h1.innerText.trim() : '股票數據';

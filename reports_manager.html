@@ -1489,6 +1489,18 @@
     border-color: #2563eb !important;
     box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
   }
+  [data-theme="light"] .market-pulse-strip {
+    background:#f8fafc;
+    border-bottom-color:#cbd5e1;
+  }
+  [data-theme="light"] .market-pulse-card {
+    background:#ffffff;
+    border-color:#bfdbfe;
+    box-shadow:0 3px 10px rgba(15,23,42,.08);
+  }
+  [data-theme="light"] .market-pulse-title { color:#0369a1; }
+  [data-theme="light"] .market-pulse-meta,
+  [data-theme="light"] .market-pulse-status { color:#64748b; }
   [data-theme="light"] .resizer {
     background: #f1f5f9 !important;
     border-left: 1px solid #e2e8f0 !important;
@@ -2407,6 +2419,48 @@
     font-size:13px; font-weight:700; line-height:1; vertical-align:middle;
     box-sizing:border-box; white-space:nowrap;
   }
+  /* ── 桌面版市場脈動：六項指數即時/延遲行情 ── */
+  .market-pulse-strip{
+    padding:10px 24px 12px; border-bottom:1px solid var(--border); background:#0b0f18;
+    flex-shrink:0;
+  }
+  .market-pulse-header{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px;
+  }
+  .market-pulse-heading{ display:flex; align-items:baseline; gap:8px; min-width:0; }
+  .market-pulse-heading strong{ color:#7dd3fc; font-size:14px; letter-spacing:.03em; }
+  .market-pulse-lights{ display:flex; align-items:center; gap:5px; flex:0 0 auto; }
+  .market-pulse-light{
+    display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border:1px solid rgba(148,163,184,.32);
+    border-radius:999px; color:#94a3b8; font-size:10px; font-weight:800; line-height:1.25;
+  }
+  .market-pulse-light-dot{ width:7px; height:7px; border-radius:50%; background:#ef4444; box-shadow:0 0 5px rgba(239,68,68,.8); }
+  .market-pulse-light.live{ color:#86efac; border-color:rgba(74,222,128,.55); background:rgba(22,163,74,.1); }
+  .market-pulse-light.live .market-pulse-light-dot{ background:#4ade80; box-shadow:0 0 9px #4ade80; animation:market-pulse-breathe 1.15s ease-in-out infinite alternate; }
+  .market-pulse-light.loading{ color:#fde68a; border-color:rgba(250,204,21,.55); }
+  .market-pulse-light.loading .market-pulse-light-dot{ background:#facc15; box-shadow:0 0 8px #facc15; animation:market-pulse-breathe .7s ease-in-out infinite alternate; }
+  @keyframes market-pulse-breathe{ from{ transform:scale(.72); opacity:.5; } to{ transform:scale(1.2); opacity:1; } }
+  .market-pulse-status{ color:var(--text-dim); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .market-pulse-refresh{
+    flex:0 0 auto; border:1px solid rgba(56,189,248,.45); border-radius:6px; background:rgba(14,116,144,.16);
+    color:#7dd3fc; cursor:pointer; padding:3px 8px; font-size:11px; font-weight:700;
+  }
+  .market-pulse-refresh:hover{ background:rgba(14,116,144,.36); }
+  .market-pulse-grid{ display:grid; grid-template-columns:repeat(6, minmax(132px, 1fr)); gap:8px; }
+  .market-pulse-card{
+    min-width:0; min-height:92px; padding:9px 11px; border:1px solid rgba(56,189,248,.72); border-radius:9px;
+    background:linear-gradient(145deg, #101827, #080d17); box-shadow:inset 0 0 0 1px rgba(14,116,144,.12);
+  }
+  .market-pulse-title{ color:#67e8f9; font-size:12px; font-weight:800; letter-spacing:.035em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .market-pulse-price{ margin-top:4px; color:#e5edf8; font-size:20px; line-height:1.15; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.025em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .market-pulse-change{ margin-top:3px; color:#94a3b8; font-size:12px; font-weight:750; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .market-pulse-card.up .market-pulse-price, .market-pulse-card.up .market-pulse-change{ color:#ff5964; }
+  .market-pulse-card.down .market-pulse-price, .market-pulse-card.down .market-pulse-change{ color:#4ade80; }
+  .market-pulse-card.unavailable{ border-color:rgba(148,163,184,.5); opacity:.8; }
+  .market-pulse-meta{ margin-top:7px; color:#7890ab; font-size:10px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .market-pulse-placeholder{ min-height:92px; border-radius:9px; border:1px solid rgba(56,189,248,.25); background:linear-gradient(90deg,#0d1523 25%,#17243a 37%,#0d1523 63%); background-size:400% 100%; animation:market-pulse-shimmer 1.5s ease infinite; }
+  @keyframes market-pulse-shimmer{ 0%{background-position:100% 0} 100%{background-position:-100% 0} }
+  @media (max-width:1180px){ .market-pulse-grid{ grid-template-columns:repeat(3, minmax(160px, 1fr)); } }
   .spinner{
     width:18px; height:18px; border-radius:50%;
     border:2.5px solid rgba(56,189,248,0.2); border-top-color:#38bdf8;
@@ -3281,6 +3335,23 @@
     <span class="spinner" id="generate-spinner"></span>
     <span class="generate-status" id="generate-status"></span>
   </div>
+  <section class="market-pulse-strip" aria-label="市場脈動">
+    <div class="market-pulse-header">
+      <div class="market-pulse-heading">
+        <strong>◈ 市場脈動</strong>
+        <span class="market-pulse-lights" aria-label="行情 API 狀態">
+          <span class="market-pulse-light" id="market-pulse-tw-light"><i class="market-pulse-light-dot"></i>台股</span>
+          <span class="market-pulse-light" id="market-pulse-us-light"><i class="market-pulse-light-dot"></i>美股</span>
+        </span>
+        <span class="market-pulse-status" id="market-pulse-status">正在載入六項行情…</span>
+      </div>
+      <button type="button" class="market-pulse-refresh" id="market-pulse-refresh" title="立即更新市場行情">↻ 更新</button>
+    </div>
+    <div class="market-pulse-grid" id="market-pulse-grid" aria-live="polite">
+      <div class="market-pulse-placeholder"></div><div class="market-pulse-placeholder"></div><div class="market-pulse-placeholder"></div>
+      <div class="market-pulse-placeholder"></div><div class="market-pulse-placeholder"></div><div class="market-pulse-placeholder"></div>
+    </div>
+  </section>
   <div class="layout">
     <div class="sidebar">
       <div class="tree-toolbar">
@@ -8753,6 +8824,113 @@ ${macroJsonText()}`;
     return sign + v.toLocaleString('zh-TW', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '億';
   }
 
+  function formatMarketPulseNumber(value){
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return '—';
+    return Number(value).toLocaleString('zh-TW', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  const marketPulseDefinitions = [
+    { key:'taiex', label:'台股市場', market:'tw' }, { key:'otc', label:'台股櫃買', market:'tw' },
+    { key:'txf', label:'台指近全', market:'txf' }, { key:'dow', label:'道瓊指數', market:'us' },
+    { key:'nasdaq', label:'納斯達克指數', market:'us' }, { key:'sox', label:'費城半導體指數', market:'us' },
+  ];
+  const marketPulseItems = new Map(marketPulseDefinitions.map(item => [item.key, item]));
+
+  function marketPulseClock(timeZone){
+    const values = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+      timeZone, weekday:'short', hour:'2-digit', minute:'2-digit', hourCycle:'h23'
+    }).formatToParts().filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
+    return { weekday: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(values.weekday), minutes: Number(values.hour) * 60 + Number(values.minute) };
+  }
+
+  function getMarketPulseSchedule(){
+    const taipei = marketPulseClock('Asia/Taipei');
+    const newYork = marketPulseClock('America/New_York');
+    const taipeiTradingDay = taipei.weekday >= 1 && taipei.weekday <= 5;
+    const twActive = taipeiTradingDay && taipei.minutes >= 540 && taipei.minutes < 810;
+    const txfActive = (taipeiTradingDay && taipei.minutes >= 525 && taipei.minutes < 825)
+      || (taipeiTradingDay && taipei.minutes >= 900)
+      || (taipei.weekday >= 2 && taipei.weekday <= 6 && taipei.minutes < 300);
+    const usActive = newYork.weekday >= 1 && newYork.weekday <= 5 && newYork.minutes >= 570 && newYork.minutes < 960;
+    const markets = [twActive && 'tw', txfActive && 'txf', usActive && 'us'].filter(Boolean);
+    const labels = [twActive && '台股盤中', txfActive && '台指期盤中', usActive && '美股盤中'].filter(Boolean);
+    return { twActive, txfActive, usActive, markets, labels };
+  }
+
+  function setMarketPulseLight(id, state, title){
+    const light = document.getElementById(id);
+    if (!light) return;
+    light.classList.toggle('live', state === 'live');
+    light.classList.toggle('loading', state === 'loading');
+    light.title = title;
+  }
+
+  function updateMarketPulseLights(schedule, items = [], loading = false){
+    const hasHealthyQuotes = keys => keys.length > 0 && keys.every(key => {
+      const item = items.find(candidate => candidate.key === key);
+      return item && !item.error && item.price !== null && item.price !== undefined;
+    });
+    const twKeys = [schedule.twActive && 'taiex', schedule.twActive && 'otc', schedule.txfActive && 'txf'].filter(Boolean);
+    const usKeys = schedule.usActive ? ['dow', 'nasdaq', 'sox'] : [];
+    const twState = !twKeys.length ? 'stopped' : (loading ? 'loading' : (hasHealthyQuotes(twKeys) ? 'live' : 'stopped'));
+    const usState = !usKeys.length ? 'stopped' : (loading ? 'loading' : (hasHealthyQuotes(usKeys) ? 'live' : 'stopped'));
+    setMarketPulseLight('market-pulse-tw-light', twState, twState === 'live' ? '台股行情 API 更新正常' : (twState === 'loading' ? '台股行情 API 更新中' : '台股休市或行情 API 未更新'));
+    setMarketPulseLight('market-pulse-us-light', usState, usState === 'live' ? '美股行情 API 更新正常' : (usState === 'loading' ? '美股行情 API 更新中' : '美股休市或行情 API 未更新'));
+  }
+
+  function renderMarketPulse(data, schedule = getMarketPulseSchedule()){
+    const gridEl = document.getElementById('market-pulse-grid');
+    const statusEl = document.getElementById('market-pulse-status');
+    if (!gridEl) return;
+    const incomingItems = Array.isArray(data?.items) ? data.items : [];
+    updateMarketPulseLights(schedule, incomingItems);
+    incomingItems.forEach(item => marketPulseItems.set(item.key, { ...marketPulseItems.get(item.key), ...item, marketClosed:false }));
+    const activeByMarket = { tw:schedule.twActive, txf:schedule.txfActive, us:schedule.usActive };
+    const items = marketPulseDefinitions.map(definition => ({ ...definition, ...marketPulseItems.get(definition.key), marketClosed: !activeByMarket[definition.market] }));
+    gridEl.innerHTML = items.map(item => {
+      const change = Number(item.change);
+      const changeClass = item.marketClosed ? 'unavailable closed' : (Number.isFinite(change) ? (change > 0 ? 'up' : (change < 0 ? 'down' : 'flat')) : 'unavailable');
+      const changeText = item.marketClosed ? '休市中，暫停更新' : (Number.isFinite(change)
+        ? `${change > 0 ? '+' : ''}${formatMarketPulseNumber(change)} (${change > 0 ? '+' : ''}${Number(item.changePct || 0).toFixed(2)}%)`
+        : '暫無行情');
+      const sourceText = item.marketClosed ? '休市中 · 不呼叫行情 API' : (item.error ? `資料暫不可用：${item.source || ''}` : `${item.source || ''}${item.delayed ? ' · 延遲' : ''}`);
+      const title = item.error ? escapeHtml(item.error) : escapeHtml(item.updatedAt || item.source || '');
+      return `
+        <article class="market-pulse-card ${changeClass}" title="${title}">
+          <div class="market-pulse-title">${escapeHtml(item.label || '市場指數')}</div>
+          <div class="market-pulse-price">${formatMarketPulseNumber(item.price)}</div>
+          <div class="market-pulse-change">${changeText}</div>
+          <div class="market-pulse-meta">${escapeHtml(sourceText)}</div>
+        </article>`;
+    }).join('');
+    if (statusEl) {
+      statusEl.textContent = schedule.labels.length
+        ? `自動更新中：${schedule.labels.join('、')}｜台股即時・美股延遲`
+        : '目前休市，已暫停所有行情請求';
+    }
+  }
+
+  async function loadMarketPulse(forceRefresh = false){
+    const statusEl = document.getElementById('market-pulse-status');
+    const schedule = getMarketPulseSchedule();
+    if (!forceRefresh && !schedule.markets.length) {
+      renderMarketPulse(null, schedule);
+      return;
+    }
+    if (!forceRefresh) updateMarketPulseLights(schedule, [], true);
+    try {
+      const markets = forceRefresh ? ['tw', 'txf', 'us'] : schedule.markets;
+      const params = new URLSearchParams({ markets: markets.join(',') });
+      if (forceRefresh) params.set('refresh', '1');
+      const response = await fetch(`/api/market-pulse?${params}`);
+      const payload = await response.json();
+      if (!response.ok || !payload.ok || !payload.data) throw new Error(payload.error || '無法取得行情');
+      renderMarketPulse(payload.data, schedule);
+    } catch (error) {
+      if (statusEl) statusEl.textContent = `行情載入失敗：${error.message}`;
+    }
+  }
+
   async function loadMarketInstBreakdown(){
     const cardEl = document.getElementById('market-inst-card');
     const bodyEl = document.getElementById('market-inst-body');
@@ -9021,6 +9199,12 @@ ${macroJsonText()}`;
     .then(loadList);
   loadMarketInstBreakdown();
   loadDisposalNoticeData();
+  const marketPulseRefreshBtn = document.getElementById('market-pulse-refresh');
+  if (marketPulseRefreshBtn) {
+    marketPulseRefreshBtn.addEventListener('click', () => loadMarketPulse(true));
+  }
+  loadMarketPulse();
+  window.setInterval(() => loadMarketPulse(), 10000);
 </script>
 </body>
 </html>

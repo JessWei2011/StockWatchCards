@@ -148,6 +148,14 @@ window.ChartEngine = {
     state.lastShowMa = showShortMa;
     state.lastShowBoll = showBoll;
 
+    // 市場指數不套用個股 RSI / MACD / KD；台股市場與櫃買僅額外保留成交量窗格。
+    if (stockData.reportType === 'market') {
+      this._renderMarketChart(dom, state, stockData, {
+        isLight, showShortMa, isSameStock, prevLegendSelected, zoomStart, zoomEnd
+      });
+      return;
+    }
+
     const {
       dates,
       candles,
@@ -799,6 +807,81 @@ window.ChartEngine = {
     requestAnimationFrame(() => this.resize(dom));
     setTimeout(() => this.resize(dom), 60);
     setTimeout(() => this.resize(dom), 200);
+  },
+
+  _renderMarketChart(dom, state, stockData, config) {
+    const { chartInstance } = state;
+    const { dates, candles, volumes = [], ma5 = [], ma10 = [], ma20 = [], ma60 = [], ma120 = [], vma5 = [], vma20 = [] } = stockData;
+    const hasVolume = stockData.hasVolume === true;
+    const isLight = config.isLight;
+    const chartBg = isLight ? '#ffffff' : '#0b0f19';
+    const axisLineColor = isLight ? '#94a3b8' : '#222c3f';
+    const splitLineColor = isLight ? '#e2e8f0' : '#151b28';
+    const legendTextColor = isLight ? '#1e293b' : '#cbd5e1';
+    const zoomBorderColor = isLight ? '#cbd5e1' : '#222c3f';
+    const total = dates.length;
+    const start = config.isSameStock ? config.zoomStart : (total > 80 ? Math.round(((total - 80) / total) * 100) : 0);
+    const end = config.isSameStock ? config.zoomEnd : 100;
+    const maSelected = config.showShortMa !== false;
+    const legendData = ['K線', 'MA5', 'MA10', 'MA20', 'MA60', 'MA120'];
+    if (hasVolume) legendData.push('市場成交量', 'MV5', 'MV20');
+    const selected = Object.assign({
+      'K線': true, 'MA5': maSelected, 'MA10': maSelected, 'MA20': maSelected,
+      'MA60': false, 'MA120': false, '市場成交量': true, 'MV5': true, 'MV20': true
+    }, config.isSameStock ? (config.prevLegendSelected || {}) : {});
+    if (!config.isSameStock) {
+      selected.MA5 = maSelected;
+      selected.MA10 = maSelected;
+      selected.MA20 = maSelected;
+    }
+
+    const line = (name, data, color, xAxisIndex = 0, yAxisIndex = 0) => ({
+      name, type: 'line', xAxisIndex, yAxisIndex, data, showSymbol: false,
+      smooth: false, connectNulls: false, lineStyle: { width: 1.4, color }, emphasis: { focus: 'series' }
+    });
+    const grid = hasVolume
+      ? [{ left: '6%', right: '4%', top: '10%', height: '58%' }, { left: '6%', right: '4%', top: '75%', height: '12%' }]
+      : [{ left: '6%', right: '4%', top: '10%', height: '77%' }];
+    const xAxis = [{ type: 'category', data: dates, gridIndex: 0, boundaryGap: true, axisLabel: { show: false }, axisLine: { lineStyle: { color: axisLineColor } } }];
+    const yAxis = [{ scale: true, gridIndex: 0, axisLine: { lineStyle: { color: axisLineColor } }, splitLine: { lineStyle: { color: splitLineColor } } }];
+    const series = [
+      {
+        name: 'K線', type: 'candlestick', xAxisIndex: 0, yAxisIndex: 0, data: candles,
+        itemStyle: { color: '#ef4444', color0: '#22c55e', borderColor: '#ef4444', borderColor0: '#22c55e' }
+      },
+      line('MA5', ma5, '#f59e0b'), line('MA10', ma10, '#60a5fa'), line('MA20', ma20, '#a78bfa'),
+      line('MA60', ma60, '#f472b6'), line('MA120', ma120, '#94a3b8')
+    ];
+    if (hasVolume) {
+      xAxis.push({ type: 'category', data: dates, gridIndex: 1, axisLabel: { color: legendTextColor, fontSize: 10 }, axisLine: { lineStyle: { color: axisLineColor } } });
+      yAxis.push({ scale: true, gridIndex: 1, axisLabel: { show: false }, splitLine: { show: false } });
+      series.push({
+        name: '市場成交量', type: 'bar', xAxisIndex: 1, yAxisIndex: 1,
+        data: volumes.map((value, index) => ({ value, itemStyle: { color: candles[index] && candles[index][1] >= candles[index][0] ? 'rgba(239,68,68,.68)' : 'rgba(34,197,94,.68)' } })),
+        barMaxWidth: 12
+      }, line('MV5', vma5, '#facc15', 1, 1), line('MV20', vma20, '#38bdf8', 1, 1));
+    } else {
+      xAxis[0].axisLabel = { color: legendTextColor, fontSize: 10 };
+    }
+    const axisIndexes = hasVolume ? [0, 1] : [0];
+    chartInstance.setOption({
+      backgroundColor: chartBg, animation: true,
+      tooltip: {
+        trigger: 'axis', axisPointer: { type: 'cross', link: [{ xAxisIndex: 'all' }] },
+        backgroundColor: isLight ? 'rgba(255,255,255,.96)' : 'rgba(15,23,42,.96)',
+        textStyle: { color: isLight ? '#0f172a' : '#e2e8f0' }, borderColor: isLight ? '#cbd5e1' : '#334155'
+      },
+      axisPointer: { link: [{ xAxisIndex: 'all' }], label: { backgroundColor: '#3b82f6' } },
+      legend: { data: legendData, top: 5, textStyle: { color: legendTextColor, fontSize: 11 }, selected },
+      grid, xAxis, yAxis,
+      dataZoom: [
+        { type: 'inside', xAxisIndex: axisIndexes, start, end },
+        { type: 'slider', xAxisIndex: axisIndexes, bottom: '1%', height: 16, borderColor: zoomBorderColor, fillerColor: 'rgba(59,130,246,.2)', start, end }
+      ],
+      series
+    }, true);
+    requestAnimationFrame(() => this.resize(dom));
+    setTimeout(() => this.resize(dom), 80);
   },
 
   _attachZoomFix(dom) {
