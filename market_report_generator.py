@@ -109,30 +109,62 @@ def taiwan_market_volume(months: int = 9) -> dict[str, float]:
     return volumes
 
 
-def tpex_market_volumes() -> dict[str, float]:
-    """櫃買中心 OpenAPI 提供本月每日市場成交量。"""
-    volume_response = requests.get(
-        "https://www.tpex.org.tw/openapi/v1/tpex_daily_trading_index",
-        headers=HEADERS,
-        timeout=20,
-        verify=False,
-    )
-    volume_response.raise_for_status()
-    volumes = {}
-    for item in volume_response.json() or []:
-        raw = str(item.get("Date") or "")
-        if len(raw) == 7 and raw.isdigit():  # 民國年月日，例如 1150901
-            raw = f"{int(raw[:3]) + 1911:04d}{raw[3:]}"
-        if len(raw) == 8 and raw.isdigit():
-            volumes[f"{raw[:4]}-{raw[4:6]}-{raw[6:]}"] = number(item.get("TradeVolume"), 0)
-    return volumes
+def tpex_market_volumes(year: int | None = None, month: int | None = None) -> dict[str, float]:
+    """櫃買中心歷史每日市場成交量（可查特定月份或本月）。"""
+    if year and month:
+        date_str = f"{year}/{month:02d}/01"
+        try:
+            res = requests.post(
+                "https://www.tpex.org.tw/www/zh-tw/afterTrading/tradingIndex",
+                data={"date": date_str, "response": "json"},
+                headers=HEADERS,
+                timeout=20,
+                verify=False,
+            )
+            res.raise_for_status()
+            tables = res.json().get("tables") or []
+            data = tables[0].get("data") if tables else []
+            volumes = {}
+            for item in data:
+                if len(item) < 2:
+                    continue
+                raw_date = str(item[0]).strip()
+                pieces = raw_date.split("/")
+                if len(pieces) == 3 and pieces[0].isdigit():
+                    gregorian = int(pieces[0]) + 1911
+                    date = f"{gregorian:04d}-{int(pieces[1]):02d}-{int(pieces[2]):02d}"
+                    volumes[date] = number(item[1], 0)
+            if volumes:
+                return volumes
+        except Exception:
+            pass
+
+    # 若特定月份失敗或未指定，嘗試本月 OpenAPI
+    try:
+        volume_response = requests.get(
+            "https://www.tpex.org.tw/openapi/v1/tpex_daily_trading_index",
+            headers=HEADERS,
+            timeout=20,
+            verify=False,
+        )
+        volume_response.raise_for_status()
+        volumes = {}
+        for item in volume_response.json() or []:
+            raw = str(item.get("Date") or "")
+            if len(raw) == 7 and raw.isdigit():  # 民國年月日，例如 1150901
+                raw = f"{int(raw[:3]) + 1911:04d}{raw[3:]}"
+            if len(raw) == 8 and raw.isdigit():
+                volumes[f"{raw[:4]}-{raw[4:6]}-{raw[6:]}"] = number(item.get("TradeVolume"), 0)
+        return volumes
+    except Exception:
+        return {}
 
 
 def tpex_month_ohlc(year: int, month: int, volumes: dict[str, float]) -> list[dict]:
     """官方歷史指數 API，可查 2012/04 起的每月 OHLC。"""
     response = requests.post(
         "https://www.tpex.org.tw/www/zh-tw/indexInfo/inx",
-        data={"date": f"{year}{month:02d}01", "response": "json"},
+        data={"date": f"{year}/{month:02d}/01", "response": "json"},
         headers=HEADERS,
         timeout=20,
         verify=False,
@@ -156,7 +188,7 @@ def tpex_month_ohlc(year: int, month: int, volumes: dict[str, float]) -> list[di
 
 
 def tpex_history() -> list[dict]:
-    """櫃買官方 OHLC 按月發布；本機快取會在每天更新後逐月累積。"""
+    """櫃買官方 OHLC 按月發布；回溯抓取過去 24 個月並快取逐月累積。"""
     cache_path = ROOT / "cache" / "tpex_index_history.json"
     cached: dict[str, dict] = {}
     try:
@@ -169,10 +201,24 @@ def tpex_history() -> list[dict]:
                 cached[date] = {**row, "date": date}
     except (OSError, json.JSONDecodeError):
         pass
-    volumes = tpex_market_volumes()
+
     now = datetime.now()
-    for row in tpex_month_ohlc(now.year, now.month, volumes):
-        cached[row["date"]] = row
+    # 如果快取中資料少於 200 筆，回溯爬取過去 24 個月；否則只更新最近 2 個月
+    months_to_fetch = 24 if len(cached) < 200 else 2
+    for offset in range(months_to_fetch):
+        # 計算 offset 個月前的年份與月份
+        year = now.year
+        month = now.month - offset
+        while month <= 0:
+            month += 12
+            year -= 1
+        try:
+            volumes = tpex_market_volumes(year, month)
+            for row in tpex_month_ohlc(year, month, volumes):
+                cached[row["date"]] = row
+        except Exception as exc:
+            print(f"⚠️ 櫃買指數 {year}-{month:02d} 擷取失敗: {exc}")
+
     cache_path.parent.mkdir(exist_ok=True)
     cache_path.write_text(json.dumps(cached, ensure_ascii=False, indent=2), encoding="utf-8")
     return [cached[key] for key in sorted(cached)][-500:]

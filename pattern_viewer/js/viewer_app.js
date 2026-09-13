@@ -105,6 +105,16 @@
 
   function updateMarginSummary(root, reportData, card) {
     if (!root) return;
+    const isMarket = !!(reportData && (reportData.reportType === 'market' || reportData.isMarketReport || String(reportData.stockCode || '').startsWith('MKT')));
+    if (isMarket) {
+      root.querySelectorAll('#patternMarginTableWrapper, #reports-patternMarginTableWrapper').forEach(slot => {
+        slot.innerHTML = '';
+      });
+      root.querySelectorAll('#patternMarginContainer, #reports-patternMarginContainer').forEach(container => {
+        container.style.display = 'none';
+      });
+      return;
+    }
     const rows = marginRows(card, reportData);
     const content = marginSummaryHtml(rows);
     root.querySelectorAll('#patternMarginTableWrapper, #reports-patternMarginTableWrapper').forEach(slot => {
@@ -618,6 +628,18 @@
       this.root.querySelectorAll('.inst-mini-chart').forEach(element => {
         if (isMarketReport) element.style.display = 'none';
       });
+      if (isMarketReport) {
+        updateMarginSummary(this.root, this.currentStockData, null);
+        this.root.querySelectorAll('#patternInstTableWrapper, #reports-patternInstTableWrapper, .pattern-inst-table-wrapper').forEach(slot => {
+          slot.innerHTML = '';
+        });
+        this.root.querySelectorAll('#patternInstContainer, #reports-patternInstContainer').forEach(el => {
+          el.style.display = 'none';
+        });
+        this.root.querySelectorAll('#patternChipSnapshot, #reports-patternChipSnapshot').forEach(el => {
+          el.innerHTML = '';
+        });
+      }
       this.updateDisposalBadge();
 
       const cardStockName = this.q('#cardStockName');

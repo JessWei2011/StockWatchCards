@@ -150,6 +150,8 @@ window.ChartEngine = {
 
     // 市場指數不套用個股 RSI / MACD / KD；台股市場與櫃買僅額外保留成交量窗格。
     if (stockData.reportType === 'market') {
+      const hudOverlay = dom.querySelector('.echart-in-chart-hud-container');
+      if (hudOverlay) hudOverlay.remove();
       this._renderMarketChart(dom, state, stockData, {
         isLight, showShortMa, isSameStock, prevLegendSelected, zoomStart, zoomEnd
       });
@@ -839,15 +841,30 @@ window.ChartEngine = {
       name, type: 'line', xAxisIndex, yAxisIndex, data, showSymbol: false,
       smooth: false, connectNulls: false, lineStyle: { width: 1.4, color }, emphasis: { focus: 'series' }
     });
+    // 預留頂部空間給 HUD 與指標標籤（top 改為 12%），設定適度高度避免 K 線過度縱向拉伸
     const grid = hasVolume
-      ? [{ left: '6%', right: '4%', top: '10%', height: '58%' }, { left: '6%', right: '4%', top: '75%', height: '12%' }]
-      : [{ left: '6%', right: '4%', top: '10%', height: '77%' }];
+      ? [{ left: '6%', right: '4%', top: '12%', height: '56%' }, { left: '6%', right: '4%', top: '75%', height: '14%' }]
+      : [{ left: '6%', right: '4%', top: '12%', height: '75%' }];
     const xAxis = [{ type: 'category', data: dates, gridIndex: 0, boundaryGap: true, axisLabel: { show: false }, axisLine: { lineStyle: { color: axisLineColor } } }];
-    const yAxis = [{ scale: true, gridIndex: 0, axisLine: { lineStyle: { color: axisLineColor } }, splitLine: { lineStyle: { color: splitLineColor } } }];
+    const yAxis = [
+      {
+        scale: true,
+        boundaryGap: ['5%', '8%'],
+        gridIndex: 0,
+        axisLine: { lineStyle: { color: axisLineColor } },
+        splitLine: { lineStyle: { color: splitLineColor } }
+      }
+    ];
     const series = [
       {
         name: 'K線', type: 'candlestick', xAxisIndex: 0, yAxisIndex: 0, data: candles,
-        itemStyle: { color: '#ef4444', color0: '#22c55e', borderColor: '#ef4444', borderColor0: '#22c55e' }
+        itemStyle: {
+          color: 'transparent',
+          color0: 'transparent',
+          borderColor: '#ef4444',
+          borderColor0: '#10b981',
+          borderWidth: 2
+        }
       },
       line('MA5', ma5, '#f59e0b'), line('MA10', ma10, '#60a5fa'), line('MA20', ma20, '#a78bfa'),
       line('MA60', ma60, '#f472b6'), line('MA120', ma120, '#94a3b8')
@@ -857,7 +874,7 @@ window.ChartEngine = {
       yAxis.push({ scale: true, gridIndex: 1, axisLabel: { show: false }, splitLine: { show: false } });
       series.push({
         name: '市場成交量', type: 'bar', xAxisIndex: 1, yAxisIndex: 1,
-        data: volumes.map((value, index) => ({ value, itemStyle: { color: candles[index] && candles[index][1] >= candles[index][0] ? 'rgba(239,68,68,.68)' : 'rgba(34,197,94,.68)' } })),
+        data: volumes.map((value, index) => ({ value, itemStyle: { color: candles[index] && candles[index][1] >= candles[index][0] ? 'rgba(239,68,68,.68)' : 'rgba(16,185,129,.68)' } })),
         barMaxWidth: 12
       }, line('MV5', vma5, '#facc15', 1, 1), line('MV20', vma20, '#38bdf8', 1, 1));
     } else {
@@ -880,6 +897,104 @@ window.ChartEngine = {
       ],
       series
     }, true);
+
+    // 市場指數圖專屬 HUD (更新頂部 OHLC、均線及成交量)
+    const hudDefaultColor = isLight ? '#0f172a' : '#cbd5e1';
+    const hudLabelColor = isLight ? '#475569' : '#94a3b8';
+    const hudShadow = isLight ? 'none' : '0 1px 3px rgba(0,0,0,0.8)';
+    const hudSepColor = isLight ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.25)';
+    const fastColor = isLight ? '#0284c7' : '#38bdf8';
+    const slowColor = isLight ? '#d97706' : '#f59e0b';
+
+    const updateMarketHUD = (idx) => {
+      if (!chartInstance || chartInstance.isDisposed() || !stockData || !stockData.dates) return;
+      if (idx < 0 || idx >= stockData.dates.length) return;
+
+      const chartDom = chartInstance.getDom();
+      if (!chartDom) return;
+      if (getComputedStyle(chartDom).position === 'static') {
+        chartDom.style.position = 'relative';
+      }
+
+      let overlay = chartDom.querySelector('.echart-in-chart-hud-container');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'echart-in-chart-hud-container';
+        overlay.style.position = 'absolute';
+        overlay.style.inset = '0';
+        overlay.style.pointerEvents = 'none';
+        overlay.style.zIndex = '5';
+        chartDom.appendChild(overlay);
+      }
+
+      if (!overlay.dataset.renderedVersion || overlay.dataset.renderedVersion !== 'market-v1' || overlay.dataset.themeMode !== (isLight ? 'light' : 'dark')) {
+        overlay.dataset.renderedVersion = 'market-v1';
+        overlay.dataset.themeMode = isLight ? 'light' : 'dark';
+        overlay.innerHTML = `
+          <div id="ichud-pane-0" style="position:absolute; left:6.2%; top:8.5%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
+          ${hasVolume ? `<div id="ichud-pane-1" style="position:absolute; left:6.2%; top:72.5%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>` : ''}
+        `;
+      }
+
+      const d = stockData.dates[idx];
+      const c = stockData.candles && stockData.candles[idx];
+      const elP0 = overlay.querySelector('#ichud-pane-0');
+      const elP1 = overlay.querySelector('#ichud-pane-1');
+
+      if (elP0 && c) {
+        const o = c[0], cl = c[1], l = c[2], h = c[3];
+        const prevCl = idx > 0 && stockData.candles[idx - 1] ? stockData.candles[idx - 1][1] : o;
+        const diff = cl - prevCl;
+        const pct = prevCl ? (diff / prevCl * 100) : 0;
+        const color = diff >= 0 ? '#ef4444' : '#10b981';
+        const sign = diff >= 0 ? '+' : '';
+
+        const m5 = stockData.ma5 && stockData.ma5[idx] != null ? `<span style="color:#f59e0b; font-weight:bold;">${Number(stockData.ma5[idx]).toFixed(2)}</span>` : '—';
+        const m10 = stockData.ma10 && stockData.ma10[idx] != null ? `<span style="color:#3b82f6; font-weight:bold;">${Number(stockData.ma10[idx]).toFixed(2)}</span>` : '—';
+        const m20 = stockData.ma20 && stockData.ma20[idx] != null ? `<span style="color:#ec4899; font-weight:bold;">${Number(stockData.ma20[idx]).toFixed(2)}</span>` : '—';
+        const m60 = stockData.ma60 && stockData.ma60[idx] != null ? `<span style="color:#10b981; font-weight:bold;">${Number(stockData.ma60[idx]).toFixed(2)}</span>` : '—';
+        const m120 = stockData.ma120 && stockData.ma120[idx] != null ? `<span style="color:#8b5cf6; font-weight:bold;">${Number(stockData.ma120[idx]).toFixed(2)}</span>` : '—';
+
+        elP0.innerHTML = `<span style="color:${fastColor}; font-weight:bold;">${d}</span> <span style="color:${hudLabelColor};">開:</span><span style="font-weight:bold;">${o.toFixed(2)}</span> <span style="color:${hudLabelColor};">高:</span><span style="font-weight:bold;">${h.toFixed(2)}</span> <span style="color:${hudLabelColor};">低:</span><span style="font-weight:bold;">${l.toFixed(2)}</span> <span style="color:${hudLabelColor};">收:</span><span style="color:${color}; font-weight:bold;">${cl.toFixed(2)}</span> <span style="color:${hudLabelColor};">漲跌:</span><span style="color:${color}; font-weight:bold;">${sign}${diff.toFixed(2)} (${sign}${pct.toFixed(2)}%)</span> <span style="color:${hudSepColor}; margin:0 4px;">|</span> <span style="color:${hudLabelColor};">MA5:</span>${m5} <span style="color:${hudLabelColor};">MA10:</span>${m10} <span style="color:${hudLabelColor};">MA20:</span>${m20} <span style="color:${hudLabelColor};">MA60:</span>${m60} <span style="color:${hudLabelColor};">MA120:</span>${m120}`;
+      }
+
+      if (elP1 && hasVolume) {
+        const v = stockData.volumes && stockData.volumes[idx];
+        const mv5Val = stockData.vma5 && stockData.vma5[idx] != null ? `<span style="color:${fastColor}; font-weight:bold;">${Number(stockData.vma5[idx]).toLocaleString()}</span>` : '—';
+        const mv20Val = stockData.vma20 && stockData.vma20[idx] != null ? `<span style="color:${slowColor}; font-weight:bold;">${Number(stockData.vma20[idx]).toLocaleString()}</span>` : '—';
+        elP1.innerHTML = `<span style="color:${hudLabelColor};">市場成交量:</span> <span style="color:${fastColor}; font-weight:bold;">${v != null ? Number(v).toLocaleString() : '—'}</span> <span style="color:${hudSepColor}; margin:0 4px;">|</span> <span style="color:${hudLabelColor};">MV5:</span>${mv5Val} <span style="color:${hudLabelColor};">MV20:</span>${mv20Val}`;
+      }
+    };
+
+    if (state.axisPointerHandler) {
+      chartInstance.off('updateAxisPointer', state.axisPointerHandler);
+    }
+    state.axisPointerHandler = (event) => {
+      if (event.axesInfo && event.axesInfo.length) {
+        const axisInfo = event.axesInfo[0];
+        if (axisInfo && axisInfo.value != null) {
+          const dataIndex = typeof axisInfo.value === 'number' ? axisInfo.value : dates.indexOf(axisInfo.value);
+          if (dataIndex >= 0 && dataIndex < dates.length) {
+            updateMarketHUD(dataIndex);
+          }
+        }
+      }
+    };
+    chartInstance.on('updateAxisPointer', state.axisPointerHandler);
+
+    if (dates && dates.length) {
+      updateMarketHUD(dates.length - 1);
+    }
+
+    if (!state.hudMouseLeaveBound) {
+      state.hudMouseLeaveBound = true;
+      dom.addEventListener('mouseleave', () => {
+        if (stockData && stockData.dates && stockData.dates.length) {
+          updateMarketHUD(stockData.dates.length - 1);
+        }
+      });
+    }
+
     requestAnimationFrame(() => this.resize(dom));
     setTimeout(() => this.resize(dom), 80);
   },
