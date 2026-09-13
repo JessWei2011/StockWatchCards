@@ -601,6 +601,9 @@
       const rep = (this.reportsIndex || []).find(item => String(item.code) === code);
       const card = this.cardByCode && this.cardByCode[code];
       const isMarketReport = this.currentStockData.reportType === 'market' || (rep && rep.reportType === 'market');
+      // 讓市場模式成為容器層級的狀態；即使外部流程在切換後補畫籌碼資訊，
+      // UI 仍不會恢復個股專用的技術指標區塊。
+      this.root.dataset.reportType = isMarketReport ? 'market' : 'stock';
       const mkt = (rep && rep.market) || (card && card.market) || (window.STOCK_MARKET_MAP && window.STOCK_MARKET_MAP[code]) || ((rep && rep.path && rep.path.includes('(TWO)')) ? 'TWO' : 'TW');
       const mktClass = mkt === 'TWO' ? 'market-two' : 'market-tw';
       const mktLabel = mkt === 'TWO' ? '上櫃' : '上市';

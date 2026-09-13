@@ -150,6 +150,10 @@ window.ChartEngine = {
 
     // 市場指數不套用個股 RSI / MACD / KD；台股市場與櫃買僅額外保留成交量窗格。
     if (stockData.reportType === 'market') {
+      // 市場與個股共用同一個 ECharts 實體。先清空前一檔個股的 pane / graphic，
+      // 避免圖表在捲動觸發 resize 後，殘留 RSI、MACD、KD 的舊繪製圖層。
+      state.chartInstance.clear();
+      dom.dataset.chartReportType = 'market';
       const hudOverlay = dom.querySelector('.echart-in-chart-hud-container');
       if (hudOverlay) hudOverlay.remove();
       this._renderMarketChart(dom, state, stockData, {
@@ -157,6 +161,7 @@ window.ChartEngine = {
       });
       return;
     }
+    delete dom.dataset.chartReportType;
 
     const {
       dates,
@@ -841,10 +846,11 @@ window.ChartEngine = {
       name, type: 'line', xAxisIndex, yAxisIndex, data, showSymbol: false,
       smooth: false, connectNulls: false, lineStyle: { width: 1.4, color }, emphasis: { focus: 'series' }
     });
-    // 預留頂部空間給 HUD 與指標標籤（top 改為 12%），設定適度高度避免 K 線過度縱向拉伸
+    // 市場指數主圖與個股 K 線窗格使用相同高度，避免因市場版省略 RSI／MACD／KD
+    // 而把每根 K 棒垂直拉長；其餘空間保留為乾淨的報表留白。
     const grid = hasVolume
-      ? [{ left: '6%', right: '4%', top: '12%', height: '56%' }, { left: '6%', right: '4%', top: '75%', height: '14%' }]
-      : [{ left: '6%', right: '4%', top: '12%', height: '75%' }];
+      ? [{ left: '6%', right: '4%', top: '11.0%', height: '19.8%' }, { left: '6%', right: '4%', top: '37.0%', height: '8.5%' }]
+      : [{ left: '6%', right: '4%', top: '11.0%', height: '19.8%' }];
     const xAxis = [{ type: 'category', data: dates, gridIndex: 0, boundaryGap: true, axisLabel: { show: false }, axisLine: { lineStyle: { color: axisLineColor } } }];
     const yAxis = [
       {
@@ -882,7 +888,8 @@ window.ChartEngine = {
     }
     const axisIndexes = hasVolume ? [0, 1] : [0];
     chartInstance.setOption({
-      backgroundColor: chartBg, animation: true,
+      // 市場報表沒有次要技術指標窗格；關閉切換動畫可避免舊個股窗格在重繪時閃現。
+      backgroundColor: chartBg, animation: false,
       tooltip: {
         trigger: 'axis', axisPointer: { type: 'cross', link: [{ xAxisIndex: 'all' }] },
         backgroundColor: isLight ? 'rgba(255,255,255,.96)' : 'rgba(15,23,42,.96)',
@@ -932,7 +939,7 @@ window.ChartEngine = {
         overlay.dataset.themeMode = isLight ? 'light' : 'dark';
         overlay.innerHTML = `
           <div id="ichud-pane-0" style="position:absolute; left:6.2%; top:8.5%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
-          ${hasVolume ? `<div id="ichud-pane-1" style="position:absolute; left:6.2%; top:72.5%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>` : ''}
+          ${hasVolume ? `<div id="ichud-pane-1" style="position:absolute; left:6.2%; top:35.0%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>` : ''}
         `;
       }
 

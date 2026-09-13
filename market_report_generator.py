@@ -20,7 +20,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 ROOT = Path(__file__).resolve().parent
-REPORT_DIR = ROOT / "reports" / "市場指數"
+# 左側資料夾清單依名稱排序；以固定序號讓市場總覽永遠排在最前。
+REPORT_DIR = ROOT / "reports" / "00_市場指數"
 HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
 YAHOO_ENDPOINT = "https://query1.finance.yahoo.com/v8/finance/chart/{}"
 

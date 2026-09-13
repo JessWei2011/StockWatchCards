@@ -2171,6 +2171,16 @@
     color: #c084fc !important;
     border: 1px solid rgba(192, 132, 252, 0.4);
   }
+  /* 市場指數不使用個股 RSI／MACD／KD 等技術狀態；以容器狀態鎖定，
+     防止其他更新流程重新顯示已隱藏的個股區塊。 */
+  .pattern-viewer[data-report-type="market"] #statKlineBox,
+  .pattern-viewer[data-report-type="market"] #statVolBox,
+  .pattern-viewer[data-report-type="market"] #statMacdBox,
+  .pattern-viewer[data-report-type="market"] #statRsiBox,
+  .pattern-viewer[data-report-type="market"] #statKdBox,
+  .pattern-viewer[data-report-type="market"] #statChipBox {
+    display: none !important;
+  }
   .tree-report-row .name{
     flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;
     cursor:pointer;
@@ -8101,6 +8111,20 @@
 
   function updatePatternInstitutionalSummary(code){
     const cleanCode = String(code || '').split('.')[0].trim();
+    // 市場指數沒有個股法人／集保籌碼。此函式會在選股同步流程中被呼叫，
+    // 必須自行防呆，不能把 PatternViewer 已隱藏的個股區塊重新打開。
+    if (cleanCode.startsWith('MKT')) {
+      document.querySelectorAll('#patternInstTableWrapper, #reports-patternInstTableWrapper, .pattern-inst-table-wrapper').forEach(el => {
+        el.innerHTML = '';
+      });
+      document.querySelectorAll('#patternInstContainer, #reports-patternInstContainer, #patternMarginContainer, #reports-patternMarginContainer, .inst-mini-chart').forEach(el => {
+        el.style.display = 'none';
+      });
+      document.querySelectorAll('#patternChipSnapshot, #reports-patternChipSnapshot').forEach(el => {
+        el.innerHTML = '';
+      });
+      return;
+    }
     const card = cardsByCode[cleanCode] || cardsByCode[code] || null;
     const content = card ? renderInstitutionSummary(card) : '<div class="inst-chart-empty">尚無法人籌碼資料</div>';
 
