@@ -1,21 +1,9 @@
-<<<<<<< Updated upstream
 {
   "version": 2,
   "code": "3324",
   "name": "雙鴻",
   "market": "TWO",
-  "analysisDate": "2026-09-04",
-  "publishedAt": "2026-09-06T09:12:57+08:00",
-  "stockCount": 89
+  "analysisDate": "2026-09-11",
+  "publishedAt": "2026-09-13T11:52:19+08:00",
+  "stockCount": 98
 }
-=======
-{
-  "version": 2,
-  "code": "3324",
-  "name": "雙鴻",
-  "market": "TWO",
-  "analysisDate": "2026-09-08",
-  "publishedAt": "2026-09-09T18:18:38+08:00",
-  "stockCount": 93
-}
->>>>>>> Stashed changes

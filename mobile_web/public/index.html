@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 <!doctype html>
 <html lang="zh-Hant">
 <head>
@@ -10,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Stock2股票">
   <meta name="description" content="手機 AI 實戰勝率榜與個股看盤中心">
   <title>Stock2 手機戰情室</title>
-  <link rel="stylesheet" href="./style.css?v=20260906091258">
+  <link rel="stylesheet" href="./style.css?v=20260913115221">
 </head>
 <body>
   <header class="topbar">
@@ -27,40 +26,34 @@
   <main class="page-shell">
     <div id="errorBanner" class="error-banner" role="alert" hidden></div>
 
-    <!-- ==================== TAB 1: 👑 AI 榜單 ==================== -->
+    <!-- ==================== TAB 1: 🏆 排行榜（與桌面版同步） ==================== -->
     <section class="tab-view" id="viewRanking">
       <!-- 頂部次級切換頁籤 -->
       <div class="sub-tab-bar" id="rankingSubTabBar">
-        <button type="button" class="sub-tab-btn active" data-subtab="evolution">👑 AI 實戰勝率榜 (主)</button>
-        <button type="button" class="sub-tab-btn" data-subtab="auxiliary">⚡ ChatGPT & Gemini (輔)</button>
-        <button type="button" class="sub-tab-btn" data-subtab="log">📖 覆盤日記</button>
+        <button type="button" class="sub-tab-btn active" data-subtab="ai">🤖 AI 四大榜單</button>
+        <button type="button" class="sub-tab-btn" data-subtab="chip">🏦 籌碼策略榜</button>
       </div>
 
-      <!-- 子視圖 A：AI 進化勝率榜 (主推大卡片) -->
-      <div id="subViewEvolution">
-        <div class="market-overview-banner" id="marketOverviewBanner" hidden>
-          <div class="banner-title"><span>🌐</span><span>今日盤面資金主軸</span></div>
-          <p class="banner-desc" id="marketOverviewText"></p>
-        </div>
-        <div class="evolution-list" id="evolutionList">
-          <div style="text-align:center; padding:30px; color:#64748b;">載入 AI 獨有實戰勝率榜中…</div>
-        </div>
-      </div>
-
-      <!-- 子視圖 B：輔助四大榜單 (ChatGPT & Gemini) -->
-      <div id="subViewAuxiliary" hidden>
+      <!-- 子視圖 A：與桌面版同步的四大 AI 榜單 -->
+      <div id="subViewAi">
         <div class="ranking-intro" style="margin-bottom:12px;">
-          <span class="section-kicker">AUXILIARY BOARDS</span>
-          <h2>雙 AI 與法人籌碼策略榜</h2>
-          <p>Gemini、ChatGPT 與法人籌碼策略榜；點擊可查看個股圖表。</p>
+          <span class="section-kicker">AI RANKINGS</span>
+          <h2>Gemini／ChatGPT 四大榜單</h2>
+          <p>與桌面版排行榜同步，點擊可查看個股圖表。</p>
         </div>
-        <div class="four-ranking-grid" id="rankingList" aria-label="雙 AI 與法人籌碼策略排行榜"></div>
+        <div class="four-ranking-grid" id="rankingAiList" aria-label="AI 四大排行榜"></div>
       </div>
 
-      <!-- 子視圖 C：覆盤日記 -->
-      <div id="subViewLog" hidden>
-        <div id="evolutionLogContent" class="evo-log-container">覆盤日記載入中…</div>
+      <!-- 子視圖 B：集保與法人籌碼策略榜 -->
+      <div id="subViewChip" hidden>
+        <div class="ranking-intro" style="margin-bottom:12px;">
+          <span class="section-kicker">CHIP STRATEGY</span>
+          <h2>集保大戶與法人籌碼榜</h2>
+          <p>400／1000 張大戶週變化，以及外資、投信買超策略榜。</p>
+        </div>
+        <div class="four-ranking-grid" id="rankingChipList" aria-label="集保與法人籌碼策略排行榜"></div>
       </div>
+
     </section>
 
     <!-- ==================== TAB 2: 📈 個股看盤 ==================== -->
@@ -275,11 +268,11 @@
   </div>
 
   <script src="./vendor/echarts.min.js?v=5.4.3"></script>
-  <script src="./modules/parser.js?v=20260906091258"></script>
-  <script src="./app.js?v=20260906091258"></script>
+  <script src="./modules/parser.js?v=20260913115221"></script>
+  <script src="./app.js?v=20260913115221"></script>
 </body>
 </html>
-=======
+<!-- 已排除舊版合併內容，保留上方目前手機版結構。
 <!doctype html>
 <html lang="zh-Hant">
 <head>
@@ -291,7 +284,7 @@
   <meta name="apple-mobile-web-app-title" content="Stock2股票">
   <meta name="description" content="手機 AI 實戰勝率榜與個股看盤中心">
   <title>Stock2 手機戰情室</title>
-  <link rel="stylesheet" href="./style.css?v=20260909181839">
+  <link rel="stylesheet" href="./style.css?v=20260913115221">
 </head>
 <body>
   <header class="topbar">
@@ -308,40 +301,34 @@
   <main class="page-shell">
     <div id="errorBanner" class="error-banner" role="alert" hidden></div>
 
-    <!-- ==================== TAB 1: 👑 AI 榜單 ==================== -->
+    <!-- ==================== TAB 1: 🏆 排行榜（與桌面版同步） ==================== -->
     <section class="tab-view" id="viewRanking">
       <!-- 頂部次級切換頁籤 -->
       <div class="sub-tab-bar" id="rankingSubTabBar">
-        <button type="button" class="sub-tab-btn active" data-subtab="evolution">👑 AI 實戰勝率榜 (主)</button>
-        <button type="button" class="sub-tab-btn" data-subtab="auxiliary">⚡ ChatGPT & Gemini (輔)</button>
-        <button type="button" class="sub-tab-btn" data-subtab="log">📖 覆盤日記</button>
+        <button type="button" class="sub-tab-btn active" data-subtab="ai">🤖 AI 四大榜單</button>
+        <button type="button" class="sub-tab-btn" data-subtab="chip">🏦 籌碼策略榜</button>
       </div>
 
-      <!-- 子視圖 A：AI 進化勝率榜 (主推大卡片) -->
-      <div id="subViewEvolution">
-        <div class="market-overview-banner" id="marketOverviewBanner" hidden>
-          <div class="banner-title"><span>🌐</span><span>今日盤面資金主軸</span></div>
-          <p class="banner-desc" id="marketOverviewText"></p>
-        </div>
-        <div class="evolution-list" id="evolutionList">
-          <div style="text-align:center; padding:30px; color:#64748b;">載入 AI 獨有實戰勝率榜中…</div>
-        </div>
-      </div>
-
-      <!-- 子視圖 B：輔助四大榜單 (ChatGPT & Gemini) -->
-      <div id="subViewAuxiliary" hidden>
+      <!-- 子視圖 A：與桌面版同步的四大 AI 榜單 -->
+      <div id="subViewAi">
         <div class="ranking-intro" style="margin-bottom:12px;">
-          <span class="section-kicker">AUXILIARY BOARDS</span>
-          <h2>雙 AI 與法人籌碼策略榜</h2>
-          <p>Gemini、ChatGPT 與法人籌碼策略榜；點擊可查看個股圖表。</p>
+          <span class="section-kicker">AI RANKINGS</span>
+          <h2>Gemini／ChatGPT 四大榜單</h2>
+          <p>與桌面版排行榜同步，點擊可查看個股圖表。</p>
         </div>
-        <div class="four-ranking-grid" id="rankingList" aria-label="雙 AI 與法人籌碼策略排行榜"></div>
+        <div class="four-ranking-grid" id="rankingAiList" aria-label="AI 四大排行榜"></div>
       </div>
 
-      <!-- 子視圖 C：覆盤日記 -->
-      <div id="subViewLog" hidden>
-        <div id="evolutionLogContent" class="evo-log-container">覆盤日記載入中…</div>
+      <!-- 子視圖 B：集保與法人籌碼策略榜 -->
+      <div id="subViewChip" hidden>
+        <div class="ranking-intro" style="margin-bottom:12px;">
+          <span class="section-kicker">CHIP STRATEGY</span>
+          <h2>集保大戶與法人籌碼榜</h2>
+          <p>400／1000 張大戶週變化，以及外資、投信買超策略榜。</p>
+        </div>
+        <div class="four-ranking-grid" id="rankingChipList" aria-label="集保與法人籌碼策略排行榜"></div>
       </div>
+
     </section>
 
     <!-- ==================== TAB 2: 📈 個股看盤 ==================== -->
@@ -556,8 +543,8 @@
   </div>
 
   <script src="./vendor/echarts.min.js?v=5.4.3"></script>
-  <script src="./modules/parser.js?v=20260909181839"></script>
-  <script src="./app.js?v=20260909181839"></script>
+  <script src="./modules/parser.js?v=20260913115221"></script>
+  <script type="application/x-stock2-legacy" src="./app.js?v=20260913115221"></script>
 </body>
 </html>
->>>>>>> Stashed changes
+-->

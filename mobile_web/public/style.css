@@ -193,6 +193,7 @@ body.stock-picker-open { overflow: hidden; }
 .ranking-intro p { margin: 0; color: var(--muted); font-size: 13px; }
 .ranking-date { display: block; margin-top: 12px; color: #8ce3ff; font-size: 11px; font-weight: 700; }
 .four-ranking-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+#rankingChipList { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .ranking-board { min-width: 0; padding: 9px; border-radius: 14px; }
 .ranking-board h3 { margin: 2px 2px 9px; padding-bottom: 8px; border-bottom: 1px solid rgba(148, 163, 184, .12); color: var(--board-color); font-size: 13px; line-height: 1.25; text-align: center; }
 .ranking-board-items { display: grid; gap: 5px; }
@@ -207,8 +208,20 @@ body.stock-picker-open { overflow: hidden; }
 .chatgpt-defensive { --board-color: #38bdf8; }
 .institutional-foreign-trust { --board-color: #fbbf24; border-color: rgba(251, 191, 36, .55); }
 .institutional-trust-buy { --board-color: #c084fc; border-color: rgba(192, 132, 252, .55); }
+.holder-up { --board-color: #fb923c; border-color: rgba(251, 146, 60, .55); }
+.holder-down { --board-color: #4ade80; border-color: rgba(74, 222, 128, .55); }
+.holder-1000-up { --board-color: #38bdf8; border-color: rgba(56, 189, 248, .55); }
+.holder-1000-down { --board-color: #a78bfa; border-color: rgba(167, 139, 250, .55); }
+
+/* 相容舊版 index.html 殘留的第二份文件節點，避免重複版面干擾手機操作。 */
+body > section#viewRanking,
+body > section#viewStock,
+body > section#viewSectors,
+body > section#viewWatchlist,
+body > nav#bottomNav:nth-of-type(2),
+body > div#stockPickerOverlay:nth-of-type(2) { display: none !important; }
 @media (max-width: 900px) { .four-ranking-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 520px) { .four-ranking-grid { grid-template-columns: 1fr; } .ranking-board h3 { font-size: 15px; } .ranking-item { padding: 11px 9px; } .ranking-name, .ranking-price { font-size: 14px; } }
+@media (max-width: 520px) { .four-ranking-grid { grid-template-columns: 1fr; } #rankingChipList { grid-template-columns: 1fr; } .ranking-board h3 { font-size: 15px; } .ranking-item { padding: 11px 9px; } .ranking-name, .ranking-price { font-size: 14px; } }
 .ranking-return-button { margin: 0 0 10px; padding: 8px 2px; border: 0; background: transparent; color: #8ce3ff; font-size: 13px; font-weight: 750; cursor: pointer; }
 
 .panel, .hero-card, .price-grid article {

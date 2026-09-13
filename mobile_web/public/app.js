@@ -11,7 +11,7 @@
     chartData: null,
     chart: null,
     activeTab: 'ranking', // 'ranking' | 'stock' | 'sectors' | 'watchlist'
-    rankingSubTab: 'evolution', // 'evolution' | 'auxiliary' | 'log'
+    rankingSubTab: 'ai', // 'ai' | 'chip' | 'log'
     period: 20,
     showMa: true,
     showBoll: true
@@ -192,10 +192,12 @@
     state.activeTab = tabName;
 
     // 1. 切換 View 顯示
-    $('#viewRanking').hidden = (tabName !== 'ranking');
-    $('#viewStock').hidden = (tabName !== 'stock');
-    $('#viewSectors').hidden = (tabName !== 'sectors');
-    $('#viewWatchlist').hidden = (tabName !== 'watchlist');
+    // 僅保留主文件中的第一組頁面節點，避免舊版靜態輸出重複節點影響操作。
+    [['ranking', '#viewRanking'], ['stock', '#viewStock'], ['sectors', '#viewSectors'], ['watchlist', '#viewWatchlist']].forEach(([name, selector]) => {
+      document.querySelectorAll(selector).forEach((view, index) => {
+        view.hidden = index > 0 || tabName !== name;
+      });
+    });
 
     // 2. 更新底部按鈕 active 樣式
     document.querySelectorAll('#bottomNav .nav-item').forEach(btn => {
@@ -204,7 +206,7 @@
 
     // 3. 更新頂部 Topbar 標題
     if (tabName === 'ranking') {
-      setText('#topbarTitle', 'AI 實戰勝率榜');
+      setText('#topbarTitle', '排行榜');
     } else if (tabName === 'stock') {
       setText('#topbarTitle', state.card ? `${state.card.code} ${state.card.name}` : '個股看盤');
       if (state.chart) {
@@ -227,13 +229,8 @@
     document.querySelectorAll('#rankingSubTabBar .sub-tab-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.subtab === subTab);
     });
-    $('#subViewEvolution').hidden = (subTab !== 'evolution');
-    $('#subViewAuxiliary').hidden = (subTab !== 'auxiliary');
-    $('#subViewLog').hidden = (subTab !== 'log');
-
-    if (subTab === 'log') {
-      loadEvolutionLog();
-    }
+    $('#subViewAi').hidden = (subTab !== 'ai');
+    $('#subViewChip').hidden = (subTab !== 'chip');
   }
 
   // ==================== 個股看盤渲染 (Stock Detail) ====================
@@ -270,9 +267,10 @@
 
     setText('#analysisDate', `截止 ${rankings.scanDate || '—'}`);
 
-    // 1. 主推：👑 AI 獨有實戰勝率榜
+    // 保留 Evolution 資料相容性；手機主畫面改以桌面排行榜的 AI 四榜為準。
     const evoBoard = rankings.boards.find(b => b.id === 'evolution-master') || rankings.boards[0];
-    if (evoBoard && Array.isArray(evoBoard.items)) {
+    const legacyEvolutionContainer = $('#evolutionList');
+    if (legacyEvolutionContainer && evoBoard && Array.isArray(evoBoard.items)) {
       if (rankings.marketOverview) {
         $('#marketOverviewBanner').hidden = false;
         $('#marketOverviewText').textContent = rankings.marketOverview;
@@ -280,7 +278,7 @@
         $('#marketOverviewBanner').hidden = true;
       }
 
-      $('#evolutionList').innerHTML = evoBoard.items.map((item, idx) => {
+      legacyEvolutionContainer.innerHTML = evoBoard.items.map((item, idx) => {
         const rankNum = parseInt(item.rank) || (idx + 1);
         let badgeClass = 'normal';
         if (rankNum === 1) badgeClass = 'top1';
@@ -361,9 +359,7 @@
       }).join('');
     }
 
-    // 2. 輔助：ChatGPT & Gemini 榜單
-    const auxBoards = rankings.boards.filter(b => b.id !== 'evolution-master');
-    $('#rankingList').innerHTML = auxBoards.map(board => `
+    const renderBoard = board => `
       <section class="ranking-board ${escapeHtml(board.tone || '')}" aria-labelledby="board-${escapeHtml(board.id)}">
         <h3 id="board-${escapeHtml(board.id)}">${escapeHtml(board.title)}</h3>
         <div class="ranking-board-items">
@@ -376,7 +372,11 @@
           `).join('')}
         </div>
       </section>
-    `).join('');
+    `;
+    const aiBoards = rankings.boards.filter(board => /^(gemini|chatgpt)-/.test(board.id));
+    const chipBoards = rankings.boards.filter(board => /^(holder-|institutional-)/.test(board.id));
+    $('#rankingAiList').innerHTML = aiBoards.map(renderBoard).join('');
+    $('#rankingChipList').innerHTML = chipBoards.map(renderBoard).join('');
   }
 
   // ==================== 產業風口視圖 (Sectors View) ====================
@@ -1142,7 +1142,7 @@
     });
 
     // 3. AI 進化榜大卡片點選 (點擊進入看盤，點星號加自選)
-    $('#evolutionList').addEventListener('click', event => {
+    $('#evolutionList')?.addEventListener('click', event => {
       const starBtn = event.target.closest('.evo-star-btn');
       if (starBtn) {
         event.stopPropagation();
@@ -1225,7 +1225,14 @@
     });
 
     // 8. 輔助四大榜單點選
-    $('#rankingList').addEventListener('click', event => {
+    $('#rankingAiList').addEventListener('click', event => {
+      const button = event.target.closest('button[data-code]');
+      if (button) {
+        loadStock(button.dataset.code, { pushHistory: true });
+        switchTab('stock');
+      }
+    });
+    $('#rankingChipList').addEventListener('click', event => {
       const button = event.target.closest('button[data-code]');
       if (button) {
         loadStock(button.dataset.code, { pushHistory: true });

@@ -341,6 +341,44 @@ def parse_institutional_strategy_ranking(text: str) -> tuple[str, dict[str, list
     return as_of, boards
 
 
+def build_holder_change_boards(reports: dict[str, dict]) -> tuple[str, dict[str, list[dict]]]:
+    """由個股報告的集保週報生成與桌面排行榜一致的四個大戶變化榜。"""
+    changes = []
+    for code, report in reports.items():
+        try:
+            html = report["path"].read_text(encoding="utf-8")
+            section = re.search(r"大戶持股比例.*?<table>(.*?)</table>", html, re.S)
+            if not section:
+                continue
+            rows = re.findall(r"<tr><td>(\d{4}-\d{2}-\d{2})</td><td>([\d.]+)%</td><td>[\d.]+%</td><td>[\d.]+%</td><td>([\d.]+)%</td>", section.group(1))
+            if len(rows) < 2:
+                continue
+            previous, latest = rows[-2], rows[-1]
+            changes.append({
+                "code": code, "name": report["name"], "date": latest[0],
+                "big400": float(latest[1]) - float(previous[1]),
+                "big1000": float(latest[2]) - float(previous[2]),
+            })
+        except (OSError, ValueError):
+            continue
+    configs = {
+        "holder-400-up": ("400 張大戶本週增加率", "big400", lambda value: value > 0, True),
+        "holder-400-down": ("400 張大戶本週減少率", "big400", lambda value: value < 0, False),
+        "holder-1000-up": ("1000 張大戶本週增加率", "big1000", lambda value: value > 0, True),
+        "holder-1000-down": ("1000 張大戶本週減少率", "big1000", lambda value: value < 0, False),
+    }
+    boards = {}
+    for key, (_title, field, predicate, descending) in configs.items():
+        items = [item for item in changes if predicate(item[field])]
+        items.sort(key=lambda item: item[field], reverse=descending)
+        boards[key] = [
+            {"rank": index, "code": item["code"], "name": item["name"], "displayValue": f"{item[field]:+.2f}pp"}
+            for index, item in enumerate(items[:10], 1)
+        ]
+    as_of = max((item["date"] for item in changes), default="")
+    return as_of, boards
+
+
 def export_all_rankings() -> None:
     evolution_path = ROOT_DIR / "stock_winrate_ranking_evolution.md"
     evo_items = []
@@ -399,6 +437,12 @@ def export_all_rankings() -> None:
             "tone": "gemini-momentum",
             "items": parsed["gemini"]["momentum"][:10]
         })
+        boards.append({
+            "id": "gemini-defensive",
+            "title": "🌱 Gemini 穩健防守 TOP 10",
+            "tone": "gemini-defensive",
+            "items": parsed["gemini"]["defensive"][:10]
+        })
 
     if INSTITUTIONAL_STRATEGY_FILE.is_file():
         try:
@@ -423,12 +467,22 @@ def export_all_rankings() -> None:
             ])
         except Exception as error:
             print(f"Warning parsing institutional strategy ranking: {error}")
-        boards.append({
-            "id": "gemini-defensive",
-            "title": "🌱 Gemini 穩健防守 TOP 10",
-            "tone": "gemini-defensive",
-            "items": parsed["gemini"]["defensive"][:10]
-        })
+
+    try:
+        reports = discover_latest_reports()
+        holder_date, holder_boards = build_holder_change_boards(reports)
+        if holder_date:
+            scan_dates.append(holder_date)
+        holder_titles = {
+            "holder-400-up": "📈 400 張大戶本週增加率 TOP 10",
+            "holder-400-down": "📉 400 張大戶本週減少率 TOP 10",
+            "holder-1000-up": "📈 1000 張大戶本週增加率 TOP 10",
+            "holder-1000-down": "📉 1000 張大戶本週減少率 TOP 10",
+        }
+        holder_tones = {"holder-400-up": "holder-up", "holder-400-down": "holder-down", "holder-1000-up": "holder-1000-up", "holder-1000-down": "holder-1000-down"}
+        boards.extend({"id": key, "title": holder_titles[key], "tone": holder_tones[key], "items": items} for key, items in holder_boards.items())
+    except Exception as error:
+        print(f"Warning building holder change rankings: {error}")
 
     payload = {
         "version": 2,

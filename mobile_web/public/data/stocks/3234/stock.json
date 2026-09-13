@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 {
   "version": 2,
   "stock": {
@@ -6,69 +5,31 @@
     "name": "光環",
     "group": "CPO",
     "market": "TWO",
-    "date": "2026-09-04",
+    "date": "2026-09-11",
     "isStarred": false
   },
   "latestAnalysis": {
-    "date": "2026-09-04",
-    "current": "206.00",
-    "decision": "強烈買入 (動能爆發)",
-    "winRate": "91%",
-    "pattern": "多頭排列階梯推升 (Bullish Trend)",
-    "confidence": "完全確認",
-    "entry": "206.00",
-    "stop": "142.30",
-    "resist": "220.0",
-    "target": "329.26",
-    "bullish": [
-      "K線：🚀 均線開花多頭發散 (主升段連鎖加速)",
-      "成交量：✨ 量能黃金交叉 (攻擊量增溫)",
-      "RSI：RSI(14): 74.2 進入過熱區",
-      "MACD：📈 MACD 多頭推升收斂 (紅柱縮小整理)",
-      "KD：🚀 KD 高檔強勢鈍化 (K值連3日>80軋空)",
-      "籌碼：🛡️ 外資月度重倉防守 (近20日淨買佔優)"
-    ],
-    "bearish": [
-      "風控停損：142.30 元"
-    ],
-    "action": "交易方向：做多；建議評級：強烈買入 (動能爆發)；策略：右側突破跟隨；目標價：329.26 元；停損：142.30 元。"
-  }
-}
-=======
-{
-  "version": 2,
-  "stock": {
-    "code": "3234",
-    "name": "光環",
-    "group": "CPO",
-    "market": "TWO",
-    "date": "2026-09-08",
-    "isStarred": false
-  },
-  "latestAnalysis": {
-    "date": "2026-09-08",
-    "current": "197.00",
+    "date": "2026-09-11",
+    "current": "187.50",
     "decision": "觀望 / 逢低佈局",
-    "winRate": "54%",
+    "winRate": "63.5%",
     "pattern": "多頭排列階梯推升 (Bullish Trend)",
     "confidence": "完全確認",
-    "entry": "193.06",
+    "entry": "183.75",
     "stop": "170.00",
     "resist": "220.0",
     "target": "329.26",
     "bullish": [
-      "K線：💡 守穩10MA (短線回測有守)",
-      "RSI：RSI(14): 67.8 多方推進",
-      "MACD：📈 MACD 多頭推升收斂 (紅柱縮小整理)",
-      "KD：⚪ KD 多空中性震盪",
+      "RSI：RSI(14): 59.9 多方推進",
       "籌碼：🛡️ 外資月度重倉防守 (近20日淨買佔優)"
     ],
     "bearish": [
-      "K線：⚠️ 5MA轉俯角 (下彎轉弱)",
+      "K線：⚡ 5MA死叉10MA (短線轉弱)、⚠️ 5MA轉俯角 (下彎轉弱)",
       "成交量：📉 縮量沉澱整理",
+      "MACD：⚡ MACD 零軸上死亡交叉 (波段獲利了結)、❄️ MACD 柱狀體翻綠 (動能減弱)",
+      "KD：📉 KD 空方弱勢回檔",
       "風控停損：170.00 元"
     ],
     "action": "交易方向：做多；建議評級：觀望 / 逢低佈局；策略：右側突破跟隨；目標價：329.26 元；停損：170.00 元。"
   }
 }
->>>>>>> Stashed changes

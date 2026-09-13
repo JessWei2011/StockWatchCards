@@ -393,6 +393,73 @@
       ]
     },
     {
+      "id": "gemini-defensive",
+      "title": "🌱 Gemini 穩健防守 TOP 10",
+      "tone": "gemini-defensive",
+      "items": [
+        {
+          "rank": "1",
+          "code": "1560",
+          "name": "中砂",
+          "price": "790.00"
+        },
+        {
+          "rank": "2",
+          "code": "3034",
+          "name": "聯詠",
+          "price": "547.00"
+        },
+        {
+          "rank": "3",
+          "code": "2379",
+          "name": "瑞昱",
+          "price": "704.00"
+        },
+        {
+          "rank": "4",
+          "code": "3653",
+          "name": "健策",
+          "price": "5765.00"
+        },
+        {
+          "rank": "5",
+          "code": "2360",
+          "name": "致茂",
+          "price": "2160.00"
+        },
+        {
+          "rank": "6",
+          "code": "3532",
+          "name": "台勝科",
+          "price": "423.00"
+        },
+        {
+          "rank": "7",
+          "code": "6531",
+          "name": "愛普",
+          "price": "988.00"
+        },
+        {
+          "rank": "8",
+          "code": "2454",
+          "name": "聯發科",
+          "price": "4585.00"
+        },
+        {
+          "rank": "9",
+          "code": "2426",
+          "name": "鼎元",
+          "price": "97.10"
+        },
+        {
+          "rank": "10",
+          "code": "3008",
+          "name": "大立光",
+          "price": "6660.00"
+        }
+      ]
+    },
+    {
       "id": "institutional-foreign-trust",
       "title": "🏦 外資＋投信同步買超 TOP 10",
       "tone": "institutional-foreign-trust",
@@ -607,69 +674,270 @@
       ]
     },
     {
-      "id": "gemini-defensive",
-      "title": "🌱 Gemini 穩健防守 TOP 10",
-      "tone": "gemini-defensive",
+      "id": "holder-400-up",
+      "title": "📈 400 張大戶本週增加率 TOP 10",
+      "tone": "holder-up",
       "items": [
         {
-          "rank": "1",
-          "code": "1560",
-          "name": "中砂",
-          "price": "790.00"
+          "rank": 1,
+          "code": "3324",
+          "name": "雙鴻",
+          "displayValue": "+9.32pp"
         },
         {
-          "rank": "2",
-          "code": "3034",
-          "name": "聯詠",
-          "price": "547.00"
+          "rank": 2,
+          "code": "1815",
+          "name": "富喬",
+          "displayValue": "+6.10pp"
         },
         {
-          "rank": "3",
-          "code": "2379",
-          "name": "瑞昱",
-          "price": "704.00"
+          "rank": 3,
+          "code": "3374",
+          "name": "精材",
+          "displayValue": "+5.94pp"
         },
         {
-          "rank": "4",
-          "code": "3653",
-          "name": "健策",
-          "price": "5765.00"
+          "rank": 4,
+          "code": "3529",
+          "name": "力旺",
+          "displayValue": "+5.64pp"
         },
         {
-          "rank": "5",
-          "code": "2360",
-          "name": "致茂",
-          "price": "2160.00"
+          "rank": 5,
+          "code": "2455",
+          "name": "全新",
+          "displayValue": "+4.79pp"
         },
         {
-          "rank": "6",
-          "code": "3532",
-          "name": "台勝科",
-          "price": "423.00"
+          "rank": 6,
+          "code": "2481",
+          "name": "強茂",
+          "displayValue": "+4.04pp"
         },
         {
-          "rank": "7",
-          "code": "6531",
-          "name": "愛普",
-          "price": "988.00"
+          "rank": 7,
+          "code": "3693",
+          "name": "營邦",
+          "displayValue": "+3.86pp"
         },
         {
-          "rank": "8",
-          "code": "2454",
-          "name": "聯發科",
-          "price": "4585.00"
+          "rank": 8,
+          "code": "3661",
+          "name": "世芯-KY",
+          "displayValue": "+2.61pp"
         },
         {
-          "rank": "9",
-          "code": "2426",
-          "name": "鼎元",
-          "price": "97.10"
+          "rank": 9,
+          "code": "3450",
+          "name": "聯鈞",
+          "displayValue": "+2.44pp"
         },
         {
-          "rank": "10",
+          "rank": 10,
           "code": "3008",
           "name": "大立光",
-          "price": "6660.00"
+          "displayValue": "+2.32pp"
+        }
+      ]
+    },
+    {
+      "id": "holder-400-down",
+      "title": "📉 400 張大戶本週減少率 TOP 10",
+      "tone": "holder-down",
+      "items": [
+        {
+          "rank": 1,
+          "code": "3441",
+          "name": "聯一光",
+          "displayValue": "-6.68pp"
+        },
+        {
+          "rank": 2,
+          "code": "8039",
+          "name": "台虹",
+          "displayValue": "-5.70pp"
+        },
+        {
+          "rank": 3,
+          "code": "6207",
+          "name": "雷科",
+          "displayValue": "-4.60pp"
+        },
+        {
+          "rank": 4,
+          "code": "2426",
+          "name": "鼎元",
+          "displayValue": "-3.75pp"
+        },
+        {
+          "rank": 5,
+          "code": "5425",
+          "name": "台半",
+          "displayValue": "-3.21pp"
+        },
+        {
+          "rank": 6,
+          "code": "8299",
+          "name": "群聯",
+          "displayValue": "-3.20pp"
+        },
+        {
+          "rank": 7,
+          "code": "6182",
+          "name": "合晶",
+          "displayValue": "-2.96pp"
+        },
+        {
+          "rank": 8,
+          "code": "5289",
+          "name": "宜鼎",
+          "displayValue": "-2.85pp"
+        },
+        {
+          "rank": 9,
+          "code": "6669",
+          "name": "緯穎",
+          "displayValue": "-2.79pp"
+        },
+        {
+          "rank": 10,
+          "code": "8021",
+          "name": "尖點",
+          "displayValue": "-2.73pp"
+        }
+      ]
+    },
+    {
+      "id": "holder-1000-up",
+      "title": "📈 1000 張大戶本週增加率 TOP 10",
+      "tone": "holder-1000-up",
+      "items": [
+        {
+          "rank": 1,
+          "code": "3406",
+          "name": "玉晶光",
+          "displayValue": "+7.84pp"
+        },
+        {
+          "rank": 2,
+          "code": "1815",
+          "name": "富喬",
+          "displayValue": "+6.88pp"
+        },
+        {
+          "rank": 3,
+          "code": "3374",
+          "name": "精材",
+          "displayValue": "+6.15pp"
+        },
+        {
+          "rank": 4,
+          "code": "3324",
+          "name": "雙鴻",
+          "displayValue": "+5.58pp"
+        },
+        {
+          "rank": 5,
+          "code": "3529",
+          "name": "力旺",
+          "displayValue": "+4.46pp"
+        },
+        {
+          "rank": 6,
+          "code": "2481",
+          "name": "強茂",
+          "displayValue": "+4.32pp"
+        },
+        {
+          "rank": 7,
+          "code": "3491",
+          "name": "昇達科",
+          "displayValue": "+3.89pp"
+        },
+        {
+          "rank": 8,
+          "code": "2455",
+          "name": "全新",
+          "displayValue": "+3.67pp"
+        },
+        {
+          "rank": 9,
+          "code": "6217",
+          "name": "中探針",
+          "displayValue": "+2.00pp"
+        },
+        {
+          "rank": 10,
+          "code": "3234",
+          "name": "光環",
+          "displayValue": "+1.83pp"
+        }
+      ]
+    },
+    {
+      "id": "holder-1000-down",
+      "title": "📉 1000 張大戶本週減少率 TOP 10",
+      "tone": "holder-1000-down",
+      "items": [
+        {
+          "rank": 1,
+          "code": "8299",
+          "name": "群聯",
+          "displayValue": "-7.06pp"
+        },
+        {
+          "rank": 2,
+          "code": "6265",
+          "name": "方土昶",
+          "displayValue": "-5.82pp"
+        },
+        {
+          "rank": 3,
+          "code": "8039",
+          "name": "台虹",
+          "displayValue": "-4.99pp"
+        },
+        {
+          "rank": 4,
+          "code": "8996",
+          "name": "高力",
+          "displayValue": "-4.25pp"
+        },
+        {
+          "rank": 5,
+          "code": "8021",
+          "name": "尖點",
+          "displayValue": "-3.44pp"
+        },
+        {
+          "rank": 6,
+          "code": "2344",
+          "name": "華邦電",
+          "displayValue": "-3.21pp"
+        },
+        {
+          "rank": 7,
+          "code": "2408",
+          "name": "南亞科",
+          "displayValue": "-3.14pp"
+        },
+        {
+          "rank": 8,
+          "code": "2426",
+          "name": "鼎元",
+          "displayValue": "-3.13pp"
+        },
+        {
+          "rank": 9,
+          "code": "4979",
+          "name": "華星光",
+          "displayValue": "-2.84pp"
+        },
+        {
+          "rank": 10,
+          "code": "6510",
+          "name": "精測",
+          "displayValue": "-2.73pp"
         }
       ]
     }
