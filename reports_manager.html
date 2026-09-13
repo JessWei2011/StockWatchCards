@@ -2045,6 +2045,10 @@
     color:var(--text-dim); flex-shrink:0; width:36px;
     font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
     font-variant-numeric:tabular-nums; font-size:12.5px;
+    cursor:pointer;
+  }
+  .tree-report-row .code:hover{
+    text-decoration:underline;
   }
   /* ── 上市與上櫃股號顏色（全網頁適用） ── */
   :root {
@@ -2155,7 +2159,13 @@
     color: #c084fc !important;
     border: 1px solid rgba(192, 132, 252, 0.4);
   }
-  .tree-report-row .name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .tree-report-row .name{
+    flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;
+    cursor:pointer;
+  }
+  .tree-report-row .name:hover{
+    text-decoration:underline;
+  }
   .tree-stat-pills{
     display:inline-flex; align-items:center; justify-content:flex-end; gap:4px; flex-shrink:0; margin-left:auto;
   }
@@ -6167,6 +6177,33 @@
     }
   }
 
+  function renderHolderChangeLeaderboard(){
+    const cardMap = { ...(window.cardsByCode || {}), ...(reportTagCardsByCode || {}) };
+    const changes = Object.values(cardMap).map(card => {
+      const rows = Array.isArray(card.holderFlow) ? card.holderFlow.slice()
+        .sort((a, b) => String(a.date || '').localeCompare(String(b.date || ''))) : [];
+      if (rows.length < 2) return null;
+      const previous = rows[rows.length - 2];
+      const latest = rows[rows.length - 1];
+      const big400 = Number(latest.big400Pct) - Number(previous.big400Pct);
+      const big1000 = Number(latest.big1000Pct) - Number(previous.big1000Pct);
+      if (!Number.isFinite(big400) || !Number.isFinite(big1000)) return null;
+      return { code: String(card.code || ''), name: String(card.name || STOCK_NAMES_MAP[String(card.code || '')] || ''), big400, big1000 };
+    }).filter(item => item && item.code);
+    const configs = [
+      ['400張大戶本週增加率', '400↑', 'big400', '#fb923c', item => item.big400 > 0, (a, b) => b.big400 - a.big400],
+      ['400張大戶本週減少率', '400↓', 'big400', '#4ade80', item => item.big400 < 0, (a, b) => a.big400 - b.big400],
+      ['1000張大戶本週增加率', '1000↑', 'big1000', '#38bdf8', item => item.big1000 > 0, (a, b) => b.big1000 - a.big1000],
+      ['1000張大戶本週減少率', '1000↓', 'big1000', '#a78bfa', item => item.big1000 < 0, (a, b) => a.big1000 - b.big1000]
+    ];
+    const format = value => `${value > 0 ? '+' : ''}${value.toFixed(2)}pp`;
+    const column = ([title, badge, key, color, predicate, sorter]) => {
+      const items = changes.filter(predicate).sort(sorter).slice(0, 10);
+      return `<div class="holder-change-ranking-col" style="flex:0 0 calc((100% - 40px) / 5); min-width:200px; box-sizing:border-box; background:rgba(0,0,0,.28); border:1px solid ${color}66; border-radius:9px; padding:9px 10px;"><div style="display:flex; justify-content:space-between; align-items:center; gap:6px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,.1); color:${color}; font-size:14px; font-weight:900;"><span>${title}</span><span style="font-size:12px;">${badge}</span></div><div style="display:flex; flex-direction:column; gap:3px; margin-top:6px;">${items.length ? items.map((item, index) => `<div style="display:flex; align-items:center; justify-content:space-between; gap:5px; padding:3px 4px; border-radius:5px; background:rgba(255,255,255,.035); cursor:pointer;" onclick="if(!window.getSelection().toString().trim()) openPatternForStock('${escapeHtml(item.code)}');"><span style="display:flex; min-width:0; align-items:center; gap:5px;"><b style="width:16px; color:var(--text-dim); text-align:right; font-size:12px;">${index + 1}</b><span class="stock-code ${getStockMarketClass(item.code)}" style="font-weight:850; font-family:monospace;">${escapeHtml(item.code)}</span><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:750;">${escapeHtml(item.name)}</span></span><b style="color:${color}; white-space:nowrap; font-size:13px;">${format(item[key])}</b></div>`).join('') : '<div style="padding:10px 0; text-align:center; color:var(--text-dim); font-size:13px;">尚無符合資料</div>'}</div></div>`;
+    };
+    return `<section id="holder-change-leaderboard" class="ranking-overview-panel" style="margin-top:14px; background:#11161f; border:1.5px solid rgba(125,180,255,.3); border-radius:12px; padding:12px 14px;"><div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:8px;"><b style="font-size:16px; color:#e2e8f0;">🏦 集保大戶籌碼本週變動排行榜</b><span style="font-size:12px; color:var(--text-dim);">本週相對前週，單位：百分點（pp）</span></div><div style="display:flex; flex-wrap:wrap; gap:9px;">${configs.map(column).join('')}</div></section>`;
+  }
+
   function renderWinrateRankingUI(){
     const container = document.getElementById('ranking-content');
     if (!container) return;
@@ -6185,7 +6222,7 @@
           ${items.length ? items.slice(0, 10).map((item, index) => `<button type="button" class="mini-overview-row" data-stock-code="${escapeHtml(item.code)}" title="開啟 ${escapeHtml(item.name)} (${escapeHtml(item.code)}) 專業看盤" style="display:flex;width:100%;border:0;align-items:center;justify-content:space-between;padding:3px 7px;border-radius:6px;background:rgba(255,255,255,.035);color:var(--text);font-size:15px;min-height:28px;box-sizing:border-box;cursor:pointer;text-align:left;"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><b style="color:var(--text-dim);display:inline-block;width:24px;text-align:right;margin-right:7px;">${index + 1}</b><span class="stock-code ${getStockMarketClass(item.code)}" style="font-family:monospace;font-weight:850;">${escapeHtml(item.code)}</span>　<b>${escapeHtml(item.name)}</b></span><b style="color:${color};white-space:nowrap;margin-left:8px;">${escapeHtml(item.price || item.score || '')}</b></button>`).join('') : '<div style="color:var(--text-dim);padding:10px;text-align:center;">無資料</div>'}
         </div>
       </section>`;
-    container.innerHTML = `<div class="ranking-card"><div class="ranking-overview-panel" style="background:#11161f;border:1.5px solid rgba(125,180,255,.3);border-radius:12px;padding:12px 14px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;"><div class="ranking-overview-title" style="font-size:17px;font-weight:900;color:#fff;"><span style="font-size:20px;">🏆</span> 四大榜單快照</div><div class="ranking-overview-date" style="font-size:14px;color:var(--text-dim);">資料截止日：<strong style="color:#93c5fd;font-size:15px;">${escapeHtml(snapshotDate)}</strong></div></div><div style="display:flex;gap:10px;flex-wrap:wrap;">${columns.map(renderSnapshot).join('')}</div></div><section class="ranking-overview-panel" style="margin-top:14px;background:#11161f;border:1.5px solid rgba(125,180,255,.3);border-radius:12px;padding:12px 14px;"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><div style="font-size:17px;font-weight:900;color:#fff;">📰 RSS 個股動態</div><div style="display:flex;gap:6px;"><select id="ranking-rss-range" aria-label="RSS 時間範圍" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg);color:var(--text);"><option value="today">今天</option><option value="3d">近三天</option></select><form id="ranking-rss-form" style="display:flex;gap:6px;"><input id="ranking-rss-code" inputmode="numeric" maxlength="6" pattern="[0-9]{4,6}" placeholder="輸入股號查詢" aria-label="輸入股號查詢 RSS" style="width:130px;padding:6px 9px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg);color:var(--text);"><button type="submit" class="btn" style="padding:5px 10px;">查詢</button></form></div></div><div id="ranking-rss-results"></div></section></div>`;
+    container.innerHTML = `<div class="ranking-card"><div class="ranking-overview-panel" style="background:#11161f;border:1.5px solid rgba(125,180,255,.3);border-radius:12px;padding:12px 14px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;"><div class="ranking-overview-title" style="font-size:17px;font-weight:900;color:#fff;"><span style="font-size:20px;">🏆</span> 四大榜單快照</div><div class="ranking-overview-date" style="font-size:14px;color:var(--text-dim);">資料截止日：<strong style="color:#93c5fd;font-size:15px;">${escapeHtml(snapshotDate)}</strong></div></div><div style="display:flex;gap:10px;flex-wrap:wrap;">${columns.map(renderSnapshot).join('')}</div></div>${renderHolderChangeLeaderboard()}<section class="ranking-overview-panel" style="margin-top:14px;background:#11161f;border:1.5px solid rgba(125,180,255,.3);border-radius:12px;padding:12px 14px;"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><div style="font-size:17px;font-weight:900;color:#fff;">📰 RSS 個股動態</div><div style="display:flex;gap:6px;"><select id="ranking-rss-range" aria-label="RSS 時間範圍" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg);color:var(--text);"><option value="today">今天</option><option value="3d">近三天</option></select><form id="ranking-rss-form" style="display:flex;gap:6px;"><input id="ranking-rss-code" inputmode="numeric" maxlength="6" pattern="[0-9]{4,6}" placeholder="輸入股號查詢" aria-label="輸入股號查詢 RSS" style="width:130px;padding:6px 9px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg);color:var(--text);"><button type="submit" class="btn" style="padding:5px 10px;">查詢</button></form></div></div><div id="ranking-rss-results"></div></section></div>`;
     document.getElementById('ranking-rss-range').value = rssDisplayRange;
     document.getElementById('ranking-rss-range')?.addEventListener('change', event => {
       rssDisplayRange = event.target.value;
@@ -6202,7 +6239,6 @@
     });
     container.querySelectorAll('.mini-overview-row[data-stock-code]').forEach(row => row.addEventListener('click', () => openPatternForStock(row.dataset.stockCode)));
     loadRankingRss(rssCodes);
-    return;
     const currentData = winrateParsedData[winrateRankingSource];
     if (!currentData) {
       loadWinrateRankingReport();
@@ -6359,6 +6395,40 @@
       `;
     }
 
+    function renderHolderChangeLeaderboard(){
+      const cardMap = { ...(window.cardsByCode || {}), ...(reportTagCardsByCode || {}) };
+      const changes = Object.values(cardMap).map(card => {
+        const rows = Array.isArray(card.holderFlow) ? card.holderFlow.slice()
+          .sort((a, b) => String(a.date || '').localeCompare(String(b.date || ''))) : [];
+        if (rows.length < 2) return null;
+        const previous = rows[rows.length - 2];
+        const latest = rows[rows.length - 1];
+        const big400 = Number(latest.big400Pct) - Number(previous.big400Pct);
+        const big1000 = Number(latest.big1000Pct) - Number(previous.big1000Pct);
+        if (!Number.isFinite(big400) || !Number.isFinite(big1000)) return null;
+        return {
+          code: String(card.code || ''), name: String(card.name || STOCK_NAMES_MAP[String(card.code || '')] || ''),
+          date: String(latest.date || ''), big400, big1000
+        };
+      }).filter(item => item && item.code);
+
+      const configs = [
+        ['400張大戶本週增加率', '400↑', 'big400', '#fb923c', item => item.big400 > 0, (a, b) => b.big400 - a.big400],
+        ['400張大戶本週減少率', '400↓', 'big400', '#4ade80', item => item.big400 < 0, (a, b) => a.big400 - b.big400],
+        ['1000張大戶本週增加率', '1000↑', 'big1000', '#38bdf8', item => item.big1000 > 0, (a, b) => b.big1000 - a.big1000],
+        ['1000張大戶本週減少率', '1000↓', 'big1000', '#a78bfa', item => item.big1000 < 0, (a, b) => a.big1000 - b.big1000]
+      ];
+      const format = value => `${value > 0 ? '+' : ''}${value.toFixed(2)}pp`;
+      const column = ([title, badge, key, color, predicate, sorter]) => {
+        const items = changes.filter(predicate).sort(sorter).slice(0, 10);
+        return `<div class="holder-change-ranking-col" style="flex:0 0 calc((100% - 40px) / 5); min-width:200px; box-sizing:border-box; background:rgba(0,0,0,.28); border:1px solid ${color}66; border-radius:9px; padding:9px 10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,.1); color:${color}; font-size:14px; font-weight:900;"><span>${title}</span><span style="font-size:12px;">${badge}</span></div>
+          <div style="display:flex; flex-direction:column; gap:3px; margin-top:6px;">${items.length ? items.map((item, index) => `<div style="display:flex; align-items:center; justify-content:space-between; gap:5px; padding:3px 4px; border-radius:5px; background:rgba(255,255,255,.035); cursor:pointer;" onclick="if(!window.getSelection().toString().trim()) openPatternForStock('${escapeHtml(item.code)}');"><span style="display:flex; min-width:0; align-items:center; gap:5px;"><b style="width:16px; color:var(--text-dim); text-align:right; font-size:12px;">${index + 1}</b><span class="stock-code ${getStockMarketClass(item.code)}" style="font-weight:850; font-family:monospace;">${escapeHtml(item.code)}</span><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:750;">${escapeHtml(item.name)}</span></span><b style="color:${color}; white-space:nowrap; font-size:13px;">${format(item[key])}</b></div>`).join('') : '<div style="padding:10px 0; text-align:center; color:var(--text-dim); font-size:13px;">尚無符合資料</div>'}</div>
+        </div>`;
+      };
+      return `<section id="holder-change-leaderboard" style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,.12);"><div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:8px;"><b style="font-size:16px; color:#e2e8f0;">🏦 集保大戶籌碼本週變動排行榜</b><span style="font-size:12px; color:var(--text-dim);">本週相對前週，單位：百分點（pp）</span></div><div style="display:flex; flex-wrap:wrap; gap:9px;">${configs.map(column).join('')}</div></section>`;
+    }
+
     let html = `
       <div class="ranking-card">
         <!-- 🚀 全景總覽 (Master Overview) 一覽無遺 -->
@@ -6378,6 +6448,7 @@
             ${renderMiniOverviewCol('ChatGPT 攻擊型 TOP 10', '⚡', '#f97316', cMomo, 'chatgpt', 'momentum')}
             ${renderMiniOverviewCol('ChatGPT 穩健型 TOP 10', '🌱', '#38bdf8', cDef, 'chatgpt', 'defensive')}
           </div>
+          ${renderHolderChangeLeaderboard()}
         </div>
 
         <!-- 榜單一鍵直達切換器 (縮小空白區，所有按鈕排入同一行) -->
@@ -7558,8 +7629,20 @@
     const market = getStockMarket(code, r);
     const marketClass = market === 'TWO' ? 'market-two' : 'market-tw';
     const marketLabel = market === 'TWO' ? '上櫃' : '上市';
-    const marketTitle = `[${marketLabel}] ${code} ${displayName}`;
-    item.innerHTML = `${newBadge}${starBtn}<span class="code ${marketClass}" title="${escapeHtml(marketTitle)}">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>${dispBadge}<span class="tree-stat-pills">${quickActions}${winPill}${changePill}${pricePill}${pePill}</span>`;
+    const patternTitle = `[${marketLabel}] 點擊開啟 ${code} ${displayName} 的專業看盤`;
+    item.innerHTML = `${newBadge}${starBtn}<span class="code ${marketClass}" title="${escapeHtml(patternTitle)}">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(patternTitle)}">${escapeHtml(displayName)}</span>${dispBadge}<span class="tree-stat-pills">${quickActions}${winPill}${changePill}${pricePill}${pePill}</span>`;
+
+    // 點擊股號或股名：直接切換跳轉到「📈 專業看盤」
+    const codeEl = item.querySelector('.code');
+    const nameEl = item.querySelector('.name');
+    const onPatternClick = (e) => {
+      e.stopPropagation();
+      openPatternForStock(code);
+    };
+    if (codeEl) codeEl.addEventListener('click', onPatternClick);
+    if (nameEl) nameEl.addEventListener('click', onPatternClick);
+
+    // 點擊整列其他區域（如右側指標數據藍框處）：維持現有行為，切換右邊預覽與 K 線快照
     item.addEventListener('click', () => {
       if (window.activeWorkspaceName === 'reports') {
         selectStockGlobal(code);
