@@ -296,7 +296,8 @@ class TestAiStockPickingRemoval(unittest.TestCase):
     @patch.object(server.requests, "get")
     def test_rss_news_parses_stock_items_without_scoring(self, mock_get):
         mock_response = MagicMock()
-        mock_response.content = b'''<?xml version="1.0"?><rss><channel><item><title>2330 test announcement</title><link>https://example.com/news</link><pubDate>Wed, 10 Sep 2026 10:00:00 GMT</pubDate><source>Example News</source></item></channel></rss>'''
+        now_pub = server.datetime.datetime.now(server.datetime.timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
+        mock_response.content = f'''<?xml version="1.0"?><rss><channel><item><title>2330 test announcement</title><link>https://example.com/news</link><pubDate>{now_pub}</pubDate><source>Example News</source></item></channel></rss>'''.encode('utf-8')
         mock_response.raise_for_status.return_value = None
         mock_get.return_value = mock_response
         server.RSS_CACHE.clear()

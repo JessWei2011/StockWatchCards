@@ -88,6 +88,8 @@ __pycache__/
 .claude/
 margin_data.db
 *.lnk
+._*
+.DS_Store
 
 # Mobile web app
 !export_mobile_site.py
