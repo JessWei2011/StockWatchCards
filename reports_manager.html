@@ -6479,8 +6479,8 @@
             ${renderMiniOverviewCol('ChatGPT 攻擊型 TOP 10', '⚡', '#f97316', cMomo, 'chatgpt', 'momentum')}
             ${renderMiniOverviewCol('ChatGPT 穩健型 TOP 10', '🌱', '#38bdf8', cDef, 'chatgpt', 'defensive')}
           </div>
-          ${renderHolderChangeLeaderboard()}
           ${renderInstitutionalStrategyLeaderboard()}
+          ${renderHolderChangeLeaderboard()}
         </div>
       </div>
     `;
@@ -8946,30 +8946,24 @@ ${macroJsonText()}`;
     const h = Number(item.high ?? Math.max(y, o, z));
     const l = Number(item.low ?? Math.min(y, o, z));
 
-    if (!Number.isFinite(y) || !Number.isFinite(o) || !Number.isFinite(z) || item.marketClosed) {
+    if (!Number.isFinite(y) || !Number.isFinite(o) || !Number.isFinite(z)) {
       return '';
     }
 
+    // 1. 開高走低四種判定：開高/開低看昨收(y)，走高/走低看今日開盤價(o)
     let badgeText = '';
-    let badgeClass = '';
-
     if (o >= y) {
-      if (z >= o) {
-        badgeText = '開高走高';
-        badgeClass = 'red-k';
-      } else {
-        badgeText = '開高走低';
-        badgeClass = 'green-k';
-      }
+      badgeText = z >= o ? '開高走高' : '開高走低';
     } else {
-      if (z >= o) {
-        badgeText = '開低走高';
-        badgeClass = 'red-k';
-      } else {
-        badgeText = '開低走低';
-        badgeClass = 'green-k';
-      }
+      badgeText = z >= o ? '開低走高' : '開低走低';
     }
+
+    // 2. 漲跌顏色：比對目標一律為「昨日收盤價 (y)」
+    //    現價 >= 昨收：漲（紅色）
+    //    現價 <  昨收：跌（綠色）
+    const isUp = z >= y;
+    const badgeClass = isUp ? 'red-k' : 'green-k';
+    const candleColor = isUp ? '#ff5964' : '#4ade80';
 
     const minVal = Math.min(l, y, o, z);
     const maxVal = Math.max(h, y, o, z);
@@ -8989,7 +8983,6 @@ ${macroJsonText()}`;
     const yH = scaleY(h);
     const yL = scaleY(l);
 
-    const candleColor = z >= o ? '#ff5964' : '#4ade80';
     const bodyTop = Math.min(yO, yZ);
     const bodyHeight = Math.max(Math.abs(yZ - yO), 3);
     const tooltip = `昨收: ${formatMarketPulseNumber(y)} | 開盤: ${formatMarketPulseNumber(o)} | 現價: ${formatMarketPulseNumber(z)} | 最高: ${formatMarketPulseNumber(h)} | 最低: ${formatMarketPulseNumber(l)}`;
@@ -9030,11 +9023,20 @@ ${macroJsonText()}`;
     const items = marketPulseDefinitions.map(definition => ({ ...definition, ...marketPulseItems.get(definition.key), marketClosed: !activeByMarket[definition.market] }));
     gridEl.innerHTML = items.map(item => {
       const change = Number(item.change);
-      const changeClass = item.marketClosed ? 'unavailable closed' : (Number.isFinite(change) ? (change > 0 ? 'up' : (change < 0 ? 'down' : 'flat')) : 'unavailable');
-      const changeText = item.marketClosed ? '休市中，暫停更新' : (Number.isFinite(change)
+      const isClosed = Boolean(item.marketClosed);
+      const hasQuote = Number.isFinite(item.price);
+      let changeClass = 'unavailable';
+      if (hasQuote) {
+        if (Number.isFinite(change) && change > 0) changeClass = isClosed ? 'up closed-quote' : 'up';
+        else if (Number.isFinite(change) && change < 0) changeClass = isClosed ? 'down closed-quote' : 'down';
+        else changeClass = isClosed ? 'flat closed-quote' : 'flat';
+      }
+      const changeText = Number.isFinite(change)
         ? `${change > 0 ? '+' : ''}${formatMarketPulseNumber(change)} (${change > 0 ? '+' : ''}${Number(item.changePct || 0).toFixed(2)}%)`
-        : '暫無行情');
-      const sourceText = item.marketClosed ? '休市中 · 不呼叫行情 API' : (item.error ? `資料暫不可用：${item.source || ''}` : `${item.source || ''}${item.delayed ? ' · 延遲' : ''}`);
+        : (isClosed ? '休市中 · 暫停更新' : '暫無行情');
+      const sourceText = item.error
+        ? `資料暫不可用：${item.source || ''}`
+        : `${item.source || ''}${item.delayed ? ' · 延遲' : ''}${isClosed ? ' · 休市' : ''}`;
       const title = item.error ? escapeHtml(item.error) : escapeHtml(item.updatedAt || item.source || '');
       const trendHtml = buildMarketPulseTrend(item);
       return `
@@ -9058,13 +9060,9 @@ ${macroJsonText()}`;
   async function loadMarketPulse(forceRefresh = false){
     const statusEl = document.getElementById('market-pulse-status');
     const schedule = getMarketPulseSchedule();
-    if (!forceRefresh && !schedule.markets.length) {
-      renderMarketPulse(null, schedule);
-      return;
-    }
     if (!forceRefresh) updateMarketPulseLights(schedule, [], true);
     try {
-      const markets = forceRefresh ? ['tw', 'txf', 'us'] : schedule.markets;
+      const markets = ['tw', 'txf', 'us'];
       const params = new URLSearchParams({ markets: markets.join(',') });
       if (forceRefresh) params.set('refresh', '1');
       const response = await fetch(`/api/market-pulse?${params}`);

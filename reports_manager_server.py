@@ -1809,10 +1809,17 @@ def _fetch_yahoo_us_index(key, label, symbol):
         raise ValueError("Yahoo Finance 未回傳行情")
     meta = payload[0].get("meta", {})
     timestamps = payload[0].get("timestamp") or []
-    closes = payload[0].get("indicators", {}).get("quote", [{}])[0].get("close", [])
+    quote_data = payload[0].get("indicators", {}).get("quote", [{}])[0]
+    closes = quote_data.get("close", [])
+    opens = [x for x in quote_data.get("open", []) if x is not None]
+    highs = [x for x in quote_data.get("high", []) if x is not None]
+    lows = [x for x in quote_data.get("low", []) if x is not None]
     last_close = next((value for value in reversed(closes) if value is not None), None)
     price = meta.get("regularMarketPrice") or last_close
     previous_close = meta.get("previousClose") or meta.get("chartPreviousClose")
+    open_price = opens[0] if opens else meta.get("regularMarketOpen")
+    high_price = meta.get("regularMarketDayHigh") or (max(highs) if highs else None)
+    low_price = meta.get("regularMarketDayLow") or (min(lows) if lows else None)
     updated_at = ""
     if timestamps:
         updated_at = datetime.datetime.fromtimestamp(timestamps[-1], tz=datetime.timezone.utc).astimezone(
@@ -1820,9 +1827,9 @@ def _fetch_yahoo_us_index(key, label, symbol):
         ).strftime("%Y-%m-%d %H:%M")
     return _market_quote(
         key, label, price, previous_close, "Yahoo Finance 延遲行情", updated_at, delayed=True,
-        open_price=meta.get("regularMarketOpen"),
-        high_price=meta.get("regularMarketDayHigh"),
-        low_price=meta.get("regularMarketDayLow"),
+        open_price=open_price,
+        high_price=high_price,
+        low_price=low_price,
     )
 
 
