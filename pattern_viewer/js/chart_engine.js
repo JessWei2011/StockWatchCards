@@ -156,6 +156,10 @@ window.ChartEngine = {
       dom.dataset.chartReportType = 'market';
       const hudOverlay = dom.querySelector('.echart-in-chart-hud-container');
       if (hudOverlay) hudOverlay.remove();
+      if (state.mouseLeaveHandler) {
+        dom.removeEventListener('mouseleave', state.mouseLeaveHandler);
+        state.mouseLeaveHandler = null;
+      }
       this._renderMarketChart(dom, state, stockData, {
         isLight, showShortMa, isSameStock, prevLegendSelected, zoomStart, zoomEnd
       });
@@ -682,6 +686,7 @@ window.ChartEngine = {
 
     const updateInChartHUD = (idx) => {
       if (!state.chartInstance || state.chartInstance.isDisposed() || !stockData || !stockData.dates) return;
+      if (stockData.reportType === 'market') return;
       if (idx < 0 || idx >= stockData.dates.length) return;
 
       const chartDom = state.chartInstance.getDom();
@@ -800,15 +805,16 @@ window.ChartEngine = {
       updateInChartHUD(lastIdx);
     }
 
-    if (!state.hudMouseLeaveBound) {
-      state.hudMouseLeaveBound = true;
-      dom.addEventListener('mouseleave', () => {
-        if (stockData && stockData.dates && stockData.dates.length) {
-          const lastIdx = stockData.dates.length - 1;
-          updateInChartHUD(lastIdx);
-        }
-      });
+    if (state.mouseLeaveHandler) {
+      dom.removeEventListener('mouseleave', state.mouseLeaveHandler);
     }
+    state.mouseLeaveHandler = () => {
+      if (stockData && stockData.dates && stockData.dates.length) {
+        const lastIdx = stockData.dates.length - 1;
+        updateInChartHUD(lastIdx);
+      }
+    };
+    dom.addEventListener('mouseleave', state.mouseLeaveHandler);
 
     // 多階段延遲觸發 resize，保證容器切換完成後能正確取得寬高並繪製
     requestAnimationFrame(() => this.resize(dom));
@@ -993,14 +999,15 @@ window.ChartEngine = {
       updateMarketHUD(dates.length - 1);
     }
 
-    if (!state.hudMouseLeaveBound) {
-      state.hudMouseLeaveBound = true;
-      dom.addEventListener('mouseleave', () => {
-        if (stockData && stockData.dates && stockData.dates.length) {
-          updateMarketHUD(stockData.dates.length - 1);
-        }
-      });
+    if (state.mouseLeaveHandler) {
+      dom.removeEventListener('mouseleave', state.mouseLeaveHandler);
     }
+    state.mouseLeaveHandler = () => {
+      if (stockData && stockData.dates && stockData.dates.length) {
+        updateMarketHUD(stockData.dates.length - 1);
+      }
+    };
+    dom.addEventListener('mouseleave', state.mouseLeaveHandler);
 
     requestAnimationFrame(() => this.resize(dom));
     setTimeout(() => this.resize(dom), 80);
