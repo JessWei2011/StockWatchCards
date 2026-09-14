@@ -2455,22 +2455,51 @@
     flex:0 0 auto; border:1px solid rgba(56,189,248,.45); border-radius:6px; background:rgba(14,116,144,.16);
     color:#7dd3fc; cursor:pointer; padding:3px 8px; font-size:11px; font-weight:700;
   }
-  .market-pulse-refresh:hover{ background:rgba(14,116,144,.36); }
-  .market-pulse-grid{ display:grid; grid-template-columns:repeat(6, minmax(132px, 1fr)); gap:8px; }
+  .market-pulse-grid{ display:grid; grid-template-columns:repeat(6, minmax(140px, 1fr)); gap:8px; }
   .market-pulse-card{
-    min-width:0; min-height:92px; padding:9px 11px; border:1px solid rgba(56,189,248,.72); border-radius:9px;
+    min-width:0; min-height:94px; padding:8px 10px; border:1px solid rgba(56,189,248,.72); border-radius:9px;
     background:linear-gradient(145deg, #101827, #080d17); box-shadow:inset 0 0 0 1px rgba(14,116,144,.12);
+    display:flex; align-items:stretch; justify-content:space-between; gap:6px;
   }
+  .market-pulse-main{ min-width:0; flex:1 1 auto; display:flex; flex-direction:column; justify-content:space-between; }
   .market-pulse-title{ color:#67e8f9; font-size:12px; font-weight:800; letter-spacing:.035em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .market-pulse-price{ margin-top:4px; color:#e5edf8; font-size:20px; line-height:1.15; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.025em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .market-pulse-change{ margin-top:3px; color:#94a3b8; font-size:12px; font-weight:750; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .market-pulse-price{ margin-top:2px; color:#e5edf8; font-size:18px; line-height:1.15; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.025em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .market-pulse-change{ margin-top:2px; color:#94a3b8; font-size:11.5px; font-weight:750; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .market-pulse-card.up .market-pulse-price, .market-pulse-card.up .market-pulse-change{ color:#ff5964; }
   .market-pulse-card.down .market-pulse-price, .market-pulse-card.down .market-pulse-change{ color:#4ade80; }
   .market-pulse-card.unavailable{ border-color:rgba(148,163,184,.5); opacity:.8; }
-  .market-pulse-meta{ margin-top:7px; color:#7890ab; font-size:10px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .market-pulse-placeholder{ min-height:92px; border-radius:9px; border:1px solid rgba(56,189,248,.25); background:linear-gradient(90deg,#0d1523 25%,#17243a 37%,#0d1523 63%); background-size:400% 100%; animation:market-pulse-shimmer 1.5s ease infinite; }
+  .market-pulse-meta{ margin-top:4px; color:#7890ab; font-size:9.5px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .market-pulse-trend{
+    flex:0 0 138px; display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+    padding:3px 5px; border-radius:6px; background:rgba(15,23,42,.65);
+    border:1px solid rgba(56,189,248,.18); box-sizing:border-box; user-select:none;
+  }
+  .market-pulse-trend-badge{
+    font-size:9.5px; font-weight:800; padding:1px 5px; border-radius:3px; line-height:1.2;
+    white-space:nowrap; text-align:center; letter-spacing:.02em; margin-bottom:2px;
+  }
+  .market-pulse-trend-badge.red-k{ background:rgba(239,68,68,.18); color:#ff5964; border:1px solid rgba(239,68,68,.5); }
+  .market-pulse-trend-badge.green-k{ background:rgba(34,197,94,.18); color:#4ade80; border:1px solid rgba(34,197,94,.5); }
+  .market-pulse-trend-badge.flat{ background:rgba(148,163,184,.15); color:#94a3b8; border:1px solid rgba(148,163,184,.3); }
+  .market-pulse-trend-body{
+    display:flex; align-items:center; justify-content:space-between; gap:6px; width:100%;
+  }
+  .market-pulse-spark{ width:44px; height:46px; flex-shrink:0; display:block; overflow:visible; }
+  .market-pulse-trend-labels{
+    display:flex; flex-direction:column; justify-content:space-around; height:46px;
+    font-size:9.5px; line-height:1.2; font-variant-numeric:tabular-nums; flex:1; min-width:0;
+  }
+  .trend-lbl{
+    display:flex; align-items:center; justify-content:space-between; gap:2px;
+    font-family:'JetBrains Mono', monospace; font-size:9.5px; font-weight:700; white-space:nowrap;
+  }
+  .trend-lbl.high .lbl-tag{ color:#94a3b8; font-size:8.5px; }
+  .trend-lbl.high .lbl-val{ color:#e2e8f0; }
+  .trend-lbl.low .lbl-tag{ color:#94a3b8; font-size:8.5px; }
+  .trend-lbl.low .lbl-val{ color:#e2e8f0; }
+  .market-pulse-placeholder{ min-height:94px; border-radius:9px; border:1px solid rgba(56,189,248,.25); background:linear-gradient(90deg,#0d1523 25%,#17243a 37%,#0d1523 63%); background-size:400% 100%; animation:market-pulse-shimmer 1.5s ease infinite; }
   @keyframes market-pulse-shimmer{ 0%{background-position:100% 0} 100%{background-position:-100% 0} }
-  @media (max-width:1180px){ .market-pulse-grid{ grid-template-columns:repeat(3, minmax(160px, 1fr)); } }
+  @media (max-width:1380px){ .market-pulse-grid{ grid-template-columns:repeat(3, minmax(160px, 1fr)); } }
   .spinner{
     width:18px; height:18px; border-radius:50%;
     border:2.5px solid rgba(56,189,248,0.2); border-top-color:#38bdf8;
@@ -8902,6 +8931,94 @@ ${macroJsonText()}`;
     setMarketPulseLight('market-pulse-us-light', usState, usState === 'live' ? '美股行情 API 更新正常' : (usState === 'loading' ? '美股行情 API 更新中' : '美股休市或行情 API 未更新'));
   }
 
+  function formatTrendNum(val){
+    if (val === null || val === undefined || !Number.isFinite(val)) return '—';
+    return Number(val).toLocaleString('zh-TW', {
+      minimumFractionDigits: val >= 1000 ? 0 : 2,
+      maximumFractionDigits: val >= 1000 ? 0 : 2,
+    });
+  }
+
+  function buildMarketPulseTrend(item){
+    const y = Number(item.previousClose);
+    const o = Number(item.open);
+    const z = Number(item.price);
+    const h = Number(item.high ?? Math.max(y, o, z));
+    const l = Number(item.low ?? Math.min(y, o, z));
+
+    if (!Number.isFinite(y) || !Number.isFinite(o) || !Number.isFinite(z) || item.marketClosed) {
+      return '';
+    }
+
+    let badgeText = '';
+    let badgeClass = '';
+
+    if (o >= y) {
+      if (z >= o) {
+        badgeText = '開高走高';
+        badgeClass = 'red-k';
+      } else {
+        badgeText = '開高走低';
+        badgeClass = 'green-k';
+      }
+    } else {
+      if (z >= o) {
+        badgeText = '開低走高';
+        badgeClass = 'red-k';
+      } else {
+        badgeText = '開低走低';
+        badgeClass = 'green-k';
+      }
+    }
+
+    const minVal = Math.min(l, y, o, z);
+    const maxVal = Math.max(h, y, o, z);
+    const span = (maxVal - minVal) || 1;
+    const pad = span * 0.12;
+    const chartMin = minVal - pad;
+    const chartMax = maxVal + pad;
+    const chartRange = chartMax - chartMin;
+
+    const W = 44;
+    const H = 46;
+    const scaleY = (val) => Math.round((H - 4) - ((val - chartMin) / chartRange) * (H - 8));
+
+    const yY = scaleY(y);
+    const yO = scaleY(o);
+    const yZ = scaleY(z);
+    const yH = scaleY(h);
+    const yL = scaleY(l);
+
+    const candleColor = z >= o ? '#ff5964' : '#4ade80';
+    const bodyTop = Math.min(yO, yZ);
+    const bodyHeight = Math.max(Math.abs(yZ - yO), 3);
+    const tooltip = `昨收: ${formatMarketPulseNumber(y)} | 開盤: ${formatMarketPulseNumber(o)} | 現價: ${formatMarketPulseNumber(z)} | 最高: ${formatMarketPulseNumber(h)} | 最低: ${formatMarketPulseNumber(l)}`;
+
+    return `
+      <div class="market-pulse-trend" title="${escapeHtml(tooltip)}">
+        <span class="market-pulse-trend-badge ${badgeClass}">${badgeText}</span>
+        <div class="market-pulse-trend-body">
+          <svg class="market-pulse-spark" viewBox="0 0 ${W} ${H}">
+            <!-- 昨收基準水平線 -->
+            <line x1="2" y1="${yY}" x2="${W - 2}" y2="${yY}" stroke="#eab308" stroke-dasharray="3,2" stroke-width="1" opacity="0.9" />
+
+            <!-- 最高最低影線 -->
+            <line x1="22" y1="${yH}" x2="22" y2="${yL}" stroke="${candleColor}" stroke-width="1.8" stroke-linecap="round" />
+
+            <!-- K 棒實體 (開盤 ~ 現價) -->
+            <rect x="13" y="${bodyTop}" width="18" height="${bodyHeight}" rx="2" fill="${candleColor}" stroke="${candleColor}" stroke-width="0.5" />
+
+            <!-- 現價指示圓點 -->
+            <circle cx="22" cy="${yZ}" r="3" fill="#ffffff" stroke="${candleColor}" stroke-width="2" />
+          </svg>
+          <div class="market-pulse-trend-labels">
+            <div class="trend-lbl high"><span class="lbl-tag">高</span><span class="lbl-val">${formatTrendNum(h)}</span></div>
+            <div class="trend-lbl low"><span class="lbl-tag">低</span><span class="lbl-val">${formatTrendNum(l)}</span></div>
+          </div>
+        </div>
+      </div>`;
+  }
+
   function renderMarketPulse(data, schedule = getMarketPulseSchedule()){
     const gridEl = document.getElementById('market-pulse-grid');
     const statusEl = document.getElementById('market-pulse-status');
@@ -8919,12 +9036,16 @@ ${macroJsonText()}`;
         : '暫無行情');
       const sourceText = item.marketClosed ? '休市中 · 不呼叫行情 API' : (item.error ? `資料暫不可用：${item.source || ''}` : `${item.source || ''}${item.delayed ? ' · 延遲' : ''}`);
       const title = item.error ? escapeHtml(item.error) : escapeHtml(item.updatedAt || item.source || '');
+      const trendHtml = buildMarketPulseTrend(item);
       return `
         <article class="market-pulse-card ${changeClass}" title="${title}">
-          <div class="market-pulse-title">${escapeHtml(item.label || '市場指數')}</div>
-          <div class="market-pulse-price">${formatMarketPulseNumber(item.price)}</div>
-          <div class="market-pulse-change">${changeText}</div>
-          <div class="market-pulse-meta">${escapeHtml(sourceText)}</div>
+          <div class="market-pulse-main">
+            <div class="market-pulse-title">${escapeHtml(item.label || '市場指數')}</div>
+            <div class="market-pulse-price">${formatMarketPulseNumber(item.price)}</div>
+            <div class="market-pulse-change">${changeText}</div>
+            <div class="market-pulse-meta">${escapeHtml(sourceText)}</div>
+          </div>
+          ${trendHtml}
         </article>`;
     }).join('');
     if (statusEl) {

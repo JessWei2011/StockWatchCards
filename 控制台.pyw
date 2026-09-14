@@ -138,6 +138,9 @@ def main() -> None:
             None, False, "Local\\Stock2UnifiedController"
         )
         if not instance_mutex or ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
+            if instance_mutex:
+                ctypes.windll.kernel32.CloseHandle(instance_mutex)
+            show_stock()
             return
     try:
         ensure_servers()

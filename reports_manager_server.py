@@ -1673,9 +1673,15 @@ def _market_number(value):
         return None
 
 
-def _market_quote(key, label, price, previous_close, source, updated_at="", delayed=False, error=None):
+def _market_quote(
+    key, label, price, previous_close, source, updated_at="", delayed=False, error=None,
+    open_price=None, high_price=None, low_price=None
+):
     price = _market_number(price)
     previous_close = _market_number(previous_close)
+    open_price = _market_number(open_price)
+    high_price = _market_number(high_price)
+    low_price = _market_number(low_price)
     change = round(price - previous_close, 2) if price is not None and previous_close is not None else None
     change_pct = round(change / previous_close * 100, 2) if change is not None and previous_close else None
     return {
@@ -1683,6 +1689,9 @@ def _market_quote(key, label, price, previous_close, source, updated_at="", dela
         "label": label,
         "price": price,
         "previousClose": previous_close,
+        "open": open_price,
+        "high": high_price,
+        "low": low_price,
         "change": change,
         "changePct": change_pct,
         "source": source,
@@ -1690,6 +1699,34 @@ def _market_quote(key, label, price, previous_close, source, updated_at="", dela
         "delayed": delayed,
         "error": error,
     }
+
+
+_TAIEX_OPEN_CACHE = {"date": None, "open": None}
+_TAIEX_OPEN_LOCK = threading.Lock()
+
+
+def _get_taiex_actual_matched_open(today_str):
+    """台股加權指數在 9:00:00 點位常為試撮/昨收基準，9:00 撮合後（首分鐘）之點位為市場實際開盤點位。"""
+    with _TAIEX_OPEN_LOCK:
+        if _TAIEX_OPEN_CACHE["date"] == today_str and _TAIEX_OPEN_CACHE["open"] is not None:
+            return _TAIEX_OPEN_CACHE["open"]
+    try:
+        r = requests.get(
+            "https://query1.finance.yahoo.com/v8/finance/chart/%5ETWII?range=1d&interval=1m",
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=3,
+        ).json()
+        closes = r["chart"]["result"][0]["indicators"]["quote"][0].get("close", [])
+        valid_closes = [c for c in closes if c is not None]
+        if valid_closes:
+            matched_open = round(float(valid_closes[0]), 2)
+            with _TAIEX_OPEN_LOCK:
+                _TAIEX_OPEN_CACHE["date"] = today_str
+                _TAIEX_OPEN_CACHE["open"] = matched_open
+            return matched_open
+    except Exception:
+        pass
+    return None
 
 
 def _fetch_twse_market_indexes():
@@ -1710,14 +1747,21 @@ def _fetch_twse_market_indexes():
         f"{row.get('ex', '')}_{str(row.get('ch', '')).split('.')[0]}": row
         for row in rows
     }
+    today_str = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime("%Y%m%d")
+    actual_taiex_open = _get_taiex_actual_matched_open(today_str)
+
     result = {}
     for key, label, source_key in (("taiex", "台股市場", "tse_t00"), ("otc", "台股櫃買", "otc_o00")):
         row = index_rows.get(source_key, {})
         price = row.get("z") or row.get("c") or row.get("y")
+        open_price = actual_taiex_open if (key == "taiex" and actual_taiex_open) else row.get("o")
         result[key] = _market_quote(
             key, label, price, row.get("y"), "TWSE 即時行情",
             f"{row.get('d', '')} {row.get('t', '')}".strip(),
             error=None if row else "交易所暫無回應",
+            open_price=open_price,
+            high_price=row.get("h"),
+            low_price=row.get("l"),
         )
     return result
 
@@ -1733,7 +1777,7 @@ def _fetch_yahoo_taiwan_futures():
     page = response.text
 
     def get_value(field):
-        matched = re.search(rf'"{field}":(?:"([^"]+)"|([-0-9.]+))', page)
+        matched = re.search(rf'"{field}":(?:\s*"([^"]+)"|([-0-9.]+))', page)
         return (matched.group(1) or matched.group(2)) if matched else None
 
     market_time = _market_number(get_value("regularMarketTime"))
@@ -1745,6 +1789,9 @@ def _fetch_yahoo_taiwan_futures():
     return _market_quote(
         "txf", "台指近全", get_value("regularMarketPrice"), get_value("previousClose"),
         "Yahoo 台指近月全盤", updated_at,
+        open_price=get_value("openPrice") or get_value("regularMarketOpen"),
+        high_price=get_value("dayHighPrice") or get_value("regularMarketDayHigh"),
+        low_price=get_value("dayLowPrice") or get_value("regularMarketDayLow"),
     )
 
 
@@ -1771,7 +1818,12 @@ def _fetch_yahoo_us_index(key, label, symbol):
         updated_at = datetime.datetime.fromtimestamp(timestamps[-1], tz=datetime.timezone.utc).astimezone(
             datetime.timezone(datetime.timedelta(hours=8))
         ).strftime("%Y-%m-%d %H:%M")
-    return _market_quote(key, label, price, previous_close, "Yahoo Finance 延遲行情", updated_at, delayed=True)
+    return _market_quote(
+        key, label, price, previous_close, "Yahoo Finance 延遲行情", updated_at, delayed=True,
+        open_price=meta.get("regularMarketOpen"),
+        high_price=meta.get("regularMarketDayHigh"),
+        low_price=meta.get("regularMarketDayLow"),
+    )
 
 
 def fetch_market_pulse(force_refresh=False, markets=None):

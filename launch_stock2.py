@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import sys
 from pathlib import Path
 
@@ -34,6 +35,17 @@ def main() -> int:
         return 1
 
     controller = ROOT_DIR / "控制台.pyw"
+    if os.name == "nt":
+        pythonw = Path(sys.executable).with_name("pythonw.exe")
+        if pythonw.exists() and sys.executable.lower().endswith("python.exe"):
+            import subprocess
+            subprocess.Popen(
+                [str(pythonw), str(controller)],
+                cwd=str(ROOT_DIR),
+                creationflags=getattr(subprocess, "DETACHED_PROCESS", 0x00000008),
+            )
+            return 0
+
     namespace = {"__name__": "__main__", "__file__": str(controller)}
     exec(compile(controller.read_bytes(), str(controller), "exec"), namespace)
     return 0
