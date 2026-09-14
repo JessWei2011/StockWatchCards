@@ -52,7 +52,7 @@ try {
         throw 'Git was not found. Install Git for Windows first.'
     }
     if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot '.git'))) {
-        throw "Stock2 Git repository was not found at $ProjectRoot"
+        throw "StockCenter Git repository was not found at $ProjectRoot"
     }
 
     $NestedRepositories = @(
@@ -81,7 +81,7 @@ try {
     foreach ($Repo in $NestedRepositories) {
         Publish-Repository -Label "Macro ($($Repo.Name))" -Repository $Repo.FullName -Message $CommitMessage
     }
-    Publish-Repository -Label 'Stock2' -Repository $ProjectRoot -Message $CommitMessage
+    Publish-Repository -Label 'StockCenter' -Repository $ProjectRoot -Message $CommitMessage
 
     Write-Host ""
     Write-Host 'Both repositories were committed and pushed successfully.' -ForegroundColor Green

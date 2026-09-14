@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Stock2 免安裝綠色便攜包自動打包腳本
+StockCenter 免安裝綠色便攜包自動打包腳本
 功能：
 1. 自動抽取本機 Python 3.11 環境（含 yfinance, pandas, mplfinance, pystray 等依賴）
 2. 複製專案必要檔案，排除 .git、暫存檔與歷史大快取
 3. 產生無腦啟動腳本「🚀啟動股票系統.bat」與關閉腳本「結束股票系統.bat」
-4. 自動壓縮為 Stock2_Portable.zip
+4. 自動壓縮為 StockCenter_Portable.zip
 """
 
 import os
@@ -24,7 +24,7 @@ if sys.stdout.encoding != "utf-8":
 
 ROOT_DIR = Path(__file__).resolve().parent
 DIST_DIR = ROOT_DIR / "dist"
-OUTPUT_DIR = DIST_DIR / "Stock2_Portable"
+OUTPUT_DIR = DIST_DIR / "StockCenter_Portable"
 PYTHON_SRC_DIR = Path(sys.executable).resolve().parent
 
 # 專案需要複製的頂層檔案與目錄
@@ -34,7 +34,7 @@ INCLUDE_FILES = [
     "batch_scanner.py",
     "batch_scanner_gemini.py",
     "控制台.pyw",
-    "launch_stock2.py",
+    "launch_stockcenter.py",
     "deploy_mobile.py",
     "requirements.txt",
     "reports_manager.html",
@@ -98,7 +98,7 @@ def copy_python_env():
     print("Python 環境抽取完成！")
 
 def copy_project_files():
-    print_step("正在複製 Stock2 核心程式與資源...")
+    print_step("正在複製 StockCenter 核心程式與資源...")
 
     # 複製單獨檔案
     for filename in INCLUDE_FILES:
@@ -164,7 +164,7 @@ def create_launcher_scripts():
 setlocal
 cd /d "%~dp0"
 
-echo [Stock2] 正在啟動股票分析系統，請稍候...
+echo [StockCenter] 正在啟動股票分析系統，請稍候...
 
 :: 優先使用隨附的免安裝 Python
 set "PYW=%~dp0python_env\\pythonw.exe"
@@ -192,14 +192,14 @@ exit /b 0
 setlocal
 cd /d "%~dp0"
 
-echo [Stock2] 正在關閉所有股票背景伺服器...
+echo [StockCenter] 正在關閉所有股票背景伺服器...
 
 set "PY=%~dp0python_env\\python.exe"
 if not exist "%PY%" set "PY=python.exe"
 
 "%PY%" -c "import urllib.request; [urllib.request.urlopen(urllib.request.Request(f'http://localhost:{p}/api/shutdown', method='POST', data=b''), timeout=1) for p in [8935, 8934]]" 2>nul
 
-echo [Stock2] 服務已安全結束。
+echo [StockCenter] 服務已安全結束。
 timeout /t 2 /nobreak >nul
 exit /b 0
 """
@@ -209,7 +209,7 @@ exit /b 0
     # 3. 貼心使用說明
     readme_txt = OUTPUT_DIR / "使用說明.txt"
     readme_content = """==============================================
-       Stock2 股票分析系統 - 免安裝綠色便攜版
+       StockCenter 股票分析系統 - 免安裝綠色便攜版
 ==============================================
 
 【使用方式】
@@ -230,8 +230,8 @@ exit /b 0
     print("已生成: 使用說明.txt")
 
 def create_zip_archive():
-    print_step("正在打包為 ZIP 壓縮檔 (Stock2_Portable.zip)...")
-    zip_path = DIST_DIR / "Stock2_Portable.zip"
+    print_step("正在打包為 ZIP 壓縮檔 (StockCenter_Portable.zip)...")
+    zip_path = DIST_DIR / "StockCenter_Portable.zip"
     if zip_path.exists():
         zip_path.unlink()
 
@@ -269,7 +269,7 @@ def sync_mobile_snapshot():
         print(f"[提示] 手機版資料預先同步略過: {e}")
 
 def main():
-    print("開始執行 Stock2 免安裝發布包打包作業...")
+    print("開始執行 StockCenter 免安裝發布包打包作業...")
     clean_output_dir()
     copy_python_env()
     copy_project_files()
@@ -278,7 +278,7 @@ def main():
     create_zip_archive()
     print_step("全部打包作業順利完成！")
     print(f"發布資料夾位於：{OUTPUT_DIR}")
-    print(f"ZIP 壓縮檔位於：{DIST_DIR / 'Stock2_Portable.zip'}")
+    print(f"ZIP 壓縮檔位於：{DIST_DIR / 'StockCenter_Portable.zip'}")
 
 if __name__ == "__main__":
     main()

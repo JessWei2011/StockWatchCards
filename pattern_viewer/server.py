@@ -18,7 +18,7 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
 DEFAULT_PORT = 8888
-# Set root directory to Stock2 project root so /reports/ and /pattern_viewer/ are both accessible
+# Set root directory to StockCenter project root so /reports/ and /pattern_viewer/ are both accessible
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DIRECTORY = os.path.dirname(SCRIPT_DIR)
 REPORTS_DIR = os.path.join(DIRECTORY, 'reports')

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Windows 與 macOS 共用的 Stock2 啟動入口。"""
+"""Windows 與 macOS 共用的 StockCenter 啟動入口。"""
 from __future__ import annotations
 
 import importlib.util

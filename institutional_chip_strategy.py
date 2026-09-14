@@ -18,7 +18,7 @@ OUTPUT_FILE = ROOT_DIR / "institutional_chip_strategy_ranking.md"
 TWSE_URL = "https://www.twse.com.tw/rwd/zh/fund/T86"
 TPEX_URL = "https://www.tpex.org.tw/web/stock/3insti/daily_trade/3itrade_hedge_result.php"
 CODE_RE = re.compile(r"^\d{4}$")
-USER_AGENT = "Stock2 Institutional Chip Ranking/1.0"
+USER_AGENT = "StockCenter Institutional Chip Ranking/1.0"
 
 
 def fetch_json(url: str, params: dict[str, str]) -> dict:

@@ -9,4 +9,4 @@ fi
 
 python3 -m pip install --upgrade pip
 python3 -m pip install -r requirements.txt
-echo "安裝完成，請雙擊「啟動Stock2.command」。"
+echo "安裝完成，請雙擊「啟動控制台.command」。"
