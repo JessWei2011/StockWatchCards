@@ -287,7 +287,8 @@
      ☀️ 總經分析頁面【方案 A：Apple Stocks / Google Finance 純白極簡高對比風】
      涵蓋：三大法人買賣金額看板、注意與處置股票即時預警中心、8項總經與波動率卡片、歷史明細、Git備份卡
      ══════════════════════════════════════════════════════════════════════ */
-  [data-theme="light"] #macro-workspace {
+  [data-theme="light"] #macro-workspace,
+  [data-theme="light"] #market-pulse-workspace {
     background: #ffffff !important;
   }
   [data-theme="light"] #macro-workspace .macro-panel {
@@ -1499,6 +1500,7 @@
     box-shadow:0 3px 10px rgba(15,23,42,.08);
   }
   [data-theme="light"] .market-pulse-title { color:#0369a1; }
+  [data-theme="light"] .market-pulse-turnover { color:#d97706; }
   [data-theme="light"] .market-pulse-meta,
   [data-theme="light"] .market-pulse-status { color:#64748b; }
   [data-theme="light"] .resizer {
@@ -2455,23 +2457,24 @@
     flex:0 0 auto; border:1px solid rgba(56,189,248,.45); border-radius:6px; background:rgba(14,116,144,.16);
     color:#7dd3fc; cursor:pointer; padding:3px 8px; font-size:11px; font-weight:700;
   }
-  .market-pulse-grid{ display:grid; grid-template-columns:repeat(6, minmax(140px, 1fr)); gap:8px; }
+  .market-pulse-grid{ display:grid; grid-template-columns:repeat(3, minmax(200px, 1fr)); gap:12px; }
   .market-pulse-card{
-    min-width:0; min-height:94px; padding:8px 10px; border:1px solid rgba(56,189,248,.72); border-radius:9px;
+    min-width:0; min-height:94px; padding:10px 14px; border:1px solid rgba(56,189,248,.72); border-radius:10px;
     background:linear-gradient(145deg, #101827, #080d17); box-shadow:inset 0 0 0 1px rgba(14,116,144,.12);
-    display:flex; align-items:stretch; justify-content:space-between; gap:6px;
+    display:flex; align-items:stretch; justify-content:space-between; gap:10px;
   }
   .market-pulse-main{ min-width:0; flex:1 1 auto; display:flex; flex-direction:column; justify-content:space-between; }
-  .market-pulse-title{ color:#67e8f9; font-size:12px; font-weight:800; letter-spacing:.035em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .market-pulse-price{ margin-top:2px; color:#e5edf8; font-size:18px; line-height:1.15; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.025em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .market-pulse-change{ margin-top:2px; color:#94a3b8; font-size:11.5px; font-weight:750; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .market-pulse-title{ color:#67e8f9; font-size:13px; font-weight:800; letter-spacing:.035em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .market-pulse-price{ margin-top:2px; color:#e5edf8; font-size:20px; line-height:1.15; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.025em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .market-pulse-change{ margin-top:2px; color:#94a3b8; font-size:12px; font-weight:750; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .market-pulse-card.up .market-pulse-price, .market-pulse-card.up .market-pulse-change{ color:#ff5964; }
   .market-pulse-card.down .market-pulse-price, .market-pulse-card.down .market-pulse-change{ color:#4ade80; }
   .market-pulse-card.unavailable{ border-color:rgba(148,163,184,.5); opacity:.8; }
-  .market-pulse-meta{ margin-top:4px; color:#7890ab; font-size:9.5px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .market-pulse-turnover{ margin-top:2px; color:#fbbf24; font-size:12px; font-weight:750; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .market-pulse-meta{ margin-top:4px; color:#7890ab; font-size:10px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .market-pulse-trend{
-    flex:0 0 138px; display:flex; flex-direction:column; align-items:center; justify-content:space-between;
-    padding:3px 5px; border-radius:6px; background:rgba(15,23,42,.65);
+    flex:0 0 148px; display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+    padding:3px 6px; border-radius:6px; background:rgba(15,23,42,.65);
     border:1px solid rgba(56,189,248,.18); box-sizing:border-box; user-select:none;
   }
   .market-pulse-trend-badge{
@@ -2484,22 +2487,22 @@
   .market-pulse-trend-body{
     display:flex; align-items:center; justify-content:space-between; gap:6px; width:100%;
   }
-  .market-pulse-spark{ width:44px; height:46px; flex-shrink:0; display:block; overflow:visible; }
+  .market-pulse-spark{ width:46px; height:48px; flex-shrink:0; display:block; overflow:visible; }
   .market-pulse-trend-labels{
-    display:flex; flex-direction:column; justify-content:space-around; height:46px;
-    font-size:9.5px; line-height:1.2; font-variant-numeric:tabular-nums; flex:1; min-width:0;
+    display:flex; flex-direction:column; justify-content:space-around; height:48px;
+    font-size:10px; line-height:1.2; font-variant-numeric:tabular-nums; flex:1; min-width:0;
   }
   .trend-lbl{
     display:flex; align-items:center; justify-content:space-between; gap:2px;
-    font-family:'JetBrains Mono', monospace; font-size:9.5px; font-weight:700; white-space:nowrap;
+    font-family:'JetBrains Mono', monospace; font-size:10px; font-weight:700; white-space:nowrap;
   }
-  .trend-lbl.high .lbl-tag{ color:#94a3b8; font-size:8.5px; }
+  .trend-lbl.high .lbl-tag{ color:#94a3b8; font-size:9px; }
   .trend-lbl.high .lbl-val{ color:#e2e8f0; }
-  .trend-lbl.low .lbl-tag{ color:#94a3b8; font-size:8.5px; }
+  .trend-lbl.low .lbl-tag{ color:#94a3b8; font-size:9px; }
   .trend-lbl.low .lbl-val{ color:#e2e8f0; }
-  .market-pulse-placeholder{ min-height:94px; border-radius:9px; border:1px solid rgba(56,189,248,.25); background:linear-gradient(90deg,#0d1523 25%,#17243a 37%,#0d1523 63%); background-size:400% 100%; animation:market-pulse-shimmer 1.5s ease infinite; }
+  .market-pulse-placeholder{ min-height:94px; border-radius:10px; border:1px solid rgba(56,189,248,.25); background:linear-gradient(90deg,#0d1523 25%,#17243a 37%,#0d1523 63%); background-size:400% 100%; animation:market-pulse-shimmer 1.5s ease infinite; }
   @keyframes market-pulse-shimmer{ 0%{background-position:100% 0} 100%{background-position:-100% 0} }
-  @media (max-width:1380px){ .market-pulse-grid{ grid-template-columns:repeat(3, minmax(160px, 1fr)); } }
+  @media (max-width:960px){ .market-pulse-grid{ grid-template-columns:1fr; } }
   .spinner{
     width:18px; height:18px; border-radius:50%;
     border:2.5px solid rgba(56,189,248,0.2); border-top-color:#38bdf8;
@@ -2543,8 +2546,13 @@
   .app-tab:hover{ color:var(--text); background:var(--hover); }
   .app-tab.active{ color:#08101c; background:var(--accent); border-color:var(--accent); }
   .workspace{ flex:1; min-height:0; }
-  #reports-workspace[hidden], #pattern-workspace[hidden], #ranking-workspace[hidden], #analysis-workspace[hidden], #macro-workspace[hidden]{ display:none !important; }
+  #reports-workspace[hidden], #pattern-workspace[hidden], #ranking-workspace[hidden], #analysis-workspace[hidden], #macro-workspace[hidden], #market-pulse-workspace[hidden]{ display:none !important; }
   #reports-workspace{ display:flex; flex-direction:column; }
+  #market-pulse-workspace{
+    overflow-y:auto; overflow-x:hidden; padding:24px 32px; display:flex; flex-direction:column; gap:18px; min-width:0; background:#0b0d13;
+    zoom: 1.5;
+  }
+  #market-pulse-workspace .market-pulse-strip{ border-radius:12px; border:1px solid var(--border); max-width:1400px; width:100%; margin:0 auto; box-sizing:border-box; }
   #macro-workspace{ overflow-y:auto; overflow-x:hidden; padding:20px 28px; display:flex; flex-direction:column; gap:18px; min-width:0; background:#0b0d13; }
   #macro-workspace .market-inst-card, #macro-workspace .disposal-warning-card, #macro-workspace .macro-panel{ max-width:1800px; width:100%; margin:0 auto; }
   #pattern-workspace{ overflow:auto; background:#0f1117; }
@@ -3363,6 +3371,7 @@
     <button type="button" class="app-tab" data-workspace="ranking">🏆 排行榜</button>
     <button type="button" class="app-tab" data-workspace="analysis">📑 分析報告</button>
     <button type="button" class="app-tab" data-workspace="macro">🌐 總經分析</button>
+    <button type="button" class="app-tab" data-workspace="market-pulse">◈ 市場脈動</button>
   </nav>
   <section class="workspace" id="reports-workspace">
   <div class="generate-bar">
@@ -3374,23 +3383,6 @@
     <span class="spinner" id="generate-spinner"></span>
     <span class="generate-status" id="generate-status"></span>
   </div>
-  <section class="market-pulse-strip" aria-label="市場脈動">
-    <div class="market-pulse-header">
-      <div class="market-pulse-heading">
-        <strong>◈ 市場脈動</strong>
-        <span class="market-pulse-lights" aria-label="行情 API 狀態">
-          <span class="market-pulse-light" id="market-pulse-tw-light"><i class="market-pulse-light-dot"></i>台股</span>
-          <span class="market-pulse-light" id="market-pulse-us-light"><i class="market-pulse-light-dot"></i>美股</span>
-        </span>
-        <span class="market-pulse-status" id="market-pulse-status">正在載入六項行情…</span>
-      </div>
-      <button type="button" class="market-pulse-refresh" id="market-pulse-refresh" title="立即更新市場行情">↻ 更新</button>
-    </div>
-    <div class="market-pulse-grid" id="market-pulse-grid" aria-live="polite">
-      <div class="market-pulse-placeholder"></div><div class="market-pulse-placeholder"></div><div class="market-pulse-placeholder"></div>
-      <div class="market-pulse-placeholder"></div><div class="market-pulse-placeholder"></div><div class="market-pulse-placeholder"></div>
-    </div>
-  </section>
   <div class="layout">
     <div class="sidebar">
       <div class="tree-toolbar">
@@ -3867,6 +3859,26 @@
         <div class="analysis-empty">請由左側個股清單點選個股以查看分析報告。</div>
       </div>
     </div>
+  </section>
+
+  <section class="workspace" id="market-pulse-workspace" hidden>
+    <section class="market-pulse-strip" aria-label="市場脈動">
+      <div class="market-pulse-header">
+        <div class="market-pulse-heading">
+          <strong>◈ 市場脈動</strong>
+          <span class="market-pulse-lights" aria-label="行情 API 狀態">
+            <span class="market-pulse-light" id="market-pulse-tw-light"><i class="market-pulse-light-dot"></i>台股</span>
+            <span class="market-pulse-light" id="market-pulse-us-light"><i class="market-pulse-light-dot"></i>美股</span>
+          </span>
+          <span class="market-pulse-status" id="market-pulse-status">正在載入六項行情…</span>
+        </div>
+        <button type="button" class="market-pulse-refresh" id="market-pulse-refresh" title="立即更新市場行情">↻ 更新</button>
+      </div>
+      <div class="market-pulse-grid" id="market-pulse-grid" aria-live="polite">
+        <div class="market-pulse-placeholder"></div><div class="market-pulse-placeholder"></div><div class="market-pulse-placeholder"></div>
+        <div class="market-pulse-placeholder"></div><div class="market-pulse-placeholder"></div><div class="market-pulse-placeholder"></div>
+      </div>
+    </section>
   </section>
 
   <div class="modal-overlay hidden" id="delete-modal">
@@ -5017,7 +5029,7 @@
   }
 
   async function activateWorkspace(name, { pushHistory = true } = {}){
-    const target = ['pattern', 'ranking', 'analysis', 'macro'].includes(name) ? name : 'reports';
+    const target = ['pattern', 'ranking', 'analysis', 'macro', 'market-pulse'].includes(name) ? name : 'reports';
     window.activeWorkspaceName = target;
     document.querySelectorAll('.app-tab').forEach(button => {
       const active = button.dataset.workspace === target;
@@ -5030,6 +5042,8 @@
     document.getElementById('analysis-workspace').hidden = target !== 'analysis';
     const macroWs = document.getElementById('macro-workspace');
     if (macroWs) macroWs.hidden = target !== 'macro';
+    const marketPulseWs = document.getElementById('market-pulse-workspace');
+    if (marketPulseWs) marketPulseWs.hidden = target !== 'market-pulse';
     document.getElementById('breadcrumb').style.visibility = target === 'reports' ? '' : 'hidden';
 
     if (pushHistory && typeof syncBrowserHistory === 'function') {
@@ -5093,6 +5107,11 @@
     if (target === 'macro') {
       if (typeof loadMacroData === 'function') {
         loadMacroData();
+      }
+    }
+    if (target === 'market-pulse') {
+      if (typeof loadMarketPulse === 'function') {
+        loadMarketPulse();
       }
     }
   }
@@ -6598,7 +6617,7 @@
     const hash = window.location.hash.replace(/^#/, '').trim();
     if (!hash) return { workspace: 'reports', code: null };
     const [workspacePart, queryPart] = hash.split('?');
-    const workspace = ['pattern', 'ranking', 'analysis', 'reports', 'macro'].includes(workspacePart) ? workspacePart : 'reports';
+    const workspace = ['pattern', 'ranking', 'analysis', 'reports', 'macro', 'market-pulse'].includes(workspacePart) ? workspacePart : 'reports';
     let code = null;
     if (queryPart) {
       const params = new URLSearchParams(queryPart);
@@ -6608,9 +6627,10 @@
   }
 
   function getRouteHash(workspace, code){
-    const ws = ['pattern', 'ranking', 'analysis', 'macro'].includes(workspace) ? workspace : 'reports';
+    const ws = ['pattern', 'ranking', 'analysis', 'macro', 'market-pulse'].includes(workspace) ? workspace : 'reports';
     if (ws === 'reports') return '#reports';
     if (ws === 'macro') return '#macro';
+    if (ws === 'market-pulse') return '#market-pulse';
     if (ws === 'ranking') return '#ranking';
     if (code) return `#${ws}?code=${encodeURIComponent(code)}`;
     return `#${ws}`;
@@ -6620,7 +6640,7 @@
 
   function syncBrowserHistory(workspace, code, { replace = false } = {}){
     if (isApplyingRouteFromPopState) return;
-    const targetWs = ['pattern', 'ranking', 'analysis', 'macro'].includes(workspace) ? workspace : 'reports';
+    const targetWs = ['pattern', 'ranking', 'analysis', 'macro', 'market-pulse'].includes(workspace) ? workspace : 'reports';
     const targetCode = code ? String(code).trim() : null;
     const targetHash = getRouteHash(targetWs, targetCode);
     const stateObj = { workspace: targetWs, code: targetCode };
@@ -6712,6 +6732,9 @@
   } else if (initialRoute.workspace === 'macro') {
     activateWorkspace('macro', { pushHistory: false });
     syncBrowserHistory('macro', null, { replace: true });
+  } else if (initialRoute.workspace === 'market-pulse') {
+    activateWorkspace('market-pulse', { pushHistory: false });
+    syncBrowserHistory('market-pulse', null, { replace: true });
   } else if (initialRoute.workspace !== 'reports') {
     activateWorkspace(initialRoute.workspace, { pushHistory: false });
     syncBrowserHistory(initialRoute.workspace, null, { replace: true });
@@ -9039,12 +9062,20 @@ ${macroJsonText()}`;
         : `${item.source || ''}${item.delayed ? ' · 延遲' : ''}${isClosed ? ' · 休市' : ''}`;
       const title = item.error ? escapeHtml(item.error) : escapeHtml(item.updatedAt || item.source || '');
       const trendHtml = buildMarketPulseTrend(item);
+      const turnoverNum = Number(item.turnover);
+      let turnoverHtml = '';
+      if (Number.isFinite(turnoverNum) && turnoverNum > 0) {
+        const turnoverYi = turnoverNum / 1e8;
+        const formattedYi = turnoverYi.toLocaleString('zh-TW', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        turnoverHtml = `<div class="market-pulse-turnover" title="成交交易量：${formattedYi} 億元">成交交易量：${formattedYi} 億</div>`;
+      }
       return `
         <article class="market-pulse-card ${changeClass}" title="${title}">
           <div class="market-pulse-main">
             <div class="market-pulse-title">${escapeHtml(item.label || '市場指數')}</div>
             <div class="market-pulse-price">${formatMarketPulseNumber(item.price)}</div>
             <div class="market-pulse-change">${changeText}</div>
+            ${turnoverHtml}
             <div class="market-pulse-meta">${escapeHtml(sourceText)}</div>
           </div>
           ${trendHtml}

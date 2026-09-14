@@ -1675,13 +1675,14 @@ def _market_number(value):
 
 def _market_quote(
     key, label, price, previous_close, source, updated_at="", delayed=False, error=None,
-    open_price=None, high_price=None, low_price=None
+    open_price=None, high_price=None, low_price=None, turnover=None
 ):
     price = _market_number(price)
     previous_close = _market_number(previous_close)
     open_price = _market_number(open_price)
     high_price = _market_number(high_price)
     low_price = _market_number(low_price)
+    turnover = _market_number(turnover)
     change = round(price - previous_close, 2) if price is not None and previous_close is not None else None
     change_pct = round(change / previous_close * 100, 2) if change is not None and previous_close else None
     return {
@@ -1692,6 +1693,7 @@ def _market_quote(
         "open": open_price,
         "high": high_price,
         "low": low_price,
+        "turnover": turnover,
         "change": change,
         "changePct": change_pct,
         "source": source,
@@ -1750,6 +1752,18 @@ def _fetch_twse_market_indexes():
     today_str = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime("%Y%m%d")
     actual_taiex_open = _get_taiex_actual_matched_open(today_str)
 
+    # 取得上市 (TSE) 與上櫃 (OTC) 即時成交交易量（元）
+    turnovers = {}
+    for code_type, ohlc_url in (("taiex", "https://mis.twse.com.tw/stock/data/mis_ohlc_TSE.txt"), ("otc", "https://mis.twse.com.tw/stock/data/mis_ohlc_OTC.txt")):
+        try:
+            r_ohlc = requests.get(ohlc_url, headers=headers, timeout=3)
+            if r_ohlc.status_code == 200:
+                tz = r_ohlc.json().get("staticObj", {}).get("tz")
+                if tz:
+                    turnovers[code_type] = float(tz)
+        except Exception:
+            pass
+
     result = {}
     for key, label, source_key in (("taiex", "台股市場", "tse_t00"), ("otc", "台股櫃買", "otc_o00")):
         row = index_rows.get(source_key, {})
@@ -1762,6 +1776,7 @@ def _fetch_twse_market_indexes():
             open_price=open_price,
             high_price=row.get("h"),
             low_price=row.get("l"),
+            turnover=turnovers.get(key),
         )
     return result
 
