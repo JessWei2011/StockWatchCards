@@ -4740,10 +4740,10 @@
 
 <script src="pattern_viewer/js/vendor/echarts.min.js"></script>
 <script>if(typeof echarts==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"><\/script>');}</script>
-<script src="pattern_viewer/js/parser.js?v=78"></script>
+<script src="pattern_viewer/js/parser.js?v=99"></script>
 <script src="pattern_viewer/js/pattern_engine.js?v=77"></script>
-<script src="pattern_viewer/js/chart_engine.js?v=88"></script>
-<script src="pattern_viewer/js/viewer_app.js?v=97"></script>
+<script src="pattern_viewer/js/chart_engine.js?v=99"></script>
+<script src="pattern_viewer/js/viewer_app.js?v=101"></script>
 <script src="render-shared.js?v=77"></script>
 <script>
   const DISPLAY_SCALE_KEY = 'stock-analysis-display-scale';
@@ -8169,12 +8169,18 @@
       document.querySelectorAll('#patternInstTableWrapper, #reports-patternInstTableWrapper, .pattern-inst-table-wrapper').forEach(el => {
         el.innerHTML = '';
       });
-      document.querySelectorAll('#patternInstContainer, #reports-patternInstContainer, #patternMarginContainer, #reports-patternMarginContainer, .inst-mini-chart').forEach(el => {
+      document.querySelectorAll('#patternInstContainer, #reports-patternInstContainer').forEach(el => {
         el.style.display = 'none';
       });
       document.querySelectorAll('#patternChipSnapshot, #reports-patternChipSnapshot').forEach(el => {
         el.innerHTML = '';
       });
+      // 注意：僅在非台股大盤 (非 MKT01) 時隱藏融資融券容器，MKT01 需顯示大盤融資融券看板
+      if (cleanCode !== 'MKT01') {
+        document.querySelectorAll('#patternMarginContainer, #reports-patternMarginContainer').forEach(el => {
+          el.style.display = 'none';
+        });
+      }
       return;
     }
     const card = cardsByCode[cleanCode] || cardsByCode[code] || null;

@@ -17,14 +17,14 @@ window.PatternParser = {
     // RSI / MACD / KD 欄位格式。
     if (doc.querySelector('meta[name="report-kind"][content="market"], [data-report-kind="market"]')) {
       const h1 = doc.querySelector('h1');
-      const title = h1 ? h1.innerText.trim() : '市場指數';
+      const title = h1 ? (h1.textContent || h1.innerText || '').trim() : '市場指數';
       const table = doc.querySelector('table[data-kline-table]') || doc.querySelector('table');
       if (!table) return null;
-      const headers = Array.from(table.querySelectorAll('th')).map(th => th.innerText.trim());
+      const headers = Array.from(table.querySelectorAll('th')).map(th => (th.textContent || th.innerText || '').trim());
       const hasVolume = headers.some(header => /成交量|量/.test(header));
       const dates = [], candles = [], volumes = [];
       Array.from(table.querySelectorAll('tr')).slice(1).forEach(row => {
-        const cols = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim());
+        const cols = Array.from(row.querySelectorAll('td')).map(td => (td.textContent || td.innerText || '').trim());
         if (cols.length < 5) return;
         const open = Number(cols[1].replace(/,/g, ''));
         const high = Number(cols[2].replace(/,/g, ''));
@@ -45,12 +45,36 @@ window.PatternParser = {
         const total = volumes.slice(index - period + 1, index + 1).reduce((sum, value) => sum + value, 0);
         return Number((total / period).toFixed(1));
       });
+      const marginTable = doc.querySelector('table[data-margin-table]');
+      const marketMarginFlow = [];
+      if (marginTable) {
+        Array.from(marginTable.querySelectorAll('tr')).slice(1).forEach(row => {
+          const cols = Array.from(row.querySelectorAll('td')).map(td => (td.textContent || td.innerText || '').trim());
+          if (cols.length < 5) return;
+          const date = cols[0];
+          const marginChange = Number(cols[1].replace(/,/g, ''));
+          const marginBalance = Number(cols[2].replace(/,/g, ''));
+          const shortChange = Number(cols[3].replace(/,/g, ''));
+          const shortBalance = Number(cols[4].replace(/,/g, ''));
+          if (Number.isFinite(marginBalance) && Number.isFinite(marginChange)) {
+            marketMarginFlow.push({
+              date,
+              marginChange,
+              marginBalance,
+              shortChange: Number.isFinite(shortChange) ? shortChange : 0,
+              shortBalance: Number.isFinite(shortBalance) ? shortBalance : 0
+            });
+          }
+        });
+      }
+
       return {
         title, reportType: 'market', hasVolume, dates, candles, volumes,
         ma5: movingAverage(5), ma10: movingAverage(10), ma20: movingAverage(20),
         ma60: movingAverage(60), ma120: movingAverage(120),
         vma5: volumeAverage(5), vma20: volumeAverage(20),
-        institutionalFlow: [], marginFlow: [], holderFlow: []
+        institutionalFlow: [], marginFlow: [], holderFlow: [],
+        marketMarginFlow
       };
     }
 

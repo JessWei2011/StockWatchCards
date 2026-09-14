@@ -886,7 +886,17 @@ window.ChartEngine = {
       yAxis.push({ scale: true, gridIndex: 1, axisLabel: { show: false }, splitLine: { show: false } });
       series.push({
         name: '市場成交量', type: 'bar', xAxisIndex: 1, yAxisIndex: 1,
-        data: volumes.map((value, index) => ({ value, itemStyle: { color: candles[index] && candles[index][1] >= candles[index][0] ? 'rgba(239,68,68,.68)' : 'rgba(16,185,129,.68)' } })),
+        data: volumes.map((value, index) => {
+          const isUp = candles[index] && candles[index][1] >= candles[index][0];
+          return {
+            value,
+            itemStyle: {
+              color: 'transparent',
+              borderColor: isUp ? '#ef4444' : '#10b981',
+              borderWidth: 2
+            }
+          };
+        }),
         barMaxWidth: 12
       }, line('MV5', vma5, '#facc15', 1, 1), line('MV20', vma20, '#38bdf8', 1, 1));
     } else {

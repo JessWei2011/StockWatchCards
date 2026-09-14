@@ -103,16 +103,59 @@
     </table></div>`;
   }
 
+  function marketMarginSummaryHtml(rows) {
+    if (!rows || !rows.length) return '<div class="inst-chart-empty">尚無大盤融資融券日資料</div>';
+    const balance = value => Number(value).toLocaleString('zh-TW', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const change = value => {
+      const num = Number(value);
+      const tone = num > 0 ? 'buy' : (num < 0 ? 'sell' : 'flat');
+      return `<span class="inst-flow-value ${tone}">${num > 0 ? '+' : ''}${num.toFixed(2)}</span>`;
+    };
+    const shortBal = value => Math.round(Number(value)).toLocaleString('zh-TW');
+    const shortChg = value => {
+      const num = Number(value);
+      const tone = num > 0 ? 'buy' : (num < 0 ? 'sell' : 'flat');
+      return `<span class="inst-flow-value ${tone}">${num > 0 ? '+' : ''}${shortBal(num)}</span>`;
+    };
+    return `<div class="inst-flow-scroll"><table class="inst-flow-table" aria-label="台股大盤近15日融資融券，融資單位億元、融券單位張">
+      <thead><tr><th>項目＼日期</th>${rows.map(row => `<th>${String(row.date || '').slice(5).replace('-', '/')}</th>`).join('')}</tr></thead>
+      <tbody>
+        <tr><td>融資餘額(億)</td>${rows.map(row => `<td>${balance(row.marginBalance)}</td>`).join('')}</tr>
+        <tr><td>融資增減(億)</td>${rows.map(row => `<td>${change(row.marginChange)}</td>`).join('')}</tr>
+        <tr><td>融券餘額(張)</td>${rows.map(row => `<td>${shortBal(row.shortBalance)}</td>`).join('')}</tr>
+        <tr><td>融券增減(張)</td>${rows.map(row => `<td>${shortChg(row.shortChange)}</td>`).join('')}</tr>
+      </tbody>
+    </table></div>`;
+  }
+
   function updateMarginSummary(root, reportData, card) {
     if (!root) return;
     const isMarket = !!(reportData && (reportData.reportType === 'market' || reportData.isMarketReport || String(reportData.stockCode || '').startsWith('MKT')));
     if (isMarket) {
-      root.querySelectorAll('#patternMarginTableWrapper, #reports-patternMarginTableWrapper').forEach(slot => {
-        slot.innerHTML = '';
-      });
-      root.querySelectorAll('#patternMarginContainer, #reports-patternMarginContainer').forEach(container => {
-        container.style.display = 'none';
-      });
+      const isTwMarket = reportData && (String(reportData.title || '').includes('台股市場') || String(reportData.stockCode || '') === 'MKT01');
+      const marketRows = (reportData && Array.isArray(reportData.marketMarginFlow)) ? reportData.marketMarginFlow.slice().reverse() : [];
+      if (isTwMarket && marketRows.length > 0) {
+        const content = marketMarginSummaryHtml(marketRows);
+        const slots = root.querySelectorAll('#patternMarginTableWrapper, #reports-patternMarginTableWrapper, .pattern-margin-table-wrapper');
+        slots.forEach(slot => {
+          slot.innerHTML = content;
+        });
+        const containers = root.querySelectorAll('#patternMarginContainer, #reports-patternMarginContainer');
+        containers.forEach(container => {
+          container.style.display = 'block';
+          const titleEl = container.querySelector('.margin-title-text, .rank-detail-label');
+          if (titleEl) titleEl.innerHTML = '<span>💳</span> 台股大盤信用交易（融資融券）';
+          const noteEl = container.querySelector('.margin-note-text, .inst-chart-note');
+          if (noteEl) noteEl.innerHTML = '日期橫向排列｜<span style="color:#f87171; font-weight:700;">紅色增加</span>・<span style="color:#4ade80; font-weight:700;">綠色減少</span>｜融資單位：億元・融券單位：張';
+        });
+      } else {
+        root.querySelectorAll('#patternMarginTableWrapper, #reports-patternMarginTableWrapper, .pattern-margin-table-wrapper').forEach(slot => {
+          slot.innerHTML = '';
+        });
+        root.querySelectorAll('#patternMarginContainer, #reports-patternMarginContainer').forEach(container => {
+          container.style.display = 'none';
+        });
+      }
       return;
     }
     const rows = marginRows(card, reportData);
@@ -122,6 +165,10 @@
     });
     root.querySelectorAll('#patternMarginContainer, #reports-patternMarginContainer').forEach(container => {
       container.style.display = rows.length ? 'block' : 'none';
+      const titleEl = container.querySelector('.margin-title-text');
+      if (titleEl) titleEl.textContent = '融資近15日逐日餘額／增減';
+      const noteEl = container.querySelector('.margin-note-text');
+      if (noteEl) noteEl.innerHTML = '日期橫向排列｜<span style="color:#f87171; font-weight:700;">紅色增加</span>・<span style="color:#4ade80; font-weight:700;">綠色減少</span>｜單位：張';
     });
   }
 
@@ -186,8 +233,10 @@
         '#patternEmptyTitle': '#patternEmptyTitle, .empty-title',
         '#patternEmptyDetail': '#patternEmptyDetail, .empty-detail',
         '#echart-main': '#echart-main, .chart-canvas',
-        '#patternInstContainer': '#patternInstContainer, .inst-mini-chart',
-        '#patternInstTableWrapper': '#patternInstTableWrapper, .pattern-inst-table-wrapper',
+        '#patternInstContainer': '#patternInstContainer, #reports-patternInstContainer',
+        '#patternInstTableWrapper': '#patternInstTableWrapper, #reports-patternInstTableWrapper, .pattern-inst-table-wrapper',
+        '#patternMarginContainer': '#patternMarginContainer, #reports-patternMarginContainer',
+        '#patternMarginTableWrapper': '#patternMarginTableWrapper, #reports-patternMarginTableWrapper, .pattern-margin-table-wrapper',
         '#patternStarBtn': '#patternStarBtn, .pattern-star-btn'
       };
       const resolved = aliases[selector] || selector;
@@ -498,6 +547,7 @@
         if (requestId !== this.requestSerial || this.destroyed) return false;
 
         parsed = PatternParser.parseStockHtml(htmlText);
+        if (parsed) parsed.stockCode = normalizedCode;
         console.log(`[PatternViewer Debug] 📊 Parser 解析結果:`, parsed);
         if (!parsed || !parsed.dates || parsed.dates.length === 0) {
           throw new Error(`報表 ${entry.path} 中找不到可解析的 K 線資料`);
@@ -628,7 +678,7 @@
         const element = this.q(selector);
         if (element) element.style.display = isMarketReport ? 'none' : '';
       });
-      this.root.querySelectorAll('.inst-mini-chart').forEach(element => {
+      this.root.querySelectorAll('#patternInstContainer, #reports-patternInstContainer').forEach(element => {
         if (isMarketReport) element.style.display = 'none';
       });
       if (isMarketReport) {

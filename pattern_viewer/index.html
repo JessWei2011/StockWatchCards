@@ -150,6 +150,15 @@
           </div>
           <div id="patternInstTableWrapper"></div>
         </div>
+
+        <!-- 💳 融資近15日逐日餘額／增減看板 -->
+        <div id="patternMarginContainer" class="inst-mini-chart" style="display:none; margin-top:16px; margin-bottom:20px; padding:14px 16px; background:#141721; border:1px solid rgba(249,115,22,0.3); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+          <div class="inst-chart-head" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">
+            <span class="rank-detail-label" style="font-weight:800; color:#fdba74; font-size:17px; display:inline-flex; align-items:center; gap:6px;"><span>💳</span> <span class="margin-title-text">融資近15日逐日餘額／增減</span></span>
+            <span class="inst-chart-note margin-note-text" style="font-size:12.5px; color:#94a3b8;">日期橫向排列｜<span style="color:#f87171; font-weight:700;">紅色增加</span>・<span style="color:#4ade80; font-weight:700;">綠色減少</span>｜單位：張</span>
+          </div>
+          <div id="patternMarginTableWrapper" class="pattern-margin-table-wrapper"></div>
+        </div>
       </main>
     </div>
 
@@ -1130,10 +1139,10 @@
     </div>
   </div>
 
-  <script src="js/parser.js?v=68"></script>
+  <script src="js/parser.js?v=99"></script>
   <script src="js/pattern_engine.js?v=68"></script>
-  <script src="js/chart_engine.js?v=88"></script>
-  <script src="js/viewer_app.js?v=88"></script>
+  <script src="js/chart_engine.js?v=99"></script>
+  <script src="js/viewer_app.js?v=101"></script>
   <script>
     window.openKlineCheatSheetModal = function() {
       const modal = document.getElementById('klineCheatSheetModal');
