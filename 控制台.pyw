@@ -108,16 +108,20 @@ def start_all(_icon=None, _item=None) -> None:
 def stop_all(_icon=None, _item=None) -> None:
     threading.Thread(target=stop_servers, name="server-stop", daemon=True).start()
 
-
 def show_stock(_icon=None, _item=None) -> None:
     open_workspace("stock")
 
 
 def quit_controller(icon, _item=None) -> None:
     stop_event.set()
-    stop_servers()
-    wait_for_servers_to_stop()
-    icon.stop()
+    def _do_quit():
+        try:
+            stop_servers()
+            wait_for_servers_to_stop(1.5)
+        finally:
+            icon.stop()
+            os._exit(0)
+    threading.Thread(target=_do_quit, daemon=True).start()
 
 
 def make_icon_image() -> Image.Image:
@@ -159,10 +163,12 @@ def main() -> None:
     finally:
         # 右鍵退出以外的結束路徑也不能留下服務或 mutex。
         stop_servers()
-        wait_for_servers_to_stop()
+        wait_for_servers_to_stop(1.5)
         if os.name == "nt" and instance_mutex:
             ctypes.windll.kernel32.CloseHandle(instance_mutex)
+        os._exit(0)
 
 
 if __name__ == "__main__":
     main()
+

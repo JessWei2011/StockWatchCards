@@ -7439,7 +7439,7 @@
       }
     }
 
-    const displayName = (window.STOCK_NAMES_MAP && window.STOCK_NAMES_MAP[code]) || r.name || r.base;
+    const displayName = r.name || (window.STOCK_NAMES_MAP && window.STOCK_NAMES_MAP[code]) || r.base;
     const market = getStockMarket(code, r);
     const marketClass = market === 'TWO' ? 'market-two' : 'market-tw';
     const marketLabel = market === 'TWO' ? '上櫃' : '上市';

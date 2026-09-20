@@ -524,12 +524,30 @@ def _stop_legacy_macro_server():
             pass
 
 
+def _stop_controller_process():
+    """清理由桌面/啟動常駐的統一控制台 (控制台.pyw)。"""
+    if os.name != "nt":
+        return
+    try:
+        cmd = 'Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like "*控制台.pyw*" } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }'
+        subprocess.run(
+            ["powershell", "-NoProfile", "-Command", cmd],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+            timeout=3,
+        )
+    except Exception:
+        pass
+
+
 def _shutdown_application(delay=0.3):
     def worker():
         time.sleep(delay)
         try:
             _stop_macro_update_process()
             _stop_legacy_macro_server()
+            _stop_controller_process()
         finally:
             # 回應送達且子程序完成清理後，直接結束整個 Windows process；
             # 即使清理舊程序時遇到 Windows 權限問題，也不可留下主 server。
