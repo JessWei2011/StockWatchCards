@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import reports_manager_server as server
+import reports_state
 
 
 @unittest.skip("AI 選股與研究卡功能已移除")
@@ -323,6 +324,1201 @@ class TestAiStockPickingRemoval(unittest.TestCase):
         self.assertEqual(summary["summary"], "公司發布營收資訊")
         self.assertEqual(summary["source_indices"], [1])
         self.assertNotIn("score", summary)
+
+
+class TestReportsStateInitPreviewAPI(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_root = Path(self.temp_dir.name)
+        self.temp_reports_dir = self.temp_root / "reports"
+        self.temp_reports_dir.mkdir(parents=True, exist_ok=True)
+        self.temp_state_file = self.temp_root / "reports_state.json"
+
+        self.patches = [
+            patch.object(server, "REPORTS_DIR", self.temp_reports_dir),
+            patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file),
+            patch.object(server, "ROOT_DIR", self.temp_root),
+        ]
+        for p in self.patches:
+            p.start()
+
+    def tearDown(self):
+        for p in reversed(self.patches):
+            p.stop()
+        self.temp_dir.cleanup()
+
+    def _make_handler(self, path="/api/reports-state/init-preview"):
+        handler = server.Handler.__new__(server.Handler)
+        handler.path = path
+        handler._read_json_body = MagicMock(return_value={})
+        handler._json = MagicMock()
+        return handler
+
+    def test_init_preview_no_state_file(self):
+        """1. 無狀態檔：200、ok=true、hasExistingState=false、stateFilePath == 'reports_state.json'，並正確含掃描出的個股；呼叫前後狀態檔仍不存在。"""
+        sub = self.temp_reports_dir / "半導體"
+        sub.mkdir(parents=True, exist_ok=True)
+        (sub / "2330_台積電(TW).html").write_text("dummy html", encoding="utf-8")
+        (sub / "2330_台積電(TW)_chart.png").write_bytes(b"dummy png")
+
+        self.assertFalse(self.temp_state_file.exists())
+
+        handler = self._make_handler()
+        handler.do_GET()
+
+        handler._json.assert_called_once()
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 200)
+        self.assertTrue(payload.get("ok"))
+        self.assertFalse(payload.get("hasExistingState"))
+        self.assertEqual(payload.get("stateFilePath"), "reports_state.json")
+        self.assertNotIn("existingStateVersion", payload)
+        self.assertNotIn("existingStateUpdatedAt", payload)
+        self.assertNotIn("existingStockCount", payload)
+
+        preview = payload.get("preview", {})
+        self.assertIn("2330", preview.get("proposedState", {}).get("stocks", {}))
+        self.assertEqual(preview["proposedState"]["stocks"]["2330"]["folder"], "半導體")
+        self.assertEqual(preview["summary"]["totalScanned"], 1)
+
+        # 呼叫後狀態檔依然不存在（零副作用）
+        self.assertFalse(self.temp_state_file.exists())
+
+    def test_init_preview_with_existing_valid_state_preserves_tombstone(self):
+        """2. 合法狀態檔：200、hasExistingState=true、三個 existingState* 欄位正確；既有 tombstone 遇到磁碟舊檔時，同時有 tombstone_conflict，且 preview.proposedState.stocks[code] 的 tombstone 欄位完全不變。"""
+        valid_state = {
+            "version": 1,
+            "updatedAt": "2026-09-20T12:00:00.000000Z",
+            "stocks": {
+                "3324": {
+                    "name": "雙鴻",
+                    "folder": "散熱",
+                    "updatedAt": "2026-09-20T12:00:00.000000Z",
+                    "deletedAt": "2026-09-20T12:00:00.000000Z",
+                }
+            }
+        }
+        self.temp_state_file.write_text(json.dumps(valid_state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+        sub = self.temp_reports_dir / "散熱"
+        sub.mkdir(parents=True, exist_ok=True)
+        (sub / "3324_雙鴻(TWO).html").write_text("old html", encoding="utf-8")
+
+        handler = self._make_handler()
+        handler.do_GET()
+
+        handler._json.assert_called_once()
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 200)
+        self.assertTrue(payload.get("ok"))
+        self.assertTrue(payload.get("hasExistingState"))
+        self.assertEqual(payload.get("existingStateVersion"), 1)
+        self.assertEqual(payload.get("existingStateUpdatedAt"), "2026-09-20T12:00:00.000000Z")
+        self.assertEqual(payload.get("existingStockCount"), 1)
+
+        preview = payload.get("preview", {})
+        conflicts = preview.get("conflicts", [])
+        tombstone_conflicts = [c for c in conflicts if c.get("type") == "tombstone_conflict"]
+        self.assertEqual(len(tombstone_conflicts), 1)
+        self.assertEqual(tombstone_conflicts[0]["code"], "3324")
+
+        # tombstone 欄位完全不變
+        preserved_stock = preview.get("proposedState", {}).get("stocks", {}).get("3324")
+        self.assertIsNotNone(preserved_stock)
+        self.assertEqual(preserved_stock["name"], "雙鴻")
+        self.assertEqual(preserved_stock["folder"], "散熱")
+        self.assertEqual(preserved_stock["updatedAt"], "2026-09-20T12:00:00.000000Z")
+        self.assertEqual(preserved_stock["deletedAt"], "2026-09-20T12:00:00.000000Z")
+
+    def test_init_preview_corrupted_state_file_returns_422(self):
+        """3. 損壞狀態檔：422、ok=false、corrupted=true、沒有 preview；呼叫前後原始位元組完全相同，且不洩露本機絕對路徑。"""
+        corrupted_bytes = b'{"version": 1, "stocks": broken json'
+        self.temp_state_file.write_bytes(corrupted_bytes)
+
+        handler = self._make_handler()
+        handler.do_GET()
+
+        handler._json.assert_called_once()
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 422)
+        self.assertFalse(payload.get("ok"))
+        self.assertTrue(payload.get("corrupted"))
+        self.assertNotIn("preview", payload)
+        self.assertIn("error", payload)
+        # 錯誤訊息中不得包含暫存目錄的絕對路徑
+        self.assertNotIn(str(self.temp_root), payload["error"])
+
+        # 呼叫前後檔案內容與位元組完全一致
+        self.assertEqual(self.temp_state_file.read_bytes(), corrupted_bytes)
+
+    def test_init_preview_state_file_is_directory_returns_422(self):
+        """驗收修正 005：reports_state.json 路徑存在但為資料夾時，必須安全失敗回傳 422，不回傳 preview，且資料夾仍存在。"""
+        self.temp_state_file.mkdir(parents=True, exist_ok=True)
+
+        handler = self._make_handler()
+        handler.do_GET()
+
+        handler._json.assert_called_once()
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 422)
+        self.assertFalse(payload.get("ok"))
+        self.assertTrue(payload.get("corrupted"))
+        self.assertNotIn("preview", payload)
+        self.assertEqual(payload.get("error"), "狀態檔路徑不是一般檔案")
+
+        # 呼叫後該資料夾仍存在，未被刪除或改名
+        self.assertTrue(self.temp_state_file.is_dir())
+
+    def test_init_preview_invalid_schema_state_file_returns_422(self):
+        """驗收修正 005：reports_state.json 結構不合法（如小寫代號或非 Z 時間）時回傳 422、無 preview，且原始位元組完全不變。"""
+        invalid_schema_state = {
+            "version": 1,
+            "updatedAt": "2026-09-20T12:00:00+08:00",
+            "stocks": {
+                "2330": {
+                    "name": "台積電",
+                    "folder": "",
+                    "updatedAt": "2026-09-20T12:00:00+08:00",
+                    "deletedAt": None,
+                }
+            }
+        }
+        raw_bytes = json.dumps(invalid_schema_state, ensure_ascii=False, indent=2).encode("utf-8")
+        self.temp_state_file.write_bytes(raw_bytes)
+
+        handler = self._make_handler()
+        handler.do_GET()
+
+        handler._json.assert_called_once()
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 422)
+        self.assertFalse(payload.get("ok"))
+        self.assertTrue(payload.get("corrupted"))
+        self.assertNotIn("preview", payload)
+        self.assertNotIn(str(self.temp_root), payload.get("error", ""))
+
+        # 呼叫前後原始位元組完全相同
+        self.assertEqual(self.temp_state_file.read_bytes(), raw_bytes)
+
+    def test_init_preview_location_conflict_excluded_from_proposed_state(self):
+        """4. 跨資料夾重複：同代號出現在兩資料夾時有 location_conflict，且該代號不在 proposedState.stocks。"""
+        dir_a = self.temp_reports_dir / "散熱"
+        dir_b = self.temp_reports_dir / "未分類"
+        dir_a.mkdir(parents=True, exist_ok=True)
+        dir_b.mkdir(parents=True, exist_ok=True)
+        (dir_a / "8996_高力(TW).html").write_text("html a", encoding="utf-8")
+        (dir_b / "8996_高力(TW).html").write_text("html b", encoding="utf-8")
+
+        handler = self._make_handler()
+        handler.do_GET()
+
+        handler._json.assert_called_once()
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 200)
+
+        preview = payload.get("preview", {})
+        conflicts = preview.get("conflicts", [])
+        loc_conflicts = [c for c in conflicts if c.get("type") == "location_conflict"]
+        self.assertEqual(len(loc_conflicts), 1)
+        self.assertEqual(loc_conflicts[0]["code"], "8996")
+        self.assertEqual(set(loc_conflicts[0]["folders"]), {"未分類", "散熱"})
+
+        # location_conflict 絕對不可出現在 proposedState.stocks 中
+        self.assertNotIn("8996", preview.get("proposedState", {}).get("stocks", {}))
+
+    def test_init_preview_warnings_for_multiple_html_and_missing_chinese_name(self):
+        """5. 警告：同資料夾兩個 HTML 變體產生 multiple_html_variants；字典無對應的英文名稱產生 missing_chinese_name。"""
+        sub1 = self.temp_reports_dir / "散熱"
+        sub1.mkdir(parents=True, exist_ok=True)
+        (sub1 / "3324_雙鴻(TWO).html").write_text("html 1", encoding="utf-8")
+        (sub1 / "3324_雙鴻(TWO)_處置股.html").write_text("html 2", encoding="utf-8")
+
+        sub2 = self.temp_reports_dir / "其他"
+        sub2.mkdir(parents=True, exist_ok=True)
+        (sub2 / "1560_Kinik Company(TW).html").write_text("html 3", encoding="utf-8")
+
+        with patch.object(server, "STOCK_NAME_DICT", {"3324": "雙鴻"}):
+            handler = self._make_handler()
+            handler.do_GET()
+
+        handler._json.assert_called_once()
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 200)
+
+        preview = payload.get("preview", {})
+        warnings = preview.get("warnings", [])
+        types_by_code = {w.get("code"): w.get("type") for w in warnings}
+        self.assertEqual(types_by_code.get("3324"), "multiple_html_variants")
+        self.assertEqual(types_by_code.get("1560"), "missing_chinese_name")
+
+    def test_init_preview_strictly_read_only_and_preserves_tree(self):
+        """6. 嚴格唯讀：對含資料夾、報表與合法狀態檔的暫存樹，呼叫前後逐一比對所有檔案的相對路徑、內容、大小與 st_mtime_ns 完全一致，且不呼叫寫入函式。"""
+        sub = self.temp_reports_dir / "半導體"
+        sub.mkdir(parents=True, exist_ok=True)
+        (sub / "2330_台積電(TW).html").write_text("<html>tsmc</html>", encoding="utf-8")
+        (sub / "2330_台積電(TW)_chart.png").write_bytes(b"fake png bytes")
+        valid_state = {
+            "version": 1,
+            "updatedAt": "2026-09-21T00:00:00.000000Z",
+            "stocks": {
+                "2330": {
+                    "name": "台積電",
+                    "folder": "半導體",
+                    "updatedAt": "2026-09-21T00:00:00.000000Z",
+                    "deletedAt": None,
+                }
+            }
+        }
+        self.temp_state_file.write_text(json.dumps(valid_state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+        # 記錄呼叫前的樹快照
+        before_snapshot = {}
+        for p in self.temp_root.rglob("*"):
+            if p.is_file():
+                st = p.stat()
+                before_snapshot[p.relative_to(self.temp_root)] = (p.read_bytes(), st.st_size, st.st_mtime_ns)
+
+        with patch.object(server, "save_reports_state_atomic") as mock_server_save, \
+             patch("reports_state.save_state") as mock_state_save:
+            handler = self._make_handler()
+            handler.do_GET()
+
+            mock_server_save.assert_not_called()
+            mock_state_save.assert_not_called()
+
+        handler._json.assert_called_once()
+        self.assertEqual(handler._json.call_args[0][0], 200)
+
+        # 比對呼叫後的樹快照
+        after_snapshot = {}
+        for p in self.temp_root.rglob("*"):
+            if p.is_file():
+                st = p.stat()
+                after_snapshot[p.relative_to(self.temp_root)] = (p.read_bytes(), st.st_size, st.st_mtime_ns)
+
+        self.assertEqual(set(before_snapshot.keys()), set(after_snapshot.keys()))
+        for rel_path, before_info in before_snapshot.items():
+            after_info = after_snapshot[rel_path]
+            self.assertEqual(before_info[0], after_info[0], f"檔案內容被修改: {rel_path}")
+            self.assertEqual(before_info[1], after_info[1], f"檔案大小被修改: {rel_path}")
+            self.assertEqual(before_info[2], after_info[2], f"檔案 mtime 被修改: {rel_path}")
+
+
+class TestReportsStateInitApplyAPI(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_root = Path(self.temp_dir.name)
+        self.temp_reports_dir = self.temp_root / "reports"
+        self.temp_reports_dir.mkdir(parents=True, exist_ok=True)
+        self.temp_state_file = self.temp_root / "reports_state.json"
+
+        self.patches = [
+            patch.object(server, "REPORTS_DIR", self.temp_reports_dir),
+            patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file),
+            patch.object(server, "ROOT_DIR", self.temp_root),
+        ]
+        for p in self.patches:
+            p.start()
+
+    def tearDown(self):
+        for p in reversed(self.patches):
+            p.stop()
+        self.temp_dir.cleanup()
+
+    def _make_handler(self, path="/api/reports-state/init-apply", body=None):
+        handler = server.Handler.__new__(server.Handler)
+        handler.path = path
+        handler._read_json_body = MagicMock(return_value=body if body is not None else {})
+        handler._json = MagicMock()
+        return handler
+
+    def _get_preview_basis(self, name_dict=None):
+        h = server.Handler.__new__(server.Handler)
+        h.path = "/api/reports-state/init-preview"
+        h._json = MagicMock()
+        with patch.object(server, "STOCK_NAME_DICT", name_dict if name_dict is not None else {"2330": "台積電"}):
+            h.do_GET()
+        _, payload = h._json.call_args[0]
+        return payload.get("basis")
+
+    def test_init_apply_successful_first_time_creation(self):
+        """1. 正常首次建立：基準相符、無衝突、無缺中文名，成功建立 reports_state.json。"""
+        sub = self.temp_reports_dir / "半導體"
+        sub.mkdir(parents=True, exist_ok=True)
+        (sub / "2330_台積電(TW).html").write_text("html content", encoding="utf-8")
+
+        name_dict = {"2330": "台積電"}
+        basis = self._get_preview_basis(name_dict)
+
+        handler = self._make_handler(body={"confirm": True, "basis": basis})
+        with patch.object(server, "STOCK_NAME_DICT", name_dict):
+            handler.do_POST()
+
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 200)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["stockCount"], 1)
+
+        # 狀態檔成功建立
+        self.assertTrue(self.temp_state_file.is_file())
+        state = json.loads(self.temp_state_file.read_text(encoding="utf-8"))
+        self.assertEqual(state["stocks"]["2330"]["name"], "台積電")
+        self.assertEqual(state["stocks"]["2330"]["folder"], "半導體")
+
+    def test_init_apply_rejects_when_missing_confirm(self):
+        """2. 缺 confirm 拒絕：回傳 400，且絕不建立狀態檔。"""
+        basis = self._get_preview_basis()
+        handler = self._make_handler(body={"basis": basis})
+        handler.do_POST()
+
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 400)
+        self.assertFalse(payload["ok"])
+        self.assertFalse(self.temp_state_file.exists())
+
+    def test_init_apply_rejects_when_basis_mismatch_reports_modified(self):
+        """3. basis 因報表檔案變更不符：預覽後檔案被修改，回傳 409 basis_mismatch。"""
+        sub = self.temp_reports_dir / "半導體"
+        sub.mkdir(parents=True, exist_ok=True)
+        html_file = sub / "2330_台積電(TW).html"
+        html_file.write_text("orig", encoding="utf-8")
+
+        name_dict = {"2330": "台積電"}
+        basis = self._get_preview_basis(name_dict)
+
+        # 預覽後修改報表
+        html_file.write_text("modified", encoding="utf-8")
+
+        handler = self._make_handler(body={"confirm": True, "basis": basis})
+        with patch.object(server, "STOCK_NAME_DICT", name_dict):
+            handler.do_POST()
+
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 409)
+        self.assertEqual(payload.get("conflictType"), "basis_mismatch")
+        self.assertFalse(self.temp_state_file.exists())
+
+    def test_init_apply_rejects_when_basis_mismatch_name_dict_modified(self):
+        """4. basis 因名稱字典變更不符：回傳 409 basis_mismatch。"""
+        sub = self.temp_reports_dir / "半導體"
+        sub.mkdir(parents=True, exist_ok=True)
+        (sub / "2330_台積電(TW).html").write_text("orig", encoding="utf-8")
+
+        basis = self._get_preview_basis({"2330": "台積電"})
+
+        # 確認時傳入變更後的字典
+        handler = self._make_handler(body={"confirm": True, "basis": basis})
+        with patch.object(server, "STOCK_NAME_DICT", {"2330": "台積電新名"}):
+            handler.do_POST()
+
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 409)
+        self.assertEqual(payload.get("conflictType"), "basis_mismatch")
+        self.assertFalse(self.temp_state_file.exists())
+
+    def test_init_apply_rejects_when_state_file_already_exists(self):
+        """5. 狀態檔已存在拒絕：回傳 409，且外來狀態檔內容絕不被覆寫。"""
+        self.temp_state_file.write_text('{"version": 1, "existing": true}', encoding="utf-8")
+        basis = {"fingerprint": "fake", "reportsHash": "fake", "stateFileStatus": "absent", "nameDictHash": "fake"}
+
+        handler = self._make_handler(body={"confirm": True, "basis": basis})
+        handler.do_POST()
+
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 409)
+        self.assertEqual(payload.get("conflictType"), "state_file_already_exists")
+        # 原檔案未變
+        self.assertEqual(self.temp_state_file.read_text(encoding="utf-8"), '{"version": 1, "existing": true}')
+
+    def test_init_apply_rejects_when_state_file_is_directory(self):
+        """6. 狀態檔路徑為資料夾時安全失敗回傳 422。"""
+        self.temp_state_file.mkdir()
+        basis = {"fingerprint": "fake", "reportsHash": "fake", "stateFileStatus": "absent", "nameDictHash": "fake"}
+
+        handler = self._make_handler(body={"confirm": True, "basis": basis})
+        handler.do_POST()
+
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 422)
+        self.assertTrue(self.temp_state_file.is_dir())
+
+    def test_init_apply_rejects_when_conflicts_exist(self):
+        """7. 存在跨資料夾衝突拒絕：回傳 409 unresolved_conflicts，絕不建立部分狀態檔。"""
+        dir_a = self.temp_reports_dir / "散熱"
+        dir_b = self.temp_reports_dir / "未分類"
+        dir_a.mkdir(parents=True, exist_ok=True)
+        dir_b.mkdir(parents=True, exist_ok=True)
+        (dir_a / "8996_高力(TW).html").write_text("a", encoding="utf-8")
+        (dir_b / "8996_高力(TW).html").write_text("b", encoding="utf-8")
+
+        name_dict = {"8996": "高力"}
+        basis = self._get_preview_basis(name_dict)
+
+        handler = self._make_handler(body={"confirm": True, "basis": basis})
+        with patch.object(server, "STOCK_NAME_DICT", name_dict):
+            handler.do_POST()
+
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 409)
+        self.assertEqual(payload.get("conflictType"), "unresolved_conflicts")
+        self.assertFalse(self.temp_state_file.exists())
+
+    def test_init_apply_allows_official_english_name(self):
+        """8. 缺中文名只是提示；英文正式名稱可安全建立狀態檔。"""
+        sub = self.temp_reports_dir / "其他"
+        sub.mkdir(parents=True, exist_ok=True)
+        (sub / "1560_Kinik Company(TW).html").write_text("html", encoding="utf-8")
+
+        # 字典中沒有 1560 的中文名
+        basis = self._get_preview_basis({})
+
+        handler = self._make_handler(body={"confirm": True, "basis": basis})
+        with patch.object(server, "STOCK_NAME_DICT", {}):
+            handler.do_POST()
+
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 200)
+        self.assertTrue(payload.get("ok"))
+        saved = json.loads(self.temp_state_file.read_text(encoding="utf-8"))
+        self.assertEqual(saved["stocks"]["1560"]["name"], "Kinik Company")
+
+    def test_init_apply_allows_multiple_html_variants_as_warning(self):
+        """9. 多 HTML 變體警告允許建立：同資料夾多 HTML 不阻礙首次建立。"""
+        sub = self.temp_reports_dir / "散熱"
+        sub.mkdir(parents=True, exist_ok=True)
+        (sub / "3324_雙鴻(TWO).html").write_text("v1", encoding="utf-8")
+        (sub / "3324_雙鴻(TWO)_處置股.html").write_text("v2", encoding="utf-8")
+
+        name_dict = {"3324": "雙鴻"}
+        basis = self._get_preview_basis(name_dict)
+
+        handler = self._make_handler(body={"confirm": True, "basis": basis})
+        with patch.object(server, "STOCK_NAME_DICT", name_dict):
+            handler.do_POST()
+
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 200)
+        self.assertTrue(self.temp_state_file.is_file())
+
+    def test_init_apply_duplicate_submission_idempotency(self):
+        """10. 重複提交冪等阻擋：第一次成功建立，第二次回傳 409 state_file_already_exists。"""
+        sub = self.temp_reports_dir / "半導體"
+        sub.mkdir(parents=True, exist_ok=True)
+        (sub / "2330_台積電(TW).html").write_text("content", encoding="utf-8")
+
+        name_dict = {"2330": "台積電"}
+        basis = self._get_preview_basis(name_dict)
+
+        # 第一次呼叫
+        h1 = self._make_handler(body={"confirm": True, "basis": basis})
+        with patch.object(server, "STOCK_NAME_DICT", name_dict):
+            h1.do_POST()
+        self.assertEqual(h1._json.call_args[0][0], 200)
+
+        # 第二次呼叫
+        h2 = self._make_handler(body={"confirm": True, "basis": basis})
+        with patch.object(server, "STOCK_NAME_DICT", name_dict):
+            h2.do_POST()
+        status_code, payload = h2._json.call_args[0]
+        self.assertEqual(status_code, 409)
+        self.assertEqual(payload.get("conflictType"), "state_file_already_exists")
+
+    def test_init_apply_preserves_external_state_file_created_during_publish(self):
+        """外部程序在最後發布瞬間建立狀態檔時，API 必須回 409 且保留外來內容。"""
+        sub = self.temp_reports_dir / "半導體"
+        sub.mkdir(parents=True, exist_ok=True)
+        (sub / "2330_台積電(TW).html").write_text("content", encoding="utf-8")
+        name_dict = {"2330": "台積電"}
+        basis = self._get_preview_basis(name_dict)
+        foreign_bytes = b'{"external": true}'
+
+        def external_writer(_temp_path, destination):
+            Path(destination).write_bytes(foreign_bytes)
+            raise FileExistsError("external writer won the race")
+
+        handler = self._make_handler(body={"confirm": True, "basis": basis})
+        with patch.object(server, "STOCK_NAME_DICT", name_dict), \
+             patch("reports_state.os.link", side_effect=external_writer):
+            handler.do_POST()
+
+        status_code, payload = handler._json.call_args[0]
+        self.assertEqual(status_code, 409)
+        self.assertEqual(payload.get("conflictType"), "state_file_already_exists")
+        self.assertEqual(self.temp_state_file.read_bytes(), foreign_bytes)
+        self.assertEqual(list(self.temp_root.glob(".tmp_init_*.tmp")), [])
+
+    def test_init_apply_strictly_zero_modification_to_reports_tree(self):
+        """11. 嚴格唯讀 reports/ 樹：寫入狀態檔前後 reports/ 內所有檔案路徑、內容、大小與 mtime 完全一致。"""
+        sub = self.temp_reports_dir / "半導體"
+        sub.mkdir(parents=True, exist_ok=True)
+        (sub / "2330_台積電(TW).html").write_text("<html>tsmc</html>", encoding="utf-8")
+        (sub / "2330_台積電(TW)_chart.png").write_bytes(b"chart png")
+
+        name_dict = {"2330": "台積電"}
+        basis = self._get_preview_basis(name_dict)
+
+        # 記錄樹快照
+        before = {}
+        for p in self.temp_reports_dir.rglob("*"):
+            if p.is_file():
+                st = p.stat()
+                before[p.relative_to(self.temp_reports_dir)] = (p.read_bytes(), st.st_size, st.st_mtime_ns)
+
+        handler = self._make_handler(body={"confirm": True, "basis": basis})
+        with patch.object(server, "STOCK_NAME_DICT", name_dict):
+            handler.do_POST()
+
+        self.assertEqual(handler._json.call_args[0][0], 200)
+
+        after = {}
+        for p in self.temp_reports_dir.rglob("*"):
+            if p.is_file():
+                st = p.stat()
+                after[p.relative_to(self.temp_reports_dir)] = (p.read_bytes(), st.st_size, st.st_mtime_ns)
+
+        self.assertEqual(set(before.keys()), set(after.keys()))
+        for rel_path, b_info in before.items():
+            a_info = after[rel_path]
+            self.assertEqual(b_info[0], a_info[0], f"內容變動: {rel_path}")
+            self.assertEqual(b_info[1], a_info[1], f"大小變動: {rel_path}")
+            self.assertEqual(b_info[2], a_info[2], f"mtime 變動: {rel_path}")
+
+
+class TestFixStockNameAPI(unittest.TestCase):
+    """測試 POST /api/reports-state/fix-stock-name 名稱補正端點。"""
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_root = Path(self.temp_dir.name)
+        self.temp_reports_dir = self.temp_root / "reports"
+        self.temp_reports_dir.mkdir(parents=True, exist_ok=True)
+        self.temp_dict_file = self.temp_root / "stock_name_dict.json"
+        self.temp_state_file = self.temp_root / "reports_state.json"
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def _make_handler(self, path="/api/reports-state/fix-stock-name", body=None):
+        handler = server.Handler.__new__(server.Handler)
+        handler.path = path
+        handler._read_json_body = MagicMock(return_value=body if body is not None else {})
+        handler._json = MagicMock()
+        return handler
+
+    def test_fix_stock_name_success_updates_dict_and_reloads(self):
+        self.temp_dict_file.write_text(json.dumps({"2330": "台積電"}, ensure_ascii=False), encoding="utf-8")
+        handler = self._make_handler(body={"code": "1560", "chineseName": "中砂"})
+
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "STOCK_NAME_DICT_PATH", self.temp_dict_file):
+            server.reload_stock_name_dict()
+            handler.do_POST()
+
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 200)
+        self.assertTrue(payload.get("ok"))
+        self.assertEqual(payload.get("code"), "1560")
+        self.assertEqual(payload.get("chineseName"), "中砂")
+
+        saved = json.loads(self.temp_dict_file.read_text(encoding="utf-8"))
+        self.assertEqual(saved["1560"], "中砂")
+        self.assertEqual(saved["2330"], "台積電")
+        # 驗證絕未建立狀態檔
+        self.assertFalse(self.temp_state_file.exists())
+
+    def test_fix_stock_name_validation_fails_on_bad_code_or_empty_name(self):
+        handler = self._make_handler(body={"code": "INVALID_TOO_LONG_12345", "chineseName": "中砂"})
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "STOCK_NAME_DICT_PATH", self.temp_dict_file):
+            handler.do_POST()
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 400)
+        self.assertFalse(payload.get("ok"))
+
+        handler2 = self._make_handler(body={"code": "1560", "chineseName": "   "})
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "STOCK_NAME_DICT_PATH", self.temp_dict_file):
+            handler2.do_POST()
+        status2, _ = handler2._json.call_args[0]
+        self.assertEqual(status2, 400)
+
+    def test_fix_stock_name_validation_fails_on_pure_ascii_name(self):
+        handler = self._make_handler(body={"code": "1560", "chineseName": "Kinik Company"})
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "STOCK_NAME_DICT_PATH", self.temp_dict_file):
+            handler.do_POST()
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 400)
+        self.assertIn("中文字元", payload.get("error", ""))
+
+    def test_fix_stock_name_safe_fails_on_directory_dict(self):
+        self.temp_dict_file.mkdir()
+        handler = self._make_handler(body={"code": "1560", "chineseName": "中砂"})
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "STOCK_NAME_DICT_PATH", self.temp_dict_file):
+            handler.do_POST()
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 422)
+
+    def test_fix_stock_name_allows_subsequent_preview_unblock_and_does_not_create_state(self):
+        # 1. 建立一個缺少中文名的個股檔案
+        (self.temp_reports_dir / "1560_Kinik Company(TW).html").write_text("<html>kinik</html>", encoding="utf-8")
+        self.temp_dict_file.write_text("{}", encoding="utf-8")
+
+        # 2. 補名前預覽：應該有 missing_chinese_name
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file), \
+             patch.object(server, "STOCK_NAME_DICT_PATH", self.temp_dict_file):
+            server.reload_stock_name_dict()
+            preview1 = reports_state.generate_initial_state_preview(
+                self.temp_reports_dir,
+                existing_state=None,
+                stock_name_dict=server.STOCK_NAME_DICT,
+            )
+            missing1 = [w for w in preview1.get("warnings", []) if w.get("type") == "missing_chinese_name"]
+            self.assertEqual(len(missing1), 1)
+
+            # 3. 呼叫補名 API
+            handler = self._make_handler(body={"code": "1560", "chineseName": "中砂"})
+            handler.do_POST()
+            self.assertEqual(handler._json.call_args[0][0], 200)
+
+            # 4. 補名後重新取得預覽：missing_chinese_name 解除
+            preview2 = reports_state.generate_initial_state_preview(
+                self.temp_reports_dir,
+                existing_state=None,
+                stock_name_dict=server.STOCK_NAME_DICT,
+            )
+            missing2 = [w for w in preview2.get("warnings", []) if w.get("type") == "missing_chinese_name"]
+            self.assertEqual(len(missing2), 0)
+            self.assertIn("1560", preview2["proposedState"]["stocks"])
+            self.assertEqual(preview2["proposedState"]["stocks"]["1560"]["name"], "中砂")
+
+            # 驗證過程中絕對沒有建立 reports_state.json
+            self.assertFalse(self.temp_state_file.exists())
+
+
+class TestSyncPreviewAPI(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_root = Path(self.temp_dir.name)
+        self.temp_reports_dir = self.temp_root / "reports"
+        self.temp_reports_dir.mkdir(parents=True, exist_ok=True)
+        self.temp_state_file = self.temp_root / "reports_state.json"
+        self.temp_dict_file = self.temp_root / "stock_name_dict.json"
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def _make_handler(self, path="/api/reports-state/sync-preview", body=None):
+        handler = server.Handler.__new__(server.Handler)
+        handler.path = path
+        handler._read_json_body = MagicMock(return_value=body if body is not None else {})
+        handler._json = MagicMock()
+        return handler
+
+    def test_sync_preview_rejects_path_parameters(self):
+        """拒絕路徑參數：傳入 incomingPath 或 filePath 必須回傳 400。"""
+        handler = self._make_handler(body={"incomingPath": "C:\\fake\\reports_state.json"})
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file):
+            handler.do_POST()
+
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 400)
+        self.assertFalse(payload.get("ok"))
+        self.assertIn("不接受路徑參數", payload.get("error", ""))
+
+    def test_sync_preview_local_state_missing_returns_404(self):
+        """本機狀態檔缺失時回傳 404。"""
+        valid_incoming = {
+            "version": 1,
+            "updatedAt": "2026-03-30T10:00:00Z",
+            "stocks": {}
+        }
+        handler = self._make_handler(body={"incomingState": valid_incoming})
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file):
+            handler.do_POST()
+
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 404)
+        self.assertFalse(payload.get("ok"))
+
+    def test_sync_preview_local_state_corrupted_returns_422(self):
+        """本機狀態檔損壞時安全失敗回傳 422。"""
+        self.temp_state_file.write_text("invalid json content", encoding="utf-8")
+        valid_incoming = {
+            "version": 1,
+            "updatedAt": "2026-03-30T10:00:00Z",
+            "stocks": {}
+        }
+        handler = self._make_handler(body={"incomingState": valid_incoming})
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file):
+            handler.do_POST()
+
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 422)
+        self.assertFalse(payload.get("ok"))
+
+    def test_sync_preview_incoming_state_corrupted_returns_400_or_422(self):
+        """外來狀態缺失或格式不合法時回傳 400/422。"""
+        local_valid = {
+            "version": 1,
+            "updatedAt": "2026-03-30T10:00:00Z",
+            "stocks": {}
+        }
+        self.temp_state_file.write_text(json.dumps(local_valid), encoding="utf-8")
+
+        # 缺少 incomingState
+        handler = self._make_handler(body={})
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file):
+            handler.do_POST()
+        status, _ = handler._json.call_args[0]
+        self.assertEqual(status, 400)
+
+        # incomingState 結構不合法
+        handler2 = self._make_handler(body={"incomingState": {"version": 1}})
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file):
+            handler2.do_POST()
+        status2, _ = handler2._json.call_args[0]
+        self.assertIn(status2, (400, 422))
+
+    def test_sync_preview_success_and_strictly_read_only(self):
+        """成功情境：純唯讀預覽，且對磁碟狀態檔與 reports/ 檔案庫完全零變更。"""
+        local_state = {
+            "version": 1,
+            "updatedAt": "2026-03-30T10:00:00Z",
+            "stocks": {
+                "2330": {"name": "台積電", "folder": "半導體", "updatedAt": "2026-03-30T10:00:00Z", "deletedAt": None}
+            }
+        }
+        self.temp_state_file.write_text(json.dumps(local_state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+        semi_dir = self.temp_reports_dir / "半導體"
+        semi_dir.mkdir(parents=True, exist_ok=True)
+        (semi_dir / "2330_台積電(TW).html").write_text("html content", encoding="utf-8")
+
+        incoming_state = {
+            "version": 1,
+            "updatedAt": "2026-03-30T11:00:00Z",
+            "stocks": {
+                "2330": {"name": "台積電", "folder": "半導體", "updatedAt": "2026-03-30T10:00:00Z", "deletedAt": None},
+                "2317": {"name": "鴻海", "folder": "電子", "updatedAt": "2026-03-30T11:00:00Z", "deletedAt": None}
+            }
+        }
+
+        # 記錄快照
+        before_snapshot = {}
+        for p in self.temp_root.rglob("*"):
+            if p.is_file():
+                st = p.stat()
+                before_snapshot[p.relative_to(self.temp_root)] = (p.read_bytes(), st.st_size, st.st_mtime_ns)
+
+        handler = self._make_handler(body={"incomingState": incoming_state})
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file):
+            handler.do_POST()
+
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 200)
+        self.assertTrue(payload.get("ok"))
+        self.assertTrue(payload.get("readOnly"))
+        self.assertIn("preview", payload)
+        preview = payload["preview"]
+        self.assertEqual(preview["stateSummary"]["addedFromIncoming"], 1)
+
+        # 驗證完全零修改
+        after_snapshot = {}
+        for p in self.temp_root.rglob("*"):
+            if p.is_file():
+                st = p.stat()
+                after_snapshot[p.relative_to(self.temp_root)] = (p.read_bytes(), st.st_size, st.st_mtime_ns)
+
+        self.assertEqual(set(before_snapshot.keys()), set(after_snapshot.keys()))
+        for rel_path, before_info in before_snapshot.items():
+            after_info = after_snapshot[rel_path]
+            self.assertEqual(before_info[0], after_info[0], f"檔案內容被修改: {rel_path}")
+            self.assertEqual(before_info[1], after_info[1], f"檔案大小被修改: {rel_path}")
+            self.assertEqual(before_info[2], after_info[2], f"檔案修改時間被更動: {rel_path}")
+
+
+class TestSyncApplyAPI(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_root = Path(self.temp_dir.name)
+        self.temp_reports_dir = self.temp_root / "reports"
+        self.temp_reports_dir.mkdir(parents=True, exist_ok=True)
+        self.temp_state_file = self.temp_root / "reports_state.json"
+        self.temp_dict_file = self.temp_root / "stock_name_dict.json"
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def _make_handler(self, path="/api/reports-state/sync-apply", body=None):
+        handler = server.Handler.__new__(server.Handler)
+        handler.path = path
+        handler._read_json_body = MagicMock(return_value=body if body is not None else {})
+        handler._json = MagicMock()
+        return handler
+
+    def test_sync_apply_rejects_path_parameters(self):
+        """拒絕路徑參數：傳入 incomingPath 或 filePath 必須回傳 400。"""
+        handler = self._make_handler(body={"confirm": True, "incomingPath": "C:\\fake\\reports_state.json"})
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file):
+            handler.do_POST()
+
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 400)
+        self.assertFalse(payload.get("ok"))
+        self.assertIn("不接受路徑參數", payload.get("error", ""))
+
+    def test_sync_apply_rejects_missing_confirm(self):
+        """缺少 confirm: true 必須拒絕套用（400）。"""
+        handler = self._make_handler(body={"basis": {"localFingerprint": "abc", "incomingFingerprint": "def"}})
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file):
+            handler.do_POST()
+
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 400)
+        self.assertFalse(payload.get("ok"))
+        self.assertIn("confirm", payload.get("error", ""))
+
+    def test_sync_apply_rejects_missing_or_invalid_basis(self):
+        """缺少 basis 或缺少指紋時必須回傳 400。"""
+        local_state = {"version": 1, "updatedAt": "2026-03-30T10:00:00Z", "stocks": {}}
+        self.temp_state_file.write_text(json.dumps(local_state), encoding="utf-8")
+
+        # 缺少 basis
+        handler = self._make_handler(body={"confirm": True, "incomingState": {"version": 1, "updatedAt": "2026-03-30T10:00:00Z", "stocks": {}}})
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file):
+            handler.do_POST()
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 400)
+
+        # basis 缺少 fingerprint
+        handler2 = self._make_handler(body={
+            "confirm": True,
+            "basis": {"otherKey": "abc"},
+            "incomingState": {"version": 1, "updatedAt": "2026-03-30T10:00:00Z", "stocks": {}}
+        })
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file):
+            handler2.do_POST()
+        status2, _ = handler2._json.call_args[0]
+        self.assertEqual(status2, 400)
+
+    def test_sync_apply_rejects_basis_mismatch(self):
+        """基準指紋不符時必須安全失敗回傳 409 (basis_mismatch)。"""
+        local_state = {
+            "version": 1,
+            "updatedAt": "2026-03-30T10:00:00Z",
+            "stocks": {}
+        }
+        self.temp_state_file.write_text(json.dumps(local_state), encoding="utf-8")
+        incoming_state = {
+            "version": 1,
+            "updatedAt": "2026-03-30T10:00:00Z",
+            "stocks": {}
+        }
+        handler = self._make_handler(body={
+            "confirm": True,
+            "basis": {
+                "fingerprint": "wrong_fingerprint_hash"
+            },
+            "incomingState": incoming_state
+        })
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file):
+            handler.do_POST()
+
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 409)
+        self.assertEqual(payload.get("code"), "basis_mismatch")
+
+    def test_sync_apply_rejects_conflicts_even_if_client_sends_a_choice(self):
+        """存在衝突時一律拒絕；用戶端選邊資料不得繞過人工檔案處理流程。"""
+        local_state = {
+            "version": 1,
+            "updatedAt": "2026-03-30T10:00:00Z",
+            "stocks": {
+                "2330": {"name": "台積電", "folder": "半導體A", "updatedAt": "2026-03-30T10:00:00Z", "deletedAt": None}
+            }
+        }
+        self.temp_state_file.write_text(json.dumps(local_state), encoding="utf-8")
+        incoming_state = {
+            "version": 1,
+            "updatedAt": "2026-03-30T10:00:00Z",
+            "stocks": {
+                "2330": {"name": "台積電", "folder": "半導體B", "updatedAt": "2026-03-30T10:00:00Z", "deletedAt": None}
+            }
+        }
+        basis = reports_state.calculate_sync_preview_basis(
+            self.temp_reports_dir,
+            self.temp_state_file,
+            incoming_state,
+            stock_name_dict={}
+        )
+        handler = self._make_handler(body={
+            "confirm": True,
+            "basis": basis,
+            "incomingState": incoming_state,
+            "conflictResolutions": {"2330": "incoming"}
+        })
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file), \
+             patch.object(server, "STOCK_NAME_DICT", {}):
+            handler.do_POST()
+
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 409)
+        self.assertEqual(payload.get("code"), "unresolved_conflicts")
+        self.assertIn("2330", payload.get("unresolvedCodes", []))
+
+    def test_sync_apply_with_newer_incoming_state_success(self):
+        """無衝突的較新外來狀態可套用，狀態與檔案皆正確更新。"""
+        # 本機在 半導體A 有檔案
+        dir_a = self.temp_reports_dir / "半導體A"
+        dir_a.mkdir(parents=True, exist_ok=True)
+        file_a = dir_a / "2330_台積電(TW).html"
+        file_a.write_text("content 2330", encoding="utf-8")
+
+        local_state = {
+            "version": 1,
+            "updatedAt": "2026-03-30T10:00:00Z",
+            "stocks": {
+                "2330": {"name": "台積電", "folder": "半導體A", "updatedAt": "2026-03-30T10:00:00Z", "deletedAt": None}
+            }
+        }
+        self.temp_state_file.write_text(json.dumps(local_state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+        # incoming 較新，要求改到 半導體B
+        incoming_state = {
+            "version": 1,
+            "updatedAt": "2026-03-30T11:00:00Z",
+            "stocks": {
+                "2330": {"name": "台積電", "folder": "半導體B", "updatedAt": "2026-03-30T11:00:00Z", "deletedAt": None}
+            }
+        }
+
+        basis = reports_state.calculate_sync_preview_basis(
+            self.temp_reports_dir,
+            self.temp_state_file,
+            incoming_state,
+            stock_name_dict={}
+        )
+
+        handler = self._make_handler(body={
+            "confirm": True,
+            "basis": basis,
+            "incomingState": incoming_state
+        })
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file), \
+             patch.object(server, "STOCK_NAME_DICT", {}):
+            handler.do_POST()
+
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 200)
+        self.assertTrue(payload.get("ok"))
+        self.assertTrue(payload.get("applied"))
+
+        # 驗證檔案已搬移到 半導體B
+        dest_file = self.temp_reports_dir / "半導體B" / "2330_台積電(TW).html"
+        self.assertTrue(dest_file.exists())
+        self.assertFalse(file_a.exists())
+
+        # 驗證狀態檔已更新
+        saved_state = json.loads(self.temp_state_file.read_text(encoding="utf-8"))
+        self.assertEqual(saved_state["stocks"]["2330"]["folder"], "半導體B")
+
+    def test_sync_apply_unmanaged_files_preserved(self):
+        """套用同步時，未受管候選檔案絕不會被刪除或異動。"""
+        # 建立未受管檔案
+        unmanaged_file = self.temp_reports_dir / "未分類" / "9999_未知個股(TW).html"
+        unmanaged_file.parent.mkdir(parents=True, exist_ok=True)
+        unmanaged_file.write_text("unmanaged", encoding="utf-8")
+        unmanaged_mtime = unmanaged_file.stat().st_mtime_ns
+
+        local_state = {
+            "version": 1,
+            "updatedAt": "2026-03-30T10:00:00Z",
+            "stocks": {}
+        }
+        self.temp_state_file.write_text(json.dumps(local_state), encoding="utf-8")
+        incoming_state = {
+            "version": 1,
+            "updatedAt": "2026-03-30T11:00:00Z",
+            "stocks": {}
+        }
+        basis = reports_state.calculate_sync_preview_basis(
+            self.temp_reports_dir,
+            self.temp_state_file,
+            incoming_state,
+            stock_name_dict={}
+        )
+
+        handler = self._make_handler(body={
+            "confirm": True,
+            "basis": basis,
+            "incomingState": incoming_state
+        })
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file), \
+             patch.object(server, "STOCK_NAME_DICT", {}):
+            handler.do_POST()
+
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 200)
+        self.assertTrue(unmanaged_file.exists())
+        self.assertEqual(unmanaged_file.stat().st_mtime_ns, unmanaged_mtime)
+
+    def test_sync_apply_rollback_on_failure(self):
+        """套用過程中若拋出例外，必須完整回滾並回傳 500。"""
+        dir_a = self.temp_reports_dir / "半導體A"
+        dir_a.mkdir(parents=True, exist_ok=True)
+        file_a = dir_a / "2330_台積電(TW).html"
+        file_a.write_text("initial content", encoding="utf-8")
+
+        local_state = {
+            "version": 1,
+            "updatedAt": "2026-03-30T10:00:00Z",
+            "stocks": {
+                "2330": {"name": "台積電", "folder": "半導體A", "updatedAt": "2026-03-30T10:00:00Z", "deletedAt": None}
+            }
+        }
+        self.temp_state_file.write_text(json.dumps(local_state), encoding="utf-8")
+        incoming_state = {
+            "version": 1,
+            "updatedAt": "2026-03-30T11:00:00Z",
+            "stocks": {
+                "2330": {"name": "台積電", "folder": "半導體B", "updatedAt": "2026-03-30T11:00:00Z", "deletedAt": None}
+            }
+        }
+        basis = reports_state.calculate_sync_preview_basis(
+            self.temp_reports_dir,
+            self.temp_state_file,
+            incoming_state,
+            stock_name_dict={}
+        )
+
+        handler = self._make_handler(body={
+            "confirm": True,
+            "basis": basis,
+            "incomingState": incoming_state
+        })
+
+        # 模擬 execute_sync_plan_transactional 失敗
+        with patch.object(server, "ROOT_DIR", self.temp_root), \
+             patch.object(server, "REPORTS_DIR", self.temp_reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.temp_state_file), \
+             patch.object(server, "STOCK_NAME_DICT", {}), \
+             patch.object(server.reports_state, "execute_sync_plan_transactional", side_effect=RuntimeError("Disk write failed")):
+            handler.do_POST()
+
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 500)
+        self.assertFalse(payload.get("ok"))
+        self.assertIn("Disk write failed", payload.get("error", ""))
+
+        # 檔案與狀態檔必須完好如初
+        self.assertTrue(file_a.exists())
+        saved_state = json.loads(self.temp_state_file.read_text(encoding="utf-8"))
+        self.assertEqual(saved_state["stocks"]["2330"]["folder"], "半導體A")
+
+
+class TestDuplicateCleanupAPI(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        self.reports_dir = self.root / "reports"
+        self.reports_dir.mkdir()
+        self.folder = self.reports_dir / "散熱"
+        self.folder.mkdir()
+        self.keep_file = self.folder / "3324_雙鴻(TWO).html"
+        self.duplicate_file = self.folder / "3324_雙鴻(TWO)(處置期間0908-0914).html"
+        self.keep_file.write_text("keep", encoding="utf-8")
+        self.duplicate_file.write_text("duplicate", encoding="utf-8")
+        self.state_file = self.root / "reports_state.json"
+        self.quarantine_dir = self.root / ".reports_duplicate_quarantine"
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def _handler(self, path, body=None):
+        handler = server.Handler.__new__(server.Handler)
+        handler.path = path
+        handler._json = MagicMock()
+        handler._read_json_body = MagicMock(return_value=body if body is not None else {})
+        return handler
+
+    def test_preview_is_read_only_and_apply_archives_duplicate(self):
+        handler = self._handler("/api/reports/duplicate-cleanup-preview")
+        with patch.object(server, "ROOT_DIR", self.root), \
+             patch.object(server, "REPORTS_DIR", self.reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.state_file), \
+             patch.object(server, "REPORTS_DUPLICATE_QUARANTINE_DIR", self.quarantine_dir), \
+             patch.object(server, "STOCK_NAME_DICT", {"3324": "雙鴻"}):
+            handler.do_GET()
+
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 200)
+        self.assertTrue(payload["preview"]["isReadOnlyPreview"])
+        self.assertTrue(self.duplicate_file.exists())
+
+        apply_handler = self._handler("/api/reports/duplicate-cleanup-apply", {
+            "confirm": True, "basis": payload["basis"]
+        })
+        with patch.object(server, "ROOT_DIR", self.root), \
+             patch.object(server, "REPORTS_DIR", self.reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.state_file), \
+             patch.object(server, "REPORTS_DUPLICATE_QUARANTINE_DIR", self.quarantine_dir), \
+             patch.object(server, "STOCK_NAME_DICT", {"3324": "雙鴻"}):
+            apply_handler.do_POST()
+
+        status, payload = apply_handler._json.call_args[0]
+        self.assertEqual(status, 200)
+        self.assertTrue(payload["ok"])
+        self.assertFalse(self.duplicate_file.exists())
+        self.assertTrue(self.keep_file.exists())
+        self.assertTrue(self.quarantine_dir.exists())
+
+    def test_apply_rejects_stale_basis(self):
+        handler = self._handler("/api/reports/duplicate-cleanup-apply", {
+            "confirm": True, "basis": {"fingerprint": "stale"}
+        })
+        with patch.object(server, "ROOT_DIR", self.root), \
+             patch.object(server, "REPORTS_DIR", self.reports_dir), \
+             patch.object(server, "REPORTS_STATE_FILE", self.state_file), \
+             patch.object(server, "REPORTS_DUPLICATE_QUARANTINE_DIR", self.quarantine_dir), \
+             patch.object(server, "STOCK_NAME_DICT", {"3324": "雙鴻"}):
+            handler.do_POST()
+
+        status, payload = handler._json.call_args[0]
+        self.assertEqual(status, 409)
+        self.assertEqual(payload["code"], "basis_mismatch")
+        self.assertTrue(self.duplicate_file.exists())
 
 
 if __name__ == "__main__":

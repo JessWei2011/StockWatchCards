@@ -66,6 +66,7 @@
 !llm_manual_handoff.json
 !market_hot_sectors_cache.json
 !scratch_stocks_summary.json
+!reports_state.json
 
 # Ranking history
 !ranking_history/

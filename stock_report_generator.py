@@ -10,6 +10,43 @@ try:
     sys.stderr.reconfigure(encoding="utf-8")
 except Exception:
     pass
+from reports_state import get_report_output_destination
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timedelta
+warnings.filterwarnings("ignore")
+logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
+
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+try:
+    import yfinance as yf
+    import pandas as pd
+    import numpy as np
+    import requests
+    from requests.adapters import HTTPAdapter
+    import matplotlib
+    matplotlib.use("Agg")
+    matplotlib.rcParams["font.sans-serif"] = ["Microsoft JhengHei", "Microsoft YaHei", "SimHei"]
+    matplotlib.rcParams["axes.unicode_minus"] = False
+    import matplotlib.pyplot as plt
+    import mplfinance as mpf
+except ImportError as e:
+    print(f"❌ 缺少套件: {e}")
+    print("請執行: pip install yfinance pandas numpy requests urllib3 matplotlib mplfinance")
+    input("按 Enter 鍵結束…")
+    sys.exit(1)
+
+# 全域連線池 Session（複用 TCP 連線，減少連線延遲與記憶體開銷）
+_session = requests.Session()
+_adapter = HTTPAdapter(pool_connections=32, pool_maxsize=32, max_retries=2)
+_session.mount("https://", _adapter)
+_session.mount("http://", _adapter)
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "Referer": "https://www.twse.com.tw/",
+}
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 warnings.filterwarnings("ignore")
@@ -53,6 +90,7 @@ KLINE_DISPLAY_DAYS = 180  # K線顯示天數（約36週，完整支援 MA5/10/20
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cache")
 HOLDERS_MARKET_CACHE = os.path.join(CACHE_DIR, "holders_market.csv")
 REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
+STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports_state.json")
 TODAY_NEW_STOCKS_FILE = os.path.join(CACHE_DIR, "today_new_stocks.json")
 HOLDERS_WEEKS = 8  # 大戶持股比例趨勢顯示週數
 HOLDERS_BACKFILL_WEEKS = 3  # 快取不足時，額外回補的過去週數(一次性，補齊後不再重複查詢)
@@ -91,14 +129,35 @@ def record_today_new_stock(sid):
         pass
 
 
-
 def find_existing_report_dir(sid, name=""):
     """在整個 reports/ (含用 reports_manager 手動分類過的子資料夾)裡找這檔股票現有報表
-    1. 若已存在於某個分類子資料夾（非根目錄），優先存回原本該子資料夾（尊重既有分類歸檔）。
-    2. 若是全新股票，或過去僅散落在 reports/ 根目錄（未分類）：
-       透過 AI 自動產業分類引擎 (classify_stock) 判定標準產業分類（例如 '封測'、'金融保險'、'記憶體'、'散熱' 等），
-       自動在 reports/ 下建立該標準分類子資料夾並存入，達到 100% 全自動實體歸檔！
+    安全優先序（依據授權 007 階段 3D 規範）：
+    1. 狀態檔整合：
+       - 若狀態檔損壞、格式不合法、為資料夾或符號連結：安全失敗拋出例外，不得退回 mtime 推測。
+       - 若個股在狀態檔為 tombstone：安全失敗拋出例外，安全拒絕輸出以防舊檔復活。
+       - 若個股在狀態檔為 active：強制輸出至狀態檔指定之 folder（reports/<folder>），不可依舊檔 mtime 任意挑選。
+       - 若個股未受狀態檔管理：固定輸出至 reports/ 根目錄，不猜測 mtime，並輸出日誌提示「待納入後續同步整理」。
+       - 若狀態檔不存在：保持既有路徑判定行為（舊有歷史檔案/AI分類）。
+    2. 既有行為（僅在無狀態檔時生效）：
+       - 若現有報表已在子資料夾，存回該子資料夾。
+       - 全新股票或根目錄未分類股票：啟動 AI 自動產業分類歸檔。
     """
+    dest = get_report_output_destination(sid, REPORTS_DIR, STATE_FILE)
+    status = dest["status"]
+
+    if status == "invalid_state_file":
+        raise ValueError(f"狀態檔損壞或異常 ({STATE_FILE}): {dest.get('error')}，安全拒絕推測路徑")
+    if status == "tombstone":
+        raise ValueError(f"個股 {sid} 在狀態檔中已標記為刪除 (Tombstone, deletedAt: {dest.get('deletedAt')})，安全拒絕生成以防復活")
+    if status == "active":
+        target_dir = dest["target_dir"]
+        os.makedirs(target_dir, exist_ok=True)
+        return str(target_dir)
+    if status == "unmanaged":
+        print(f" ℹ️ 個股 {sid} 尚未受狀態檔管理，固定輸出至 reports/ 根目錄 (待納入後續同步整理)")
+        return str(dest["target_dir"])
+
+    # status == "no_state_file"：保持既有行為
     matches = glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*.html"), recursive=True)
     if matches:
         matches.sort(key=os.path.getmtime, reverse=True)
@@ -120,9 +179,30 @@ def find_existing_report_dir(sid, name=""):
 
     return REPORTS_DIR
 
+
+def cleanup_stale_report_variants(sid, output_file, preserve_existing=False):
+    """清理舊版產生器遺留檔；受狀態檔管理時必須保留所有既有變體。"""
+    if preserve_existing:
+        print(f" ℹ️ 個股 {sid} 受狀態檔管理，保留既有報表變體與其他資料夾副本供同步整理")
+        return
+
+    for old_path in glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*.html"), recursive=True) + \
+                    glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*_chart.png"), recursive=True):
+        if os.path.abspath(old_path) != os.path.abspath(output_file):
+            try:
+                os.remove(old_path)
+                print(f" 🗑 移除舊檔: {os.path.relpath(old_path, REPORTS_DIR)}")
+            except OSError:
+                pass
+
+
 def auto_organize_unfiled_reports():
     """自動掃描 reports/ 根目錄下所有未分類的報表（.html、.png、.md），
     透過 AI 自動分類判定器自動建立標準資料夾並歸檔移入。"""
+    if os.path.exists(STATE_FILE):
+        # 存在狀態檔時，未受管理個股固定留在 reports/ 根目錄待後續同步整理，禁止自動搬移
+        return 0
+
     root_htmls = [f for f in Path(REPORTS_DIR).glob("*.html") if f.is_file()]
     if not root_htmls:
         return 0
@@ -1118,6 +1198,15 @@ def run(ticker_input):
         print(f" ✅ {code} {matched_name}")
         sid = code
 
+    # 狀態檔安全守衛（授權 007 階段 3D 規範）：
+    dest = get_report_output_destination(sid, REPORTS_DIR, STATE_FILE)
+    if dest["status"] == "invalid_state_file":
+        print(f" ❌ 失敗: 狀態檔損壞或異常 ({STATE_FILE}): {dest.get('error')}，安全終止輸出。\n")
+        return False
+    if dest["status"] == "tombstone":
+        print(f" ❌ 失敗: 個股 {sid} 在狀態檔中已被標記為刪除 (Tombstone)，安全拒絕生成以防舊檔復活。\n")
+        return False
+
     dates = trading_dates(DAYS_LOOKBACK * 2)
     cache = load_cache(sid)
     lines = []
@@ -1392,15 +1481,8 @@ def run(ticker_input):
     existing_reports = glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*.html"), recursive=True)
     is_brand_new = len(existing_reports) == 0
 
-    # 出關/名稱變動時清掉這檔股票在 reports/ 裡的舊檔名殘留，並順便清理舊 _chart.png
-    for old_path in glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*.html"), recursive=True) + \
-                     glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*_chart.png"), recursive=True):
-        if os.path.abspath(old_path) != os.path.abspath(fname):
-            try:
-                os.remove(old_path)
-                print(f" 🗑 移除舊檔: {os.path.relpath(old_path, REPORTS_DIR)}")
-            except OSError:
-                pass
+    # 有合法狀態檔時，歷史版本與跨資料夾副本須留給同步預覽處理；不可由產生器靜默刪除。
+    cleanup_stale_report_variants(sid, fname, preserve_existing=(dest["status"] != "no_state_file"))
 
     html = build_html(
         sid, name, dispo, info, df, ma5, ma10, ma20, ma60, ri, mc, ms, mh, K, D, J, bu, bm, bl, inst, mg,

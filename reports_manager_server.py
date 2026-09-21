@@ -30,6 +30,7 @@ from pathlib import Path
 from socketserver import ThreadingTCPServer
 from urllib.parse import urlparse, parse_qs, quote
 import requests
+import reports_state
 
 if sys.stdout.encoding != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
@@ -37,11 +38,14 @@ if sys.stdout.encoding != "utf-8":
 
 ROOT_DIR = Path(__file__).resolve().parent
 REPORTS_DIR = ROOT_DIR / "reports"
+REPORTS_TEMP_DIR = ROOT_DIR / ".reports_temp"
+REPORTS_DUPLICATE_QUARANTINE_DIR = ROOT_DIR / ".reports_duplicate_quarantine"
 EVOLUTION_RANKING_FILE = ROOT_DIR / "stock_winrate_ranking_evolution.md"
 INSTITUTIONAL_STRATEGY_RANKING_FILE = ROOT_DIR / "institutional_chip_strategy_ranking.md"
 AI_RESEARCH_CARDS_FILE = ROOT_DIR / "ai_research_cards.json"
 AI_RESEARCH_TEMP_FILE = ROOT_DIR / "ai_research_cards.tmp"
 WATCHLIST_FILE = ROOT_DIR / "watchlist.json"
+REPORTS_STATE_FILE = ROOT_DIR / "reports_state.json"
 MACRO_DIR = ROOT_DIR / "指標數據"
 MACRO_DATA_FILE = MACRO_DIR / "macro_data.json"
 MACRO_STATUS_FILE = MACRO_DIR / "macro_update_status.json"
@@ -299,6 +303,48 @@ def get_stock_name(code, default=None):
         return default
     return STOCK_NAME_DICT.get(str(code), default)
 
+
+REPORTS_STATE_LOCK = threading.RLock()
+
+def get_reports_state_if_exists():
+    with REPORTS_STATE_LOCK:
+        if not REPORTS_STATE_FILE.is_file():
+            return None
+        return reports_state.load_state(REPORTS_STATE_FILE)
+
+def save_reports_state_atomic(state):
+    with REPORTS_STATE_LOCK:
+        reports_state.save_state(state, REPORTS_STATE_FILE)
+
+def collect_stock_group_files(dir_path: Path, code: str = None, base: str = None) -> list[Path]:
+    files_map = {}
+    if base:
+        h = dir_path / f"{base}.html"
+        c = dir_path / f"{base}_chart.png"
+        if h.is_file(): files_map[h.name] = h
+        if c.is_file(): files_map[c.name] = c
+    if not code and base:
+        m = TRACKED_FILENAME_RE.match(base + ".html")
+        if m:
+            code = m.group(1)
+        else:
+            parts = base.split("_")
+            if parts and 2 <= len(parts[0]) <= 6:
+                code = parts[0]
+    if code:
+        code_upper = code.upper()
+        for f in dir_path.iterdir():
+            if not f.is_file():
+                continue
+            name = f.name
+            if name.startswith("._") or name == ".DS_Store" or name.endswith(".tmp"):
+                continue
+            lower = name.lower()
+            if not (lower.endswith(".html") or lower.endswith(".md") or lower.endswith("_chart.png")):
+                continue
+            if name.startswith(f"{code}_") or name.startswith(f"{code_upper}_"):
+                files_map[name] = f
+    return list(files_map.values())
 
 def report_type_for(code, market):
     """市場指數報表和個股共用報表樹，但前端需避免套用個股籌碼／技術欄位。"""
@@ -594,7 +640,7 @@ def parse_md_report_card(md_path):
     m_price = re.search(r'當前價格[】\]\s\*]*[：:]\s*([0-9.]+)', text)
     m_stop = re.search(r'【停損位】\s*[：:]\s*[^0-9]*([0-9.]+)', text)
     m_target = re.search(r'【目標價】\s*[：:]\s*[^0-9]*([0-9.]+)', text)
-    
+
     m_tech = re.search(r'技術標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text)
     m_kline = re.search(r'K線\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text, re.I)
     m_vol = re.search(r'VOL\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text, re.I) or re.search(r'量能標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text, re.I)
@@ -602,7 +648,7 @@ def parse_md_report_card(md_path):
     m_rsi = re.search(r'RSI\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text, re.I)
     m_macd = re.search(r'MACD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text, re.I)
     m_kd = re.search(r'KD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)', text, re.I)
-    
+
     code = m_code.group(1).strip() if m_code else ""
     if not code:
         fname = md_path.stem
@@ -612,7 +658,7 @@ def parse_md_report_card(md_path):
         parts = md_path.stem.split('_')
         if len(parts) >= 2:
             name = parts[1]
-            
+
     pattern = m_pat.group(1).strip() if m_pat else "多頭排列階梯推升"
     win_str = m_win.group(1).replace('%', '').strip() if m_win else "70"
     try:
@@ -681,7 +727,7 @@ def read_stock_cards():
     by_code = {}
     if not REPORTS_DIR.is_dir():
         return by_code
-        
+
     for md_path in REPORTS_DIR.glob("**/*_4階段技術分析報告.md"):
         card = parse_md_report_card(md_path)
         if card and card.get("code"):
@@ -753,54 +799,108 @@ def build_tree(path=None):
 def list_folder(path):
     folders = []
     reports = []
-    seen_bases = set()
     try:
         entries = sorted(os.listdir(path), key=str.lower)
     except FileNotFoundError:
         return folders, reports
 
+    # 讀取現有狀態檔（若有）
+    current_state = get_reports_state_if_exists()
+    state_stocks = current_state.get("stocks", {}) if current_state else {}
+
+    # 先收集資料夾與 HTML 檔案
+    html_entries = []
     for entry in entries:
-        # macOS 會在外接磁碟或非 APFS 檔案系統產生 AppleDouble 中繼檔（._*）。
-        # 這些不是使用者的報表，不應出現在管理清單。
         if entry.startswith("._") or entry == ".DS_Store":
             continue
         full = path / entry
         if full.is_dir():
             folders.append(entry)
         elif entry.lower().endswith(".html"):
-            base = entry[:-5]
-            if base in seen_bases:
-                continue
-            seen_bases.add(base)
-            chart_name = base + "_chart.png"
-            m = TRACKED_FILENAME_RE.match(entry)
-            code = m.group(1) if m else None
-            if not code:
-                parts = base.split("_")
-                if parts and 2 <= len(parts[0]) <= 6:
-                    code = parts[0]
-            name = get_stock_name(code, m.group(2)) if (m and code) else (m.group(2) if m else None)
-            market = m.group(3) if m else ("TWO" if "(TWO)" in entry else "TW")
-            md_name = None
-            if code:
-                md_matches = list(path.glob(f"{code}_*.md"))
-                if md_matches:
-                    md_name = md_matches[0].name
-            stat_info = full.stat()
-            reports.append({
-                "base": base,
-                "code": code,
-                "name": name,
-                "market": market,
-                "html": entry,
-                "chart": chart_name if (path / chart_name).exists() else None,
-                "md": md_name,
-                "hasMd": bool(md_name),
-                "mtime": stat_info.st_mtime,
-                "size": stat_info.st_size,
-                "reportType": report_type_for(code, market),
-            })
+            html_entries.append(entry)
+
+    # 按個股代號歸納檔案
+    grouped_by_code = {}
+    for entry in html_entries:
+        base = entry[:-5]
+        m = TRACKED_FILENAME_RE.match(entry)
+        code = m.group(1) if m else None
+        raw_name = m.group(2) if m else None
+        market = m.group(3) if m else ("TWO" if "(TWO)" in entry else "TW")
+        if not code:
+            parts = base.split("_")
+            if parts and 2 <= len(parts[0]) <= 6:
+                code = parts[0]
+                if len(parts) > 1:
+                    raw_name = parts[1]
+
+        c_key = code.upper() if code else f"_NOCODE_{base}"
+        if c_key not in grouped_by_code:
+            grouped_by_code[c_key] = []
+        grouped_by_code[c_key].append({
+            "entry": entry,
+            "base": base,
+            "code": code,
+            "raw_name": raw_name,
+            "market": market,
+            "stat": (path / entry).stat(),
+        })
+
+    for c_key, items in grouped_by_code.items():
+        # 按 mtime 最新者作為主顯示報表
+        items.sort(key=lambda it: it["stat"].st_mtime, reverse=True)
+        primary = items[0]
+        code = primary["code"]
+        base = primary["base"]
+        market = primary["market"]
+        stat_info = primary["stat"]
+
+        # 名稱優先序：1. 狀態檔名稱 2. stock_name_dict.json 3. 檔名名稱
+        stock_rec = state_stocks.get(code) if code else None
+        is_tombstone = bool(stock_rec and stock_rec.get("deletedAt") is not None)
+        has_multiple_htmls = len(items) > 1
+        needs_review = has_multiple_htmls or is_tombstone
+
+        if stock_rec and stock_rec.get("name"):
+            name = stock_rec["name"]
+        elif code:
+            name = get_stock_name(code, primary["raw_name"])
+        else:
+            name = primary["raw_name"] or base
+
+        md_name = None
+        if code:
+            md_matches = list(path.glob(f"{code}_*.md"))
+            if md_matches:
+                md_name = md_matches[0].name
+
+        chart_name = base + "_chart.png"
+        has_chart = (path / chart_name).exists()
+        if not has_chart and code:
+            chart_matches = list(path.glob(f"{code}_*_chart.png"))
+            if chart_matches:
+                chart_name = chart_matches[0].name
+                has_chart = True
+
+        reports.append({
+            "base": base,
+            "code": code,
+            "name": name,
+            "market": market,
+            "html": primary["entry"],
+            "chart": chart_name if has_chart else None,
+            "md": md_name,
+            "hasMd": bool(md_name),
+            "mtime": stat_info.st_mtime,
+            "size": stat_info.st_size,
+            "reportType": report_type_for(code, market),
+            "needsReview": needs_review,
+            "isTombstone": is_tombstone,
+            "htmlVariantsCount": len(items),
+        })
+
     return folders, reports
+
 
 
 def list_reports_recursive(path):
@@ -2229,6 +2329,89 @@ class Handler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/new-stocks-today":
             self._json(200, {"ok": True, **read_today_new_stocks()})
             return
+        if parsed.path == "/api/reports-state/init-preview":
+            state = None
+            has_existing_state = False
+            state_file_path = "reports_state.json"
+
+            with REPORTS_STATE_LOCK:
+                if REPORTS_STATE_FILE.is_symlink():
+                    self._json(422, {
+                        "ok": False,
+                        "error": "狀態檔路徑為符號連結",
+                        "corrupted": True,
+                    })
+                    return
+                if REPORTS_STATE_FILE.exists():
+                    if not REPORTS_STATE_FILE.is_file():
+                        self._json(422, {
+                            "ok": False,
+                            "error": "狀態檔路徑不是一般檔案",
+                            "corrupted": True,
+                        })
+                        return
+                    has_existing_state = True
+                    try:
+                        state = reports_state.load_state(REPORTS_STATE_FILE)
+                    except Exception as err:
+                        safe_err = str(err).replace(str(REPORTS_STATE_FILE.resolve()), state_file_path)
+                        safe_err = safe_err.replace(str(REPORTS_STATE_FILE), state_file_path)
+                        if str(ROOT_DIR.resolve()) in safe_err:
+                            safe_err = safe_err.replace(str(ROOT_DIR.resolve()), "")
+                        if str(ROOT_DIR) in safe_err:
+                            safe_err = safe_err.replace(str(ROOT_DIR), "")
+                        self._json(422, {
+                            "ok": False,
+                            "error": f"狀態檔損壞或格式不合法: {safe_err}",
+                            "corrupted": True,
+                        })
+                        return
+
+            try:
+                preview = reports_state.generate_initial_state_preview(
+                    REPORTS_DIR,
+                    existing_state=state,
+                    stock_name_dict=STOCK_NAME_DICT,
+                )
+                basis = reports_state.calculate_preview_basis(
+                    REPORTS_DIR,
+                    REPORTS_STATE_FILE,
+                    stock_name_dict=STOCK_NAME_DICT,
+                )
+            except Exception as e:
+                self._json(500, {"ok": False, "error": f"產生初始化預覽失敗: {e}"})
+                return
+
+            response_payload = {
+                "ok": True,
+                "hasExistingState": has_existing_state,
+                "stateFilePath": state_file_path,
+                "basis": basis,
+                "preview": preview,
+            }
+            if has_existing_state and state is not None:
+                response_payload["existingStateVersion"] = state.get("version", 1)
+                response_payload["existingStateUpdatedAt"] = state.get("updatedAt", "")
+                response_payload["existingStockCount"] = len(state.get("stocks", {}))
+
+            self._json(200, response_payload)
+            return
+        if parsed.path == "/api/reports/duplicate-cleanup-preview":
+            try:
+                preview = reports_state.generate_duplicate_cleanup_preview(
+                    REPORTS_DIR,
+                    stock_name_dict=STOCK_NAME_DICT,
+                )
+                basis = reports_state.calculate_preview_basis(
+                    REPORTS_DIR,
+                    REPORTS_STATE_FILE,
+                    stock_name_dict=STOCK_NAME_DICT,
+                )
+            except Exception as error:
+                self._json(500, {"ok": False, "error": f"產生重複檔整理預覽失敗: {error}"})
+                return
+            self._json(200, {"ok": True, "preview": preview, "basis": basis})
+            return
         if parsed.path == "/api/tree":
             self._json(200, {"ok": True, "tree": build_tree()})
             return
@@ -2439,6 +2622,489 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urlparse(self.path)
+
+        if parsed.path == "/api/reports/duplicate-cleanup-apply":
+            try:
+                body = self._read_json_body()
+            except Exception:
+                self._json(400, {"ok": False, "error": "無效的 JSON 請求內容"})
+                return
+            if body.get("confirm") is not True:
+                self._json(400, {"ok": False, "error": "缺少明確的使用者確認標記 (confirm: true)"})
+                return
+            client_basis = body.get("basis")
+            if not isinstance(client_basis, dict) or not client_basis.get("fingerprint"):
+                self._json(400, {"ok": False, "error": "缺少或無效的預覽基準資料"})
+                return
+
+            with REPORTS_STATE_LOCK:
+                current_basis = reports_state.calculate_preview_basis(
+                    REPORTS_DIR,
+                    REPORTS_STATE_FILE,
+                    stock_name_dict=STOCK_NAME_DICT,
+                )
+                if client_basis.get("fingerprint") != current_basis["fingerprint"]:
+                    self._json(409, {
+                        "ok": False,
+                        "code": "basis_mismatch",
+                        "error": "檔案系統或狀態基準已變更，請重新預覽後再確認整理",
+                    })
+                    return
+                preview = reports_state.generate_duplicate_cleanup_preview(
+                    REPORTS_DIR,
+                    stock_name_dict=STOCK_NAME_DICT,
+                )
+                candidates = preview.get("candidates", [])
+                if not candidates:
+                    self._json(409, {"ok": False, "code": "no_candidates", "error": "目前沒有可安全隔離的同資料夾重複 HTML"})
+                    return
+                try:
+                    result = reports_state.archive_duplicate_variants_transactional(
+                        REPORTS_DIR,
+                        candidates,
+                        REPORTS_DUPLICATE_QUARANTINE_DIR,
+                    )
+                except Exception as error:
+                    self._json(500, {"ok": False, "error": f"隔離重複檔失敗，已嘗試回滾: {error}"})
+                    return
+
+            invalidate_all_caches()
+            session = result.get("session")
+            try:
+                session_path = str(session.relative_to(ROOT_DIR)) if session else None
+            except ValueError:
+                session_path = None
+            self._json(200, {
+                "ok": True,
+                "archivedCount": result.get("archivedCount", 0),
+                "archivedGroups": len(candidates),
+                "quarantinePath": session_path,
+                "message": "重複檔已移至可復原隔離區，尚未永久刪除",
+            })
+            return
+
+        if parsed.path == "/api/reports-state/init-apply":
+            try:
+                body = self._read_json_body()
+            except Exception:
+                self._json(400, {"ok": False, "error": "無效的 JSON 請求內容"})
+                return
+
+            if body.get("confirm") is not True:
+                self._json(400, {
+                    "ok": False,
+                    "error": "缺少明確的使用者確認標記 (confirm: true)",
+                    "errorType": "missing_confirm",
+                })
+                return
+
+            client_basis = body.get("basis")
+            if not isinstance(client_basis, dict):
+                self._json(400, {
+                    "ok": False,
+                    "error": "缺少或無效的預覽基準資料 (basis)",
+                    "errorType": "invalid_basis",
+                })
+                return
+
+            with REPORTS_STATE_LOCK:
+                # 1. 安全路徑與既有檔案檢查（首次建立絕不覆寫）
+                if REPORTS_STATE_FILE.is_symlink():
+                    self._json(422, {
+                        "ok": False,
+                        "error": "狀態檔路徑為符號連結",
+                        "corrupted": True,
+                    })
+                    return
+                if REPORTS_STATE_FILE.exists():
+                    if not REPORTS_STATE_FILE.is_file():
+                        self._json(422, {
+                            "ok": False,
+                            "error": "狀態檔路徑不是一般檔案",
+                            "corrupted": True,
+                        })
+                        return
+                    self._json(409, {
+                        "ok": False,
+                        "error": "reports_state.json 已經存在，首次建立 API 不得覆寫既有狀態",
+                        "conflictType": "state_file_already_exists",
+                    })
+                    return
+
+                # 2. 重新計算當前基準並嚴格比對
+                current_basis = reports_state.calculate_preview_basis(
+                    REPORTS_DIR,
+                    REPORTS_STATE_FILE,
+                    stock_name_dict=STOCK_NAME_DICT,
+                )
+                if (client_basis.get("fingerprint") != current_basis["fingerprint"] or
+                    client_basis.get("reportsHash") != current_basis["reportsHash"] or
+                    client_basis.get("stateFileStatus") != current_basis["stateFileStatus"] or
+                    client_basis.get("nameDictHash") != current_basis["nameDictHash"]):
+                    self._json(409, {
+                        "ok": False,
+                        "error": "檔案系統或狀態基準已於預覽後發生變更，請重新整理預覽後再確認",
+                        "conflictType": "basis_mismatch",
+                        "expectedFingerprint": client_basis.get("fingerprint"),
+                        "currentFingerprint": current_basis["fingerprint"],
+                    })
+                    return
+
+                # 3. 伺服器端自行重新唯讀掃描，絕不信任前端資料
+                preview = reports_state.generate_initial_state_preview(
+                    REPORTS_DIR,
+                    existing_state=None,
+                    stock_name_dict=STOCK_NAME_DICT,
+                )
+                if preview.get("conflicts"):
+                    self._json(409, {
+                        "ok": False,
+                        "error": f"目前掃描存在未解決的衝突 (共 {len(preview['conflicts'])} 筆)，首次建立必須為零衝突；請先在檔案總管手動整理後再預覽",
+                        "conflictType": "unresolved_conflicts",
+                        "conflicts": preview["conflicts"],
+                    })
+                    return
+
+                # 4. 英文正式名稱僅為提示，不阻擋建立；例如 AES-KY 等本來
+                # 就沒有常用中文名稱的標的，必須能安全納入狀態檔。
+
+                # 5. 排他原子建立
+                proposed_state = preview["proposedState"]
+                try:
+                    reports_state.create_initial_state_exclusive(proposed_state, REPORTS_STATE_FILE)
+                except FileExistsError:
+                    self._json(409, {
+                        "ok": False,
+                        "error": "reports_state.json 已經存在，首次建立 API 不得覆寫既有狀態",
+                        "conflictType": "state_file_already_exists",
+                    })
+                    return
+                except ValueError as ve:
+                    self._json(422, {
+                        "ok": False,
+                        "error": str(ve),
+                        "corrupted": True,
+                    })
+                    return
+                except Exception as e:
+                    self._json(500, {
+                        "ok": False,
+                        "error": f"建立初始狀態主檔失敗: {e}",
+                    })
+                    return
+
+                invalidate_all_caches()
+                self._json(200, {
+                    "ok": True,
+                    "message": "已成功建立初始狀態主檔 reports_state.json",
+                    "stateFilePath": "reports_state.json",
+                    "stockCount": len(proposed_state.get("stocks", {})),
+                    "writtenAt": proposed_state.get("updatedAt", ""),
+                })
+                return
+
+        if parsed.path == "/api/reports-state/fix-stock-name":
+            try:
+                body = self._read_json_body()
+                code = str(body.get("code") or body.get("stock_id") or "").strip()
+                chinese_name = str(body.get("chineseName") or body.get("name") or "").strip()
+
+                if not code or not chinese_name:
+                    self._json(400, {"ok": False, "error": "必須提供股票代號 (code) 與中文名稱 (chineseName)"})
+                    return
+
+                try:
+                    updated_dict = reports_state.update_stock_name_dict_entry(
+                        STOCK_NAME_DICT_PATH,
+                        code=code,
+                        chinese_name=chinese_name,
+                    )
+                except ValueError as ve:
+                    err_msg = str(ve)
+                    if "不可為符號連結" in err_msg or "不可為資料夾" in err_msg or "損壞" in err_msg:
+                        self._json(422, {"ok": False, "error": err_msg})
+                    else:
+                        self._json(400, {"ok": False, "error": err_msg})
+                    return
+                except Exception as e:
+                    self._json(500, {"ok": False, "error": f"更新名稱字典失敗: {e}"})
+                    return
+
+                reload_stock_name_dict()
+                invalidate_all_caches()
+                self._json(200, {
+                    "ok": True,
+                    "code": code.upper(),
+                    "chineseName": chinese_name,
+                    "updatedDictCount": len(updated_dict),
+                })
+                return
+            except Exception as ex:
+                self._json(400, {"ok": False, "error": f"不合法的請求內容: {ex}"})
+                return
+
+        if parsed.path == "/api/reports-state/sync-preview":
+            try:
+                body = self._read_json_body()
+                # 拒絕任何伺服器檔案路徑參數，只接受記憶體 JSON 物件
+                for forbidden_key in ("path", "filePath", "file_path", "filename", "statePath", "incomingPath"):
+                    if forbidden_key in body:
+                        self._json(400, {
+                            "ok": False,
+                            "error": "本端點僅接受記憶體 JSON 物件 (incomingState)，拒絕接受伺服器檔案路徑參數 (不接受路徑參數)",
+                        })
+                        return
+
+                incoming_state = body.get("incomingState")
+                if not isinstance(incoming_state, dict):
+                    self._json(400, {
+                        "ok": False,
+                        "error": "缺少或無效的 incomingState 物件",
+                    })
+                    return
+
+                try:
+                    reports_state.validate_state(incoming_state)
+                except ValueError as ve:
+                    self._json(422, {
+                        "ok": False,
+                        "error": f"外來狀態檔結構損壞或不合法: {ve}",
+                        "corrupted": True,
+                    })
+                    return
+
+                # 檢查本機狀態檔
+                if REPORTS_STATE_FILE.is_symlink():
+                    self._json(422, {
+                        "ok": False,
+                        "error": "本機狀態檔為符號連結 (symlink)，安全失敗",
+                        "corrupted": True,
+                    })
+                    return
+
+                if REPORTS_STATE_FILE.is_dir():
+                    self._json(422, {
+                        "ok": False,
+                        "error": "本機狀態檔路徑為資料夾，安全失敗",
+                        "corrupted": True,
+                    })
+                    return
+
+                if not REPORTS_STATE_FILE.exists():
+                    self._json(404, {
+                        "ok": False,
+                        "error": "本機狀態檔 reports_state.json 尚未初始化，無法進行跨電腦合併預覽",
+                    })
+                    return
+
+                try:
+                    local_raw = REPORTS_STATE_FILE.read_text(encoding="utf-8")
+                    local_state = json.loads(local_raw)
+                    reports_state.validate_state(local_state)
+                except Exception as e:
+                    self._json(422, {
+                        "ok": False,
+                        "error": f"本機狀態檔損壞或格式不合法: {e}",
+                        "corrupted": True,
+                    })
+                    return
+
+                # 產生純唯讀預覽
+                preview = reports_state.generate_sync_preview(
+                    local_state,
+                    incoming_state,
+                    REPORTS_DIR,
+                    stock_name_dict=STOCK_NAME_DICT,
+                )
+                basis = reports_state.calculate_sync_preview_basis(
+                    REPORTS_DIR,
+                    REPORTS_STATE_FILE,
+                    incoming_state,
+                    stock_name_dict=STOCK_NAME_DICT,
+                )
+
+                self._json(200, {
+                    "ok": True,
+                    "readOnly": True,
+                    "preview": preview,
+                    "mergedState": preview["mergedState"],
+                    "stateChanges": preview["stateChanges"],
+                    "fileActions": preview["fileActions"],
+                    "conflicts": preview["conflicts"],
+                    "warnings": preview["warnings"],
+                    "itemDecisions": preview["itemDecisions"],
+                    "basis": basis,
+                    "isReadOnlyPreview": True,
+                })
+                return
+            except Exception as ex:
+                self._json(500, {"ok": False, "error": f"產生同步整理預覽失敗: {ex}"})
+                return
+
+        if parsed.path == "/api/reports-state/sync-apply":
+            try:
+                body = self._read_json_body()
+            except Exception:
+                self._json(400, {"ok": False, "error": "無效的 JSON 請求內容"})
+                return
+
+            # 1. 拒絕路徑參數
+            for forbidden_key in ("path", "filePath", "file_path", "filename", "statePath", "incomingPath"):
+                if forbidden_key in body:
+                    self._json(400, {
+                        "ok": False,
+                        "error": "本端點僅接受記憶體 JSON 物件 (incomingState)，拒絕接受伺服器檔案路徑參數 (不接受路徑參數)",
+                    })
+                    return
+
+            # 2. 驗證確認標記
+            if body.get("confirm") is not True:
+                self._json(400, {
+                    "ok": False,
+                    "error": "缺少明確的使用者確認標記 (confirm: true)",
+                    "errorType": "missing_confirm",
+                })
+                return
+
+            # 3. 驗證基準與外來狀態
+            client_basis = body.get("basis")
+            if not isinstance(client_basis, dict) or not client_basis.get("fingerprint"):
+                self._json(400, {
+                    "ok": False,
+                    "error": "缺少或無效的預覽基準資料 (basis.fingerprint)",
+                    "errorType": "invalid_basis",
+                })
+                return
+
+            incoming_state = body.get("incomingState")
+            if not isinstance(incoming_state, dict):
+                self._json(400, {
+                    "ok": False,
+                    "error": "缺少或無效的 incomingState 物件",
+                })
+                return
+
+            try:
+                reports_state.validate_state(incoming_state)
+            except ValueError as ve:
+                self._json(422, {
+                    "ok": False,
+                    "error": f"外來狀態檔結構損壞或不合法: {ve}",
+                    "corrupted": True,
+                })
+                return
+
+            with REPORTS_STATE_LOCK:
+                # 4. 檢查本機狀態檔
+                if REPORTS_STATE_FILE.is_symlink():
+                    self._json(422, {
+                        "ok": False,
+                        "error": "本機狀態檔為符號連結 (symlink)，安全失敗",
+                        "corrupted": True,
+                    })
+                    return
+
+                if REPORTS_STATE_FILE.is_dir():
+                    self._json(422, {
+                        "ok": False,
+                        "error": "本機狀態檔路徑為資料夾，安全失敗",
+                        "corrupted": True,
+                    })
+                    return
+
+                if not REPORTS_STATE_FILE.exists():
+                    self._json(404, {
+                        "ok": False,
+                        "error": "本機狀態檔 reports_state.json 尚未初始化，無法套用跨電腦同步",
+                    })
+                    return
+
+                try:
+                    local_raw = REPORTS_STATE_FILE.read_text(encoding="utf-8")
+                    local_state = json.loads(local_raw)
+                    reports_state.validate_state(local_state)
+                except Exception as e:
+                    self._json(422, {
+                        "ok": False,
+                        "error": f"本機狀態檔損壞或格式不合法: {e}",
+                        "corrupted": True,
+                    })
+                    return
+
+                # 5. 重新計算基準指紋並嚴格比對
+                current_basis = reports_state.calculate_sync_preview_basis(
+                    REPORTS_DIR,
+                    REPORTS_STATE_FILE,
+                    incoming_state,
+                    stock_name_dict=STOCK_NAME_DICT,
+                )
+                if client_basis.get("fingerprint") != current_basis["fingerprint"]:
+                    self._json(409, {
+                        "ok": False,
+                        "error": "檔案系統或狀態基準已於預覽後發生變更，請重新預覽後再確認套用",
+                        "conflictType": "basis_mismatch",
+                        "code": "basis_mismatch",
+                        "expectedFingerprint": client_basis.get("fingerprint"),
+                        "currentFingerprint": current_basis["fingerprint"],
+                    })
+                    return
+
+                # 6. 合併狀態與衝突檢查。同步套用不能代替人工裁決；
+                # 衝突必須先在既有檔案管理功能或檔案總管中處理後重新預覽。
+                preview = reports_state.generate_sync_preview(
+                    local_state,
+                    incoming_state,
+                    REPORTS_DIR,
+                    stock_name_dict=STOCK_NAME_DICT,
+                )
+
+                if preview.get("conflicts"):
+                    self._json(409, {
+                        "ok": False,
+                        "error": f"仍有 {len(preview['conflicts'])} 筆未解決的衝突，請先完成衝突裁決後再套用",
+                        "conflictType": "unresolved_conflicts",
+                        "code": "unresolved_conflicts",
+                        "conflicts": preview["conflicts"],
+                        "unresolvedCodes": [c.get("code") for c in preview["conflicts"]],
+                    })
+                    return
+
+                # 7. 交易式執行檔案整理與狀態更新
+                try:
+                    exec_result = reports_state.execute_sync_plan_transactional(
+                        REPORTS_DIR,
+                        preview["fileActions"],
+                        preview["mergedState"],
+                        REPORTS_STATE_FILE,
+                        temp_dir=REPORTS_TEMP_DIR,
+                    )
+                except reports_state.SyncCleanupError as ex:
+                    self._json(500, {
+                        "ok": False,
+                        "applied": True,
+                        "error": "同步的檔案與狀態已套用，但交易暫存區清理失敗；請保留現況並由管理者處理暫存區。",
+                    })
+                    return
+                except Exception as ex:
+                    self._json(500, {
+                        "ok": False,
+                        "error": f"同步整理執行失敗，已安全回滾: {ex}",
+                    })
+                    return
+
+                invalidate_all_caches()
+                self._json(200, {
+                    "ok": True,
+                    "applied": True,
+                    "message": "跨電腦同步整理已成功套用完成",
+                    "movedCount": exec_result.get("movedCount", 0),
+                    "deletedCount": exec_result.get("deletedCount", 0),
+                    "movedFiles": exec_result.get("movedFiles", []),
+                    "deletedFiles": exec_result.get("deletedFiles", []),
+                    "stockCount": len(preview["mergedState"].get("stocks", {})),
+                    "updatedAt": preview["mergedState"].get("updatedAt", ""),
+                })
+                return
 
         if parsed.path == "/api/rss-summary":
             try:
@@ -2792,7 +3458,29 @@ class Handler(SimpleHTTPRequestHandler):
                 if dest.exists():
                     self._json(409, {"ok": False, "error": "同名資料夾已存在"})
                     return
+
+                old_rel = target.relative_to(REPORTS_DIR.resolve()).as_posix()
+                new_rel = dest.relative_to(REPORTS_DIR.resolve()).as_posix()
+
+                state = get_reports_state_if_exists()
+                if state is not None:
+                    state_copy = json.loads(json.dumps(state))
+                    reports_state.record_folder_rename(state_copy, old_rel, new_rel)
+                    reports_state.validate_state(state_copy)
+
                 target.rename(dest)
+
+                if state is not None:
+                    try:
+                        reports_state.record_folder_rename(state, old_rel, new_rel)
+                        save_reports_state_atomic(state)
+                    except Exception as e:
+                        try:
+                            dest.rename(target)
+                        except Exception:
+                            pass
+                        raise e
+
                 invalidate_all_caches()
                 self._json(200, {"ok": True})
                 return
@@ -2813,7 +3501,55 @@ class Handler(SimpleHTTPRequestHandler):
                         "reportCount": count_contents(target),
                     })
                     return
-                shutil.rmtree(target)
+
+                # 若是強制刪除且內含檔案，需為內部所有代號寫入 tombstone
+                state = get_reports_state_if_exists()
+                scan_map = {}
+                target_rel = target.relative_to(REPORTS_DIR.resolve()).as_posix()
+                if target_rel == ".":
+                    target_rel = ""
+                if state is not None and has_contents:
+                    scan_map = reports_state.scan_reports_directory(target)
+                    state_copy = json.loads(json.dumps(state))
+                    for code, info in scan_map.items():
+                        # scan_reports_directory() 的 folders 是相對於 target；
+                        # tombstone 則必須保存相對於 reports/ 的完整路徑。
+                        child_rel = info["folders"][0] if info.get("folders") else ""
+                        f_rel = f"{target_rel}/{child_rel}" if child_rel else target_rel
+                        reports_state.record_stock_deletion(state_copy, code, name=info.get("resolvedName"), folder=f_rel)
+                    reports_state.validate_state(state_copy)
+
+                # 將目標資料夾移至同磁碟 REPORTS_TEMP_DIR 暫存區（位於 reports/ 外）
+                REPORTS_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+                temp_del_dir = REPORTS_TEMP_DIR / f".tmp_del_{int(time.time()*1000)}_{target.name}"
+                target.rename(temp_del_dir)
+
+                if state is not None and has_contents:
+                    try:
+                        for code, info in scan_map.items():
+                            child_rel = info["folders"][0] if info.get("folders") else ""
+                            f_rel = f"{target_rel}/{child_rel}" if child_rel else target_rel
+                            reports_state.record_stock_deletion(state, code, name=info.get("resolvedName"), folder=f_rel)
+                        save_reports_state_atomic(state)
+                    except Exception as e:
+                        try:
+                            temp_del_dir.rename(target)
+                        except Exception:
+                            pass
+                        raise e
+
+                # 永久刪除暫存區，若失敗回傳錯誤並保留暫存路徑
+                try:
+                    shutil.rmtree(temp_del_dir)
+                except Exception as clean_err:
+                    invalidate_all_caches()
+                    self._json(500, {
+                        "ok": False,
+                        "error": f"狀態已更新，但暫存資料夾清除失敗: {clean_err}；檔案暫存於 {temp_del_dir.name}",
+                        "tempPath": str(temp_del_dir)
+                    })
+                    return
+
                 invalidate_all_caches()
                 self._json(200, {"ok": True})
                 return
@@ -2836,46 +3572,21 @@ class Handler(SimpleHTTPRequestHandler):
                     self._json(404, {"ok": False, "error": "目標資料夾不存在"})
                     return
 
-                html_name = (base + ".html") if base else ""
-                chart_name = (base + "_chart.png") if base else ""
-                src_html = (src_dir / html_name) if html_name else None
-                src_chart = (src_dir / chart_name) if chart_name else None
-
-                if (not src_html or not src_html.exists()) and code:
-                    html_matches = list(src_dir.glob(f"{code}_*.html"))
-                    if html_matches:
-                        src_html = html_matches[0]
-                        html_name = src_html.name
-                        base = src_html.stem
-                        chart_name = base + "_chart.png"
-                        src_chart = src_dir / chart_name
-
-                if not code and base:
-                    m = TRACKED_FILENAME_RE.match(html_name or (base + ".html"))
-                    if m:
-                        code = m.group(1)
-                    else:
-                        parts = base.split("_")
-                        if parts and 2 <= len(parts[0]) <= 6:
-                            code = parts[0]
-
-                files_to_move = []
-                if src_html and src_html.exists():
-                    files_to_move.append(src_html)
-                if src_chart and src_chart.exists():
-                    files_to_move.append(src_chart)
-
-                if code:
-                    for md_file in src_dir.glob(f"{code}_*.md"):
-                        if md_file not in files_to_move:
-                            files_to_move.append(md_file)
-                    for extra_chart in src_dir.glob(f"{code}_*_chart.png"):
-                        if extra_chart not in files_to_move:
-                            files_to_move.append(extra_chart)
-
+                files_to_move = collect_stock_group_files(src_dir, code=code, base=base)
                 if not files_to_move:
                     self._json(404, {"ok": False, "error": "找不到可移動的來源報表檔案"})
                     return
+
+                if not code:
+                    for f in files_to_move:
+                        m = TRACKED_FILENAME_RE.match(f.name)
+                        if m:
+                            code = m.group(1)
+                            break
+                        parts = f.stem.split("_")
+                        if parts and 2 <= len(parts[0]) <= 6:
+                            code = parts[0]
+                            break
 
                 conflicts = [f.name for f in files_to_move if (dest_dir / f.name).exists()]
                 if conflicts:
@@ -2886,17 +3597,36 @@ class Handler(SimpleHTTPRequestHandler):
                     })
                     return
 
-                moved_names = []
-                for f in files_to_move:
-                    dest_file = dest_dir / f.name
-                    try:
-                        shutil.move(str(f), str(dest_file))
-                        moved_names.append(f.name)
-                    except Exception as e:
-                        print(f"[move-error] 移動 {f.name} 失敗: {e}")
+                state = get_reports_state_if_exists()
+                dest_rel = dest_dir.relative_to(REPORTS_DIR.resolve()).as_posix()
+                if dest_rel == ".": dest_rel = ""
+                if state is not None and code:
+                    state_copy = json.loads(json.dumps(state))
+                    reports_state.record_stock_move(state_copy, code, dest_rel)
+                    reports_state.validate_state(state_copy)
+
+                moved_pairs = []
+                try:
+                    for f in files_to_move:
+                        df = dest_dir / f.name
+                        shutil.move(str(f), str(df))
+                        moved_pairs.append((f, df))
+
+                    if state is not None and code:
+                        reports_state.record_stock_move(state, code, dest_rel)
+                        save_reports_state_atomic(state)
+
+                except Exception as e:
+                    for orig_src, curr_dest in reversed(moved_pairs):
+                        try:
+                            if curr_dest.exists():
+                                shutil.move(str(curr_dest), str(orig_src))
+                        except Exception:
+                            pass
+                    raise e
 
                 invalidate_all_caches()
-                self._json(200, {"ok": True, "moved": moved_names})
+                self._json(200, {"ok": True, "moved": [f.name for f in files_to_move]})
                 return
 
             if parsed.path == "/api/report/delete":
@@ -2916,41 +3646,92 @@ class Handler(SimpleHTTPRequestHandler):
                     self._json(400, {"ok": False, "error": "無效的股票代號或報表名稱"})
                     return
 
-                target_dir = resolve_safe_path(folder) if folder is not None else None
-                matches = set()
-                if target_dir is not None:
-                    if code:
-                        matches.update(target_dir.glob(f"{code}_*.html"))
-                        matches.update(target_dir.glob(f"{code}_*.md"))
-                        matches.update(target_dir.glob(f"{code}_*_chart.png"))
-                    if base:
-                        f_html = target_dir / f"{base}.html"
-                        if f_html.exists():
-                            matches.add(f_html)
-                        f_chart = target_dir / f"{base}_chart.png"
-                        if f_chart.exists():
-                            matches.add(f_chart)
-                else:
-                    if code:
-                        matches.update(REPORTS_DIR.rglob(f"{code}_*.html"))
-                        matches.update(REPORTS_DIR.rglob(f"{code}_*.md"))
-                        matches.update(REPORTS_DIR.rglob(f"{code}_*_chart.png"))
-                    if base:
-                        matches.update(REPORTS_DIR.rglob(f"{base}.html"))
-                        matches.update(REPORTS_DIR.rglob(f"{base}_chart.png"))
+                target_dir = resolve_safe_path(folder) if folder is not None else REPORTS_DIR.resolve()
+                matches = collect_stock_group_files(target_dir, code=code, base=base)
+                if not matches:
+                    self._json(404, {"ok": False, "error": "找不到可刪除的報表檔案"})
+                    return
 
-                deleted = 0
-                deleted_names = []
-                for path_obj in sorted(matches):
+                raw_name = None
+                if not code:
+                    for f in matches:
+                        m = TRACKED_FILENAME_RE.match(f.name)
+                        if m:
+                            code = m.group(1)
+                            raw_name = m.group(2)
+                            break
+                        parts = f.stem.split("_")
+                        if parts and 2 <= len(parts[0]) <= 6:
+                            code = parts[0]
+                            if len(parts) > 1:
+                                raw_name = parts[1]
+                            break
+                else:
+                    for f in matches:
+                        m = TRACKED_FILENAME_RE.match(f.name)
+                        if m and m.group(1) == code:
+                            raw_name = m.group(2)
+                            break
+
+                source_folder_rel = target_dir.relative_to(REPORTS_DIR.resolve()).as_posix()
+                if source_folder_rel == ".": source_folder_rel = ""
+
+                # 檢查狀態檔合法性
+                state = get_reports_state_if_exists()
+                if state is not None and code:
+                    state_copy = json.loads(json.dumps(state))
+                    dict_name = get_stock_name(code, raw_name)
+                    reports_state.record_stock_deletion(state_copy, code, name=dict_name, folder=source_folder_rel)
+                    reports_state.validate_state(state_copy)
+
+                REPORTS_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+                temp_del_dir = REPORTS_TEMP_DIR / f".tmp_del_{int(time.time()*1000)}"
+                temp_del_dir.mkdir(parents=True, exist_ok=True)
+                moved_pairs = []
+
+                try:
+                    for f in matches:
+                        df = temp_del_dir / f.name
+                        shutil.move(str(f), str(df))
+                        moved_pairs.append((f, df))
+
+                    if state is not None and code:
+                        dict_name = get_stock_name(code, raw_name)
+                        reports_state.record_stock_deletion(state, code, name=dict_name, folder=source_folder_rel)
+                        save_reports_state_atomic(state)
+
+                except Exception as e:
+                    for orig_src, curr_temp in reversed(moved_pairs):
+                        try:
+                            if curr_temp.exists():
+                                shutil.move(str(curr_temp), str(orig_src))
+                        except Exception:
+                            pass
                     try:
-                        if path_obj.exists():
-                            path_obj.unlink()
-                            deleted += 1
-                            deleted_names.append(path_obj.name)
-                    except OSError:
+                        shutil.rmtree(temp_del_dir)
+                    except Exception:
                         pass
+                    raise e
+
+                # 成功寫入狀態後，清理暫存區；若清理失敗，明確回報錯誤
+                try:
+                    shutil.rmtree(temp_del_dir)
+                except Exception as clean_err:
+                    invalidate_all_caches()
+                    self._json(500, {
+                        "ok": False,
+                        "error": f"狀態已刪除，但暫存區清除失敗: {clean_err}；檔案暫存於 {temp_del_dir.name}",
+                        "tempPath": str(temp_del_dir)
+                    })
+                    return
+
                 invalidate_all_caches()
-                self._json(200, {"ok": True, "deletedFiles": deleted, "deletedNames": deleted_names})
+                self._json(200, {
+                    "ok": True,
+                    "deletedFiles": len(matches),
+                    "deletedNames": [f.name for f in matches],
+                    "message": "已成功刪除同代號全部報表檔案（包含所有 HTML 變體、MD 與圖表）並寫入跨電腦防復活墓碑紀錄"
+                })
                 return
 
             if parsed.path == "/api/report/batch-move":
@@ -2961,6 +3742,8 @@ class Handler(SimpleHTTPRequestHandler):
                     return
                 all_moved = []
                 errors = []
+                state = get_reports_state_if_exists()
+
                 for item in items:
                     src_dir_path = item.get("from", "")
                     dest_dir_path = item.get("to") or default_to
@@ -2974,38 +3757,57 @@ class Handler(SimpleHTTPRequestHandler):
                         if not dest_dir.is_dir():
                             errors.append(f"{base or code}: 目標資料夾不存在")
                             continue
-                        files_to_move = []
-                        if base:
-                            h = src_dir / f"{base}.html"
-                            c = src_dir / f"{base}_chart.png"
-                            if h.exists():
-                                files_to_move.append(h)
-                            if c.exists():
-                                files_to_move.append(c)
-                        if not code and base:
-                            parts = base.split("_")
-                            if parts and 2 <= len(parts[0]) <= 6:
-                                code = parts[0]
-                        if code:
-                            for h in src_dir.glob(f"{code}_*.html"):
-                                if h not in files_to_move:
-                                    files_to_move.append(h)
-                            for m in src_dir.glob(f"{code}_*.md"):
-                                if m not in files_to_move:
-                                    files_to_move.append(m)
-                            for c in src_dir.glob(f"{code}_*_chart.png"):
-                                if c not in files_to_move:
-                                    files_to_move.append(c)
+                        files_to_move = collect_stock_group_files(src_dir, code=code, base=base)
+                        if not files_to_move:
+                            continue
+                        if not code:
+                            for f in files_to_move:
+                                m = TRACKED_FILENAME_RE.match(f.name)
+                                if m:
+                                    code = m.group(1)
+                                    break
+                                parts = f.stem.split("_")
+                                if parts and 2 <= len(parts[0]) <= 6:
+                                    code = parts[0]
+                                    break
+
                         conflicts = [f.name for f in files_to_move if (dest_dir / f.name).exists()]
                         if conflicts:
                             errors.append(f"{base or code}: 目標已有同名檔案（未移動）")
                             continue
-                        for f in files_to_move:
-                            df = dest_dir / f.name
-                            shutil.move(str(f), str(df))
-                            all_moved.append(f.name)
+
+                        dest_rel = dest_dir.relative_to(REPORTS_DIR.resolve()).as_posix()
+                        if dest_rel == ".": dest_rel = ""
+
+                        # 使用候選狀態副本做獨立交易，避免單項失敗污染記憶體
+                        candidate_state = json.loads(json.dumps(state)) if state is not None else None
+                        if candidate_state is not None and code:
+                            reports_state.record_stock_move(candidate_state, code, dest_rel)
+                            reports_state.validate_state(candidate_state)
+
+                        moved_pairs = []
+                        try:
+                            for f in files_to_move:
+                                df = dest_dir / f.name
+                                shutil.move(str(f), str(df))
+                                moved_pairs.append((f, df))
+
+                            if candidate_state is not None and code:
+                                save_reports_state_atomic(candidate_state)
+                                state = candidate_state  # 僅在儲存成功後更新記憶體 state
+
+                            all_moved.extend([f.name for f in files_to_move])
+                        except Exception as e:
+                            for orig_src, curr_dest in reversed(moved_pairs):
+                                try:
+                                    if curr_dest.exists():
+                                        shutil.move(str(curr_dest), str(orig_src))
+                                except Exception:
+                                    pass
+                            errors.append(f"{base or code}: 移動失敗 ({e})")
                     except Exception as e:
                         errors.append(f"{base or code}: {e}")
+
                 invalidate_all_caches()
                 self._json(200, {"ok": True, "moved": all_moved, "errors": errors})
                 return
@@ -3016,6 +3818,10 @@ class Handler(SimpleHTTPRequestHandler):
                     self._json(400, {"ok": False, "error": "沒有指定要刪除的項目"})
                     return
                 all_deleted = []
+                errors = []
+                cleanup_errors = []
+                state = get_reports_state_if_exists()
+
                 for item in items:
                     folder = item.get("folder") if "folder" in item else item.get("path")
                     code = (item.get("code") or "").strip()
@@ -3024,31 +3830,101 @@ class Handler(SimpleHTTPRequestHandler):
                         parts = base.split("_")
                         if parts and 2 <= len(parts[0]) <= 6:
                             code = parts[0]
-                    target_dir = resolve_safe_path(folder) if folder is not None else None
-                    matches = set()
-                    if target_dir is not None:
-                        if code:
-                            matches.update(target_dir.glob(f"{code}_*.html"))
-                            matches.update(target_dir.glob(f"{code}_*.md"))
-                            matches.update(target_dir.glob(f"{code}_*_chart.png"))
-                        if base:
-                            f_html = target_dir / f"{base}.html"
-                            if f_html.exists():
-                                matches.add(f_html)
+                    target_dir = resolve_safe_path(folder) if folder is not None else REPORTS_DIR.resolve()
+                    matches = collect_stock_group_files(target_dir, code=code, base=base)
+                    if not matches:
+                        continue
+
+                    raw_name = None
+                    if not code:
+                        for f in matches:
+                            m = TRACKED_FILENAME_RE.match(f.name)
+                            if m:
+                                code = m.group(1)
+                                raw_name = m.group(2)
+                                break
+                            parts = f.stem.split("_")
+                            if parts and 2 <= len(parts[0]) <= 6:
+                                code = parts[0]
+                                if len(parts) > 1:
+                                    raw_name = parts[1]
+                                break
                     else:
-                        if code:
-                            matches.update(REPORTS_DIR.rglob(f"{code}_*.html"))
-                            matches.update(REPORTS_DIR.rglob(f"{code}_*.md"))
-                            matches.update(REPORTS_DIR.rglob(f"{code}_*_chart.png"))
-                    for path_obj in matches:
+                        for f in matches:
+                            m = TRACKED_FILENAME_RE.match(f.name)
+                            if m and m.group(1) == code:
+                                raw_name = m.group(2)
+                                break
+
+                    source_folder_rel = target_dir.relative_to(REPORTS_DIR.resolve()).as_posix()
+                    if source_folder_rel == ".": source_folder_rel = ""
+
+                    candidate_state = json.loads(json.dumps(state)) if state is not None else None
+                    if candidate_state is not None and code:
+                        dict_name = get_stock_name(code, raw_name)
+                        reports_state.record_stock_deletion(candidate_state, code, name=dict_name, folder=source_folder_rel)
+                        reports_state.validate_state(candidate_state)
+
+                    REPORTS_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+                    temp_del_dir = REPORTS_TEMP_DIR / f".tmp_bdel_{int(time.time()*1000)}_{code or 'item'}"
+                    temp_del_dir.mkdir(parents=True, exist_ok=True)
+                    moved_pairs = []
+                    committed = False
+
+                    try:
+                        for f in matches:
+                            df = temp_del_dir / f.name
+                            shutil.move(str(f), str(df))
+                            moved_pairs.append((f, df))
+
+                        if candidate_state is not None and code:
+                            save_reports_state_atomic(candidate_state)
+                            state = candidate_state  # 僅在儲存成功後更新記憶體 state
+
+                        all_deleted.extend([f.name for f in matches])
+                        committed = True
                         try:
-                            if path_obj.exists():
-                                path_obj.unlink()
-                                all_deleted.append(path_obj.name)
-                        except OSError:
-                            pass
+                            shutil.rmtree(temp_del_dir)
+                        except Exception as clean_err:
+                            # 此時狀態已寫入、檔案也已離開 reports/；不得把可能
+                            # 已被部分清理的檔案搬回。改為保留可復原暫存區並明確回報。
+                            cleanup_errors.append({
+                                "item": base or code,
+                                "error": str(clean_err),
+                                "tempPath": str(temp_del_dir),
+                            })
+                    except Exception as e:
+                        if not committed:
+                            for orig_src, curr_temp in reversed(moved_pairs):
+                                try:
+                                    if curr_temp.exists():
+                                        shutil.move(str(curr_temp), str(orig_src))
+                                except Exception:
+                                    pass
+                            try:
+                                shutil.rmtree(temp_del_dir)
+                            except Exception:
+                                pass
+                        errors.append(f"{base or code}: 刪除失敗 ({e})")
+
                 invalidate_all_caches()
-                self._json(200, {"ok": True, "deletedFiles": len(all_deleted), "deletedNames": all_deleted})
+                if cleanup_errors:
+                    self._json(500, {
+                        "ok": False,
+                        "deletedFiles": len(all_deleted),
+                        "deletedNames": all_deleted,
+                        "errors": errors,
+                        "cleanupErrors": cleanup_errors,
+                        "error": "部分報表已從 reports/ 移除並寫入狀態，但暫存區清除失敗；請依 tempPath 復原或手動清理",
+                    })
+                    return
+                self._json(200, {
+                    "ok": True,
+                    "deletedFiles": len(all_deleted),
+                    "deletedNames": all_deleted,
+                    "errors": errors,
+                    "message": "已成功批次刪除選定報表檔案並寫入跨電腦防復活墓碑紀錄"
+                })
                 return
 
             self._json(404, {"ok": False, "error": "未知的 API"})

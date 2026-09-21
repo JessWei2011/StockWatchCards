@@ -3362,6 +3362,10 @@
         <span class="status-text">總經 8934: 離線</span>
       </div>
     </div>
+    <button class="btn" id="btn-init-state-main" style="background:#059669;color:#fff;font-weight:700;border:none;padding:6px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;" title="初始化跨電腦同步狀態檔 (reports_state.json)">⚡ 初始化狀態檔</button>
+    <button class="btn" id="btn-cleanup-duplicates-main" style="background:#b45309;color:#fff;font-weight:700;border:none;padding:6px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;" title="預覽並隔離歷史重複 HTML 報表">🧹 整理歷史重複</button>
+    <button class="btn" id="btn-sync-preview-main" style="background:#4f46e5;color:#fff;font-weight:700;border:none;padding:6px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;" title="跨電腦狀態合併與同步整理預覽 (唯讀，不修改檔案)">🔄 同步整理預覽</button>
+    <input type="file" id="sync-preview-file-input-main" accept=".json" style="display:none;">
     <a href="/report_manager.html" target="_blank" class="btn" style="background:#0284c7;color:#fff;font-weight:700;border:none;padding:6px 12px;border-radius:6px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;" title="開啟獨立報表檔案管理介面 (支援滑鼠拖曳分類、新增刪除資料夾、HTML與MD同步移動刪除)">📂 獨立檔案管理</a>
     <button class="btn danger" id="shutdown-server-btn"  title="關閉本機伺服器進程並關掉這個分頁">🔴 關閉伺服器</button>
   </header>
@@ -3903,6 +3907,46 @@
       <div class="modal-actions">
         <button class="btn" id="report-delete-cancel-btn">取消</button>
         <button class="btn danger" id="report-delete-confirm-btn">刪除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 跨電腦狀態初始化 Modal -->
+  <div id="init-state-modal-main" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.68); backdrop-filter:blur(3px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:var(--card-bg, #151b28); border:1px solid var(--border, #222c3f); border-radius:12px; width:640px; max-width:95vw; max-height:85vh; display:flex; flex-direction:column; padding:24px; box-shadow:0 16px 36px rgba(0,0,0,0.5); color:var(--text, #e2e8f0);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border, #222c3f); padding-bottom:10px;">
+        <h3 style="margin:0; font-size:1.15rem; font-weight:700;">⚡ 初始化跨電腦同步狀態檔</h3>
+        <button id="btn-close-init-state-main" style="background:transparent; border:none; color:var(--text-dim, #94a3b8); font-size:1.2rem; cursor:pointer; padding:2px 8px;">✕</button>
+      </div>
+      <div id="init-state-body-main" style="flex:1; overflow-y:auto; margin-bottom:16px; padding-right:4px;">
+        <div id="init-state-loading-main" style="text-align:center; padding:24px 0; color:var(--text-dim, #94a3b8);">
+          ⏳ 載入狀態檔初始化預覽中...
+        </div>
+        <div id="init-state-content-main" style="display:none;"></div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border, #222c3f); padding-top:12px;">
+        <button class="btn" id="btn-cancel-init-state-main">取消</button>
+        <button class="btn primary" id="btn-confirm-init-state-main" disabled style="font-weight:700;">確認建立狀態檔</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 跨電腦狀態同步整理預覽 Modal -->
+  <div id="sync-preview-modal-main" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.68); backdrop-filter:blur(3px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:var(--card-bg, #151b28); border:1px solid var(--border, #222c3f); border-radius:12px; width:640px; max-width:95vw; max-height:85vh; display:flex; flex-direction:column; padding:24px; box-shadow:0 16px 36px rgba(0,0,0,0.5); color:var(--text, #e2e8f0);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border, #222c3f); padding-bottom:10px;">
+        <h3 style="margin:0; font-size:1.15rem; font-weight:700;">🔄 跨電腦狀態合併與同步整理預覽</h3>
+        <button id="btn-close-sync-preview-main" style="background:transparent; border:none; color:var(--text-dim, #94a3b8); font-size:1.2rem; cursor:pointer; padding:2px 8px;">✕</button>
+      </div>
+      <div id="sync-preview-body-main" style="flex:1; overflow-y:auto; margin-bottom:16px; padding-right:4px;">
+        <div id="sync-preview-loading-main" style="text-align:center; padding:24px 0; color:var(--text-dim, #94a3b8);">
+          ⏳ 載入同步整理預覽中...
+        </div>
+        <div id="sync-preview-content-main" style="display:none;"></div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border, #222c3f); padding-top:12px;">
+        <button class="btn" id="btn-cancel-sync-preview-main">關閉</button>
+        <button class="btn primary" id="btn-apply-sync-main" disabled style="font-weight:700;">✅ 確認套用同步整理</button>
       </div>
     </div>
   </div>
@@ -7444,7 +7488,8 @@
     const marketClass = market === 'TWO' ? 'market-two' : 'market-tw';
     const marketLabel = market === 'TWO' ? '上櫃' : '上市';
     const patternTitle = `[${marketLabel}] 點擊開啟 ${code} ${displayName} 的專業看盤`;
-    item.innerHTML = `${newBadge}${starBtn}<span class="code ${marketClass}" title="${escapeHtml(patternTitle)}">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(patternTitle)}">${escapeHtml(displayName)}</span>${dispBadge}<span class="tree-stat-pills">${quickActions}${winPill}${changePill}${pricePill}${pePill}</span>`;
+    const reviewBadge = r.needsReview ? `<span class="badge" style="background:#fef08a;color:#854d0e;font-size:0.75rem;padding:2px 6px;border-radius:4px;margin-left:4px;font-weight:600;" title="存在多份 HTML 變體或墓碑舊檔，建議整理">⚠️ 待整理</span>` : "";
+    item.innerHTML = `${newBadge}${starBtn}<span class="code ${marketClass}" title="${escapeHtml(patternTitle)}">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(patternTitle)}">${escapeHtml(displayName)}</span>${reviewBadge}${dispBadge}<span class="tree-stat-pills">${quickActions}${winPill}${changePill}${pricePill}${pePill}</span>`;
 
     // 點擊股號或股名：直接切換跳轉到「📈 專業看盤」
     const codeEl = item.querySelector('.code');
@@ -7788,7 +7833,7 @@
   function openReportDeleteModal(code, name){
     reportDeleteTargetCode = code;
     document.getElementById('report-delete-modal-text').textContent =
-      `確定要刪除「${code} ${name}」嗎？確認後會永久刪除這檔個股的 HTML 與 Markdown 報表，並從左側主目錄移除。此動作無法復原。`;
+      `確定要刪除「${code} ${name}」嗎？系統將一併刪除該個股全部關聯檔案（含所有 HTML 變體、MD 報告與圖表），並寫入跨電腦防復活墓碑紀錄。此動作無法復原。`;
     document.getElementById('report-delete-modal').classList.remove('hidden');
   }
 
@@ -9385,6 +9430,574 @@ ${macroJsonText()}`;
   }
   loadMarketPulse();
   window.setInterval(() => loadMarketPulse(), 10000);
+
+  // 初始化跨電腦狀態檔 (reports_state.json) 交互邏輯
+  let currentInitPreviewDataMain = null;
+
+  async function openInitStateModalMain() {
+    const modal = document.getElementById("init-state-modal-main");
+    const loading = document.getElementById("init-state-loading-main");
+    const content = document.getElementById("init-state-content-main");
+    const confirmBtn = document.getElementById("btn-confirm-init-state-main");
+
+    modal.style.display = "flex";
+    loading.style.display = "block";
+    content.style.display = "none";
+    content.innerHTML = "";
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "確認建立狀態檔";
+    currentInitPreviewDataMain = null;
+
+    try {
+      const res = await fetch("/api/reports-state/init-preview");
+      const data = await res.json();
+      loading.style.display = "none";
+      content.style.display = "block";
+
+      if (!res.ok) {
+        content.innerHTML = `
+          <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); border-radius:8px; padding:10px 14px; color:#ef4444; margin-bottom:12px;">
+            <strong>❌ 取得初始化預覽失敗 (HTTP ${res.status})</strong><br>
+            ${data.error || "未知錯誤"}
+          </div>
+        `;
+        return;
+      }
+
+      currentInitPreviewDataMain = data;
+
+      // 將目前 API 的 canonical 契約轉成下方共用渲染欄位，避免以舊欄位判斷
+      // 而錯誤啟用確認按鈕。
+      const preview = data.preview || {};
+      const summary = preview.summary || {};
+      const warnings = Array.isArray(preview.warnings) ? preview.warnings : [];
+      data.already_exists = data.hasExistingState === true;
+      data.state_file_path = data.stateFilePath;
+      data.tracked_count = data.existingStockCount || 0;
+      data.total_stock_count = data.existingStockCount || 0;
+      data.unresolved_conflicts = Array.isArray(preview.conflicts) ? preview.conflicts.map(c => ({
+        stock_id: c.code,
+        reason: c.message,
+        files: c.files || c.filesFound || []
+      })) : [];
+      data.missing_chinese_name = warnings.filter(w => w.type === "missing_chinese_name").map(w => ({
+        stock_id: w.code,
+        relative_path: w.currentName || ""
+      }));
+      data.sample_candidates = Object.entries((preview.proposedState || {}).stocks || {}).map(([stock_id, record]) => ({
+        stock_id,
+        stock_name: record.name,
+        current_relative_folder: record.folder,
+        report_count: "狀態提案"
+      }));
+      data.candidates_count = summary.proposedCount || 0;
+      data.scanned_files_count = summary.totalScanned || 0;
+      if (data.basis) data.basis.basis_fingerprint = data.basis.fingerprint;
+
+      if (data.already_exists) {
+        content.innerHTML = `
+          <div style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.4); border-radius:8px; padding:10px 14px; color:#38bdf8; margin-bottom:12px;">
+            <strong>📌 狀態檔已存在</strong><br>
+            已偵測到正式狀態檔 <code>${data.state_file_path || "reports_state.json"}</code>。<br>
+            目前已追蹤個股數：<b>${data.tracked_count || 0}</b> 檔（總記錄數：${data.total_stock_count || 0}）。<br>
+            無須重新初始化。
+          </div>
+        `;
+        confirmBtn.disabled = true;
+        return;
+      }
+
+      const hasConflicts = Array.isArray(data.unresolved_conflicts) && data.unresolved_conflicts.length > 0;
+      const hasMissingChinese = Array.isArray(data.missing_chinese_name) && data.missing_chinese_name.length > 0;
+
+      let alertHtml = "";
+      if (hasConflicts) {
+        const conflictItems = data.unresolved_conflicts.map(c =>
+          `<li>代號 <b>${c.stock_id || ''}</b>: ${c.reason || ''} (相關檔案: ${(c.files || []).join(', ')})</li>`
+        ).join('');
+        alertHtml += `
+          <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); border-radius:8px; padding:10px 14px; color:#ef4444; margin-bottom:12px;">
+            <strong>⚠️ 發現 ${data.unresolved_conflicts.length} 筆衝突，無法初始化狀態檔：</strong>
+            <ul style="margin:6px 0 0 16px; padding:0;">${conflictItems}</ul>
+            <div style="margin-top:6px;">請先排除同代號異名或同代號多資料夾等衝突後再行初始化。</div>
+          </div>
+        `;
+      }
+
+      if (hasMissingChinese) {
+        const missingItems = data.missing_chinese_name.map(m => `
+          <li style="margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid rgba(239,68,68,0.2);">
+            <div>代號 <b>${m.stock_id || ''}</b> (目前暫定名: <code>${m.relative_path || ''}</code>)</div>
+            <div style="display:flex; gap:6px; margin-top:4px;">
+              <input type="text" id="input-fix-name-main-${m.stock_id}" placeholder="請輸入中文名稱 (如: 中砂)" style="padding:4px 8px; border-radius:4px; border:1px solid var(--border, #222c3f); background:rgba(0,0,0,0.3); color:var(--text, #e2e8f0); font-size:0.85rem; flex:1;">
+              <button class="btn primary" type="button" style="padding:2px 8px; font-size:0.82rem;" onclick="submitFixStockNameMain('${m.stock_id}')">儲存中文名稱</button>
+            </div>
+          </li>
+        `).join('');
+        alertHtml += `
+          <div style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.4); border-radius:8px; padding:10px 14px; color:#38bdf8; margin-bottom:12px;">
+            <strong>ℹ️ 發現 ${data.missing_chinese_name.length} 檔個股使用英文正式名稱：</strong>
+            <ul style="margin:6px 0 0 0; padding:0; list-style-type:none;">${missingItems}</ul>
+            <div style="margin-top:6px; font-size:0.8rem; color:var(--text-muted, #94a3b8);">不影響初始化；若日後有正式中文名稱，可選擇補上。</div>
+          </div>
+        `;
+      }
+
+      const canSubmit = !hasConflicts;
+      confirmBtn.disabled = !canSubmit;
+
+      let sampleHtml = "";
+      if (Array.isArray(data.sample_candidates) && data.sample_candidates.length > 0) {
+        const items = data.sample_candidates.slice(0, 15).map(c => `
+          <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+            <span><b>${c.stock_id}</b> ${c.stock_name} <span style="color:var(--text-muted, #64748b);">(${c.current_relative_folder || '根目錄'})</span></span>
+            <span>${c.report_count} 份報表</span>
+          </div>
+        `).join('');
+        sampleHtml = `
+          <div style="margin-top:12px;">
+            <div style="font-size:0.85rem; font-weight:600; margin-bottom:4px; color:var(--text-dim, #94a3b8);">
+              即將建立之個股預覽 (前 ${Math.min(data.sample_candidates.length, 15)} 檔)：
+            </div>
+            <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border, #222c3f); border-radius:6px; max-height:180px; overflow-y:auto; padding:6px 10px; font-size:0.85rem; font-family:monospace;">
+              ${items}
+            </div>
+          </div>
+        `;
+      }
+
+      const fingerprint = data.basis ? data.basis.basis_fingerprint : "N/A";
+
+      content.innerHTML = `
+        ${alertHtml}
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:12px;">
+          <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border, #222c3f); border-radius:8px; padding:10px; text-align:center;">
+            <div style="font-size:1.4rem; font-weight:700; color:var(--accent, #38bdf8);">${data.candidates_count || 0}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted, #64748b); margin-top:2px;">預計追蹤個股數</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border, #222c3f); border-radius:8px; padding:10px; text-align:center;">
+            <div style="font-size:1.4rem; font-weight:700; color:var(--accent, #38bdf8);">${data.scanned_files_count || 0}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted, #64748b); margin-top:2px;">掃描受追蹤檔案數</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;">
+          <div style="font-size:0.82rem; color:var(--text-muted, #64748b); margin-bottom:2px;">基準指紋 (Basis Fingerprint)：</div>
+          <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border, #222c3f); border-radius:6px; padding:6px 8px; font-family:monospace; font-size:0.78rem; color:var(--text-dim, #94a3b8); word-break:break-all;">${fingerprint}</div>
+        </div>
+        ${sampleHtml}
+      `;
+    } catch (err) {
+      loading.style.display = "none";
+      content.style.display = "block";
+      content.innerHTML = `
+        <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); border-radius:8px; padding:10px 14px; color:#ef4444;">
+          <strong>❌ 連線或讀取失敗</strong><br>${err.message || err}
+        </div>
+      `;
+    }
+  }
+
+  function closeInitStateModalMain() {
+    document.getElementById("init-state-modal-main").style.display = "none";
+  }
+
+  async function handleDuplicateCleanupMain() {
+    try {
+      const previewRes = await fetch("/api/reports/duplicate-cleanup-preview");
+      const previewData = await previewRes.json();
+      if (!previewRes.ok || !previewData.ok) throw new Error(previewData.error || "無法取得重複檔預覽");
+      const preview = previewData.preview || {};
+      const candidates = Array.isArray(preview.candidates) ? preview.candidates : [];
+      if (!candidates.length) {
+        alert("目前沒有可安全隔離的同資料夾重複 HTML 報表。");
+        return;
+      }
+      const details = candidates.map(item => `${item.code}：保留 ${item.keepFile}；隔離 ${item.archiveFiles.join("、")}`).join("\n");
+      alert(`重複檔整理預覽（尚未修改任何檔案）\n\n${details}`);
+      if (!window.confirm(`確定將 ${preview.summary.filesToArchive} 個重複檔移至可復原隔離區嗎？\n\n不會永久刪除，之後可由 .reports_duplicate_quarantine 還原。`)) return;
+      const applyRes = await fetch("/api/reports/duplicate-cleanup-apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: true, basis: previewData.basis })
+      });
+      const applyData = await applyRes.json();
+      if (!applyRes.ok || !applyData.ok) throw new Error(applyData.error || "重複檔整理失敗");
+      alert(`已隔離 ${applyData.archivedCount} 個檔案（${applyData.archivedGroups} 組個股）。\n位置：${applyData.quarantinePath || "隔離區"}`);
+      if (typeof loadTree === "function") loadTree();
+    } catch (error) {
+      alert(`重複檔整理失敗：${error.message || error}`);
+    }
+  }
+
+  async function submitFixStockNameMain(code) {
+    const input = document.getElementById(`input-fix-name-main-${code}`);
+    if (!input) return;
+    const chineseName = input.value.trim();
+    if (!chineseName) {
+      alert("中文名稱不能為空");
+      return;
+    }
+    try {
+      const res = await fetch("/api/reports-state/fix-stock-name", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, chineseName })
+      });
+      const json = await res.json();
+      if (res.ok && json.ok) {
+        await openInitStateModalMain();
+      } else {
+        alert(`更新失敗: ${json.error || '未知錯誤'}`);
+      }
+    } catch (err) {
+      alert(`更新失敗: ${err.message || err}`);
+    }
+  }
+  window.submitFixStockNameMain = submitFixStockNameMain;
+
+  async function handleConfirmInitStateMain() {
+    if (!currentInitPreviewDataMain || !currentInitPreviewDataMain.basis) return;
+
+    const confirmBtn = document.getElementById("btn-confirm-init-state-main");
+    const content = document.getElementById("init-state-content-main");
+
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "⏳ 建立狀態檔中...";
+
+    try {
+      const res = await fetch("/api/reports-state/init-apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          confirm: true,
+          basis: currentInitPreviewDataMain.basis
+        })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.ok) {
+        data.state_file_path = data.stateFilePath;
+        data.tracked_stocks_count = data.stockCount;
+        data.total_stocks_count = data.stockCount;
+        content.innerHTML = `
+          <div style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); border-radius:8px; padding:10px 14px; color:#10b981;">
+            <strong>🎉 狀態檔初始化成功！</strong><br>
+            檔案已建立：<code>${data.state_file_path || 'reports_state.json'}</code><br>
+            已追蹤個股：<b>${data.tracked_stocks_count || 0}</b> 檔<br>
+            目前總個股數：${data.total_stocks_count || 0} 筆
+          </div>
+        `;
+        confirmBtn.textContent = "✅ 已建立完成";
+        setTimeout(() => {
+          if (typeof loadTree === "function") loadTree();
+        }, 1000);
+      } else {
+        content.innerHTML = `
+          <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); border-radius:8px; padding:10px 14px; color:#ef4444;">
+            <strong>❌ 狀態檔建立失敗 (${res.status})</strong><br>
+            ${data.error || "未知錯誤"}
+          </div>
+        `;
+        confirmBtn.textContent = "建立失敗 (請重新預覽)";
+        confirmBtn.disabled = true;
+      }
+    } catch (err) {
+      content.innerHTML = `
+        <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); border-radius:8px; padding:10px 14px; color:#ef4444;">
+          <strong>❌ 請求失敗</strong><br>${err.message || err}
+        </div>
+      `;
+      confirmBtn.textContent = "建立失敗";
+      confirmBtn.disabled = true;
+    }
+  }
+
+  document.getElementById("btn-init-state-main")?.addEventListener("click", openInitStateModalMain);
+  document.getElementById("btn-cleanup-duplicates-main")?.addEventListener("click", handleDuplicateCleanupMain);
+  document.getElementById("btn-close-init-state-main")?.addEventListener("click", closeInitStateModalMain);
+  document.getElementById("btn-cancel-init-state-main")?.addEventListener("click", closeInitStateModalMain);
+  document.getElementById("btn-confirm-init-state-main")?.addEventListener("click", handleConfirmInitStateMain);
+
+  // 跨電腦狀態同步整理預覽與套用邏輯
+  let currentSyncPreviewDataMain = null;
+  let currentIncomingStateMain = null;
+
+  function openSyncPreviewModalMain() {
+    const modal = document.getElementById("sync-preview-modal-main");
+    const loading = document.getElementById("sync-preview-loading-main");
+    const content = document.getElementById("sync-preview-content-main");
+    const applyBtn = document.getElementById("btn-apply-sync-main");
+
+    modal.style.display = "flex";
+    loading.style.display = "block";
+    content.style.display = "none";
+    content.innerHTML = "";
+    if (applyBtn) {
+      applyBtn.disabled = true;
+      applyBtn.textContent = "✅ 確認套用同步整理";
+    }
+    currentSyncPreviewDataMain = null;
+    currentIncomingStateMain = null;
+  }
+
+  function closeSyncPreviewModalMain() {
+    const modal = document.getElementById("sync-preview-modal-main");
+    if (modal) modal.style.display = "none";
+  }
+
+  function checkCanApplySyncMain() {
+    const applyBtn = document.getElementById("btn-apply-sync-main");
+    if (!applyBtn || !currentSyncPreviewDataMain) return;
+    const preview = currentSyncPreviewDataMain.preview || currentSyncPreviewDataMain;
+    const conflicts = Array.isArray(preview.conflicts) ? preview.conflicts : [];
+    applyBtn.disabled = !currentSyncPreviewDataMain.basis || conflicts.length > 0;
+  }
+
+  function renderSyncPreviewResultMain(content, data) {
+    currentSyncPreviewDataMain = data;
+    const preview = data.preview || data;
+    const stateSummary = preview.stateSummary || {};
+    const fileSummary = preview.fileSummary || {};
+    const conflicts = Array.isArray(preview.conflicts) ? preview.conflicts : [];
+    const warnings = Array.isArray(preview.warnings) ? preview.warnings : [];
+    const fileActions = Array.isArray(preview.fileActions) ? preview.fileActions : [];
+
+    let conflictsHtml = "";
+    if (conflicts.length > 0) {
+      const items = conflicts.map(c => `
+        <li style="margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(239,68,68,0.2);">
+          <div>代號 <b>${c.code || ''}</b> <span style="background:rgba(239,68,68,0.25); color:#ef4444; padding:1px 6px; border-radius:4px; font-size:0.75rem;">${c.type || '衝突'}</span>：${c.message || ''}</div>
+          <div style="font-size:0.8rem; color:var(--text-dim, #94a3b8); margin-top:2px;">
+            本機：${JSON.stringify(c.localRecord || c.localState || {})} | 外來：${JSON.stringify(c.incomingRecord || c.incomingState || {})}
+          </div>
+        </li>
+      `).join('');
+      conflictsHtml = `
+        <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); border-radius:8px; padding:10px 14px; color:#ef4444; margin-bottom:12px;">
+          <strong>⚠️ 偵測到 ${conflicts.length} 筆衝突，不能直接套用：</strong>
+          請先使用既有報表管理功能或檔案總管處理檔案／資料夾，再重新選取外來狀態檔預覽。
+          <ul style="margin:6px 0 0 0; padding-left:18px; list-style-type:none;">${items}</ul>
+        </div>
+      `;
+    }
+
+    let warningsHtml = "";
+    if (warnings.length > 0) {
+      const items = warnings.map(w => `<li>${w.message || JSON.stringify(w)}</li>`).join('');
+      warningsHtml = `
+        <div style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.4); border-radius:8px; padding:10px 14px; color:var(--accent, #38bdf8); margin-top:10px;">
+          <strong>ℹ️ 注意事項 (${warnings.length} 則)：</strong>
+          <ul style="margin:6px 0 0 0; padding-left:18px;">${items}</ul>
+        </div>
+      `;
+    }
+
+    let actionsHtml = "";
+    if (fileActions.length > 0) {
+      const items = fileActions.slice(0, 30).map(a => {
+        let badgeColor = "var(--accent, #38bdf8)";
+        if (a.action === "delete_candidate") badgeColor = "var(--danger, #ef4444)";
+        if (a.action === "unmanaged_candidate") badgeColor = "#eab308";
+        if (a.action === "missing_on_disk") badgeColor = "#94a3b8";
+        return `
+          <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.06); font-family:monospace; font-size:0.85rem;">
+            <span><b style="color:${badgeColor};">[${a.action}]</b> 代號 <b>${a.code}</b> ${a.name || ''}</span>
+            <span style="color:var(--text-dim, #94a3b8); font-size:0.8rem;">${a.sourcePath || ''} ${a.targetPath ? '➔ ' + a.targetPath : ''}</span>
+          </div>
+        `;
+      }).join('');
+      actionsHtml = `
+        <div style="margin-top:12px;">
+          <div style="font-size:0.85rem; font-weight:600; margin-bottom:4px; color:var(--text-dim, #94a3b8);">
+            檔案操作建議清單 (前 ${Math.min(fileActions.length, 30)} 筆 / 共 ${fileActions.length} 筆)：
+          </div>
+          <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border, #222c3f); border-radius:6px; max-height:180px; overflow-y:auto; padding:6px 10px;">
+            ${items}
+          </div>
+        </div>
+      `;
+    }
+
+    content.innerHTML = `
+      <div style="background:rgba(234,179,8,0.15); border:1px solid rgba(234,179,8,0.4); border-radius:8px; padding:10px 14px; color:#eab308; font-weight:700; margin-bottom:12px;">
+        ⚠️ 僅供預覽，尚未修改任何檔案。請檢閱後點選下方「確認套用同步整理」執行變更。
+      </div>
+      ${conflictsHtml}
+      <div style="font-size:0.85rem; font-weight:600; margin:10px 0 4px; color:var(--text-dim, #94a3b8);">狀態合併統計：</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:12px;">
+        <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border, #222c3f); border-radius:8px; padding:10px; text-align:center;">
+          <div style="font-size:1.4rem; font-weight:700; color:var(--accent, #38bdf8);">${stateSummary.keptLocal || 0}</div>
+          <div style="font-size:0.75rem; color:var(--text-dim, #94a3b8); margin-top:2px;">保留本機</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border, #222c3f); border-radius:8px; padding:10px; text-align:center;">
+          <div style="font-size:1.4rem; font-weight:700; color:var(--accent, #38bdf8);">${stateSummary.addedFromIncoming || 0}</div>
+          <div style="font-size:0.75rem; color:var(--text-dim, #94a3b8); margin-top:2px;">外來新增</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border, #222c3f); border-radius:8px; padding:10px; text-align:center;">
+          <div style="font-size:1.4rem; font-weight:700; color:var(--accent, #38bdf8);">${stateSummary.updatedFromIncoming || 0}</div>
+          <div style="font-size:0.75rem; color:var(--text-dim, #94a3b8); margin-top:2px;">外來更新</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border, #222c3f); border-radius:8px; padding:10px; text-align:center;">
+          <div style="font-size:1.4rem; font-weight:700; color:${conflicts.length > 0 ? 'var(--danger, #ef4444)' : 'var(--accent, #38bdf8)'};">${stateSummary.conflicts || 0}</div>
+          <div style="font-size:0.75rem; color:var(--text-dim, #94a3b8); margin-top:2px;">衝突筆數</div>
+        </div>
+      </div>
+      <div style="font-size:0.85rem; font-weight:600; margin:10px 0 4px; color:var(--text-dim, #94a3b8);">檔案整理建議統計：</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:12px;">
+        <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border, #222c3f); border-radius:8px; padding:10px; text-align:center;">
+          <div style="font-size:1.4rem; font-weight:700; color:var(--accent, #38bdf8);">${fileSummary.movesCount || 0}</div>
+          <div style="font-size:0.75rem; color:var(--text-dim, #94a3b8); margin-top:2px;">待搬移</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border, #222c3f); border-radius:8px; padding:10px; text-align:center;">
+          <div style="font-size:1.4rem; font-weight:700; color:var(--accent, #38bdf8);">${fileSummary.deletionsCount || 0}</div>
+          <div style="font-size:0.75rem; color:var(--text-dim, #94a3b8); margin-top:2px;">待刪除</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border, #222c3f); border-radius:8px; padding:10px; text-align:center;">
+          <div style="font-size:1.4rem; font-weight:700; color:var(--accent, #38bdf8);">${fileSummary.unmanagedCount || 0}</div>
+          <div style="font-size:0.75rem; color:var(--text-dim, #94a3b8); margin-top:2px;">未受管檔案 (保留原位)</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border, #222c3f); border-radius:8px; padding:10px; text-align:center;">
+          <div style="font-size:1.4rem; font-weight:700; color:var(--accent, #38bdf8);">${fileSummary.missingCount || 0}</div>
+          <div style="font-size:0.75rem; color:var(--text-dim, #94a3b8); margin-top:2px;">實體缺失</div>
+        </div>
+      </div>
+      ${actionsHtml}
+      ${warningsHtml}
+    `;
+
+    checkCanApplySyncMain();
+  }
+
+  async function handleSyncFileSelectedMain(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    openSyncPreviewModalMain();
+    const loading = document.getElementById("sync-preview-loading-main");
+    const content = document.getElementById("sync-preview-content-main");
+
+    try {
+      const text = await file.text();
+      let incomingState;
+      try {
+        incomingState = JSON.parse(text);
+      } catch (parseErr) {
+        loading.style.display = "none";
+        content.style.display = "block";
+        content.innerHTML = `
+          <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); border-radius:8px; padding:10px 14px; color:#ef4444;">
+            <strong>❌ JSON 格式解析失敗</strong><br>
+            選取的檔案並非合法的 JSON 格式。(${parseErr.message})
+          </div>
+        `;
+        return;
+      }
+
+      currentIncomingStateMain = incomingState;
+
+      const res = await fetch("/api/reports-state/sync-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ incomingState })
+      });
+      const data = await res.json();
+      loading.style.display = "none";
+      content.style.display = "block";
+
+      if (!res.ok) {
+        content.innerHTML = `
+          <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); border-radius:8px; padding:10px 14px; color:#ef4444;">
+            <strong>❌ 取得同步預覽失敗 (HTTP ${res.status})</strong><br>
+            ${data.error || "未知錯誤"}
+          </div>
+        `;
+        return;
+      }
+
+      renderSyncPreviewResultMain(content, data);
+    } catch (err) {
+      loading.style.display = "none";
+      content.style.display = "block";
+      content.innerHTML = `
+        <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); border-radius:8px; padding:10px 14px; color:#ef4444;">
+          <strong>❌ 讀取或連線失敗</strong><br>${err.message || err}
+        </div>
+      `;
+    }
+  }
+
+  async function handleConfirmApplySyncMain() {
+    if (!currentSyncPreviewDataMain || !currentIncomingStateMain || !currentSyncPreviewDataMain.basis) return;
+
+    const applyBtn = document.getElementById("btn-apply-sync-main");
+    const content = document.getElementById("sync-preview-content-main");
+
+    const preview = currentSyncPreviewDataMain.preview || currentSyncPreviewDataMain;
+    const fileSummary = preview.fileSummary || {};
+    const confirmMsg = `確定要執行同步整理嗎？\n\n- 待搬移報表群組: ${fileSummary.movesCount || 0} 筆\n- 待清除舊報表: ${fileSummary.deletionsCount || 0} 筆\n- 未受管實體檔案: ${fileSummary.unmanagedCount || 0} 筆 (將維持原狀)\n\n此操作具備交易復原機制，若發生錯誤將自動回滾。`;
+    if (!window.confirm(confirmMsg)) return;
+
+    applyBtn.disabled = true;
+    applyBtn.textContent = "⏳ 套用同步中...";
+
+    try {
+      const res = await fetch("/api/reports-state/sync-apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          confirm: true,
+          basis: currentSyncPreviewDataMain.basis,
+          incomingState: currentIncomingStateMain
+        })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.ok) {
+        content.innerHTML = `
+          <div style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); border-radius:8px; padding:10px 14px; color:#10b981;">
+            <strong>🎉 跨電腦同步整理已成功套用！</strong><br>
+            搬移檔案：<b>${data.movedCount || 0}</b> 筆<br>
+            清除檔案：<b>${data.deletedCount || 0}</b> 筆<br>
+            狀態更新：<b>${data.stockCount || 0}</b> 檔個股<br>
+            更新時間戳：<code>${data.updatedAt || ''}</code>
+          </div>
+        `;
+        applyBtn.textContent = "✅ 已套用完成";
+        setTimeout(() => {
+          if (typeof loadTree === "function") loadTree();
+        }, 1000);
+      } else {
+        content.innerHTML = `
+          <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); border-radius:8px; padding:10px 14px; color:#ef4444;">
+            <strong>❌ 同步套用失敗 (${res.status})</strong><br>
+            ${data.error || "未知錯誤"}
+          </div>
+        `;
+        applyBtn.textContent = "套用失敗";
+        applyBtn.disabled = true;
+      }
+    } catch (err) {
+      content.innerHTML = `
+        <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); border-radius:8px; padding:10px 14px; color:#ef4444;">
+          <strong>❌ 請求失敗</strong><br>${err.message || err}
+        </div>
+      `;
+      applyBtn.textContent = "套用失敗";
+      applyBtn.disabled = true;
+    }
+  }
+
+  document.getElementById("btn-sync-preview-main")?.addEventListener("click", () => {
+    const input = document.getElementById("sync-preview-file-input-main");
+    if (input) {
+      input.value = "";
+      input.click();
+    }
+  });
+  document.getElementById("sync-preview-file-input-main")?.addEventListener("change", handleSyncFileSelectedMain);
+  document.getElementById("btn-close-sync-preview-main")?.addEventListener("click", closeSyncPreviewModalMain);
+  document.getElementById("btn-cancel-sync-preview-main")?.addEventListener("click", closeSyncPreviewModalMain);
+  document.getElementById("btn-apply-sync-main")?.addEventListener("click", handleConfirmApplySyncMain);
 </script>
 </body>
 </html>

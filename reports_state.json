@@ -1,0 +1,636 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-21T11:44:29.596222Z",
+  "stocks": {
+    "1303": {
+      "name": "南亞",
+      "folder": "PCB材料",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "1560": {
+      "name": "中砂",
+      "folder": "重電綠能",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "1815": {
+      "name": "富喬",
+      "folder": "PCB材料",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2059": {
+      "name": "川湖",
+      "folder": "軸承摺疊",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2301": {
+      "name": "光寶科",
+      "folder": "電源供應",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2303": {
+      "name": "聯電",
+      "folder": "成熟製程",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2308": {
+      "name": "台達電",
+      "folder": "電源供應",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2324": {
+      "name": "仁寶",
+      "folder": "伺服器",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2327": {
+      "name": "國巨",
+      "folder": "被動元件",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2344": {
+      "name": "華邦電",
+      "folder": "記憶體",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2345": {
+      "name": "智邦",
+      "folder": "網通",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2357": {
+      "name": "華碩",
+      "folder": "工業電腦",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2360": {
+      "name": "致茂",
+      "folder": "電子零組件",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2368": {
+      "name": "金像電",
+      "folder": "PCB材料",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2377": {
+      "name": "微星",
+      "folder": "工業電腦",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2379": {
+      "name": "瑞昱",
+      "folder": "IC設計",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2383": {
+      "name": "台光電",
+      "folder": "PCB材料",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2395": {
+      "name": "研華",
+      "folder": "工業電腦",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2408": {
+      "name": "南亞科",
+      "folder": "記憶體",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2426": {
+      "name": "鼎元",
+      "folder": "CPO",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2449": {
+      "name": "京元電子",
+      "folder": "封測",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2454": {
+      "name": "聯發科",
+      "folder": "IC設計",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2455": {
+      "name": "全新",
+      "folder": "CPO",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2481": {
+      "name": "強茂",
+      "folder": "功率元件",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2486": {
+      "name": "一詮",
+      "folder": "散熱",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "2492": {
+      "name": "華新科",
+      "folder": "被動元件",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3006": {
+      "name": "晶豪科",
+      "folder": "記憶體",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3008": {
+      "name": "大立光",
+      "folder": "光學",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3017": {
+      "name": "奇鋐",
+      "folder": "散熱",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3026": {
+      "name": "禾伸堂",
+      "folder": "被動元件",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3034": {
+      "name": "聯詠",
+      "folder": "IC設計",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3035": {
+      "name": "智原",
+      "folder": "IC設計",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3037": {
+      "name": "欣興",
+      "folder": "載板",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3055": {
+      "name": "蔚華科",
+      "folder": "設備",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3081": {
+      "name": "聯亞",
+      "folder": "CPO",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3105": {
+      "name": "穩懋",
+      "folder": "低軌衛星",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3189": {
+      "name": "景碩",
+      "folder": "載板",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3231": {
+      "name": "緯創",
+      "folder": "伺服器",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3234": {
+      "name": "光環",
+      "folder": "CPO",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3324": {
+      "name": "雙鴻",
+      "folder": "散熱",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3362": {
+      "name": "先進光",
+      "folder": "光學",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3363": {
+      "name": "上詮",
+      "folder": "CPO",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3374": {
+      "name": "精材",
+      "folder": "封測",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3406": {
+      "name": "玉晶光",
+      "folder": "光學",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3441": {
+      "name": "聯一光",
+      "folder": "光學",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3443": {
+      "name": "創意",
+      "folder": "IC設計",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3450": {
+      "name": "聯鈞",
+      "folder": "CPO",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3481": {
+      "name": "群創",
+      "folder": "面板",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3491": {
+      "name": "昇達科",
+      "folder": "低軌衛星",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3529": {
+      "name": "力旺",
+      "folder": "電子零組件",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3532": {
+      "name": "台勝科",
+      "folder": "矽晶圓",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3545": {
+      "name": "敦泰",
+      "folder": "IC設計",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3653": {
+      "name": "健策",
+      "folder": "散熱",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3661": {
+      "name": "世芯-KY",
+      "folder": "IC設計",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3665": {
+      "name": "貿聯-KY",
+      "folder": "連接線器",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3693": {
+      "name": "營邦",
+      "folder": "伺服器",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "4919": {
+      "name": "新唐",
+      "folder": "IC設計",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "4931": {
+      "name": "新盛力",
+      "folder": "儲能BMS",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "4958": {
+      "name": "臻鼎-KY",
+      "folder": "PCB材料",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "4979": {
+      "name": "華星光",
+      "folder": "CPO",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "5289": {
+      "name": "宜鼎",
+      "folder": "記憶體",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "5309": {
+      "name": "系統電",
+      "folder": "儲能BMS",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "5347": {
+      "name": "世界",
+      "folder": "成熟製程",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "5386": {
+      "name": "青雲",
+      "folder": "記憶體",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "5425": {
+      "name": "台半",
+      "folder": "功率元件",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "5483": {
+      "name": "中美晶",
+      "folder": "矽晶圓",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6147": {
+      "name": "頎邦",
+      "folder": "封測",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6173": {
+      "name": "信昌電",
+      "folder": "被動元件",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6182": {
+      "name": "合晶",
+      "folder": "矽晶圓",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6187": {
+      "name": "萬潤",
+      "folder": "設備",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6207": {
+      "name": "雷科",
+      "folder": "被動元件",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6213": {
+      "name": "聯茂",
+      "folder": "PCB材料",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6217": {
+      "name": "中探針",
+      "folder": "探針",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6223": {
+      "name": "旺矽",
+      "folder": "探針",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6239": {
+      "name": "力成",
+      "folder": "封測",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6257": {
+      "name": "矽格",
+      "folder": "電子零組件",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6265": {
+      "name": "方土昶",
+      "folder": "記憶體",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6274": {
+      "name": "台燿",
+      "folder": "PCB材料",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6426": {
+      "name": "統新",
+      "folder": "電子零組件",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6449": {
+      "name": "鈺邦",
+      "folder": "被動元件",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6488": {
+      "name": "環球晶",
+      "folder": "矽晶圓",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6510": {
+      "name": "精測",
+      "folder": "探針",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6515": {
+      "name": "穎崴",
+      "folder": "探針",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6531": {
+      "name": "愛普",
+      "folder": "記憶體",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6584": {
+      "name": "南俊國際",
+      "folder": "伺服器",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6669": {
+      "name": "緯穎",
+      "folder": "伺服器",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6683": {
+      "name": "雍智科技",
+      "folder": "探針",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6781": {
+      "name": "AES-KY",
+      "folder": "儲能BMS",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6805": {
+      "name": "富世達",
+      "folder": "軸承摺疊",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "6831": {
+      "name": "邁科",
+      "folder": "散熱",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "7769": {
+      "name": "鴻勁",
+      "folder": "設備",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "8021": {
+      "name": "尖點",
+      "folder": "PCB材料",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "8039": {
+      "name": "台虹",
+      "folder": "PCB材料",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "8046": {
+      "name": "南電",
+      "folder": "載板",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "8150": {
+      "name": "南茂",
+      "folder": "封測",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "8227": {
+      "name": "巨有科技",
+      "folder": "IC設計",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "8261": {
+      "name": "富鼎",
+      "folder": "功率元件",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "8299": {
+      "name": "群聯",
+      "folder": "記憶體",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "8358": {
+      "name": "金居",
+      "folder": "PCB材料",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "8996": {
+      "name": "高力",
+      "folder": "散熱",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "MKT01": {
+      "name": "台股市場",
+      "folder": "00_市場指數",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "MKT02": {
+      "name": "台股櫃買",
+      "folder": "00_市場指數",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "MKT03": {
+      "name": "道瓊指數",
+      "folder": "00_市場指數",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "MKT04": {
+      "name": "納斯達克指數",
+      "folder": "00_市場指數",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "MKT05": {
+      "name": "費城半導體指數",
+      "folder": "00_市場指數",
+      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    }
+  }
+}
