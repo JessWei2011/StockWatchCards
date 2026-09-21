@@ -2,14 +2,14 @@
 """產生市場指數 K 線報表。
 
 報表格式刻意和個股報表共用 PatternViewer；市場指數只輸出 OHLC，
-台股兩項另附市場成交量，美股指數則不以 ETF 代理成交量。
+台股市場附交易所成交額，櫃買市場附成交量；美股指數則不以 ETF 代理成交量。
 """
 from __future__ import annotations
 
 import html
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import date as calendar_date, datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
 
@@ -79,14 +79,14 @@ def yahoo_daily(symbol: str) -> list[dict]:
     return rows
 
 
-def taiwan_market_volume(months: int = 9) -> dict[str, float]:
-    """上市市場成交股數由 TWSE FMTQIK 補上；Yahoo 的指數本身沒有成交量。"""
+def taiwan_market_turnover(months: int = 25) -> dict[str, float]:
+    """上市市場成交額（億元）由 TWSE FMTQIK 補上；Yahoo 的指數本身沒有此資料。"""
     now = datetime.now()
     volumes: dict[str, float] = {}
     for offset in range(months):
         year = now.year
         month = now.month - offset
-        if month <= 0:
+        while month <= 0:
             year -= 1
             month += 12
         date_param = f"{year}{month:02d}01"
@@ -101,7 +101,7 @@ def taiwan_market_volume(months: int = 9) -> dict[str, float]:
             payload = response.json()
             fields = payload.get("fields") or []
             index_date = fields.index("日期")
-            index_volume = fields.index("成交股數")
+            index_turnover = fields.index("成交金額")
             for row in payload.get("data") or []:
                 raw_date = str(row[index_date]).strip()
                 pieces = raw_date.split("/")
@@ -109,14 +109,50 @@ def taiwan_market_volume(months: int = 9) -> dict[str, float]:
                     continue
                 gregorian = int(pieces[0]) + 1911
                 date = f"{gregorian:04d}-{int(pieces[1]):02d}-{int(pieces[2]):02d}"
-                volumes[date] = number(row[index_volume], 0)
+                # TWSE 原始單位為元，報表與券商畫面均以億元呈現。
+                volumes[date] = number(row[index_turnover], 0) / 100_000_000
         except Exception as exc:
             print(f"⚠️ 台股市場 {year}-{month:02d} 成交量讀取失敗：{exc}")
     return volumes
 
 
-def tpex_market_volumes(year: int | None = None, month: int | None = None) -> dict[str, float]:
-    """櫃買中心歷史每日市場成交量（可查特定月份或本月）。"""
+def market_pulse_turnovers() -> dict[str, dict[str, float]]:
+    """沿用市場脈動的即時成交額，讓報表與前端顯示一致。"""
+    try:
+        from reports_manager_server import _fetch_twse_market_indexes
+
+        result: dict[str, dict[str, float]] = {}
+        for key, quote in _fetch_twse_market_indexes().items():
+            raw_turnover = number(quote.get("turnover"))
+            updated_at = str(quote.get("updatedAt") or "").replace("-", "")
+            if raw_turnover is None or raw_turnover <= 0 or len(updated_at) < 8:
+                continue
+            date = f"{updated_at[:4]}-{updated_at[4:6]}-{updated_at[6:8]}"
+            result[key] = {date: raw_turnover / 100_000_000}
+        return result
+    except Exception as exc:
+        print(f"⚠️ 市場脈動成交額讀取失敗：{exc}")
+        return {}
+
+
+def rows_with_official_volume(rows: list[dict], volumes: dict[str, float]) -> list[dict]:
+    """只保留交易所已公布成交量的交易日，排除週末與未完成日線。"""
+    verified = []
+    for row in rows:
+        row_date = str(row.get("date") or "")
+        try:
+            is_weekday = calendar_date.fromisoformat(row_date).weekday() < 5
+        except ValueError:
+            continue
+        volume = number(volumes.get(row_date))
+        if not is_weekday or volume is None or volume <= 0:
+            continue
+        verified.append({**row, "volume": volume})
+    return verified
+
+
+def tpex_market_turnovers(year: int | None = None, month: int | None = None) -> dict[str, float]:
+    """櫃買中心歷史每日市場成交額（億元）。"""
     if year and month:
         date_str = f"{year}/{month:02d}/01"
         try:
@@ -132,14 +168,15 @@ def tpex_market_volumes(year: int | None = None, month: int | None = None) -> di
             data = tables[0].get("data") if tables else []
             volumes = {}
             for item in data:
-                if len(item) < 2:
+                if len(item) < 3:
                     continue
                 raw_date = str(item[0]).strip()
                 pieces = raw_date.split("/")
                 if len(pieces) == 3 and pieces[0].isdigit():
                     gregorian = int(pieces[0]) + 1911
                     date = f"{gregorian:04d}-{int(pieces[1]):02d}-{int(pieces[2]):02d}"
-                    volumes[date] = number(item[1], 0)
+                    # TPEx 原始單位為仟元。
+                    volumes[date] = number(item[2], 0) / 100_000
             if volumes:
                 return volumes
         except Exception:
@@ -160,13 +197,13 @@ def tpex_market_volumes(year: int | None = None, month: int | None = None) -> di
             if len(raw) == 7 and raw.isdigit():  # 民國年月日，例如 1150901
                 raw = f"{int(raw[:3]) + 1911:04d}{raw[3:]}"
             if len(raw) == 8 and raw.isdigit():
-                volumes[f"{raw[:4]}-{raw[4:6]}-{raw[6:]}"] = number(item.get("TradeVolume"), 0)
+                volumes[f"{raw[:4]}-{raw[4:6]}-{raw[6:]}"] = number(item.get("TradeAmount"), 0) / 100_000_000
         return volumes
     except Exception:
         return {}
 
 
-def tpex_month_ohlc(year: int, month: int, volumes: dict[str, float]) -> list[dict]:
+def tpex_month_ohlc(year: int, month: int, turnovers: dict[str, float]) -> list[dict]:
     """官方歷史指數 API，可查 2012/04 起的每月 OHLC。"""
     response = requests.post(
         "https://www.tpex.org.tw/www/zh-tw/indexInfo/inx",
@@ -188,7 +225,7 @@ def tpex_month_ohlc(year: int, month: int, volumes: dict[str, float]) -> list[di
             continue
         rows.append({
             "date": date, "open": open_price, "high": high_price, "low": low_price,
-            "close": close_price, "volume": volumes.get(date),
+            "close": close_price, "volume": turnovers.get(date), "turnover_unit": "億元",
         })
     return rows
 
@@ -208,6 +245,10 @@ def tpex_history() -> list[dict]:
     except (OSError, json.JSONDecodeError):
         pass
 
+    # 舊快取存的是成交張數，不能與成交額混用；首次升級時完整回補。
+    if cached and any(row.get("turnover_unit") != "億元" for row in cached.values()):
+        cached = {}
+
     now = datetime.now()
     # 如果快取中資料少於 200 筆，回溯爬取過去 24 個月；否則只更新最近 2 個月
     months_to_fetch = 24 if len(cached) < 200 else 2
@@ -219,15 +260,17 @@ def tpex_history() -> list[dict]:
             month += 12
             year -= 1
         try:
-            volumes = tpex_market_volumes(year, month)
-            for row in tpex_month_ohlc(year, month, volumes):
+            turnovers = tpex_market_turnovers(year, month)
+            for row in tpex_month_ohlc(year, month, turnovers):
                 cached[row["date"]] = row
         except Exception as exc:
             print(f"⚠️ 櫃買指數 {year}-{month:02d} 擷取失敗: {exc}")
 
     cache_path.parent.mkdir(exist_ok=True)
     cache_path.write_text(json.dumps(cached, ensure_ascii=False, indent=2), encoding="utf-8")
-    return [cached[key] for key in sorted(cached)][-500:]
+    return rows_with_official_volume([cached[key] for key in sorted(cached)], {
+        row["date"]: row.get("volume") for row in cached.values()
+    })[-500:]
 
 
 def display_number(value: float, decimals: int = 2) -> str:
@@ -289,13 +332,14 @@ def taiwan_market_margin(max_days: int = 15) -> list[dict]:
     return sorted_rows[:max_days]
 
 
-def write_report(code: str, name: str, rows: list[dict], has_volume: bool, margin_rows: list[dict] | None = None):
+def write_report(code: str, name: str, rows: list[dict], has_volume: bool,
+                 margin_rows: list[dict] | None = None, volume_label: str = "市場成交量"):
     if not rows:
         raise ValueError(f"{name} 沒有可寫入的 K 線資料")
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     headers = "<th>日期</th><th>開</th><th>高</th><th>低</th><th>收</th>"
     if has_volume:
-        headers += "<th>市場成交量</th>"
+        headers += f"<th>{html.escape(volume_label)}</th>"
     body = []
     for row in rows[-500:]:
         cells = [
@@ -303,9 +347,10 @@ def write_report(code: str, name: str, rows: list[dict], has_volume: bool, margi
             display_number(row["low"]), display_number(row["close"]),
         ]
         if has_volume:
-            cells.append(f"{int(row.get('volume') or 0):,}")
+            volume = row.get("volume") or 0
+            cells.append(display_number(volume) if volume_label.endswith("（億）") else f"{int(volume):,}")
         body.append("<tr>" + "".join(f"<td>{cell}</td>" for cell in cells) + "</tr>")
-    volume_note = "含市場成交量" if has_volume else "指數本身不提供成交量"
+    volume_note = f"含{volume_label}" if has_volume else "指數本身不提供成交量"
 
     margin_table_html = ""
     if margin_rows:
@@ -335,16 +380,24 @@ def write_report(code: str, name: str, rows: list[dict], has_volume: bool, margi
 
 
 def main():
-    taiwan_volumes = taiwan_market_volume()
+    taiwan_turnovers = taiwan_market_turnover()
+    pulse_turnovers = market_pulse_turnovers()
+    taiwan_turnovers.update(pulse_turnovers.get("taiex", {}))
     taiwan_margins = taiwan_market_margin(15)
     completed = 0
     for code, name, symbol, has_volume in MARKETS:
         try:
             rows = tpex_history() if code == "MKT02" else yahoo_daily(symbol)
             if code == "MKT01":
+                rows = rows_with_official_volume(rows, taiwan_turnovers)
+                write_report(code, name, rows, has_volume, margin_rows=taiwan_margins,
+                             volume_label="市場成交額（億）")
+            elif code == "MKT02":
+                current_turnovers = pulse_turnovers.get("otc", {})
                 for row in rows:
-                    row["volume"] = taiwan_volumes.get(row["date"], 0)
-                write_report(code, name, rows, has_volume, margin_rows=taiwan_margins)
+                    if row["date"] in current_turnovers:
+                        row["volume"] = current_turnovers[row["date"]]
+                write_report(code, name, rows, has_volume, volume_label="市場成交額（億）")
             else:
                 write_report(code, name, rows, has_volume)
             print(f"✅ {name}：{len(rows)} 根 K 線")
