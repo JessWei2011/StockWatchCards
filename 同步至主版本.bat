@@ -2,12 +2,11 @@
 setlocal
 cd /d "%~dp0"
 
-echo This will replace this computer's tracked StockCenter files with origin/main.
-echo Local uncommitted changes and local commits not on origin/main will be discarded.
-echo Untracked files outside reports and ignored files will be kept.
-set /p SYNC_CONFIRM=Type YES to continue: 
-if /I not "%SYNC_CONFIRM%"=="YES" (
-    echo Cancelled. No files were changed.
+echo 將以主版本更新此電腦，完成後會自動開啟報表檔案管理。
+echo 注意：本機尚未推送的已追蹤資料將被主版本覆蓋。
+choice /C YN /N /M "是否開始同步"
+if errorlevel 2 (
+    echo 已取消，沒有變更任何檔案。
     pause
     exit /b 0
 )
@@ -15,8 +14,11 @@ if /I not "%SYNC_CONFIRM%"=="YES" (
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0sync_to_canonical_main.ps1" -Confirm
 set "SCRIPT_EXIT=%ERRORLEVEL%"
 
-echo.
-if not "%SCRIPT_EXIT%"=="0" echo [ERROR] Sync did not complete.
-echo Press any key to close this window.
-pause >nul
-exit /b %SCRIPT_EXIT%
+if not "%SCRIPT_EXIT%"=="0" (
+    echo [ERROR] 同步未完成。
+    pause
+    exit /b %SCRIPT_EXIT%
+)
+
+call "%~dp0reports_manager.bat"
+exit /b 0
