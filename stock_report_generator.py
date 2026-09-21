@@ -1769,6 +1769,23 @@ def run_market_reports():
     if result.returncode:
         print("❌ 市場指數報表更新失敗")
 
+
+def should_update_institutional_chip_strategy(items):
+    """999/ALL 全清單更新完成後，一併更新法人籌碼策略榜。"""
+    aliases = {"ALL", "全部", ALL_TRACKED_INPUT}
+    return any(str(item).strip().upper() in aliases for item in items)
+
+
+def run_institutional_chip_strategy():
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "institutional_chip_strategy.py")
+    if not os.path.isfile(script):
+        print("⚠️ 找不到 institutional_chip_strategy.py，略過法人籌碼策略榜")
+        return
+    print("\n🏦 更新法人籌碼策略榜…")
+    result = subprocess.run([sys.executable, script], cwd=os.path.dirname(script), check=False)
+    if result.returncode:
+        print("❌ 法人籌碼策略榜更新失敗")
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         tracked = scan_tracked_stocks()
@@ -1777,6 +1794,8 @@ if __name__ == "__main__":
         run_batch(tickers)
         if should_update_market_reports(inputs):
             run_market_reports()
+        if should_update_institutional_chip_strategy(inputs):
+            run_institutional_chip_strategy()
     else:
         while True:
             tracked = scan_tracked_stocks()
@@ -1792,3 +1811,5 @@ if __name__ == "__main__":
             run_batch(tickers)
             if should_update_market_reports(inputs):
                 run_market_reports()
+            if should_update_institutional_chip_strategy(inputs):
+                run_institutional_chip_strategy()

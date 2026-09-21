@@ -119,6 +119,24 @@ class TestReportFileManager(unittest.TestCase):
         self.assertFalse(md_file.exists())
         self.assertFalse(chart_file.exists())
 
+    def test_delete_by_code_searches_nested_folders(self):
+        folder = self.reports_dir / "IC設計"
+        folder.mkdir()
+        html_file = folder / "2324_仁寶(TW).html"
+        md_file = folder / "2324_仁寶_4階段技術分析報告.md"
+        html_file.write_text("<html>仁寶</html>", encoding="utf-8")
+        md_file.write_text("# 2324 仁寶技術分析", encoding="utf-8")
+
+        h_del = self._make_handler("/api/report/delete", {"code": "2324"})
+        h_del.do_POST()
+        status, payload = h_del._json.call_args[0]
+
+        self.assertEqual(status, 200)
+        self.assertTrue(payload.get("ok"))
+        self.assertEqual(payload.get("deletedFiles"), 2)
+        self.assertFalse(html_file.exists())
+        self.assertFalse(md_file.exists())
+
     def test_move_keeps_source_when_destination_has_same_file(self):
         src_folder = self.reports_dir / "來源"
         dest_folder = self.reports_dir / "目標"

@@ -14,6 +14,7 @@ under /api/ for the tree/list/create/rename/delete/move operations.
 import glob
 import html
 import json
+import math
 import os
 import re
 import shutil
@@ -333,7 +334,9 @@ def collect_stock_group_files(dir_path: Path, code: str = None, base: str = None
                 code = parts[0]
     if code:
         code_upper = code.upper()
-        for f in dir_path.iterdir():
+        # 個股報表可被分類至任意子資料夾；以根目錄刪除時必須遞迴尋找，
+        # 否則只會找到 reports/ 根目錄的檔案，已分類的個股永遠無法刪除。
+        for f in dir_path.rglob("*"):
             if not f.is_file():
                 continue
             name = f.name
@@ -1037,13 +1040,17 @@ def _report_holder_rows(report_text):
         if len(cells) < 5 or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", cells[0]):
             continue
         try:
-            rows.append({
-                "date": cells[0],
-                "big400Pct": float(cells[1].replace("%", "").strip()),
-                "big1000Pct": float(cells[4].replace("%", "").strip()),
-            })
+            big400_pct = float(cells[1].replace("%", "").strip())
+            big1000_pct = float(cells[4].replace("%", "").strip())
         except ValueError:
             continue
+        if not math.isfinite(big400_pct) or not math.isfinite(big1000_pct):
+            continue
+        rows.append({
+            "date": cells[0],
+            "big400Pct": big400_pct,
+            "big1000Pct": big1000_pct,
+        })
     return rows
 
 
@@ -1082,9 +1089,12 @@ def _report_close_prices(report_text):
             if len(cells) < 5 or not re.fullmatch(r"\d{2}/\d{2}", cells[0]):
                 continue
             try:
-                prices[cells[0].replace("/", "-")] = float(cells[4].replace(",", ""))
+                price = float(cells[4].replace(",", ""))
             except ValueError:
                 continue
+            if not math.isfinite(price):
+                continue
+            prices[cells[0].replace("/", "-")] = price
         if prices:
             break
     return prices
@@ -1111,9 +1121,12 @@ def _report_recent_kline_summary(report_text):
             if len(cells) < 5 or not re.fullmatch(r"\d{2}/\d{2}", cells[0]):
                 continue
             try:
-                rows.append((cells[0], float(cells[4].replace(",", ""))))
+                close_price = float(cells[4].replace(",", ""))
             except ValueError:
                 continue
+            if not math.isfinite(close_price):
+                continue
+            rows.append((cells[0], close_price))
         if rows:
             break
     if not rows:

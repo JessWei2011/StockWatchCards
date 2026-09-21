@@ -21,7 +21,9 @@ window.PatternParser = {
       const table = doc.querySelector('table[data-kline-table]') || doc.querySelector('table');
       if (!table) return null;
       const headers = Array.from(table.querySelectorAll('th')).map(th => (th.textContent || th.innerText || '').trim());
-      const hasVolume = headers.some(header => /成交量|量/.test(header));
+      // 市場報表可能是成交量或成交額；兩者都要建立下方的量價窗格。
+      const volumeLabel = headers.find(header => /成交量|成交額|成交金額/.test(header)) || '';
+      const hasVolume = Boolean(volumeLabel);
       const dates = [], candles = [], volumes = [];
       Array.from(table.querySelectorAll('tr')).slice(1).forEach(row => {
         const cols = Array.from(row.querySelectorAll('td')).map(td => (td.textContent || td.innerText || '').trim());
@@ -69,7 +71,7 @@ window.PatternParser = {
       }
 
       return {
-        title, reportType: 'market', hasVolume, dates, candles, volumes,
+        title, reportType: 'market', hasVolume, volumeLabel, dates, candles, volumes,
         ma5: movingAverage(5), ma10: movingAverage(10), ma20: movingAverage(20),
         ma60: movingAverage(60), ma120: movingAverage(120),
         vma5: volumeAverage(5), vma20: volumeAverage(20),

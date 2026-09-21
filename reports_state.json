@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-21T11:44:29.596222Z",
+  "updatedAt": "2026-09-21T16:34:47.243680Z",
   "stocks": {
     "1303": {
       "name": "南亞",
-      "folder": "PCB材料",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "folder": "PCB",
+      "updatedAt": "2026-09-21T15:25:16.198835Z",
       "deletedAt": null
     },
     "1560": {
@@ -16,8 +16,8 @@
     },
     "1815": {
       "name": "富喬",
-      "folder": "PCB材料",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "folder": "PCB",
+      "updatedAt": "2026-09-21T15:25:16.198835Z",
       "deletedAt": null
     },
     "2059": {
@@ -47,8 +47,8 @@
     "2324": {
       "name": "仁寶",
       "folder": "伺服器",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
-      "deletedAt": null
+      "updatedAt": "2026-09-21T15:27:59.151559Z",
+      "deletedAt": "2026-09-21T15:27:59.151559Z"
     },
     "2327": {
       "name": "國巨",
@@ -82,8 +82,8 @@
     },
     "2368": {
       "name": "金像電",
-      "folder": "PCB材料",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "folder": "PCB",
+      "updatedAt": "2026-09-21T15:25:16.198835Z",
       "deletedAt": null
     },
     "2377": {
@@ -100,8 +100,8 @@
     },
     "2383": {
       "name": "台光電",
-      "folder": "PCB材料",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "folder": "PCB",
+      "updatedAt": "2026-09-21T15:25:16.198835Z",
       "deletedAt": null
     },
     "2395": {
@@ -298,8 +298,8 @@
     },
     "3529": {
       "name": "力旺",
-      "folder": "電子零組件",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "folder": "IC設計",
+      "updatedAt": "2026-09-21T16:15:51.748215Z",
       "deletedAt": null
     },
     "3532": {
@@ -341,8 +341,8 @@
     "4919": {
       "name": "新唐",
       "folder": "IC設計",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
-      "deletedAt": null
+      "updatedAt": "2026-09-21T15:17:35.286631Z",
+      "deletedAt": "2026-09-21T15:17:35.286631Z"
     },
     "4931": {
       "name": "新盛力",
@@ -352,8 +352,8 @@
     },
     "4958": {
       "name": "臻鼎-KY",
-      "folder": "PCB材料",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "folder": "PCB",
+      "updatedAt": "2026-09-21T15:25:16.198835Z",
       "deletedAt": null
     },
     "4979": {
@@ -430,8 +430,8 @@
     },
     "6213": {
       "name": "聯茂",
-      "folder": "PCB材料",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "folder": "PCB",
+      "updatedAt": "2026-09-21T15:25:16.198835Z",
       "deletedAt": null
     },
     "6217": {
@@ -454,8 +454,8 @@
     },
     "6257": {
       "name": "矽格",
-      "folder": "電子零組件",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "folder": "封測",
+      "updatedAt": "2026-09-21T16:10:31.716311Z",
       "deletedAt": null
     },
     "6265": {
@@ -466,14 +466,14 @@
     },
     "6274": {
       "name": "台燿",
-      "folder": "PCB材料",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "folder": "PCB",
+      "updatedAt": "2026-09-21T15:25:16.198835Z",
       "deletedAt": null
     },
     "6426": {
       "name": "統新",
-      "folder": "電子零組件",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "folder": "CPO",
+      "updatedAt": "2026-09-21T16:15:25.186630Z",
       "deletedAt": null
     },
     "6449": {
@@ -550,14 +550,14 @@
     },
     "8021": {
       "name": "尖點",
-      "folder": "PCB材料",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "folder": "PCB",
+      "updatedAt": "2026-09-21T15:25:16.198835Z",
       "deletedAt": null
     },
     "8039": {
       "name": "台虹",
-      "folder": "PCB材料",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "folder": "PCB",
+      "updatedAt": "2026-09-21T15:25:16.198835Z",
       "deletedAt": null
     },
     "8046": {
@@ -592,8 +592,8 @@
     },
     "8358": {
       "name": "金居",
-      "folder": "PCB材料",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "folder": "PCB",
+      "updatedAt": "2026-09-21T15:25:16.198835Z",
       "deletedAt": null
     },
     "8996": {
@@ -630,6 +630,12 @@
       "name": "費城半導體指數",
       "folder": "00_市場指數",
       "updatedAt": "2026-09-21T11:44:29.596222Z",
+      "deletedAt": null
+    },
+    "3264": {
+      "name": "3264",
+      "folder": "封測",
+      "updatedAt": "2026-09-21T16:34:47.243680Z",
       "deletedAt": null
     }
   }

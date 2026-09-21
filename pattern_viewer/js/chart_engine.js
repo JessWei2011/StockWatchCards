@@ -826,6 +826,7 @@ window.ChartEngine = {
     const { chartInstance } = state;
     const { dates, candles, volumes = [], ma5 = [], ma10 = [], ma20 = [], ma60 = [], ma120 = [], vma5 = [], vma20 = [] } = stockData;
     const hasVolume = stockData.hasVolume === true;
+    const volumeLabel = stockData.volumeLabel || '市場成交量';
     const isLight = config.isLight;
     const chartBg = isLight ? '#ffffff' : '#0b0f19';
     const axisLineColor = isLight ? '#94a3b8' : '#222c3f';
@@ -837,10 +838,10 @@ window.ChartEngine = {
     const end = config.isSameStock ? config.zoomEnd : 100;
     const maSelected = config.showShortMa !== false;
     const legendData = ['K線', 'MA5', 'MA10', 'MA20', 'MA60', 'MA120'];
-    if (hasVolume) legendData.push('市場成交量', 'MV5', 'MV20');
+    if (hasVolume) legendData.push(volumeLabel, 'MV5', 'MV20');
     const selected = Object.assign({
       'K線': true, 'MA5': maSelected, 'MA10': maSelected, 'MA20': maSelected,
-      'MA60': false, 'MA120': false, '市場成交量': true, 'MV5': true, 'MV20': true
+      'MA60': false, 'MA120': false, [volumeLabel]: true, 'MV5': true, 'MV20': true
     }, config.isSameStock ? (config.prevLegendSelected || {}) : {});
     if (!config.isSameStock) {
       selected.MA5 = maSelected;
@@ -885,7 +886,7 @@ window.ChartEngine = {
       xAxis.push({ type: 'category', data: dates, gridIndex: 1, axisLabel: { color: legendTextColor, fontSize: 10 }, axisLine: { lineStyle: { color: axisLineColor } } });
       yAxis.push({ scale: true, gridIndex: 1, axisLabel: { show: false }, splitLine: { show: false } });
       series.push({
-        name: '市場成交量', type: 'bar', xAxisIndex: 1, yAxisIndex: 1,
+        name: volumeLabel, type: 'bar', xAxisIndex: 1, yAxisIndex: 1,
         data: volumes.map((value, index) => {
           const isUp = candles[index] && candles[index][1] >= candles[index][0];
           return {
@@ -985,7 +986,7 @@ window.ChartEngine = {
         const v = stockData.volumes && stockData.volumes[idx];
         const mv5Val = stockData.vma5 && stockData.vma5[idx] != null ? `<span style="color:${fastColor}; font-weight:bold;">${Number(stockData.vma5[idx]).toLocaleString()}</span>` : '—';
         const mv20Val = stockData.vma20 && stockData.vma20[idx] != null ? `<span style="color:${slowColor}; font-weight:bold;">${Number(stockData.vma20[idx]).toLocaleString()}</span>` : '—';
-        elP1.innerHTML = `<span style="color:${hudLabelColor};">市場成交量:</span> <span style="color:${fastColor}; font-weight:bold;">${v != null ? Number(v).toLocaleString() : '—'}</span> <span style="color:${hudSepColor}; margin:0 4px;">|</span> <span style="color:${hudLabelColor};">MV5:</span>${mv5Val} <span style="color:${hudLabelColor};">MV20:</span>${mv20Val}`;
+        elP1.innerHTML = `<span style="color:${hudLabelColor};">${volumeLabel}:</span> <span style="color:${fastColor}; font-weight:bold;">${v != null ? Number(v).toLocaleString() : '—'}</span> <span style="color:${hudSepColor}; margin:0 4px;">|</span> <span style="color:${hudLabelColor};">MV5:</span>${mv5Val} <span style="color:${hudLabelColor};">MV20:</span>${mv20Val}`;
       }
     };
 

@@ -1208,6 +1208,22 @@ let starredStocksCache = null;
 const STARRED_KEY = 'stockCardsWatchlist';
 const TODAY_NEW_STOCKS_STORAGE_KEY = 'stock_manager_today_new_stocks';
 
+// 共用訊息提示。拖曳搬移、資料夾操作與同步功能都會呼叫此函式；
+// 若未建立它，拖放完成時會拋出 ReferenceError 而中斷後續畫面更新。
+function showToast(message, type = "normal") {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = String(message || "");
+  toast.setAttribute("role", "status");
+  toast.setAttribute("aria-live", "polite");
+  container.appendChild(toast);
+
+  window.setTimeout(() => toast.remove(), 3500);
+}
+
 function getTodayLocalDateString() {
   const d = new Date();
   const year = d.getFullYear();

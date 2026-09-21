@@ -2553,7 +2553,7 @@
     zoom: 1.5;
   }
   #market-pulse-workspace .market-pulse-strip{ border-radius:12px; border:1px solid var(--border); max-width:1400px; width:100%; margin:0 auto; box-sizing:border-box; }
-  #macro-workspace{ overflow-y:auto; overflow-x:hidden; padding:20px 28px; display:flex; flex-direction:column; gap:18px; min-width:0; background:#0b0d13; }
+  #macro-workspace{ overflow-y:auto; overflow-x:hidden; padding:20px 28px; display:flex; flex-direction:column; gap:18px; min-width:0; background:#0b0d13; zoom:.8; }
   #macro-workspace .market-inst-card, #macro-workspace .disposal-warning-card, #macro-workspace .macro-panel{ max-width:1800px; width:100%; margin:0 auto; }
   #pattern-workspace{ overflow:auto; background:#0f1117; }
   #pattern-workspace .pattern-viewer{ min-height:100%; }
@@ -2762,15 +2762,15 @@
   .chip-snapshot-value.flat{ color:#94a3b8; font-weight:800; }
   .holder-trend-head{
     width:100%; display:flex; justify-content:space-between; align-items:center; gap:8px;
-    color:#cbd5e1; font-size:11px;
+    color:#cbd5e1; font-size:13px;
   }
   .holder-trend-head b{ color:#fdba74; }
   .holder-trend-head span{ color:#94a3b8; white-space:nowrap; }
   .holder-trend-head i{ display:inline-block; width:7px; height:7px; margin:0 3px 0 7px; border-radius:50%; }
-  .holder-bar-grid{ width:min(100%, 520px); display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:4px; }
-  .holder-bar-card{ min-width:0; padding:3px 5px 2px; border:1px solid rgba(148,163,184,.16); border-radius:5px; background:rgba(56,189,248,.04); }
-  .holder-bar-title{ font-size:10px; font-weight:800; line-height:1.1; }
-  .holder-bar-chart{ display:block; width:100%; height:54px; overflow:visible; }
+  .holder-bar-grid{ width:min(100%, 620px); display:grid; grid-template-columns:1fr; gap:12px; margin-top:8px; }
+  .holder-bar-card{ min-width:0; padding:8px 12px 6px; border:1px solid rgba(148,163,184,.22); border-radius:7px; background:rgba(56,189,248,.04); }
+  .holder-bar-title{ font-size:13px; font-weight:800; line-height:1.2; }
+  .holder-bar-chart{ display:block; width:100%; height:136px; overflow:visible; }
 
   /* ── 台股大盤三大法人買賣金額看板 ── */
   .market-inst-card{

@@ -55,10 +55,10 @@
   function holderTrendHtml(rows) {
     if (rows.length < 2) return '<span class="inst-chart-empty">尚無足夠的集保週資料繪製趨勢</span>';
     const barChart = (key, color, label) => {
-      const width = 180;
-      const height = 54;
-      const top = 12;
-      const bottom = 42;
+      const width = 440;
+      const height = 136;
+      const top = 30;
+      const bottom = 100;
       const values = rows.map(row => Number(row[key]));
       const min = Math.floor((Math.min(...values) - 1) / 5) * 5;
       const max = Math.ceil((Math.max(...values) + 1) / 5) * 5;
@@ -69,9 +69,9 @@
         const value = Number(row[key]);
         const x = gap + index * (barWidth + gap);
         const y = top + (max - value) / range * (bottom - top);
-        const labelY = Math.max(9, y - 2);
+        const labelY = Math.max(19, y - 7);
         const date = String(row.date || '').slice(5).replace('-', '/');
-        return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${(bottom - y).toFixed(1)}" rx="1.5" fill="${color}" opacity=".88"><title>${row.date}｜${label} ${value.toFixed(2)}%</title></rect><text x="${(x + barWidth / 2).toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" fill="#e2e8f0" font-size="7.5">${value.toFixed(1)}%</text><text x="${(x + barWidth / 2).toFixed(1)}" y="51" text-anchor="middle" fill="#94a3b8" font-size="7">${date}</text>`;
+        return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${(bottom - y).toFixed(1)}" rx="3" fill="${color}" opacity=".9"><title>${row.date}｜${label} ${value.toFixed(2)}%</title></rect><text x="${(x + barWidth / 2).toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="700">${value.toFixed(1)}%</text><text x="${(x + barWidth / 2).toFixed(1)}" y="123" text-anchor="middle" fill="#cbd5e1" font-size="13">${date}</text>`;
       };
       return `<section class="holder-bar-card"><div class="holder-bar-title" style="color:${color}">${label}</div><svg class="holder-bar-chart" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${label}近${rows.length}週持股比例長條圖"><line x1="0" y1="${bottom}" x2="${width}" y2="${bottom}" stroke="rgba(148,163,184,.28)"/>${rows.map(bar).join('')}</svg></section>`;
     };

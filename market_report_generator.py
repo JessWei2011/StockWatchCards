@@ -29,6 +29,7 @@ except Exception:
 REPORT_DIR = ROOT / "reports" / "00_市場指數"
 HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
 YAHOO_ENDPOINT = "https://query1.finance.yahoo.com/v8/finance/chart/{}"
+TURNOVER_DEVIATION_LIMIT = 0.02  # 官方日資料與市場脈動相差超過 2% 時警示
 
 MARKETS = (
     ("MKT01", "台股市場", "^TWII", True),
@@ -133,6 +134,27 @@ def market_pulse_turnovers() -> dict[str, dict[str, float]]:
     except Exception as exc:
         print(f"⚠️ 市場脈動成交額讀取失敗：{exc}")
         return {}
+
+
+def reconcile_today_turnover(
+    official_turnovers: dict[str, float],
+    pulse_turnovers: dict[str, float],
+    market_name: str,
+) -> dict[str, float]:
+    """比對官方日資料與市場脈動；當日顯示以市場脈動的即時成交額為準。"""
+    reconciled = dict(official_turnovers)
+    for trade_date, pulse_value in pulse_turnovers.items():
+        official_value = number(reconciled.get(trade_date))
+        if official_value and official_value > 0:
+            deviation = abs(official_value - pulse_value) / pulse_value if pulse_value else 0
+            if deviation > TURNOVER_DEVIATION_LIMIT:
+                print(
+                    f"⚠️ {market_name} {trade_date} 成交額與市場脈動相差 "
+                    f"{deviation:.1%}（官方 {official_value:,.2f} 億／"
+                    f"市場脈動 {pulse_value:,.2f} 億），採用市場脈動值"
+                )
+        reconciled[trade_date] = pulse_value
+    return reconciled
 
 
 def rows_with_official_volume(rows: list[dict], volumes: dict[str, float]) -> list[dict]:
@@ -382,7 +404,9 @@ def write_report(code: str, name: str, rows: list[dict], has_volume: bool,
 def main():
     taiwan_turnovers = taiwan_market_turnover()
     pulse_turnovers = market_pulse_turnovers()
-    taiwan_turnovers.update(pulse_turnovers.get("taiex", {}))
+    taiwan_turnovers = reconcile_today_turnover(
+        taiwan_turnovers, pulse_turnovers.get("taiex", {}), "台股市場"
+    )
     taiwan_margins = taiwan_market_margin(15)
     completed = 0
     for code, name, symbol, has_volume in MARKETS:
@@ -393,7 +417,11 @@ def main():
                 write_report(code, name, rows, has_volume, margin_rows=taiwan_margins,
                              volume_label="市場成交額（億）")
             elif code == "MKT02":
-                current_turnovers = pulse_turnovers.get("otc", {})
+                current_turnovers = reconcile_today_turnover(
+                    {row["date"]: row.get("volume") for row in rows},
+                    pulse_turnovers.get("otc", {}),
+                    "台股櫃買",
+                )
                 for row in rows:
                     if row["date"] in current_turnovers:
                         row["volume"] = current_turnovers[row["date"]]

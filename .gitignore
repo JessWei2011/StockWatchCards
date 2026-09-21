@@ -39,6 +39,8 @@
 !啟動控制台.bat
 !launch_stockcenter.py
 !啟動控制台.command
+!同步至主版本.command
+!提交並推送所有專案.command
 !安裝相依套件.command
 !安裝相依套件.bat
 !deploy_mobile.py
