@@ -25,6 +25,26 @@ function Publish-Repository {
         [Parameter(Mandatory = $true)][string]$Message
     )
 
+    $CurrentBranch = (& git -C $Repository branch --show-current).Trim()
+    if ($LASTEXITCODE -ne 0 -or $CurrentBranch -ne 'main') {
+        throw "[$Label] Publishing is restricted to the main branch. Current branch: $CurrentBranch"
+    }
+
+    Write-Host "[$Label] Checking canonical branch..." -ForegroundColor Cyan
+    Invoke-Git -Repository $Repository -GitArguments @('fetch', 'origin', '--prune')
+    $LocalHead = (& git -C $Repository rev-parse HEAD).Trim()
+    $RemoteHead = (& git -C $Repository rev-parse origin/main).Trim()
+    $MergeBase = (& git -C $Repository merge-base HEAD origin/main).Trim()
+    if ($LASTEXITCODE -ne 0) {
+        throw "[$Label] Unable to compare local main with origin/main"
+    }
+    if ($LocalHead -ne $RemoteHead -and $MergeBase -eq $LocalHead) {
+        throw "[$Label] origin/main has newer changes. Run 同步至主版本.bat first; do not create a Git merge for report data."
+    }
+    if ($LocalHead -ne $RemoteHead -and $MergeBase -ne $RemoteHead) {
+        throw "[$Label] Local and origin/main have diverged. Keep the intended version, then use 同步至主版本.bat on the other computers; do not auto-merge report data."
+    }
+
     Write-Host ""
     Write-Host "[$Label] Staging all changes..." -ForegroundColor Cyan
     Invoke-Git -Repository $Repository -GitArguments @('add', '-A')

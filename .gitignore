@@ -54,6 +54,8 @@
 !同步所有專案.bat
 !提交並推送所有專案.bat
 !commit_push_all.ps1
+!sync_to_canonical_main.ps1
+!同步至主版本.bat
 !reports_manager.html
 !reports_manager_server.py
 !reports_manager.bat
