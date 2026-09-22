@@ -5,28 +5,28 @@
     "name": "鈺邦",
     "group": "被動元件",
     "market": "TW",
-    "date": "2026-09-18",
+    "date": "2026-09-22",
     "isStarred": false
   },
   "latestAnalysis": {
-    "date": "2026-09-18",
-    "current": "217.00",
+    "date": "2026-09-22",
+    "current": "211.00",
     "decision": "觀望 / 逢低佈局",
     "winRate": "50.0%",
-    "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
+    "pattern": "高檔盤整/區間震盪",
     "confidence": "完全確認",
-    "entry": "212.66",
+    "entry": "206.78",
     "stop": "205.50",
     "resist": "478.8",
     "target": "684.72",
     "bullish": [
-      "K線：✨ 突破站上5MA (短線點火轉強)",
-      "成交量：💎 價跌量急縮窒息量 (主力洗盤完畢)",
-      "RSI：✨ RSI 短線黃金交叉",
-      "MACD：✨ MACD 零軸下金叉 (低檔反彈轉折)",
-      "KD：✨ KD 黃金交叉 (短線轉強)"
+      "成交量：📈 較昨溫和量增 (處低均量區)",
+      "MACD：⚪ MACD 反彈動能趨緩 (紅柱縮小整理)"
     ],
     "bearish": [
+      "K線：⚠️ 跌破5MA (轉弱回測)",
+      "RSI：⚡ RSI 短線死亡交叉",
+      "KD：⚡ KD 死亡交叉 (短線修正)",
       "籌碼：📉 法人籌碼退潮 (連日調節)",
       "風控停損：205.50 元"
     ],

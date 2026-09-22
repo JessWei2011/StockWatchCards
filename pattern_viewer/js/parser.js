@@ -21,8 +21,9 @@ window.PatternParser = {
       const table = doc.querySelector('table[data-kline-table]') || doc.querySelector('table');
       if (!table) return null;
       const headers = Array.from(table.querySelectorAll('th')).map(th => (th.textContent || th.innerText || '').trim());
-      // 市場報表可能是成交量或成交額；兩者都要建立下方的量價窗格。
-      const volumeLabel = headers.find(header => /成交量|成交額|成交金額/.test(header)) || '';
+      // 市場報表不主動建立成交量窗格；若標記為 false 則直接停用。
+      const bodyHasVolumeAttr = doc.querySelector('body')?.getAttribute('data-has-volume');
+      const volumeLabel = (bodyHasVolumeAttr === 'false') ? '' : (headers.find(header => /成交量|成交額|成交金額/.test(header)) || '');
       const hasVolume = Boolean(volumeLabel);
       const dates = [], candles = [], volumes = [];
       Array.from(table.querySelectorAll('tr')).slice(1).forEach(row => {

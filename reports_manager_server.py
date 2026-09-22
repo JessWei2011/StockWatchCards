@@ -1743,9 +1743,13 @@ def _run_generate(args):
 
 
 def fetch_institutional_breakdown():
-    """即時打 TWSE 官方 API，回傳大盤法人明細（略過自營商避險）。"""
+    """即時打 TWSE 官方 API，回傳大盤法人明細（不含自營商避險，合計動態重算以確保相加一致）。"""
     try:
-        resp = requests.get("https://www.twse.com.tw/rwd/zh/fund/BFI82U?response=json", timeout=10)
+        resp = requests.get(
+            "https://www.twse.com.tw/rwd/zh/fund/BFI82U?response=json",
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
+            timeout=10,
+        )
         resp.raise_for_status()
         payload = resp.json()
     except Exception as e:
@@ -1754,22 +1758,57 @@ def fetch_institutional_breakdown():
     if payload.get("stat") != "OK":
         return None, payload.get("stat") or "TWSE 回應異常"
 
-    rows = []
+    components = []
     for item in payload.get("data", []):
         if len(item) < 4:
             continue
         label, buy, sell, net = item[0], item[1], item[2], item[3]
-        if label == "外資自營商" or "自營商避險" in label or "自營商(避險)" in label:
+        if label in ("外資自營商", "合計") or "自營商避險" in label or "自營商(避險)" in label:
             continue
         try:
-            rows.append({
+            buy_val = float(buy.replace(",", "")) / 1e8
+            sell_val = float(sell.replace(",", "")) / 1e8
+            net_val = float(net.replace(",", "")) / 1e8
+            components.append({
                 "label": label,
-                "buy": round(float(buy.replace(",", "")) / 1e8, 2),
-                "sell": round(float(sell.replace(",", "")) / 1e8, 2),
-                "net": round(float(net.replace(",", "")) / 1e8, 2),
+                "buy": buy_val,
+                "sell": sell_val,
+                "net": net_val,
             })
         except ValueError:
             continue
+
+    def sort_key(row):
+        lbl = row["label"]
+        if "外資" in lbl:
+            return 0
+        if "投信" in lbl:
+            return 1
+        if "自營" in lbl:
+            return 2
+        return 3
+
+    components.sort(key=sort_key)
+
+    total_buy = sum(c["buy"] for c in components)
+    total_sell = sum(c["sell"] for c in components)
+    total_net = sum(c["net"] for c in components)
+
+    rows = []
+    for c in components:
+        rows.append({
+            "label": c["label"],
+            "buy": round(c["buy"], 2),
+            "sell": round(c["sell"], 2),
+            "net": round(c["net"], 2),
+        })
+
+    rows.append({
+        "label": "合計",
+        "buy": round(total_buy, 2),
+        "sell": round(total_sell, 2),
+        "net": round(total_net, 2),
+    })
 
     raw_date = payload.get("date", "")
     date_str = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:]}" if len(raw_date) == 8 else raw_date

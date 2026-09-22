@@ -846,9 +846,11 @@ def create_initial_state_exclusive(state: Dict[str, Any], file_path: Path | str)
     4. 使用 os.link 進行原子排他發布；若目標已存在則捕捉 FileExistsError，刪除暫存檔並拋出。
     """
     validate_state(state)
-    path = Path(file_path).resolve()
+    raw_path = Path(file_path)
+    if raw_path.is_symlink():
+        raise ValueError("狀態檔路徑為符號連結，拒絕寫入")
+    path = raw_path.resolve()
     path.parent.mkdir(parents=True, exist_ok=True)
-
     if path.is_symlink():
         raise ValueError("狀態檔路徑為符號連結，拒絕寫入")
     if path.exists():

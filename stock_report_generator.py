@@ -1477,9 +1477,23 @@ def run(ticker_input):
     os.makedirs(target_dir, exist_ok=True)
     fname = os.path.join(target_dir, f"{base_name}.html")
 
-    # 檢查是否為全新加入的個股（存檔前 reports/ 裡尚無此個股的任何 HTML 報表）
-    existing_reports = glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*.html"), recursive=True)
-    is_brand_new = len(existing_reports) == 0
+    # 檢查是否為全新加入的個股（存檔前 reports/ 裡尚無此個股的任何 HTML/MD 報表，且非狀態檔中既有 active 個股）
+    existing_reports = (
+        glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*.html"), recursive=True) +
+        glob.glob(os.path.join(REPORTS_DIR, "**", f"{sid}_*.md"), recursive=True)
+    )
+    is_in_state = False
+    try:
+        if os.path.exists(STATE_FILE):
+            with open(STATE_FILE, "r", encoding="utf-8") as sf:
+                s_data = json.load(sf)
+                stock_entry = s_data.get("stocks", {}).get(sid)
+                if stock_entry and not stock_entry.get("deletedAt"):
+                    is_in_state = True
+    except Exception:
+        pass
+
+    is_brand_new = (len(existing_reports) == 0) and not is_in_state
 
     # 有合法狀態檔時，歷史版本與跨資料夾副本須留給同步預覽處理；不可由產生器靜默刪除。
     cleanup_stale_report_variants(sid, fname, preserve_existing=(dest["status"] != "no_state_file"))

@@ -32,8 +32,8 @@ YAHOO_ENDPOINT = "https://query1.finance.yahoo.com/v8/finance/chart/{}"
 TURNOVER_DEVIATION_LIMIT = 0.02  # 官方日資料與市場脈動相差超過 2% 時警示
 
 MARKETS = (
-    ("MKT01", "台股市場", "^TWII", True),
-    ("MKT02", "台股櫃買", None, True),
+    ("MKT01", "台股市場", "^TWII", False),
+    ("MKT02", "台股櫃買", None, False),
     ("MKT03", "道瓊指數", "^DJI", False),
     ("MKT04", "納斯達克指數", "^IXIC", False),
     ("MKT05", "費城半導體指數", "^SOX", False),

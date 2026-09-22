@@ -1521,5 +1521,49 @@ class TestDuplicateCleanupAPI(unittest.TestCase):
         self.assertTrue(self.duplicate_file.exists())
 
 
+class TestInstitutionalBreakdown(unittest.TestCase):
+    @patch("requests.get")
+    def test_fetch_institutional_breakdown_excludes_hedging_and_recalculates_total(self, mock_get):
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.return_value = None
+        mock_resp.json.return_value = {
+            "stat": "OK",
+            "date": "20260922",
+            "data": [
+                ["自營商(自行買賣)", "11,606,932,360", "8,098,761,830", "3,508,170,530"],
+                ["自營商(避險)", "42,563,031,667", "30,217,059,355", "12,345,972,312"],
+                ["投信", "22,842,946,443", "23,209,364,598", "-366,418,155"],
+                ["外資及陸資(不含外資自營商)", "385,352,538,106", "340,031,610,542", "45,320,927,564"],
+                ["外資自營商", "0", "0", "0"],
+                ["合計", "462,365,448,576", "401,556,796,325", "60,808,652,251"]
+            ]
+        }
+        mock_get.return_value = mock_resp
+
+        result, err = server.fetch_institutional_breakdown()
+        self.assertIsNone(err)
+        self.assertIsNotNone(result)
+        self.assertEqual(result["date"], "2026-09-22")
+
+        rows = result["rows"]
+        # 應只有 4 筆：外資、投信、自營商(自行買賣)、合計
+        self.assertEqual(len(rows), 4)
+        labels = [r["label"] for r in rows]
+        self.assertEqual(labels, ["外資及陸資(不含外資自營商)", "投信", "自營商(自行買賣)", "合計"])
+
+        foreign_net = rows[0]["net"]
+        trust_net = rows[1]["net"]
+        dealer_net = rows[2]["net"]
+        total_row = rows[3]
+
+        self.assertEqual(foreign_net, 453.21)
+        self.assertEqual(trust_net, -3.66)
+        self.assertEqual(dealer_net, 35.08)
+
+        # 動態計算合計（不含自營避險）：453.21 + (-3.66) + 35.08 = 484.63
+        self.assertEqual(total_row["net"], 484.63)
+        self.assertAlmostEqual(round(foreign_net + trust_net + dealer_net, 2), total_row["net"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -3497,7 +3497,7 @@
       <div class="market-inst-header">
         <div class="market-inst-title">
           <span class="icon">📊</span>
-          <span class="title-text">台股大盤三大法人買賣金額明細</span>
+          <span class="title-text">台股大盤三大法人買賣金額明細 <span style="font-size:13px; font-weight:normal; opacity:.75;">(不含自營避險)</span></span>
           <span class="market-inst-date-badge" id="market-inst-date-badge"><span class="market-inst-dot active"></span>載入中...</span>
         </div>
         <div class="market-inst-actions">
@@ -4784,7 +4784,7 @@
 
 <script src="pattern_viewer/js/vendor/echarts.min.js"></script>
 <script>if(typeof echarts==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"><\/script>');}</script>
-<script src="pattern_viewer/js/parser.js?v=99"></script>
+<script src="pattern_viewer/js/parser.js?v=102"></script>
 <script src="pattern_viewer/js/pattern_engine.js?v=77"></script>
 <script src="pattern_viewer/js/chart_engine.js?v=99"></script>
 <script src="pattern_viewer/js/viewer_app.js?v=101"></script>
@@ -6901,10 +6901,9 @@
         const json = await res.json();
         const todayStr = getTodayLocalDateString();
         if (json && json.ok && json.date === todayStr && Array.isArray(json.codes)) {
-          json.codes.forEach(c => {
-            const clean = String(c || '').trim().toUpperCase();
-            if (clean) window.TODAY_NEW_STOCKS.add(clean);
-          });
+          window.TODAY_NEW_STOCKS = new Set(
+            json.codes.map(c => String(c || '').trim().toUpperCase()).filter(Boolean)
+          );
           saveTodayNewStocksToStorage();
         }
       }
@@ -7153,10 +7152,9 @@
     const { data } = await api('GET', '/api/tree');
     tree = data.tree;
     if (tree && Array.isArray(tree.todayNewStocks)) {
-      tree.todayNewStocks.forEach(c => {
-        const clean = String(c || '').trim().toUpperCase();
-        if (clean) window.TODAY_NEW_STOCKS.add(clean);
-      });
+      window.TODAY_NEW_STOCKS = new Set(
+        tree.todayNewStocks.map(c => String(c || '').trim().toUpperCase()).filter(Boolean)
+      );
       saveTodayNewStocksToStorage();
     }
     populateMarketMapFromTree(tree);
@@ -8360,14 +8358,7 @@
     setGenerateUI(false);
     await syncTodayNewStocksFromServer();
 
-    // 檢查本次產生是否針對特定個股代號（非 ALL）
-    const inputEl = document.getElementById('generate-input');
-    const rawVal = inputEl ? inputEl.value.trim() : '';
-    const isBatchAll = rawVal.toUpperCase().startsWith('ALL') || rawVal === '全部';
-    const successfulTickers = (lastJobData && lastJobData.results || []).filter(r => r.ok && r.ticker).map(r => r.ticker);
-    if (!isBatchAll && successfulTickers.length > 0) {
-      markStockAsNewToday(successfulTickers);
-    }
+
 
     await loadTree();
     await loadList();

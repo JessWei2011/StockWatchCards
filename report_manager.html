@@ -1273,10 +1273,9 @@ async function syncTodayNewStocksFromServer() {
       const json = await res.json();
       const todayStr = getTodayLocalDateString();
       if (json && json.ok && json.date === todayStr && Array.isArray(json.codes)) {
-        json.codes.forEach(c => {
-          const clean = String(c || '').trim().toUpperCase();
-          if (clean) window.TODAY_NEW_STOCKS.add(clean);
-        });
+        window.TODAY_NEW_STOCKS = new Set(
+          json.codes.map(c => String(c || '').trim().toUpperCase()).filter(Boolean)
+        );
         saveTodayNewStocksToStorage();
       }
     }
@@ -1515,10 +1514,9 @@ async function loadData() {
     if (json.ok) {
       state.tree = json.tree;
       if (state.tree && Array.isArray(state.tree.todayNewStocks)) {
-        state.tree.todayNewStocks.forEach(c => {
-          const clean = String(c || '').trim().toUpperCase();
-          if (clean) window.TODAY_NEW_STOCKS.add(clean);
-        });
+        window.TODAY_NEW_STOCKS = new Set(
+          state.tree.todayNewStocks.map(c => String(c || '').trim().toUpperCase()).filter(Boolean)
+        );
         saveTodayNewStocksToStorage();
       }
       populateMarketMapFromTree(state.tree);
