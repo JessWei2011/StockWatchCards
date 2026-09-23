@@ -1358,6 +1358,8 @@
   [data-theme="light"] .tree-stat-pill.price.up,
   [data-theme="light"] .tree-stat-pill.winrate,
   [data-theme="light"] .tree-stat-pill.winrate.high,
+  [data-theme="light"] .tree-stat-pill.chip.extreme-sell,
+  [data-theme="light"] .tree-stat-pill.chip.sell,
   [data-theme="light"] .rank-decision-tag.strong-buy,
   [data-theme="light"] .rank-decision-tag.avoid,
   [data-theme="light"] .rank-score-pill.high {
@@ -1372,6 +1374,8 @@
   [data-theme="light"] .analysis-metric-tile .tile-value.negative,
   [data-theme="light"] .tree-stat-pill.change.down,
   [data-theme="light"] .tree-stat-pill.price.down,
+  [data-theme="light"] .tree-stat-pill.chip.extreme-buy,
+  [data-theme="light"] .tree-stat-pill.chip.buy,
   [data-theme="light"] .rank-decision-tag.buy {
     background: #f0fdf4 !important;
     color: #15803d !important;
@@ -1381,6 +1385,7 @@
   /* 黃色／琥珀色標籤 (糾纏、轉折、起漲、關注) 在白底下的高對比：淺黃底 + 焦糖深琥珀字 (拒絕刺眼淺黃白字！) */
   [data-theme="light"] .tag-pill[style*="#fde047"],
   [data-theme="light"] .analysis-badge.accent,
+  [data-theme="light"] .tree-stat-pill.chip.daytrader,
   [data-theme="light"] .rank-decision-tag.watch {
     background: #fefce8 !important;
     color: #854d0e !important;
@@ -1412,6 +1417,7 @@
   [data-theme="light"] .tag-pill[style*="#cbd5e1"],
   [data-theme="light"] .tree-stat-pill.change.flat,
   [data-theme="light"] .tree-stat-pill.price.flat,
+  [data-theme="light"] .tree-stat-pill.chip.flat,
   [data-theme="light"] .rank-score-pill.low {
     background: #f1f5f9 !important;
     color: #334155 !important;
@@ -1893,7 +1899,7 @@
   .breadcrumb span:hover{ color:var(--accent); }
   .layout{ display:flex; flex:1; min-height:0; }
   .sidebar{
-    width:380px; padding:12px; overflow-y:auto; flex-shrink:0;
+    width:410px; padding:12px; overflow-y:auto; flex-shrink:0;
   }
   .main{ flex:1; min-width:0; padding:20px; overflow-y:auto; }
 
@@ -2213,7 +2219,61 @@
     font-size:10.5px; font-weight:800; line-height:1;
     font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
     font-variant-numeric:tabular-nums; text-align:center;
+    cursor:help;
+    transition:transform 0.12s cubic-bezier(0.4, 0, 0.2, 1), filter 0.12s ease, box-shadow 0.12s ease;
+    user-select:none;
+    position:relative;
   }
+  .tree-stat-pill:hover{
+    transform:translateY(-1px) scale(1.08);
+    filter:brightness(1.3);
+    box-shadow:0 3px 8px rgba(0,0,0,0.45);
+    z-index:5;
+  }
+  .broker-chip-badge{
+    cursor:help;
+    display:inline-flex; align-items:center;
+    transition:transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
+  }
+  .broker-chip-badge:hover{
+    transform:scale(1.08);
+    filter:brightness(1.25);
+    box-shadow:0 2px 6px rgba(0,0,0,0.35);
+  }
+  /* ── 🌟 自訂高對比即時 Floating Tooltip 懸浮窗 ── */
+  .custom-floating-tooltip{
+    position:fixed;
+    z-index:9999999;
+    pointer-events:none;
+    max-width:340px;
+    background:rgba(15, 23, 42, 0.96);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border:1px solid rgba(255, 255, 255, 0.2);
+    border-radius:8px;
+    box-shadow:0 12px 28px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    padding:9px 13px;
+    font-size:12px;
+    line-height:1.45;
+    color:#f1f5f9;
+    opacity:0;
+    transform:translateY(4px) scale(0.97);
+    transition:opacity 0.12s ease, transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1);
+    white-space:normal;
+    word-break:break-word;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .custom-floating-tooltip.show{
+    opacity:1;
+    transform:translateY(0) scale(1);
+  }
+  .tree-stat-pill.chip{ width:48px; min-width:48px; max-width:48px; padding:0 1px; letter-spacing:-0.2px; }
+  .tree-stat-pill.chip.extreme-buy{ color:#34d399; border:1px solid rgba(16,185,129,.55); background:rgba(16,185,129,.22); font-weight:850; }
+  .tree-stat-pill.chip.buy{ color:#6ee7b7; border:1px solid rgba(52,211,153,.35); background:rgba(52,211,153,.12); }
+  .tree-stat-pill.chip.extreme-sell{ color:#f87171; border:1px solid rgba(239,68,68,.55); background:rgba(239,68,68,.22); font-weight:850; }
+  .tree-stat-pill.chip.sell{ color:#fca5a5; border:1px solid rgba(248,113,113,.35); background:rgba(248,113,113,.12); }
+  .tree-stat-pill.chip.flat{ color:#cbd5e1; border:1px solid rgba(148,163,184,.3); background:rgba(148,163,184,.1); }
+  .tree-stat-pill.chip.daytrader{ color:#fde047; border:1px solid rgba(250,204,21,.7); background:rgba(234,179,8,.22); font-weight:850; }
   .tree-stat-pill.winrate{ width:40px; color:#fca5a5; border:1px solid rgba(239,68,68,.4); background:rgba(239,68,68,.14); }
   .tree-stat-pill.winrate.high{ color:#f87171; border:1px solid rgba(239,68,68,.65); background:rgba(239,68,68,.25); }
   .tree-stat-pill.change{ min-width:48px; padding:0 4px; font-weight:850; }
@@ -2225,6 +2285,7 @@
   .tree-stat-pill.price.down{ color:#86efac; border:1px solid rgba(34,197,94,.45); background:rgba(34,197,94,.18); }
   .tree-stat-pill.price.flat{ color:#cbd5e1; border:1px solid rgba(148,163,184,.3); background:rgba(148,163,184,.1); }
   .tree-stat-pill.pe{ width:38px; min-width:38px; padding:0 3px; color:#c4b5fd; border:1px solid rgba(168,85,247,.4); background:rgba(168,85,247,.14); }
+  .tree-stat-pill.missing.chip-missing{ width:48px; min-width:48px; max-width:48px; }
   .tree-stat-pill.missing.winrate-missing{ width:40px; }
   .tree-stat-pill.missing.change-missing{ min-width:48px; }
   .tree-stat-pill.missing.price-missing{ min-width:46px; }
@@ -5697,18 +5758,20 @@
         const cardsRes = await fetch('/api/cards').then(response => response.json()).catch(() => null);
         if (cardsRes?.ok) reportTagCardsByCode = cardsRes.cards || {};
       }
-      // 同時取得 Evolution, Gemini 與 ChatGPT 三份資料
-      const [resE, resG, resC, institutionalRes] = await Promise.all([
+      // 同時取得 Evolution, Gemini, ChatGPT, 法人籌碼策略 與 主力券商分點集中度 資料
+      const [resE, resG, resC, institutionalRes, brokerChipsRes] = await Promise.all([
         fetch('/api/winrate-ranking-report?source=evolution', {cache:'no-store'}).then(r => r.json()).catch(() => null),
         fetch('/api/winrate-ranking-report?source=gemini').then(r => r.json()).catch(() => null),
         fetch('/api/winrate-ranking-report?source=chatgpt').then(r => r.json()).catch(() => null),
-        fetch('/api/institutional-chip-strategy', {cache:'no-store'}).then(r => r.json()).catch(() => null)
+        fetch('/api/institutional-chip-strategy', {cache:'no-store'}).then(r => r.json()).catch(() => null),
+        fetch('/api/broker-chips', {cache:'no-store'}).then(r => r.json()).catch(() => null)
       ]);
 
       if (resE && resE.ok) winrateParsedData.evolution = parseDualTrackRankingMd(resE.content, 'evolution');
       if (resG && resG.ok) winrateParsedData.gemini = parseDualTrackRankingMd(resG.content, 'gemini');
       if (resC && resC.ok) winrateParsedData.chatgpt = parseDualTrackRankingMd(resC.content, 'chatgpt');
       if (institutionalRes && institutionalRes.ok) institutionalStrategyMarkdown = institutionalRes.content || '';
+      if (brokerChipsRes && brokerChipsRes.ok) window.brokerChipsMap = brokerChipsRes.chips || {};
 
       const currentData = winrateParsedData[winrateRankingSource] || winrateParsedData.gemini || winrateParsedData.chatgpt;
       if (!currentData) {
@@ -6442,6 +6505,40 @@
       };
     });
 
+    function getBrokerChipBadge(code){
+      const chip = (window.brokerChipsMap || {})[code];
+      if (!chip || chip.broker_concentration === undefined || chip.broker_concentration === null) return '';
+      const conc = Number(chip.broker_concentration);
+      const buyers = (chip.top_buyers || []).slice(0, 2).join(', ');
+      const sellers = (chip.top_sellers || []).slice(0, 2).join(', ');
+      const hasDt = Boolean(chip.has_day_trader);
+      const dtList = (chip.day_traders || []).join('、');
+
+      let title = `主力集中度: ${conc > 0 ? '+' : ''}${conc.toFixed(1)}%\n買超前二: ${buyers || '無'}\n賣超前二: ${sellers || '無'}`;
+      if (hasDt) {
+        title += `\n⚡【隔日衝警戒】：前兩大買超包含知名隔日衝（${dtList}），次日開盤嚴禁追高，提防早盤大量結帳！`;
+      }
+
+      let concBadge = '';
+      if (conc >= 15.0) {
+        concBadge = `<span class="broker-chip-badge chip-extreme-buy" style="margin-left:4px; padding:1px 5px; border-radius:4px; font-size:11px; font-weight:850; background:rgba(16,185,129,0.25); color:#34d399; border:1px solid rgba(16,185,129,0.5); white-space:nowrap; flex-shrink:0;" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">🎯+${conc.toFixed(1)}%</span>`;
+      } else if (conc >= 5.0) {
+        concBadge = `<span class="broker-chip-badge chip-buy" style="margin-left:4px; padding:1px 4px; border-radius:4px; font-size:11px; font-weight:800; background:rgba(52,211,153,0.15); color:#6ee7b7; border:1px solid rgba(52,211,153,0.3); white-space:nowrap; flex-shrink:0;" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">+${conc.toFixed(1)}%</span>`;
+      } else if (conc <= -15.0) {
+        concBadge = `<span class="broker-chip-badge chip-extreme-sell" style="margin-left:4px; padding:1px 5px; border-radius:4px; font-size:11px; font-weight:850; background:rgba(239,68,68,0.25); color:#f87171; border:1px solid rgba(239,68,68,0.5); white-space:nowrap; flex-shrink:0;" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">🚨${conc.toFixed(1)}%</span>`;
+      } else if (conc <= -5.0) {
+        concBadge = `<span class="broker-chip-badge chip-sell" style="margin-left:4px; padding:1px 4px; border-radius:4px; font-size:11px; font-weight:800; background:rgba(248,113,113,0.15); color:#fca5a5; border:1px solid rgba(248,113,113,0.3); white-space:nowrap; flex-shrink:0;" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">${conc.toFixed(1)}%</span>`;
+      }
+
+      let dtBadge = '';
+      if (hasDt) {
+        const dtTitle = `⚡【隔日衝警戒】買方見【${dtList}】！次日開盤切勿追高，防早盤倒貨！`;
+        dtBadge = `<span class="broker-chip-badge chip-daytrader" style="margin-left:3px; padding:1px 4px; border-radius:4px; font-size:10.5px; font-weight:850; background:rgba(234,179,8,0.25); color:#fde047; border:1px solid rgba(250,204,21,0.6); white-space:nowrap; flex-shrink:0;" data-tooltip="${escapeHtml(dtTitle)}" title="${escapeHtml(dtTitle)}">⚡隔日衝</span>`;
+      }
+
+      return concBadge + dtBadge;
+    }
+
     function renderMiniOverviewCol(titleText, icon, colorTheme, items, src, track){
       return `
         <div class="mini-overview-col col-${src}-${track}" style="min-width:0; width:100%; box-sizing:border-box; background:rgba(0,0,0,0.4); border:2px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px;">
@@ -6459,6 +6556,7 @@
                   <span class="stock-code ${getStockMarketClass(it.code)}" style="font-weight:850; font-family:monospace; font-size:15px; flex-shrink:0;" title="[${getStockMarketLabel(it.code)}] ${escapeHtml(it.code)}">${escapeHtml(it.code)}</span>
                   <span class="overview-stock-name" style="font-weight:800; color:#ffffff; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</span>
                   ${tierBadgesMap[it.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[it.code].tier}" title="${escapeHtml(tierBadgesMap[it.code].title)}">${tierBadgesMap[it.code].label}</span>` : ''}
+                  ${getBrokerChipBadge(it.code)}
                 </div>
                 <span class="overview-item-val" style="font-size:14.5px; font-weight:850; color:${colorTheme}; white-space:nowrap; flex-shrink:0;">${escapeHtml(it.price || it.score || '')}</span>
               </div>
@@ -6506,7 +6604,7 @@
 
     function renderInstitutionalStrategyLeaderboard(){
       if (!institutionalStrategyMarkdown) return '';
-      const boards = { sync: [], trust: [] };
+      const boards = { sync: [], trust: [], broker_accum: [], broker_dump: [] };
       let active = '';
       let asOf = '';
       institutionalStrategyMarkdown.split(/\r?\n/).forEach(raw => {
@@ -6515,13 +6613,15 @@
         if (date) asOf = date[1];
         if (line.startsWith('##') && line.includes('外資、投信同步買超')) active = 'sync';
         else if (line.startsWith('##') && line.includes('投信買超')) active = 'trust';
+        else if (line.startsWith('##') && line.includes('主力分點強力吸籌')) active = 'broker_accum';
+        else if (line.startsWith('##') && line.includes('主力分點倒貨警戒')) active = 'broker_dump';
         else if (active && line.startsWith('|') && line.endsWith('|')) {
           const cells = line.split('|').slice(1, -1).map(v => v.trim().replace(/`/g, ''));
           if (cells.length === 7 && /^\d+$/.test(cells[0]) && /^\d{4}$/.test(cells[1])) boards[active].push(cells);
         }
       });
       const column = (title, color, items, valueIndex, label) => `<div style="min-width:0; width:100%; box-sizing:border-box; background:rgba(0,0,0,.28); border:1px solid ${color}66; border-radius:10px; padding:10px 12px;"><div style="color:${color}; font-size:15px; font-weight:900; padding-bottom:7px; border-bottom:1.5px solid rgba(255,255,255,.12);">${title}</div><div style="display:flex; flex-direction:column; gap:4px; margin-top:7px;">${items.length ? items.map(cells => `<div class="institutional-strategy-item" data-stock-code="${escapeHtml(cells[1])}" style="display:flex; justify-content:space-between; align-items:center; padding:3px 7px; border-radius:6px; background:rgba(255,255,255,.035); font-size:15px; min-height:28px; cursor:pointer;"><span style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><b style="display:inline-block; width:20px; color:var(--text-dim);">${escapeHtml(cells[0])}</b><span class="stock-code ${getStockMarketClass(cells[1])}" style="font-family:monospace; font-weight:850;">${escapeHtml(cells[1])}</span>　<b>${escapeHtml(cells[2])}</b></span><b style="color:${color}; white-space:nowrap;">${label} ${escapeHtml(cells[valueIndex])}</b></div>`).join('') : '<div style="padding:10px; text-align:center; color:var(--text-dim);">當日無符合標的</div>'}</div></div>`;
-      return `<section id="institutional-strategy-leaderboard" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.12);"><div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:10px;"><b style="font-size:16px; color:#fde68a;">🏦 法人籌碼策略榜</b><span style="font-size:12px; color:var(--text-dim);">資料日：${escapeHtml(asOf || '—')}｜單位：張</span></div><div class="ranking-overview-row" style="margin-bottom:0;">${column('外資＋投信同步買超｜合計 ≥ 300 張', '#fbbf24', boards.sync, 6, '合計')}${column('投信買超 TOP 10', '#c084fc', boards.trust, 4, '投信')}</div></section>`;
+      return `<section id="institutional-strategy-leaderboard" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.12);"><div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:10px;"><b style="font-size:16px; color:#fde68a;">🏦 法人與主力券商籌碼策略榜</b><span style="font-size:12px; color:var(--text-dim);">資料日：${escapeHtml(asOf || '—')}｜單位：張 / 集中度%</span></div><div class="ranking-overview-row" style="margin-bottom:0;">${column('外資＋投信同步買超 ≥ 300張', '#fbbf24', boards.sync, 6, '合計')}${column('投信買超 TOP 10', '#c084fc', boards.trust, 4, '投信')}${column('🎯 主力分點強力吸籌 TOP 10', '#34d399', boards.broker_accum, 6, '集中度')}${column('🚨 主力分點倒貨警戒 TOP 10', '#f87171', boards.broker_dump, 6, '集中度')}</div></section>`;
     }
 
     let html = `
@@ -7149,7 +7249,16 @@
 
   async function loadTree(){
     await syncWatchlistFromServer();
-    const { data } = await api('GET', '/api/tree');
+    const [treeRes, brokerChipsRes] = await Promise.all([
+      api('GET', '/api/tree'),
+      (!window.brokerChipsMap || Object.keys(window.brokerChipsMap).length === 0)
+        ? fetch('/api/broker-chips', {cache:'no-store'}).then(r => r.json()).catch(() => null)
+        : Promise.resolve(null)
+    ]);
+    if (brokerChipsRes && brokerChipsRes.ok) {
+      window.brokerChipsMap = brokerChipsRes.chips || {};
+    }
+    const data = (treeRes && treeRes.data) ? treeRes.data : (treeRes || {});
     tree = data.tree;
     if (tree && Array.isArray(tree.todayNewStocks)) {
       window.TODAY_NEW_STOCKS = new Set(
@@ -7443,20 +7552,51 @@
     const peTitle = peVal ? `本益比 (PE)：${peVal} 倍` : `尚無本益比資料`;
 
     const winPill = winRateVal
-      ? `<span class="tree-stat-pill winrate ${parseFloat(winRateVal)>=60 ? 'high' : ''}" title="${escapeHtml(winRateTitle)}">${escapeHtml(winRateVal)}</span>`
-      : `<span class="tree-stat-pill missing winrate-missing" title="${escapeHtml(winRateTitle)}">—</span>`;
+      ? `<span class="tree-stat-pill winrate ${parseFloat(winRateVal)>=60 ? 'high' : ''}" data-tooltip="${escapeHtml(winRateTitle)}" title="${escapeHtml(winRateTitle)}">${escapeHtml(winRateVal)}</span>`
+      : `<span class="tree-stat-pill missing winrate-missing" data-tooltip="${escapeHtml(winRateTitle)}" title="${escapeHtml(winRateTitle)}">—</span>`;
 
     const changePill = changeVal
-      ? `<span class="tree-stat-pill change ${changeCls}" title="${escapeHtml(changeTitle)}">${escapeHtml(changeVal)}</span>`
-      : `<span class="tree-stat-pill missing change-missing" title="${escapeHtml(changeTitle)}">—</span>`;
+      ? `<span class="tree-stat-pill change ${changeCls}" data-tooltip="${escapeHtml(changeTitle)}" title="${escapeHtml(changeTitle)}">${escapeHtml(changeVal)}</span>`
+      : `<span class="tree-stat-pill missing change-missing" data-tooltip="${escapeHtml(changeTitle)}" title="${escapeHtml(changeTitle)}">—</span>`;
 
     const pricePill = priceVal
-      ? `<span class="tree-stat-pill price ${priceCls}" title="${escapeHtml(priceTitle)}">${escapeHtml(priceVal)}</span>`
-      : `<span class="tree-stat-pill missing price-missing" title="${escapeHtml(priceTitle)}">—</span>`;
+      ? `<span class="tree-stat-pill price ${priceCls}" data-tooltip="${escapeHtml(priceTitle)}" title="${escapeHtml(priceTitle)}">${escapeHtml(priceVal)}</span>`
+      : `<span class="tree-stat-pill missing price-missing" data-tooltip="${escapeHtml(priceTitle)}" title="${escapeHtml(priceTitle)}">—</span>`;
 
     const pePill = peVal
-      ? `<span class="tree-stat-pill pe" title="${escapeHtml(peTitle)}">${escapeHtml(peVal)}</span>`
-      : `<span class="tree-stat-pill missing pe-missing" title="${escapeHtml(peTitle)}">—</span>`;
+      ? `<span class="tree-stat-pill pe" data-tooltip="${escapeHtml(peTitle)}" title="${escapeHtml(peTitle)}">${escapeHtml(peVal)}</span>`
+      : `<span class="tree-stat-pill missing pe-missing" data-tooltip="${escapeHtml(peTitle)}" title="${escapeHtml(peTitle)}">—</span>`;
+
+    // 主力券商分點籌碼集中度數據 (在"垃圾桶"與"總評分"之間，佔6個字元)
+    const brokerChip = (window.brokerChipsMap && window.brokerChipsMap[code]) || null;
+    let chipPill = '';
+    if (brokerChip && brokerChip.broker_concentration !== undefined && brokerChip.broker_concentration !== null) {
+      const conc = Number(brokerChip.broker_concentration);
+      const buyers = (brokerChip.top_buyers || []).slice(0, 2).join('、');
+      const sellers = (brokerChip.top_sellers || []).slice(0, 2).join('、');
+      const hasDt = Boolean(brokerChip.has_day_trader);
+      const dtList = (brokerChip.day_traders || []).join('、');
+
+      let chipTitle = `主力券商分點集中度：${conc > 0 ? '+' : ''}${conc.toFixed(1)}%\n前兩大買超分點：${buyers || '無'}\n前兩大賣超分點：${sellers || '無'}`;
+      if (hasDt) {
+        chipTitle += `\n⚡【隔日衝主力進駐】：前兩大買超包含知名隔日衝【${dtList}】！次日開盤切勿追高，防早盤倒貨！`;
+      }
+
+      let chipTone = 'flat';
+      if (hasDt && conc > 0) chipTone = 'daytrader';
+      else if (conc >= 15.0) chipTone = 'extreme-buy';
+      else if (conc > 0) chipTone = 'buy';
+      else if (conc <= -15.0) chipTone = 'extreme-sell';
+      else if (conc < 0) chipTone = 'sell';
+
+      const rawText = `${conc > 0 ? '+' : ''}${conc.toFixed(1)}%`;
+      const chipText = rawText.padStart(6, '\u00A0');
+      chipPill = `<span class="tree-stat-pill chip ${chipTone}" data-tooltip="${escapeHtml(chipTitle)}" title="${escapeHtml(chipTitle)}">${escapeHtml(chipText)}</span>`;
+    } else {
+      const chipTitle = `尚無主力分點籌碼集中度資料`;
+      const missingText = '\u00A0\u00A0—\u00A0\u00A0';
+      chipPill = `<span class="tree-stat-pill missing chip-missing" data-tooltip="${escapeHtml(chipTitle)}" title="${escapeHtml(chipTitle)}">${escapeHtml(missingText)}</span>`;
+    }
 
     const quickActions = code ? `
       <span class="tree-quick-actions">
@@ -7487,7 +7627,7 @@
     const marketLabel = market === 'TWO' ? '上櫃' : '上市';
     const patternTitle = `[${marketLabel}] 點擊開啟 ${code} ${displayName} 的專業看盤`;
     const reviewBadge = r.needsReview ? `<span class="badge" style="background:#fef08a;color:#854d0e;font-size:0.75rem;padding:2px 6px;border-radius:4px;margin-left:4px;font-weight:600;" title="存在多份 HTML 變體或墓碑舊檔，建議整理">⚠️ 待整理</span>` : "";
-    item.innerHTML = `${newBadge}${starBtn}<span class="code ${marketClass}" title="${escapeHtml(patternTitle)}">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(patternTitle)}">${escapeHtml(displayName)}</span>${reviewBadge}${dispBadge}<span class="tree-stat-pills">${quickActions}${winPill}${changePill}${pricePill}${pePill}</span>`;
+    item.innerHTML = `${newBadge}${starBtn}<span class="code ${marketClass}" title="${escapeHtml(patternTitle)}">${escapeHtml(r.code || '')}</span><span class="name" title="${escapeHtml(patternTitle)}">${escapeHtml(displayName)}</span>${reviewBadge}${dispBadge}<span class="tree-stat-pills">${quickActions}${chipPill}${winPill}${changePill}${pricePill}${pePill}</span>`;
 
     // 點擊股號或股名：直接切換跳轉到「📈 專業看盤」
     const codeEl = item.querySelector('.code');
@@ -9989,6 +10129,136 @@ ${macroJsonText()}`;
   document.getElementById("btn-close-sync-preview-main")?.addEventListener("click", closeSyncPreviewModalMain);
   document.getElementById("btn-cancel-sync-preview-main")?.addEventListener("click", closeSyncPreviewModalMain);
   document.getElementById("btn-apply-sync-main")?.addEventListener("click", handleConfirmApplySyncMain);
+
+  /* ══════════════════════════════════════════════════════════
+     🌟 全域高效自訂 Floating Tooltip 懸浮窗系統
+     解決 macOS/Chrome 原生 title 2秒超長延遲與 draggable 抑制問題
+     ══════════════════════════════════════════════════════════ */
+  (function initGlobalCustomTooltip() {
+    let tooltip = document.getElementById('customFloatingTooltip');
+    if (!tooltip) {
+      tooltip = document.createElement('div');
+      tooltip.id = 'customFloatingTooltip';
+      tooltip.className = 'custom-floating-tooltip';
+      document.body.appendChild(tooltip);
+    }
+
+    let activeEl = null;
+    let showTimer = null;
+
+    function getTooltipTarget(target) {
+      if (!target || !target.closest) return null;
+      const el = target.closest('[data-tooltip], .tree-stat-pill, .broker-chip-badge, .ranking-tier-badge, .stock-disposal-badge, .tree-quick-btn');
+      if (!el) return null;
+
+      // 若有原生 title，優先轉為 data-tooltip 並移除 title，徹底杜絕原生醜陋延遲 tooltip
+      if (el.hasAttribute('title') && el.getAttribute('title').trim()) {
+        const titleVal = el.getAttribute('title').trim();
+        if (!el.dataset.tooltip) el.dataset.tooltip = titleVal;
+        el.removeAttribute('title');
+      }
+
+      if (el.dataset.tooltip && el.dataset.tooltip.trim()) {
+        return { el, text: el.dataset.tooltip.trim() };
+      }
+      return null;
+    }
+
+    function updateTooltipPosition(el) {
+      if (!el || !tooltip) return;
+      const rect = el.getBoundingClientRect();
+      const ttRect = tooltip.getBoundingClientRect();
+      const margin = 8;
+
+      let top = rect.top - ttRect.height - margin;
+      let left = rect.left + (rect.width / 2) - (ttRect.width / 2);
+
+      // 若上方超出可視範圍，改放下方
+      if (top < margin) {
+        top = rect.bottom + margin;
+      }
+
+      // 水平防溢出保護
+      if (left < margin) left = margin;
+      if (left + ttRect.width > window.innerWidth - margin) {
+        left = window.innerWidth - margin - ttRect.width;
+      }
+
+      tooltip.style.top = `${Math.round(top)}px`;
+      tooltip.style.left = `${Math.round(left)}px`;
+    }
+
+    function renderTooltipContent(rawText) {
+      const lines = rawText.split('\n');
+      return lines.map(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return '';
+        if (trimmed.includes('⚡【隔日衝')) {
+          return `<div style="margin-top:5px; padding:5px 8px; background:rgba(234,179,8,0.22); border:1px solid rgba(250,204,21,0.65); border-radius:6px; color:#fde047; font-weight:850; font-size:11.5px; line-height:1.4; text-shadow:0 1px 2px rgba(0,0,0,0.5);">${escapeHtml(trimmed)}</div>`;
+        }
+        if (trimmed.startsWith('主力券商分點集中度') || trimmed.startsWith('主力集中度')) {
+          return `<div style="font-weight:900; font-size:12.5px; color:#38bdf8; margin-bottom:4px; padding-bottom:3px; border-bottom:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; gap:4px;">🎯 ${escapeHtml(trimmed)}</div>`;
+        }
+        if (trimmed.includes('買超前二') || trimmed.includes('前兩大買超')) {
+          return `<div style="color:#6ee7b7; font-size:11.5px; margin:2px 0; font-weight:600;">🟢 ${escapeHtml(trimmed)}</div>`;
+        }
+        if (trimmed.includes('賣超前二') || trimmed.includes('前兩大賣超')) {
+          return `<div style="color:#fca5a5; font-size:11.5px; margin:2px 0; font-weight:600;">🔴 ${escapeHtml(trimmed)}</div>`;
+        }
+        if (trimmed.startsWith('預期勝率')) {
+          return `<div style="font-weight:800; font-size:12px; color:#fca5a5;">📊 ${escapeHtml(trimmed)}</div>`;
+        }
+        if (trimmed.startsWith('當日漲跌')) {
+          return `<div style="font-weight:800; font-size:12px; color:#e2e8f0;">📈 ${escapeHtml(trimmed)}</div>`;
+        }
+        if (trimmed.startsWith('最新收盤價')) {
+          return `<div style="font-weight:800; font-size:12px; color:#38bdf8;">💰 ${escapeHtml(trimmed)}</div>`;
+        }
+        if (trimmed.startsWith('本益比')) {
+          return `<div style="font-weight:800; font-size:12px; color:#c4b5fd;">🏷️ ${escapeHtml(trimmed)}</div>`;
+        }
+        return `<div style="color:#e2e8f0; font-size:11.5px;">${escapeHtml(trimmed)}</div>`;
+      }).filter(Boolean).join('');
+    }
+
+    document.addEventListener('mouseover', (e) => {
+      const match = getTooltipTarget(e.target);
+      if (!match) return;
+
+      if (activeEl === match.el) return;
+      activeEl = match.el;
+
+      clearTimeout(showTimer);
+      showTimer = setTimeout(() => {
+        if (!activeEl) return;
+        tooltip.innerHTML = renderTooltipContent(match.text);
+        tooltip.style.display = 'block';
+        updateTooltipPosition(activeEl);
+        requestAnimationFrame(() => {
+          tooltip.classList.add('show');
+        });
+      }, 50); // 50毫秒極速快顯
+    }, true);
+
+    document.addEventListener('mouseout', (e) => {
+      const match = getTooltipTarget(e.target);
+      if (match && match.el === activeEl) {
+        clearTimeout(showTimer);
+        activeEl = null;
+        tooltip.classList.remove('show');
+        tooltip.style.display = 'none';
+      }
+    }, true);
+
+    window.addEventListener('scroll', () => {
+      if (activeEl) {
+        clearTimeout(showTimer);
+        activeEl = null;
+        tooltip.classList.remove('show');
+        tooltip.style.display = 'none';
+      }
+    }, true);
+  })();
 </script>
 </body>
 </html>

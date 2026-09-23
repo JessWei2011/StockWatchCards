@@ -38,6 +38,11 @@ try:
 except ImportError:
     YFINANCE_AVAILABLE = False
 
+try:
+    import broker_chip_service
+except Exception:
+    broker_chip_service = None
+
 ROOT = Path(__file__).resolve().parent
 REPORTS_DIR = ROOT / "reports"
 OUTPUT_MD = ROOT / "stock_winrate_ranking.md"
@@ -1411,11 +1416,18 @@ def detect_chip_tags(stock_info: dict, kline_df: pd.DataFrame = None) -> list:
     涵蓋：投信爆量總攻/護盤、土洋同步/對作、資減法買/資增法賣、法人高強度鎖碼、自營避險點火
     """
     tags = []
+    # 0. 主力券商分點籌碼集中度判定
+    broker_chip = stock_info.get('broker_chip')
+    if broker_chip and broker_chip_service:
+        b_tag = broker_chip_service.get_broker_chip_tag(broker_chip)
+        if b_tag:
+            tags.append(b_tag)
+
     institutions = stock_info.get('institutions', [])
     margin = stock_info.get('margin', [])
     
     if not institutions:
-        return ["⚪ 法人籌碼中性換手"]
+        return tags or ["⚪ 法人籌碼中性換手"]
 
     inst_5 = institutions[:5]
     inst_20 = institutions[:20]
@@ -1988,7 +2000,31 @@ def evaluate_dual_strategy(stock_info, all_category_counts=None, as_of=None):
     # 6. 籌碼指標
     chip_tags = detect_chip_tags(stock_info, df)
     for ctag in chip_tags:
-        if "🔥 土洋同步大買" in ctag:
+        if "🔥 主力極致鎖碼" in ctag:
+            momo_score += 20
+            momo_reasons.append("主力極致鎖碼(分點高度集中)")
+            def_score += 15
+            def_reasons.append("主力極致鎖碼")
+        elif "🟢 主力積極吸籌" in ctag:
+            momo_score += 10
+            momo_reasons.append("主力積極吸籌(分點吸籌)")
+            def_score += 10
+            def_reasons.append("主力積極吸籌")
+        elif "🚨 主力倒貨散戶接刀" in ctag:
+            momo_score -= 25
+            momo_reasons.append("⚠️警示:主力倒貨散戶接盤")
+            def_score -= 20
+            def_reasons.append("⚠️警示:主力倒貨散戶接刀")
+        elif "⚠️ 籌碼偏向發散" in ctag:
+            momo_score -= 15
+            momo_reasons.append("⚠️警示:主力籌碼偏向發散")
+            def_score -= 15
+            def_reasons.append("⚠️警示:籌碼流向散戶")
+        if "⚡隔日衝" in ctag:
+            def_score -= 15
+            def_reasons.append("⚠️警示:分點見隔日衝")
+            momo_reasons.append("⚠️警示:分點見隔日衝(防次日開高走低)")
+        elif "🔥 土洋同步大買" in ctag:
             momo_score += 16
             momo_reasons.append("土洋同步大買(雙主力合力)")
             def_score += 16
@@ -2184,6 +2220,20 @@ def main():
             date_counts[date] = date_counts.get(date, 0) + 1
     as_of = max(date_counts, key=date_counts.get) if date_counts else '未知'
     print(f"📅 本次統一使用資料截止日：{as_of}")
+
+    # 載入主力券商分點籌碼集中度數據
+    if broker_chip_service is not None:
+        try:
+            target_trade_date = as_of.replace("-", "").replace("/", "") if as_of and as_of != '未知' else ""
+            all_codes = list(infos_by_code.keys())
+            print(f"📊 同步批次取得 {len(all_codes)} 檔個股之主力券商分點籌碼集中度...")
+            broker_chips_map = broker_chip_service.get_broker_chips_batch(all_codes, target_date=target_trade_date, max_workers=10)
+            for c, info in infos_by_code.items():
+                if c in broker_chips_map:
+                    info['broker_chip'] = broker_chips_map[c]
+            print(f"✅ 主力分點籌碼載入完成，成功取得 {len(broker_chips_map)} 檔資料。")
+        except Exception as e:
+            print(f"⚠️ 主力分點籌碼載入略過：{e}")
 
     # 2. 多核心平行評估雙軌策略
     def _eval_single(info):

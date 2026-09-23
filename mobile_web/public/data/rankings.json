@@ -198,63 +198,63 @@
       "items": [
         {
           "rank": "1",
-          "code": "3055",
-          "name": "蔚華科",
-          "price": "206.50"
+          "code": "3529",
+          "name": "力旺",
+          "price": "3305.00"
         },
         {
           "rank": "2",
-          "code": "3443",
-          "name": "創意",
-          "price": "8375.00"
+          "code": "6426",
+          "name": "統新",
+          "price": "391.50"
         },
         {
           "rank": "3",
-          "code": "1560",
-          "name": "中砂",
-          "price": "950.00"
+          "code": "6805",
+          "name": "富世達",
+          "price": "2600.00"
         },
         {
           "rank": "4",
-          "code": "8996",
-          "name": "高力",
-          "price": "1655.00"
+          "code": "1560",
+          "name": "中砂",
+          "price": "955.00"
         },
         {
           "rank": "5",
           "code": "8227",
           "name": "巨有科技",
-          "price": "305.00"
+          "price": "310.00"
         },
         {
           "rank": "6",
+          "code": "3443",
+          "name": "創意",
+          "price": "8385.00"
+        },
+        {
+          "rank": "7",
           "code": "2303",
           "name": "聯電",
           "price": "160.00"
         },
         {
-          "rank": "7",
-          "code": "3529",
-          "name": "力旺",
-          "price": "3110.00"
-        },
-        {
           "rank": "8",
-          "code": "3189",
-          "name": "景碩",
-          "price": "909.00"
+          "code": "3026",
+          "name": "禾伸堂",
+          "price": "768.00"
         },
         {
           "rank": "9",
           "code": "2492",
           "name": "華新科",
-          "price": "311.00"
+          "price": "306.00"
         },
         {
           "rank": "10",
           "code": "5386",
           "name": "青雲",
-          "price": "281.50"
+          "price": "282.00"
         }
       ]
     },
@@ -265,63 +265,63 @@
       "items": [
         {
           "rank": "1",
-          "code": "3034",
-          "name": "聯詠",
-          "price": "557.00"
+          "code": "6531",
+          "name": "愛普",
+          "price": "987.00"
         },
         {
           "rank": "2",
-          "code": "2379",
-          "name": "瑞昱",
-          "price": "755.00"
+          "code": "6213",
+          "name": "聯茂",
+          "price": "541.00"
         },
         {
           "rank": "3",
-          "code": "3189",
-          "name": "景碩",
-          "price": "909.00"
+          "code": "6805",
+          "name": "富世達",
+          "price": "2600.00"
         },
         {
           "rank": "4",
-          "code": "6213",
-          "name": "聯茂",
-          "price": "543.00"
+          "code": "2395",
+          "name": "研華",
+          "price": "701.00"
         },
         {
           "rank": "5",
-          "code": "8299",
-          "name": "群聯",
-          "price": "2185.00"
+          "code": "2379",
+          "name": "瑞昱",
+          "price": "761.00"
         },
         {
           "rank": "6",
-          "code": "5483",
-          "name": "中美晶",
-          "price": "195.00"
+          "code": "3693",
+          "name": "營邦",
+          "price": "732.00"
         },
         {
           "rank": "7",
-          "code": "2327",
-          "name": "國巨",
-          "price": "571.00"
+          "code": "2303",
+          "name": "聯電",
+          "price": "160.00"
         },
         {
           "rank": "8",
-          "code": "2377",
-          "name": "微星",
-          "price": "153.50"
+          "code": "8299",
+          "name": "群聯",
+          "price": "2215.00"
         },
         {
           "rank": "9",
-          "code": "3105",
-          "name": "穩懋",
-          "price": "501.00"
+          "code": "3491",
+          "name": "昇達科",
+          "price": "1565.00"
         },
         {
           "rank": "10",
-          "code": "6805",
-          "name": "富世達",
-          "price": "2500.00"
+          "code": "3324",
+          "name": "雙鴻",
+          "price": "1595.00"
         }
       ]
     },
@@ -332,63 +332,63 @@
       "items": [
         {
           "rank": "1",
-          "code": "3055",
-          "name": "蔚華科",
-          "price": "206.50"
+          "code": "6805",
+          "name": "富世達",
+          "price": "2600.00"
         },
         {
           "rank": "2",
-          "code": "1560",
-          "name": "中砂",
-          "price": "950.00"
+          "code": "6426",
+          "name": "統新",
+          "price": "391.50"
         },
         {
           "rank": "3",
-          "code": "3443",
-          "name": "創意",
-          "price": "8375.00"
+          "code": "3529",
+          "name": "力旺",
+          "price": "3305.00"
         },
         {
           "rank": "4",
-          "code": "8996",
-          "name": "高力",
-          "price": "1655.00"
+          "code": "8227",
+          "name": "巨有科技",
+          "price": "310.00"
         },
         {
           "rank": "5",
-          "code": "8227",
-          "name": "巨有科技",
-          "price": "305.00"
+          "code": "3443",
+          "name": "創意",
+          "price": "8385.00"
         },
         {
           "rank": "6",
-          "code": "6805",
-          "name": "富世達",
-          "price": "2500.00"
+          "code": "1560",
+          "name": "中砂",
+          "price": "955.00"
         },
         {
           "rank": "7",
-          "code": "2449",
-          "name": "京元電子",
-          "price": "317.00"
+          "code": "3324",
+          "name": "雙鴻",
+          "price": "1595.00"
         },
         {
           "rank": "8",
-          "code": "3264",
-          "name": "欣銓",
-          "price": "276.50"
+          "code": "3653",
+          "name": "健策",
+          "price": "6410.00"
         },
         {
           "rank": "9",
-          "code": "3324",
-          "name": "雙鴻",
-          "price": "1600.00"
+          "code": "3693",
+          "name": "營邦",
+          "price": "732.00"
         },
         {
           "rank": "10",
-          "code": "3189",
-          "name": "景碩",
-          "price": "909.00"
+          "code": "6531",
+          "name": "愛普",
+          "price": "987.00"
         }
       ]
     },
@@ -399,63 +399,63 @@
       "items": [
         {
           "rank": "1",
-          "code": "6213",
-          "name": "聯茂",
-          "price": "543.00"
+          "code": "6531",
+          "name": "愛普",
+          "price": "987.00"
         },
         {
           "rank": "2",
-          "code": "2449",
-          "name": "京元電子",
-          "price": "317.00"
+          "code": "6213",
+          "name": "聯茂",
+          "price": "541.00"
         },
         {
           "rank": "3",
-          "code": "3035",
-          "name": "智原",
-          "price": "203.00"
+          "code": "6805",
+          "name": "富世達",
+          "price": "2600.00"
         },
         {
           "rank": "4",
-          "code": "3034",
-          "name": "聯詠",
-          "price": "557.00"
+          "code": "3324",
+          "name": "雙鴻",
+          "price": "1595.00"
         },
         {
           "rank": "5",
-          "code": "3026",
-          "name": "禾伸堂",
-          "price": "780.00"
+          "code": "2395",
+          "name": "研華",
+          "price": "701.00"
         },
         {
           "rank": "6",
-          "code": "3105",
-          "name": "穩懋",
-          "price": "501.00"
+          "code": "2368",
+          "name": "金像電",
+          "price": "1140.00"
         },
         {
           "rank": "7",
-          "code": "1560",
-          "name": "中砂",
-          "price": "950.00"
+          "code": "3529",
+          "name": "力旺",
+          "price": "3305.00"
         },
         {
           "rank": "8",
-          "code": "3545",
-          "name": "敦泰",
-          "price": "52.00"
+          "code": "3035",
+          "name": "智原",
+          "price": "204.00"
         },
         {
           "rank": "9",
-          "code": "6805",
-          "name": "富世達",
-          "price": "2500.00"
+          "code": "2379",
+          "name": "瑞昱",
+          "price": "761.00"
         },
         {
           "rank": "10",
-          "code": "2454",
-          "name": "聯發科",
-          "price": "5180.00"
+          "code": "6257",
+          "name": "矽格",
+          "price": "247.00"
         }
       ]
     },
@@ -466,103 +466,103 @@
       "items": [
         {
           "rank": "1",
-          "code": "2303",
-          "name": "聯電",
-          "foreign": 50545.0,
-          "trust": 7858.0,
-          "dealer": 1701.0,
-          "total": 60104.0,
-          "displayValue": "合計 +60,104 張"
+          "code": "2610",
+          "name": "華航",
+          "foreign": 14583.0,
+          "trust": 5498.0,
+          "dealer": 272.0,
+          "total": 20353.0,
+          "displayValue": "合計 +20,353 張"
         },
         {
           "rank": "2",
-          "code": "2449",
-          "name": "京元電子",
-          "foreign": 16162.0,
-          "trust": 2979.0,
-          "dealer": 1108.0,
-          "total": 20249.0,
-          "displayValue": "合計 +20,249 張"
+          "code": "2618",
+          "name": "長榮航",
+          "foreign": 11208.0,
+          "trust": 7481.0,
+          "dealer": 631.0,
+          "total": 19319.0,
+          "displayValue": "合計 +19,319 張"
         },
         {
           "rank": "3",
-          "code": "4958",
-          "name": "臻鼎-KY",
-          "foreign": 9733.0,
-          "trust": 1130.0,
-          "dealer": 383.0,
-          "total": 11246.0,
-          "displayValue": "合計 +11,246 張"
+          "code": "2317",
+          "name": "鴻海",
+          "foreign": 5861.0,
+          "trust": 968.0,
+          "dealer": 945.0,
+          "total": 7774.0,
+          "displayValue": "合計 +7,774 張"
         },
         {
           "rank": "4",
-          "code": "3711",
-          "name": "日月光投控",
-          "foreign": 8480.0,
-          "trust": 1163.0,
-          "dealer": 1108.0,
-          "total": 10751.0,
-          "displayValue": "合計 +10,751 張"
+          "code": "3037",
+          "name": "欣興",
+          "foreign": 5947.0,
+          "trust": 575.0,
+          "dealer": -892.0,
+          "total": 5630.0,
+          "displayValue": "合計 +5,630 張"
         },
         {
           "rank": "5",
-          "code": "2618",
-          "name": "長榮航",
-          "foreign": 6621.0,
-          "trust": 3993.0,
-          "dealer": 92.0,
-          "total": 10707.0,
-          "displayValue": "合計 +10,707 張"
+          "code": "1102",
+          "name": "亞泥",
+          "foreign": 5216.0,
+          "trust": 168.0,
+          "dealer": 121.0,
+          "total": 5505.0,
+          "displayValue": "合計 +5,505 張"
         },
         {
           "rank": "6",
-          "code": "2610",
-          "name": "華航",
-          "foreign": 5252.0,
-          "trust": 5133.0,
-          "dealer": 89.0,
-          "total": 10474.0,
-          "displayValue": "合計 +10,474 張"
+          "code": "9904",
+          "name": "寶成",
+          "foreign": 4974.0,
+          "trust": 96.0,
+          "dealer": 41.0,
+          "total": 5111.0,
+          "displayValue": "合計 +5,111 張"
         },
         {
           "rank": "7",
-          "code": "3189",
-          "name": "景碩",
-          "foreign": 9137.0,
-          "trust": 179.0,
-          "dealer": 894.0,
-          "total": 10210.0,
-          "displayValue": "合計 +10,210 張"
+          "code": "2412",
+          "name": "中華電",
+          "foreign": 3633.0,
+          "trust": 970.0,
+          "dealer": -12.0,
+          "total": 4591.0,
+          "displayValue": "合計 +4,591 張"
         },
         {
           "rank": "8",
-          "code": "0050",
-          "name": "元大台灣50",
-          "foreign": 7840.0,
-          "trust": 487.0,
-          "dealer": 1145.0,
-          "total": 9472.0,
-          "displayValue": "合計 +9,472 張"
+          "code": "8046",
+          "name": "南電",
+          "foreign": 3401.0,
+          "trust": 44.0,
+          "dealer": 357.0,
+          "total": 3802.0,
+          "displayValue": "合計 +3,802 張"
         },
         {
           "rank": "9",
-          "code": "2892",
-          "name": "第一金",
-          "foreign": 9026.0,
-          "trust": 171.0,
-          "dealer": 90.0,
-          "total": 9287.0,
-          "displayValue": "合計 +9,287 張"
+          "code": "3605",
+          "name": "宏致",
+          "foreign": 2399.0,
+          "trust": 1569.0,
+          "dealer": -180.0,
+          "total": 3788.0,
+          "displayValue": "合計 +3,788 張"
         },
         {
           "rank": "10",
-          "code": "2327",
-          "name": "國巨*",
-          "foreign": 7871.0,
-          "trust": 186.0,
-          "dealer": 1071.0,
-          "total": 9128.0,
-          "displayValue": "合計 +9,128 張"
+          "code": "6505",
+          "name": "台塑化",
+          "foreign": 3216.0,
+          "trust": 309.0,
+          "dealer": 104.0,
+          "total": 3629.0,
+          "displayValue": "合計 +3,629 張"
         }
       ]
     },
@@ -573,103 +573,103 @@
       "items": [
         {
           "rank": "1",
-          "code": "2303",
-          "name": "聯電",
-          "foreign": 50545.0,
-          "trust": 7858.0,
-          "dealer": 1701.0,
-          "total": 60104.0,
-          "displayValue": "投信 +7,858 張"
+          "code": "2618",
+          "name": "長榮航",
+          "foreign": 11208.0,
+          "trust": 7481.0,
+          "dealer": 631.0,
+          "total": 19319.0,
+          "displayValue": "投信 +7,481 張"
         },
         {
           "rank": "2",
           "code": "2610",
           "name": "華航",
-          "foreign": 5252.0,
-          "trust": 5133.0,
-          "dealer": 89.0,
-          "total": 10474.0,
-          "displayValue": "投信 +5,133 張"
+          "foreign": 14583.0,
+          "trust": 5498.0,
+          "dealer": 272.0,
+          "total": 20353.0,
+          "displayValue": "投信 +5,498 張"
         },
         {
           "rank": "3",
-          "code": "2618",
-          "name": "長榮航",
-          "foreign": 6621.0,
-          "trust": 3993.0,
-          "dealer": 92.0,
-          "total": 10707.0,
-          "displayValue": "投信 +3,993 張"
+          "code": "2892",
+          "name": "第一金",
+          "foreign": -1407.0,
+          "trust": 3234.0,
+          "dealer": 40.0,
+          "total": 1867.0,
+          "displayValue": "投信 +3,234 張"
         },
         {
           "rank": "4",
-          "code": "5347",
-          "name": "世界",
-          "foreign": 1873.0,
-          "trust": 3086.0,
-          "dealer": -2.0,
-          "total": 4958.0,
-          "displayValue": "投信 +3,086 張"
+          "code": "2884",
+          "name": "玉山金",
+          "foreign": -5007.0,
+          "trust": 3005.0,
+          "dealer": 530.0,
+          "total": -1472.0,
+          "displayValue": "投信 +3,005 張"
         },
         {
           "rank": "5",
-          "code": "8028",
-          "name": "昇陽半導體",
-          "foreign": -3026.0,
-          "trust": 3007.0,
-          "dealer": 56.0,
-          "total": 37.0,
-          "displayValue": "投信 +3,007 張"
+          "code": "0050",
+          "name": "元大台灣50",
+          "foreign": -11051.0,
+          "trust": 2200.0,
+          "dealer": 6636.0,
+          "total": -2215.0,
+          "displayValue": "投信 +2,200 張"
         },
         {
           "rank": "6",
-          "code": "2449",
-          "name": "京元電子",
-          "foreign": 16162.0,
-          "trust": 2979.0,
-          "dealer": 1108.0,
-          "total": 20249.0,
-          "displayValue": "投信 +2,979 張"
+          "code": "2887",
+          "name": "台新新光金",
+          "foreign": -2121.0,
+          "trust": 2006.0,
+          "dealer": 420.0,
+          "total": 305.0,
+          "displayValue": "投信 +2,006 張"
         },
         {
           "rank": "7",
-          "code": "3605",
-          "name": "宏致",
-          "foreign": -763.0,
-          "trust": 2487.0,
-          "dealer": -262.0,
-          "total": 1462.0,
-          "displayValue": "投信 +2,487 張"
+          "code": "2603",
+          "name": "長榮",
+          "foreign": -1900.0,
+          "trust": 1962.0,
+          "dealer": 108.0,
+          "total": 169.0,
+          "displayValue": "投信 +1,962 張"
         },
         {
           "rank": "8",
-          "code": "0056",
-          "name": "元大高股息",
-          "foreign": -8707.0,
-          "trust": 2450.0,
-          "dealer": -15360.0,
-          "total": -21617.0,
-          "displayValue": "投信 +2,450 張"
+          "code": "2542",
+          "name": "興富發",
+          "foreign": -251.0,
+          "trust": 1911.0,
+          "dealer": -1534.0,
+          "total": 125.0,
+          "displayValue": "投信 +1,911 張"
         },
         {
           "rank": "9",
-          "code": "8021",
-          "name": "尖點",
-          "foreign": -522.0,
-          "trust": 1852.0,
-          "dealer": -137.0,
-          "total": 1193.0,
-          "displayValue": "投信 +1,852 張"
+          "code": "2891",
+          "name": "中信金",
+          "foreign": -5502.0,
+          "trust": 1892.0,
+          "dealer": 380.0,
+          "total": -3231.0,
+          "displayValue": "投信 +1,892 張"
         },
         {
           "rank": "10",
-          "code": "2308",
-          "name": "台達電",
-          "foreign": -1323.0,
-          "trust": 1642.0,
-          "dealer": -7.0,
-          "total": 311.0,
-          "displayValue": "投信 +1,642 張"
+          "code": "5871",
+          "name": "中租-KY",
+          "foreign": -5378.0,
+          "trust": 1746.0,
+          "dealer": 1.0,
+          "total": -3631.0,
+          "displayValue": "投信 +1,746 張"
         }
       ]
     },

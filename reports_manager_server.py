@@ -2333,6 +2333,11 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path in ("/", ""):
+            self.send_response(302)
+            self.send_header("Location", "/reports_manager.html")
+            self.end_headers()
+            return
         if parsed.path == "/api/rss-news":
             qs = parse_qs(parsed.query)
             codes = re.findall(r'\d{4,6}', ','.join(qs.get('code', []) + qs.get('codes', [])))
@@ -2669,6 +2674,17 @@ class Handler(SimpleHTTPRequestHandler):
                 })
             except Exception as e:
                 self._json(500, {"ok": False, "error": f"讀取法人籌碼策略榜失敗: {e}"})
+            return
+        if parsed.path == "/api/broker-chips":
+            cache_file = ROOT_DIR / "cache" / "broker_chips_cache.json"
+            if not cache_file.exists():
+                self._json(200, {"ok": True, "chips": {}})
+                return
+            try:
+                data = json.loads(cache_file.read_text(encoding="utf-8"))
+                self._json(200, {"ok": True, "chips": data})
+            except Exception as e:
+                self._json(500, {"ok": False, "error": f"讀取分點籌碼失敗: {e}"})
             return
         super().do_GET()
 

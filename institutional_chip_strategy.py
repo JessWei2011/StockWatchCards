@@ -116,6 +116,12 @@ def fmt_lots(value: float) -> str:
     return f"{value:+,.0f}" if value else "0"
 
 
+try:
+    import broker_chip_service
+except Exception:
+    broker_chip_service = None
+
+
 def ranking_rows(records: list[dict]) -> tuple[list[dict], list[dict]]:
     # 僅普通股四碼；上市 T86 已排除 0999 類，TPEx 端再以四碼代號排除 ETF、權證等。
     ordinary = [item for item in records if CODE_RE.fullmatch(item["code"])]
@@ -130,6 +136,45 @@ def ranking_rows(records: list[dict]) -> tuple[list[dict], list[dict]]:
     )
 
 
+def broker_chip_ranking_rows(records: list[dict]) -> tuple[list[dict], list[dict]]:
+    """依主力券商分點買賣超集中度排序 (吸籌 vs 倒貨)。"""
+    if not broker_chip_service:
+        return [], []
+    cache = broker_chip_service.load_broker_chips_cache()
+    if not cache:
+        return [], []
+    name_map = {item["code"]: item["name"] for item in records}
+    
+    enriched = []
+    for code, info in cache.items():
+        conc = info.get("broker_concentration")
+        if conc is None or not CODE_RE.fullmatch(code):
+            continue
+        buyers = ", ".join(info.get("top_buyers", [])[:2])
+        sellers = ", ".join(info.get("top_sellers", [])[:2])
+        point_summary = f"買: {buyers}" if buyers else ""
+        if sellers:
+            point_summary += f" / 賣: {sellers}" if point_summary else f"賣: {sellers}"
+
+        enriched.append({
+            "code": code,
+            "name": name_map.get(code, code),
+            "buy": info.get("broker_buy_lots", 0),
+            "sell": info.get("broker_sell_lots", 0),
+            "net": info.get("broker_net_lots", 0),
+            "concentration": conc,
+            "has_day_trader": info.get("has_day_trader", False),
+            "points": point_summary
+        })
+
+    accum = [x for x in enriched if x["concentration"] > 0]
+    dump = [x for x in enriched if x["concentration"] < 0]
+
+    accum_sorted = sorted(accum, key=lambda x: (-x["concentration"], -x["net"]))[:10]
+    dump_sorted = sorted(dump, key=lambda x: (x["concentration"], x["net"]))[:10]
+    return accum_sorted, dump_sorted
+
+
 def markdown_table(items: list[dict]) -> str:
     if not items:
         return "| — | 當日無符合標的 | — | — | — | — | — |\n"
@@ -142,29 +187,96 @@ def markdown_table(items: list[dict]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def broker_markdown_table(items: list[dict]) -> str:
+    if not items:
+        return "| — | 當日無符合標的 | — | — | — | — | — |\n"
+    lines = []
+    for rank, item in enumerate(items, 1):
+        dt_flag = " ⚡(隔日衝)" if item.get("has_day_trader") else ""
+        lines.append(
+            f"| {rank} | `{item['code']}` | {item['name']}{dt_flag} | {fmt_lots(item['buy'])} | "
+            f"{fmt_lots(item['sell'])} | {fmt_lots(item['net'])} | {item['concentration']:+.1f}% |"
+        )
+    return "\n".join(lines) + "\n"
+
+
 def build_markdown(as_of: date, records: list[dict]) -> str:
     foreign_trust, trust_buy = ranking_rows(records)
+    accum_list, dump_list = broker_chip_ranking_rows(records)
     header = "| 排名 | 股票代號 | 股票名稱 | 外資(張) | 投信(張) | 自營商(張) | 合計(張) |\n|---:|:---:|:---|---:|---:|---:|---:|\n"
-    return (
-        "# 🏦 法人籌碼策略榜\n\n"
-        f"> 資料日期：{as_of.isoformat()}｜來源：TWSE T86、TPEx 三大法人買賣超｜單位：張\n\n"
-        "## ① 外資、投信同步買超｜合計至少 300 張 TOP 10\n\n"
-        + header + markdown_table(foreign_trust)
-        + "\n## ② 投信買超 TOP 10\n\n"
-        + header + markdown_table(trust_buy)
-        + "\n> 僅納入 4 碼普通股；外資、投信、自營商及合計均已統一換算為張。\n"
-    )
+    broker_header = "| 排名 | 股票代號 | 股票名稱 | 主力買(張) | 主力賣(張) | 買賣超差(張) | 集中度(%) |\n|---:|:---:|:---|---:|---:|---:|---:|\n"
+    
+    sections = [
+        "# 🏦 法人與主力籌碼策略榜\n\n",
+        f"> 資料日期：{as_of.isoformat()}｜來源：TWSE T86、TPEx 三大法人買賣超、MoneyDJ 券商分點｜單位：張\n\n",
+        "## ① 外資、投信同步買超｜合計至少 300 張 TOP 10\n\n",
+        header,
+        markdown_table(foreign_trust),
+        "\n## ② 投信買超 TOP 10\n\n",
+        header,
+        markdown_table(trust_buy)
+    ]
+
+    if accum_list:
+        sections.extend([
+            "\n## ③ 主力分點強力吸籌 TOP 10\n\n",
+            broker_header,
+            broker_markdown_table(accum_list)
+        ])
+    if dump_list:
+        sections.extend([
+            "\n## ④ 主力分點倒貨警戒 TOP 10\n\n",
+            broker_header,
+            broker_markdown_table(dump_list)
+        ])
+
+    sections.append("\n> 僅納入 4 碼普通股；三大法人買賣超及主力分點買賣均已統一換算為張。\n")
+    return "".join(sections)
+
+
+def recover_from_existing(output_path: Path) -> tuple[date, list[dict]]:
+    if not output_path.exists():
+        raise RuntimeError("無法自網路取得資料，且本機尚無既存榜單檔。")
+    text = output_path.read_text(encoding="utf-8")
+    m = re.search(r"資料日期[：:]\s*(\d{4}-\d{2}-\d{2})", text)
+    as_of = date.fromisoformat(m.group(1)) if m else date.today()
+    records = []
+    seen = set()
+    for line in text.splitlines():
+        if not line.startswith("|") or not line.endswith("|"):
+            continue
+        parts = [p.strip().replace("`", "") for p in line.split("|")[1:-1]]
+        if len(parts) >= 7 and CODE_RE.fullmatch(parts[1]):
+            code = parts[1]
+            if code not in seen:
+                seen.add(code)
+                records.append({
+                    "code": code,
+                    "name": parts[2],
+                    "market": "TWSE",
+                    "foreign": as_lots(parts[3]),
+                    "trust": as_lots(parts[4]),
+                    "dealer": as_lots(parts[5]),
+                    "total": as_lots(parts[6]),
+                })
+    return as_of, records
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="產生法人籌碼策略榜")
     parser.add_argument("--output", type=Path, default=OUTPUT_FILE)
     args = parser.parse_args()
-    as_of, records = fetch_latest_market_data()
+    try:
+        as_of, records = fetch_latest_market_data()
+    except Exception as e:
+        print(f"⚠️ 即時網路擷取三大法人資料失敗 ({e})，使用既存報告之法人數據...")
+        as_of, records = recover_from_existing(args.output)
+
     args.output.write_text(build_markdown(as_of, records), encoding="utf-8")
     first, second = ranking_rows(records)
+    accum, dump = broker_chip_ranking_rows(records)
     print(f"OK: {as_of.isoformat()} 取得 {len(records)} 檔普通股法人資料")
-    print(f"榜單① {len(first)} 檔；榜單② {len(second)} 檔")
+    print(f"榜單① {len(first)} 檔；榜單② {len(second)} 檔；主力吸籌③ {len(accum)} 檔；主力倒貨④ {len(dump)} 檔")
     print(f"輸出：{args.output}")
     return 0
 
