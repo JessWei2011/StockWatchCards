@@ -7,7 +7,6 @@
 !CLAUDE.md
 !GEMINI.md
 !AGENTS.md
-!AI_B_HANDOFF.md
 !AI_SCORING_RULES.md
 !AI_DOUBLE_CHECK.md
 !CHATGPT_PROJECT_INSTRUCTIONS.md
@@ -47,8 +46,6 @@
 !institutional_chip_strategy.py
 !broker_chip_service.py
 !institutional_chip_strategy_ranking.md
-!法人籌碼策略榜.bat
-!法人籌碼策略榜.command
 !發布手機版.command
 !requirements.txt
 !README.md
@@ -65,6 +62,9 @@
 !report_manager.html
 !報表檔案管理.bat
 !test_report_file_manager.py
+!test_reports_state.py
+!test_stock_report_generator_state.py
+!test_market_report_generator.py
 !evolution_log.html
 !build_portable.py
 !ai_research_cards.json
