@@ -2,11 +2,12 @@
 setlocal
 cd /d "%~dp0"
 
-echo 將以主版本更新此電腦，完成後會自動開啟報表檔案管理。
-echo 注意：本機尚未推送的已追蹤資料將被主版本覆蓋。
-choice /C YN /N /M "是否開始同步"
+echo This machine will be updated from the canonical main branch.
+echo Reports manager will open automatically after completion.
+echo Note: Local unpushed tracked changes will be overwritten by main.
+choice /C YN /M "Start sync now? [Y/N]"
 if errorlevel 2 (
-    echo 已取消，沒有變更任何檔案。
+    echo Cancelled. No files were changed.
     pause
     exit /b 0
 )
@@ -15,7 +16,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0sync_to_canonical_
 set "SCRIPT_EXIT=%ERRORLEVEL%"
 
 if not "%SCRIPT_EXIT%"=="0" (
-    echo [ERROR] 同步未完成。
+    echo [ERROR] Sync did not complete successfully.
     pause
     exit /b %SCRIPT_EXIT%
 )
