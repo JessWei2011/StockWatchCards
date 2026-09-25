@@ -6508,67 +6508,6 @@
       };
     });
 
-    function getBrokerChipBadge(code){
-      const chip = (window.brokerChipsMap || {})[code];
-      if (!chip) return '';
-      const c1 = chip.concentration_1d !== undefined && chip.concentration_1d !== null ? Number(chip.concentration_1d) : (chip.broker_concentration !== undefined && chip.broker_concentration !== null ? Number(chip.broker_concentration) : null);
-      const c5 = chip.concentration_5d !== undefined && chip.concentration_5d !== null ? Number(chip.concentration_5d) : null;
-      if (c1 === null && c5 === null) return '';
-
-      const buyers1d = (chip.top_buyers || []).slice(0, 2).join('、');
-      const sellers1d = (chip.top_sellers || []).slice(0, 2).join('、');
-      const buyers5d = (chip.top_buyers_5d || []).slice(0, 2).join('、');
-      const sellers5d = (chip.top_sellers_5d || []).slice(0, 2).join('、');
-      const hasDt = Boolean(chip.has_day_trader);
-      const dtList = (chip.day_traders || []).join('、');
-      const matrixStatus = chip.matrix_status || '';
-      const matrixAction = chip.matrix_action || '';
-      const matrixType = chip.matrix_type || '';
-
-      let title = `【雙週期主力籌碼矩陣】\n`;
-      if (matrixStatus) title += `• 籌碼型態：${matrixStatus}（建議：${matrixAction}）\n`;
-      if (c5 !== null) title += `• 5日波段集中度：${c5 > 0 ? '+' : ''}${c5.toFixed(1)}%（買超: ${buyers5d || '無'} ｜ 賣超: ${sellers5d || '無'}）\n`;
-      if (c1 !== null) title += `• 1日單日集中度：${c1 > 0 ? '+' : ''}${c1.toFixed(1)}%（買超: ${buyers1d || '無'} ｜ 賣超: ${sellers1d || '無'}）\n`;
-      if (hasDt) {
-        title += `⚡【隔日衝警戒】：前兩大買超包含知名隔日衝（${dtList}），次日開盤切勿追高！`;
-      }
-
-      function renderPill(val, label) {
-        if (val === null) return '';
-        let bg, col, border;
-        if (val >= 15.0) { bg = 'rgba(16,185,129,0.25)'; col = '#34d399'; border = 'rgba(16,185,129,0.5)'; }
-        else if (val >= 5.0) { bg = 'rgba(52,211,153,0.15)'; col = '#6ee7b7'; border = 'rgba(52,211,153,0.3)'; }
-        else if (val <= -15.0) { bg = 'rgba(239,68,68,0.25)'; col = '#f87171'; border = 'rgba(239,68,68,0.5)'; }
-        else if (val <= -5.0) { bg = 'rgba(248,113,113,0.15)'; col = '#fca5a5'; border = 'rgba(248,113,113,0.3)'; }
-        else { bg = 'rgba(148,163,184,0.12)'; col = '#cbd5e1'; border = 'rgba(148,163,184,0.25)'; }
-        const prefix = val > 0 ? '+' : '';
-        return `<span class="broker-chip-badge" style="margin-left:3px; padding:1px 4px; border-radius:4px; font-size:10.5px; font-weight:800; background:${bg}; color:${col}; border:1px solid ${border}; white-space:nowrap; flex-shrink:0;" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">${label}${prefix}${val.toFixed(1)}%</span>`;
-      }
-
-      let badges = '';
-      if (c5 !== null) badges += renderPill(c5, '5D:');
-      if (c1 !== null) badges += renderPill(c1, '1D:');
-
-      let statusBadge = '';
-      if (matrixType === 'wash') {
-        statusBadge = `<span class="broker-chip-badge" style="margin-left:3px; padding:1px 4px; border-radius:4px; font-size:10px; font-weight:850; background:rgba(6,182,212,0.2); color:#22d3ee; border:1px solid rgba(6,182,212,0.5);" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">💎洗盤</span>`;
-      } else if (matrixType === 'breakout') {
-        statusBadge = `<span class="broker-chip-badge" style="margin-left:3px; padding:1px 4px; border-radius:4px; font-size:10px; font-weight:850; background:rgba(16,185,129,0.25); color:#34d399; border:1px solid rgba(16,185,129,0.5);" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">🔥突破</span>`;
-      } else if (matrixType === 'rebound') {
-        statusBadge = `<span class="broker-chip-badge" style="margin-left:3px; padding:1px 4px; border-radius:4px; font-size:10px; font-weight:850; background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.5);" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">⚠️反彈</span>`;
-      } else if (matrixType === 'dump') {
-        statusBadge = `<span class="broker-chip-badge" style="margin-left:3px; padding:1px 4px; border-radius:4px; font-size:10px; font-weight:850; background:rgba(239,68,68,0.25); color:#f87171; border:1px solid rgba(239,68,68,0.5);" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">🚨倒貨</span>`;
-      }
-
-      let dtBadge = '';
-      if (hasDt) {
-        const dtTitle = `⚡【隔日衝警戒】買方見【${dtList}】！次日開盤切勿追高，防早盤倒貨！`;
-        dtBadge = `<span class="broker-chip-badge chip-daytrader" style="margin-left:3px; padding:1px 4px; border-radius:4px; font-size:10px; font-weight:850; background:rgba(234,179,8,0.25); color:#fde047; border:1px solid rgba(250,204,21,0.6); white-space:nowrap; flex-shrink:0;" data-tooltip="${escapeHtml(dtTitle)}" title="${escapeHtml(dtTitle)}">⚡隔日衝</span>`;
-      }
-
-      return badges + statusBadge + dtBadge;
-    }
-
     function renderMiniOverviewCol(titleText, icon, colorTheme, items, src, track){
       return `
         <div class="mini-overview-col col-${src}-${track}" style="min-width:0; width:100%; box-sizing:border-box; background:rgba(0,0,0,0.4); border:2px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px;">
@@ -6586,7 +6525,6 @@
                   <span class="stock-code ${getStockMarketClass(it.code)}" style="font-weight:850; font-family:monospace; font-size:15px; flex-shrink:0;" title="[${getStockMarketLabel(it.code)}] ${escapeHtml(it.code)}">${escapeHtml(it.code)}</span>
                   <span class="overview-stock-name" style="font-weight:800; color:#ffffff; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</span>
                   ${tierBadgesMap[it.code] ? `<span class="ranking-tier-badge tier-${tierBadgesMap[it.code].tier}" title="${escapeHtml(tierBadgesMap[it.code].title)}">${tierBadgesMap[it.code].label}</span>` : ''}
-                  ${getBrokerChipBadge(it.code)}
                 </div>
                 <span class="overview-item-val" style="font-size:14.5px; font-weight:850; color:${colorTheme}; white-space:nowrap; flex-shrink:0;">${escapeHtml(it.price || it.score || '')}</span>
               </div>
