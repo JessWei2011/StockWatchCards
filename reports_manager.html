@@ -1386,6 +1386,7 @@
   [data-theme="light"] .tag-pill[style*="#fde047"],
   [data-theme="light"] .analysis-badge.accent,
   [data-theme="light"] .tree-stat-pill.chip.daytrader,
+  [data-theme="light"] .tree-stat-pill.chip.rebound,
   [data-theme="light"] .rank-decision-tag.watch {
     background: #fefce8 !important;
     color: #854d0e !important;
@@ -1398,10 +1399,11 @@
   [data-theme="light"] .tag-pill[style*="#93c5fd"],
   [data-theme="light"] .tag-pill[style*="#bfdbfe"],
   [data-theme="light"] .analysis-badge.neutral,
+  [data-theme="light"] .tree-stat-pill.chip.wash,
   [data-theme="light"] .rank-score-pill.medium {
     background: #eff6ff !important;
-    color: #1d4ed8 !important;
-    border: 1px solid #60a5fa !important;
+    color: #0369a1 !important;
+    border: 1px solid #38bdf8 !important;
   }
 
   /* 紫色系標籤 (MACD、型態、PE 本益比) 在白底下的高對比：淺紫底 + 濃紫羅蘭字 */
@@ -2272,8 +2274,9 @@
   .tree-stat-pill.chip.buy{ color:#6ee7b7; border:1px solid rgba(52,211,153,.35); background:rgba(52,211,153,.12); }
   .tree-stat-pill.chip.extreme-sell{ color:#f87171; border:1px solid rgba(239,68,68,.55); background:rgba(239,68,68,.22); font-weight:850; }
   .tree-stat-pill.chip.sell{ color:#fca5a5; border:1px solid rgba(248,113,113,.35); background:rgba(248,113,113,.12); }
-  .tree-stat-pill.chip.flat{ color:#cbd5e1; border:1px solid rgba(148,163,184,.3); background:rgba(148,163,184,.1); }
   .tree-stat-pill.chip.daytrader{ color:#fde047; border:1px solid rgba(250,204,21,.7); background:rgba(234,179,8,.22); font-weight:850; }
+  .tree-stat-pill.chip.wash{ color:#22d3ee; border:1px solid rgba(6,182,212,.7); background:rgba(6,182,212,.22); font-weight:850; }
+  .tree-stat-pill.chip.rebound{ color:#fbbf24; border:1px solid rgba(245,158,11,.7); background:rgba(245,158,11,.22); font-weight:850; }
   .tree-stat-pill.winrate{ width:40px; color:#fca5a5; border:1px solid rgba(239,68,68,.4); background:rgba(239,68,68,.14); }
   .tree-stat-pill.winrate.high{ color:#f87171; border:1px solid rgba(239,68,68,.65); background:rgba(239,68,68,.25); }
   .tree-stat-pill.change{ min-width:48px; padding:0 4px; font-weight:850; }
@@ -6507,36 +6510,63 @@
 
     function getBrokerChipBadge(code){
       const chip = (window.brokerChipsMap || {})[code];
-      if (!chip || chip.broker_concentration === undefined || chip.broker_concentration === null) return '';
-      const conc = Number(chip.broker_concentration);
-      const buyers = (chip.top_buyers || []).slice(0, 2).join(', ');
-      const sellers = (chip.top_sellers || []).slice(0, 2).join(', ');
+      if (!chip) return '';
+      const c1 = chip.concentration_1d !== undefined && chip.concentration_1d !== null ? Number(chip.concentration_1d) : (chip.broker_concentration !== undefined && chip.broker_concentration !== null ? Number(chip.broker_concentration) : null);
+      const c5 = chip.concentration_5d !== undefined && chip.concentration_5d !== null ? Number(chip.concentration_5d) : null;
+      if (c1 === null && c5 === null) return '';
+
+      const buyers1d = (chip.top_buyers || []).slice(0, 2).join('、');
+      const sellers1d = (chip.top_sellers || []).slice(0, 2).join('、');
+      const buyers5d = (chip.top_buyers_5d || []).slice(0, 2).join('、');
+      const sellers5d = (chip.top_sellers_5d || []).slice(0, 2).join('、');
       const hasDt = Boolean(chip.has_day_trader);
       const dtList = (chip.day_traders || []).join('、');
+      const matrixStatus = chip.matrix_status || '';
+      const matrixAction = chip.matrix_action || '';
+      const matrixType = chip.matrix_type || '';
 
-      let title = `主力集中度: ${conc > 0 ? '+' : ''}${conc.toFixed(1)}%\n買超前二: ${buyers || '無'}\n賣超前二: ${sellers || '無'}`;
+      let title = `【雙週期主力籌碼矩陣】\n`;
+      if (matrixStatus) title += `• 籌碼型態：${matrixStatus}（建議：${matrixAction}）\n`;
+      if (c5 !== null) title += `• 5日波段集中度：${c5 > 0 ? '+' : ''}${c5.toFixed(1)}%（買超: ${buyers5d || '無'} ｜ 賣超: ${sellers5d || '無'}）\n`;
+      if (c1 !== null) title += `• 1日單日集中度：${c1 > 0 ? '+' : ''}${c1.toFixed(1)}%（買超: ${buyers1d || '無'} ｜ 賣超: ${sellers1d || '無'}）\n`;
       if (hasDt) {
-        title += `\n⚡【隔日衝警戒】：前兩大買超包含知名隔日衝（${dtList}），次日開盤嚴禁追高，提防早盤大量結帳！`;
+        title += `⚡【隔日衝警戒】：前兩大買超包含知名隔日衝（${dtList}），次日開盤切勿追高！`;
       }
 
-      let concBadge = '';
-      if (conc >= 15.0) {
-        concBadge = `<span class="broker-chip-badge chip-extreme-buy" style="margin-left:4px; padding:1px 5px; border-radius:4px; font-size:11px; font-weight:850; background:rgba(16,185,129,0.25); color:#34d399; border:1px solid rgba(16,185,129,0.5); white-space:nowrap; flex-shrink:0;" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">🎯+${conc.toFixed(1)}%</span>`;
-      } else if (conc >= 5.0) {
-        concBadge = `<span class="broker-chip-badge chip-buy" style="margin-left:4px; padding:1px 4px; border-radius:4px; font-size:11px; font-weight:800; background:rgba(52,211,153,0.15); color:#6ee7b7; border:1px solid rgba(52,211,153,0.3); white-space:nowrap; flex-shrink:0;" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">+${conc.toFixed(1)}%</span>`;
-      } else if (conc <= -15.0) {
-        concBadge = `<span class="broker-chip-badge chip-extreme-sell" style="margin-left:4px; padding:1px 5px; border-radius:4px; font-size:11px; font-weight:850; background:rgba(239,68,68,0.25); color:#f87171; border:1px solid rgba(239,68,68,0.5); white-space:nowrap; flex-shrink:0;" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">🚨${conc.toFixed(1)}%</span>`;
-      } else if (conc <= -5.0) {
-        concBadge = `<span class="broker-chip-badge chip-sell" style="margin-left:4px; padding:1px 4px; border-radius:4px; font-size:11px; font-weight:800; background:rgba(248,113,113,0.15); color:#fca5a5; border:1px solid rgba(248,113,113,0.3); white-space:nowrap; flex-shrink:0;" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">${conc.toFixed(1)}%</span>`;
+      function renderPill(val, label) {
+        if (val === null) return '';
+        let bg, col, border;
+        if (val >= 15.0) { bg = 'rgba(16,185,129,0.25)'; col = '#34d399'; border = 'rgba(16,185,129,0.5)'; }
+        else if (val >= 5.0) { bg = 'rgba(52,211,153,0.15)'; col = '#6ee7b7'; border = 'rgba(52,211,153,0.3)'; }
+        else if (val <= -15.0) { bg = 'rgba(239,68,68,0.25)'; col = '#f87171'; border = 'rgba(239,68,68,0.5)'; }
+        else if (val <= -5.0) { bg = 'rgba(248,113,113,0.15)'; col = '#fca5a5'; border = 'rgba(248,113,113,0.3)'; }
+        else { bg = 'rgba(148,163,184,0.12)'; col = '#cbd5e1'; border = 'rgba(148,163,184,0.25)'; }
+        const prefix = val > 0 ? '+' : '';
+        return `<span class="broker-chip-badge" style="margin-left:3px; padding:1px 4px; border-radius:4px; font-size:10.5px; font-weight:800; background:${bg}; color:${col}; border:1px solid ${border}; white-space:nowrap; flex-shrink:0;" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">${label}${prefix}${val.toFixed(1)}%</span>`;
+      }
+
+      let badges = '';
+      if (c5 !== null) badges += renderPill(c5, '5D:');
+      if (c1 !== null) badges += renderPill(c1, '1D:');
+
+      let statusBadge = '';
+      if (matrixType === 'wash') {
+        statusBadge = `<span class="broker-chip-badge" style="margin-left:3px; padding:1px 4px; border-radius:4px; font-size:10px; font-weight:850; background:rgba(6,182,212,0.2); color:#22d3ee; border:1px solid rgba(6,182,212,0.5);" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">💎洗盤</span>`;
+      } else if (matrixType === 'breakout') {
+        statusBadge = `<span class="broker-chip-badge" style="margin-left:3px; padding:1px 4px; border-radius:4px; font-size:10px; font-weight:850; background:rgba(16,185,129,0.25); color:#34d399; border:1px solid rgba(16,185,129,0.5);" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">🔥突破</span>`;
+      } else if (matrixType === 'rebound') {
+        statusBadge = `<span class="broker-chip-badge" style="margin-left:3px; padding:1px 4px; border-radius:4px; font-size:10px; font-weight:850; background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.5);" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">⚠️反彈</span>`;
+      } else if (matrixType === 'dump') {
+        statusBadge = `<span class="broker-chip-badge" style="margin-left:3px; padding:1px 4px; border-radius:4px; font-size:10px; font-weight:850; background:rgba(239,68,68,0.25); color:#f87171; border:1px solid rgba(239,68,68,0.5);" data-tooltip="${escapeHtml(title)}" title="${escapeHtml(title)}">🚨倒貨</span>`;
       }
 
       let dtBadge = '';
       if (hasDt) {
         const dtTitle = `⚡【隔日衝警戒】買方見【${dtList}】！次日開盤切勿追高，防早盤倒貨！`;
-        dtBadge = `<span class="broker-chip-badge chip-daytrader" style="margin-left:3px; padding:1px 4px; border-radius:4px; font-size:10.5px; font-weight:850; background:rgba(234,179,8,0.25); color:#fde047; border:1px solid rgba(250,204,21,0.6); white-space:nowrap; flex-shrink:0;" data-tooltip="${escapeHtml(dtTitle)}" title="${escapeHtml(dtTitle)}">⚡隔日衝</span>`;
+        dtBadge = `<span class="broker-chip-badge chip-daytrader" style="margin-left:3px; padding:1px 4px; border-radius:4px; font-size:10px; font-weight:850; background:rgba(234,179,8,0.25); color:#fde047; border:1px solid rgba(250,204,21,0.6); white-space:nowrap; flex-shrink:0;" data-tooltip="${escapeHtml(dtTitle)}" title="${escapeHtml(dtTitle)}">⚡隔日衝</span>`;
       }
 
-      return concBadge + dtBadge;
+      return badges + statusBadge + dtBadge;
     }
 
     function renderMiniOverviewCol(titleText, icon, colorTheme, items, src, track){
@@ -7570,26 +7600,39 @@
     // 主力券商分點籌碼集中度數據 (在"垃圾桶"與"總評分"之間，佔6個字元)
     const brokerChip = (window.brokerChipsMap && window.brokerChipsMap[code]) || null;
     let chipPill = '';
-    if (brokerChip && brokerChip.broker_concentration !== undefined && brokerChip.broker_concentration !== null) {
-      const conc = Number(brokerChip.broker_concentration);
-      const buyers = (brokerChip.top_buyers || []).slice(0, 2).join('、');
-      const sellers = (brokerChip.top_sellers || []).slice(0, 2).join('、');
+    if (brokerChip && (brokerChip.concentration_5d !== undefined || brokerChip.concentration_1d !== undefined || brokerChip.broker_concentration !== undefined)) {
+      const c1 = brokerChip.concentration_1d !== undefined && brokerChip.concentration_1d !== null ? Number(brokerChip.concentration_1d) : (brokerChip.broker_concentration !== undefined && brokerChip.broker_concentration !== null ? Number(brokerChip.broker_concentration) : null);
+      const c5 = brokerChip.concentration_5d !== undefined && brokerChip.concentration_5d !== null ? Number(brokerChip.concentration_5d) : null;
+      const primaryConc = c5 !== null ? c5 : c1;
+
+      const buyers1d = (brokerChip.top_buyers || []).slice(0, 2).join('、');
+      const sellers1d = (brokerChip.top_sellers || []).slice(0, 2).join('、');
+      const buyers5d = (brokerChip.top_buyers_5d || []).slice(0, 2).join('、');
+      const sellers5d = (brokerChip.top_sellers_5d || []).slice(0, 2).join('、');
       const hasDt = Boolean(brokerChip.has_day_trader);
       const dtList = (brokerChip.day_traders || []).join('、');
+      const matrixStatus = brokerChip.matrix_status || '';
+      const matrixAction = brokerChip.matrix_action || '';
+      const matrixType = brokerChip.matrix_type || '';
 
-      let chipTitle = `主力券商分點集中度：${conc > 0 ? '+' : ''}${conc.toFixed(1)}%\n前兩大買超分點：${buyers || '無'}\n前兩大賣超分點：${sellers || '無'}`;
+      let chipTitle = `【雙週期主力籌碼矩陣】\n`;
+      if (matrixStatus) chipTitle += `• 籌碼型態：${matrixStatus}（建議：${matrixAction}）\n`;
+      if (c5 !== null) chipTitle += `• 5日波段集中度：${c5 > 0 ? '+' : ''}${c5.toFixed(1)}%（買超: ${buyers5d || '無'} ｜ 賣超: ${sellers5d || '無'}）\n`;
+      if (c1 !== null) chipTitle += `• 1日單日集中度：${c1 > 0 ? '+' : ''}${c1.toFixed(1)}%（買超: ${buyers1d || '無'} ｜ 賣超: ${sellers1d || '無'}）\n`;
       if (hasDt) {
-        chipTitle += `\n⚡【隔日衝主力進駐】：前兩大買超包含知名隔日衝【${dtList}】！次日開盤切勿追高，防早盤倒貨！`;
+        chipTitle += `⚡【隔日衝主力進駐】：前兩大買超包含知名隔日衝【${dtList}】！次日開盤切勿追高，防早盤倒貨！`;
       }
 
       let chipTone = 'flat';
-      if (hasDt && conc > 0) chipTone = 'daytrader';
-      else if (conc >= 15.0) chipTone = 'extreme-buy';
-      else if (conc > 0) chipTone = 'buy';
-      else if (conc <= -15.0) chipTone = 'extreme-sell';
-      else if (conc < 0) chipTone = 'sell';
+      if (matrixType === 'wash') chipTone = 'wash';
+      else if (matrixType === 'rebound') chipTone = 'rebound';
+      else if (hasDt && (c1 !== null && c1 > 0)) chipTone = 'daytrader';
+      else if (primaryConc !== null && primaryConc >= 15.0) chipTone = 'extreme-buy';
+      else if (primaryConc !== null && primaryConc > 0) chipTone = 'buy';
+      else if (primaryConc !== null && primaryConc <= -15.0) chipTone = 'extreme-sell';
+      else if (primaryConc !== null && primaryConc < 0) chipTone = 'sell';
 
-      const rawText = `${conc > 0 ? '+' : ''}${conc.toFixed(1)}%`;
+      const rawText = primaryConc !== null ? `${primaryConc > 0 ? '+' : ''}${primaryConc.toFixed(1)}%` : '—';
       const chipText = rawText.padStart(6, '\u00A0');
       chipPill = `<span class="tree-stat-pill chip ${chipTone}" data-tooltip="${escapeHtml(chipTitle)}" title="${escapeHtml(chipTitle)}">${escapeHtml(chipText)}</span>`;
     } else {

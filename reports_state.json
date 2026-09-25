@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-21T16:34:47.243680Z",
+  "updatedAt": "2026-09-24T09:43:52.570920Z",
   "stocks": {
     "1303": {
       "name": "南亞",
@@ -633,9 +633,15 @@
       "deletedAt": null
     },
     "3264": {
-      "name": "3264",
+      "name": "欣銓",
       "folder": "封測",
       "updatedAt": "2026-09-21T16:34:47.243680Z",
+      "deletedAt": null
+    },
+    "7710": {
+      "name": "7710",
+      "folder": "工業電腦",
+      "updatedAt": "2026-09-24T09:43:52.570920Z",
       "deletedAt": null
     }
   }

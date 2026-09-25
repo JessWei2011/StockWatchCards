@@ -1800,6 +1800,21 @@ def run_institutional_chip_strategy():
     if result.returncode:
         print("❌ 法人籌碼策略榜更新失敗")
 
+
+def should_sync_holdings(items):
+    """999/ALL/FORCE 全清單更新完成後，依永豐持股名單自動同步重點星號。"""
+    aliases = {"ALL", "全部", ALL_TRACKED_INPUT, "999", "FORCE", "FORCE_ALL", FORCE_ALL_TRACKED_INPUT, "998"}
+    return any(str(item).strip().upper() in aliases for item in items)
+
+
+def run_holdings_sync():
+    try:
+        from holdings_service import sync_holdings_to_watchlist
+        sync_holdings_to_watchlist(verbose=True)
+    except Exception as exc:
+        print(f"⚠️ [持股同步] 執行持股同步發生異常: {exc}")
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         tracked = scan_tracked_stocks()
@@ -1810,6 +1825,8 @@ if __name__ == "__main__":
             run_market_reports()
         if should_update_institutional_chip_strategy(inputs):
             run_institutional_chip_strategy()
+        if should_sync_holdings(inputs):
+            run_holdings_sync()
     else:
         while True:
             tracked = scan_tracked_stocks()
@@ -1827,3 +1844,5 @@ if __name__ == "__main__":
                 run_market_reports()
             if should_update_institutional_chip_strategy(inputs):
                 run_institutional_chip_strategy()
+            if should_sync_holdings(inputs):
+                run_holdings_sync()

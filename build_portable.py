@@ -31,6 +31,7 @@ PYTHON_SRC_DIR = Path(sys.executable).resolve().parent
 INCLUDE_FILES = [
     "reports_manager_server.py",
     "stock_report_generator.py",
+    "holdings_service.py",
     "batch_scanner.py",
     "batch_scanner_gemini.py",
     "控制台.pyw",

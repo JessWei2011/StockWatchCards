@@ -41,6 +41,46 @@ SERVERS = {
 
 stop_event = threading.Event()
 instance_mutex = None
+instance_lock_file = None
+
+
+def acquire_instance_lock() -> bool:
+    """確保同時間只有一個控制器在執行。若已存在，返回 False。"""
+    global instance_mutex, instance_lock_file
+    if os.name == "nt":
+        instance_mutex = ctypes.windll.kernel32.CreateMutexW(
+            None, False, "Local\\Stock2UnifiedController"
+        )
+        if not instance_mutex or ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
+            if instance_mutex:
+                ctypes.windll.kernel32.CloseHandle(instance_mutex)
+                instance_mutex = None
+            return False
+        return True
+    else:
+        import fcntl
+        lock_path = Path("/tmp/StockCenterUnifiedController.lock")
+        try:
+            instance_lock_file = open(lock_path, "a+")
+            fcntl.flock(instance_lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return True
+        except (BlockingIOError, OSError):
+            return False
+
+
+def release_instance_lock() -> None:
+    global instance_mutex, instance_lock_file
+    if os.name == "nt" and instance_mutex:
+        ctypes.windll.kernel32.CloseHandle(instance_mutex)
+        instance_mutex = None
+    elif instance_lock_file:
+        try:
+            import fcntl
+            fcntl.flock(instance_lock_file.fileno(), fcntl.LOCK_UN)
+            instance_lock_file.close()
+        except OSError:
+            pass
+        instance_lock_file = None
 
 
 def is_port_open(port: int) -> bool:
@@ -55,14 +95,17 @@ def start_server(server: dict) -> bool:
     """只在連接埠尚未被使用時啟動，避免重複常駐程序。"""
     if is_port_open(server["port"]):
         return False
-    subprocess.Popen(
-        [str(PYTHONW), str(server["script"])],
-        cwd=server["cwd"],
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-    )
+    kwargs = {
+        "cwd": server["cwd"],
+        "stdin": subprocess.DEVNULL,
+        "stdout": subprocess.DEVNULL,
+        "stderr": subprocess.DEVNULL,
+    }
+    if os.name == "nt":
+        kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    else:
+        kwargs["start_new_session"] = True
+    subprocess.Popen([str(PYTHONW), str(server["script"])], **kwargs)
     return True
 
 
@@ -134,18 +177,9 @@ def make_icon_image() -> Image.Image:
 
 
 def main() -> None:
-    # Windows 命名 mutex：從啟動資料夾、桌面捷徑或手動雙擊開啟，都只保留一個控制器。
-    # macOS 沒有 ctypes.windll；服務本身以連接埠去重即可。
-    global instance_mutex
-    if os.name == "nt":
-        instance_mutex = ctypes.windll.kernel32.CreateMutexW(
-            None, False, "Local\\Stock2UnifiedController"
-        )
-        if not instance_mutex or ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
-            if instance_mutex:
-                ctypes.windll.kernel32.CloseHandle(instance_mutex)
-            show_stock()
-            return
+    if not acquire_instance_lock():
+        show_stock()
+        return
     try:
         ensure_servers()
         # Windows 的舊啟動批次檔會另外開瀏覽器；macOS 的 .command 不會，
@@ -161,11 +195,10 @@ def main() -> None:
         icon = pystray.Icon("stock2-control", make_icon_image(), "統一控制台", menu)
         icon.run()
     finally:
-        # 右鍵退出以外的結束路徑也不能留下服務或 mutex。
+        # 右鍵退出以外的結束路徑也不能留下服務或鎖。
         stop_servers()
         wait_for_servers_to_stop(1.5)
-        if os.name == "nt" and instance_mutex:
-            ctypes.windll.kernel32.CloseHandle(instance_mutex)
+        release_instance_lock()
         os._exit(0)
 
 

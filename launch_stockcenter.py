@@ -35,6 +35,11 @@ def main() -> int:
         return 1
 
     controller = ROOT_DIR / "控制台.pyw"
+    if "--foreground" in sys.argv or "-f" in sys.argv:
+        namespace = {"__name__": "__main__", "__file__": str(controller)}
+        exec(compile(controller.read_bytes(), str(controller), "exec"), namespace)
+        return 0
+
     if os.name == "nt":
         pythonw = Path(sys.executable).with_name("pythonw.exe")
         if pythonw.exists() and sys.executable.lower().endswith("python.exe"):
@@ -45,6 +50,17 @@ def main() -> int:
                 creationflags=getattr(subprocess, "DETACHED_PROCESS", 0x00000008),
             )
             return 0
+    else:
+        import subprocess
+        subprocess.Popen(
+            [sys.executable, str(controller)],
+            cwd=str(ROOT_DIR),
+            start_new_session=True,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return 0
 
     namespace = {"__name__": "__main__", "__file__": str(controller)}
     exec(compile(controller.read_bytes(), str(controller), "exec"), namespace)

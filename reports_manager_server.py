@@ -2505,6 +2505,15 @@ class Handler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/watchlist":
             self._json(200, {"ok": True, **read_watchlist()})
             return
+        if parsed.path == "/api/holdings/sync":
+            try:
+                from holdings_service import sync_holdings_to_watchlist
+                res = sync_holdings_to_watchlist(verbose=False)
+                invalidate_all_caches()
+                self._json(200, res)
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)})
+            return
         if parsed.path == "/api/servers-status":
             import socket
             def check_port(port):
@@ -2899,6 +2908,14 @@ class Handler(SimpleHTTPRequestHandler):
                     return
 
                 reload_stock_name_dict()
+                state = get_reports_state_if_exists()
+                if state is not None and code in state.get("stocks", {}):
+                    if state["stocks"][code].get("name") != chinese_name:
+                        state["stocks"][code]["name"] = chinese_name
+                        now_utc = reports_state._get_utc_now_iso()
+                        state["stocks"][code]["updatedAt"] = now_utc
+                        state["updatedAt"] = now_utc
+                        save_reports_state_atomic(state)
                 invalidate_all_caches()
                 self._json(200, {
                     "ok": True,
@@ -3487,6 +3504,16 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(200, {"ok": True, **saved})
             return
 
+        if parsed.path == "/api/holdings/sync":
+            try:
+                from holdings_service import sync_holdings_to_watchlist
+                res = sync_holdings_to_watchlist(verbose=False)
+                invalidate_all_caches()
+                self._json(200, res)
+            except Exception as e:
+                self._json(500, {"ok": False, "error": str(e)})
+            return
+
         if parsed.path == "/api/new-stocks-today":
             try:
                 body = self._read_json_body()
@@ -3668,9 +3695,16 @@ class Handler(SimpleHTTPRequestHandler):
                 state = get_reports_state_if_exists()
                 dest_rel = dest_dir.relative_to(REPORTS_DIR.resolve()).as_posix()
                 if dest_rel == ".": dest_rel = ""
+                stock_name_candidate = get_stock_name(code)
+                if not stock_name_candidate:
+                    for f in files_to_move:
+                        _, r_name, _ = reports_state._extract_stock_info_from_filename(f.name)
+                        if r_name and reports_state._has_chinese(r_name):
+                            stock_name_candidate = r_name
+                            break
                 if state is not None and code:
                     state_copy = json.loads(json.dumps(state))
-                    reports_state.record_stock_move(state_copy, code, dest_rel)
+                    reports_state.record_stock_move(state_copy, code, dest_rel, name=stock_name_candidate)
                     reports_state.validate_state(state_copy)
 
                 moved_pairs = []
@@ -3681,7 +3715,7 @@ class Handler(SimpleHTTPRequestHandler):
                         moved_pairs.append((f, df))
 
                     if state is not None and code:
-                        reports_state.record_stock_move(state, code, dest_rel)
+                        reports_state.record_stock_move(state, code, dest_rel, name=stock_name_candidate)
                         save_reports_state_atomic(state)
 
                 except Exception as e:
@@ -3847,10 +3881,18 @@ class Handler(SimpleHTTPRequestHandler):
                         dest_rel = dest_dir.relative_to(REPORTS_DIR.resolve()).as_posix()
                         if dest_rel == ".": dest_rel = ""
 
+                        stock_name_candidate = get_stock_name(code)
+                        if not stock_name_candidate:
+                            for f in files_to_move:
+                                _, r_name, _ = reports_state._extract_stock_info_from_filename(f.name)
+                                if r_name and reports_state._has_chinese(r_name):
+                                    stock_name_candidate = r_name
+                                    break
+
                         # 使用候選狀態副本做獨立交易，避免單項失敗污染記憶體
                         candidate_state = json.loads(json.dumps(state)) if state is not None else None
                         if candidate_state is not None and code:
-                            reports_state.record_stock_move(candidate_state, code, dest_rel)
+                            reports_state.record_stock_move(candidate_state, code, dest_rel, name=stock_name_candidate)
                             reports_state.validate_state(candidate_state)
 
                         moved_pairs = []

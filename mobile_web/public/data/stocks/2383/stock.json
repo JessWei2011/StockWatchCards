@@ -5,24 +5,24 @@
     "name": "台光電",
     "group": "PCB",
     "market": "TW",
-    "date": "2026-09-23",
+    "date": "2026-09-24",
     "isStarred": false
   },
   "latestAnalysis": {
-    "date": "2026-09-23",
-    "current": "5020.00",
+    "date": "2026-09-24",
+    "current": "5050.00",
     "decision": "觀望 / 逢低佈局",
     "winRate": "43.6%",
     "pattern": "高檔盤整/區間震盪",
     "confidence": "完全確認",
-    "entry": "4919.60",
+    "entry": "4949.00",
     "stop": "4635.00",
     "resist": "6440.6",
     "target": "9479.68",
     "bullish": [
-      "K線：✨ 突破站上5MA (短線點火轉強)",
+      "K線：✨ 突破站上10MA (收復短線支撐)、💡 5MA轉仰角 (翻揚轉強)",
       "成交量：📈 買盤溫和增量",
-      "RSI：✨ RSI 短線黃金交叉",
+      "RSI：RSI(14): 45.1 多空平衡",
       "KD：⚪ KD 多空中性震盪"
     ],
     "bearish": [

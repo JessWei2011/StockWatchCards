@@ -5,27 +5,27 @@
     "name": "合晶",
     "group": "矽晶圓",
     "market": "TWO",
-    "date": "2026-09-23",
+    "date": "2026-09-24",
     "isStarred": false
   },
   "latestAnalysis": {
-    "date": "2026-09-23",
-    "current": "115.50",
+    "date": "2026-09-24",
+    "current": "120.50",
     "decision": "觀望 / 逢低佈局",
-    "winRate": "83.0%",
+    "winRate": "81.5%",
     "pattern": "雙重底 W底形成突破 (Double Bottom)",
     "confidence": "完全確認",
-    "entry": "115.50",
+    "entry": "120.50",
     "stop": "100.00",
     "resist": "194.5",
     "target": "295.79",
     "bullish": [
-      "K線：📈 站穩10MA (短多結構穩固)",
+      "K線：📈 站穩5MA (強勢沿線推升)",
       "成交量：🔥 帶量突破換手",
-      "RSI：RSI(14): 54.1 多空平衡",
-      "MACD：⚪ MACD 反彈動能趨緩 (紅柱縮小整理)",
+      "RSI：RSI(14): 58.2 多方推進",
+      "MACD：🚀 MACD 零軸上強勢多頭 (紅柱連續放大)",
       "KD：📈 KD 多方強勢推進",
-      "籌碼：⚪ 法人中性換手 (多空互見)"
+      "籌碼：🛡️ 外資月度重倉防守 (近20日淨買佔優)"
     ],
     "bearish": [
       "風控停損：100.00 元"
