@@ -2694,7 +2694,22 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json(200, {"ok": True, "chips": data})
             except Exception as e:
                 self._json(500, {"ok": False, "error": f"讀取分點籌碼失敗: {e}"})
+        if parsed.path == "/api/interface/stock-tags":
+            params = parse_qs(parsed.query)
+            code = (params.get("code", [""])[0] or params.get("ticker", [""])[0]).strip()
+            force = params.get("force", ["true"])[0].lower() not in ("0", "false", "no")
+            if not code:
+                self._json(400, {"ok": False, "error": "請提供股票代號或名稱 (code/ticker)"})
+                return
+            try:
+                from interface_service import get_stock_report_and_tags
+                result = get_stock_report_and_tags(code, force_update=force)
+                status_code = 200 if result.get("ok") else 400
+                self._json(status_code, result)
+            except Exception as e:
+                self._json(500, {"ok": False, "error": f"介面處理異常: {e}"})
             return
+
         super().do_GET()
 
     def do_POST(self):
@@ -3522,6 +3537,25 @@ class Handler(SimpleHTTPRequestHandler):
             codes = body.get("codes") or ([body.get("code")] if body.get("code") else [])
             saved = record_today_new_stocks(codes)
             self._json(200, {"ok": True, **saved})
+            return
+
+        if parsed.path == "/api/interface/stock-tags":
+            try:
+                body = self._read_json_body()
+            except Exception:
+                body = {}
+            code = (body.get("code") or body.get("ticker") or "").strip()
+            force = body.get("force", True)
+            if not code:
+                self._json(400, {"ok": False, "error": "請提供股票代號或名稱 (code/ticker)"})
+                return
+            try:
+                from interface_service import get_stock_report_and_tags
+                result = get_stock_report_and_tags(code, force_update=bool(force))
+                status_code = 200 if result.get("ok") else 400
+                self._json(status_code, result)
+            except Exception as e:
+                self._json(500, {"ok": False, "error": f"介面處理異常: {e}"})
             return
 
         try:

@@ -65,6 +65,8 @@
 !test_reports_state.py
 !test_stock_report_generator_state.py
 !test_market_report_generator.py
+!interface_service.py
+!test_interface_service.py
 !evolution_log.html
 !build_portable.py
 !ai_research_cards.json
