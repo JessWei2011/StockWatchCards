@@ -926,18 +926,6 @@ def detect_chip_tags(stock_info: dict, kline_df: pd.DataFrame = None) -> list:
         elif all(c > 0 for c in margin_3_changes) and tot_inst_3 < -300:
             tags.append("⚠️ 資增法賣 (主力倒貨散戶接刀)")
 
-    # ---------------------------------------------------------
-    # 5. 月度護盤底倉 (近20日累計買賣比)
-    # ---------------------------------------------------------
-    if len(inst_20) >= 15:
-        f_20_sum = sum(x.get('foreign', 0.0) for x in inst_20)
-        t_20_sum = sum(x.get('trust', 0.0) for x in inst_20)
-        
-        if f_20_sum >= 2000 and not any("外資" in t for t in tags):
-            tags.append("🛡️ 外資月度重倉防守 (近20日淨買佔優)")
-        elif t_20_sum >= 1500 and not any("投信" in t for t in tags):
-            tags.append("🎯 投信近月密集建倉 (下檔護盤強)")
-
     # 預設常態
     if not tags:
         inst_buy_days_5 = sum(1 for x in inst_5 if x.get('total', 0.0) > 0)

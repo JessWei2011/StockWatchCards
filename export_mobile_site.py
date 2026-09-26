@@ -154,6 +154,8 @@ def parse_latest_analysis(text: str, report_path: Path) -> dict:
     for label, regex in tag_patterns:
         value = _md_value(text, regex)
         if value:
+            if label == "籌碼":
+                value = re.sub(r'[｜|]\s*[15]D[買賣]【[^】]*】(?:[·・][15]D[買賣]【[^】]*】)*', '', value)
             sub_tags = [t.strip() for t in re.split(r'[、,]', value) if t.strip()]
             b_list = []
             bear_list = []

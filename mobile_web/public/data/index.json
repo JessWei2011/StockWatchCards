@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "publishedAt": "2026-09-24T17:06:27+08:00",
+  "publishedAt": "2026-09-27T07:50:19+08:00",
   "defaultCode": "3324",
-  "count": 99,
+  "count": 102,
   "stocks": [
     {
       "code": "1303",
@@ -26,7 +26,7 @@
       "decision": "強烈買入 (動能爆發)",
       "winRate": "74.8%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
-      "isStarred": true
+      "isStarred": false
     },
     {
       "code": "1815",
@@ -98,6 +98,18 @@
       "decision": "觀望 / 逢低佈局",
       "winRate": "64.2%",
       "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
+      "isStarred": false
+    },
+    {
+      "code": "2330",
+      "name": "台積電",
+      "group": "reports",
+      "market": "TW",
+      "analysisDate": "2026-09-24",
+      "current": "2475.00",
+      "decision": "觀望 / 逢低佈局",
+      "winRate": "67.5%",
+      "pattern": "高檔 VCP 窄幅窒息量整理 (VCP Squeeze)",
       "isStarred": true
     },
     {
@@ -131,7 +143,7 @@
       "market": "TW",
       "analysisDate": "2026-09-24",
       "current": "953.00",
-      "decision": "買入 (多頭順勢)",
+      "decision": "觀望 / 逢低佈局",
       "winRate": "46.2%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": false
@@ -239,7 +251,7 @@
       "market": "TW",
       "analysisDate": "2026-09-24",
       "current": "311.00",
-      "decision": "買入 (多頭順勢)",
+      "decision": "強烈買入 (動能爆發)",
       "winRate": "75.5%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": false
@@ -254,17 +266,17 @@
       "decision": "強烈買入 (動能爆發)",
       "winRate": "78.5%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
-      "isStarred": false
+      "isStarred": true
     },
     {
       "code": "2455",
       "name": "全新",
       "group": "CPO",
       "market": "TW",
-      "analysisDate": "2026-09-24",
-      "current": "554.00",
-      "decision": "買入 (多頭順勢)",
-      "winRate": "74.8%",
+      "analysisDate": "2026-09-22",
+      "current": "547.00",
+      "decision": "觀望 / 逢低佈局",
+      "winRate": "73.2%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": false
     },
@@ -410,7 +422,7 @@
       "decision": "觀望 / 逢低佈局",
       "winRate": "44.0%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
-      "isStarred": false
+      "isStarred": true
     },
     {
       "code": "3105",
@@ -443,7 +455,7 @@
       "market": "TW",
       "analysisDate": "2026-09-24",
       "current": "184.50",
-      "decision": "觀望 / 逢低佈局",
+      "decision": "買入 (多頭順勢)",
       "winRate": "53.0%",
       "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
       "isStarred": true
@@ -647,7 +659,7 @@
       "market": "TW",
       "analysisDate": "2026-09-24",
       "current": "3770.00",
-      "decision": "觀望 / 逢低佈局",
+      "decision": "買入 (多頭順勢)",
       "winRate": "44.8%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": false
@@ -659,7 +671,7 @@
       "market": "TW",
       "analysisDate": "2026-09-24",
       "current": "2340.00",
-      "decision": "觀望 / 逢低佈局",
+      "decision": "買入 (多頭順勢)",
       "winRate": "80.8%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": false
@@ -794,7 +806,7 @@
       "decision": "觀望 / 逢低佈局",
       "winRate": "75.5%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
-      "isStarred": false
+      "isStarred": true
     },
     {
       "code": "6173",
@@ -852,7 +864,7 @@
       "analysisDate": "2026-09-24",
       "current": "595.00",
       "decision": "強烈買入 (動能爆發)",
-      "winRate": "82.2%",
+      "winRate": "80.0%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": false
     },
@@ -1037,6 +1049,18 @@
       "isStarred": false
     },
     {
+      "code": "6770",
+      "name": "力積電",
+      "group": "記憶體",
+      "market": "TW",
+      "analysisDate": "2026-09-24",
+      "current": "72.00",
+      "decision": "觀望 / 逢低佈局",
+      "winRate": "65.0%",
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
+    },
+    {
       "code": "6781",
       "name": "AES-KY",
       "group": "儲能BMS",
@@ -1055,7 +1079,7 @@
       "market": "TW",
       "analysisDate": "2026-09-24",
       "current": "2530.00",
-      "decision": "強烈買入 (動能爆發)",
+      "decision": "買入 (多頭順勢)",
       "winRate": "80.0%",
       "pattern": "雙重底 W底形成突破 (Double Bottom)",
       "isStarred": false
@@ -1069,6 +1093,18 @@
       "current": "497.50",
       "decision": "觀望 / 逢低佈局",
       "winRate": "49.2%",
+      "pattern": "高檔盤整/區間震盪",
+      "isStarred": false
+    },
+    {
+      "code": "7710",
+      "name": "ASRock Industrial Computer Corporation",
+      "group": "工業電腦",
+      "market": "TWO",
+      "analysisDate": "2026-09-24",
+      "current": "215.50",
+      "decision": "觀望 / 逢低佈局",
+      "winRate": "47.0%",
       "pattern": "高檔盤整/區間震盪",
       "isStarred": false
     },
@@ -1089,10 +1125,10 @@
       "name": "尖點",
       "group": "PCB",
       "market": "TW",
-      "analysisDate": "2026-09-24",
-      "current": "480.00",
+      "analysisDate": "2026-09-22",
+      "current": "477.00",
       "decision": "買入 (多頭順勢)",
-      "winRate": "72.5%",
+      "winRate": "74.0%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": false
     },
@@ -1164,7 +1200,7 @@
       "analysisDate": "2026-09-24",
       "current": "2125.00",
       "decision": "觀望 / 逢低佈局",
-      "winRate": "71.0%",
+      "winRate": "68.8%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": false
     },

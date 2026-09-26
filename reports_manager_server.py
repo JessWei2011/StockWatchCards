@@ -688,7 +688,8 @@ def parse_md_report_card(md_path):
 
     tech_tags_str = m_kline.group(1).strip() if m_kline else (m_tech.group(1).strip() if m_tech else "")
     vol_tags_str = m_vol.group(1).strip() if m_vol else ""
-    chip_tags_str = m_chip.group(1).strip() if m_chip else ""
+    chip_raw = m_chip.group(1).strip() if m_chip else ""
+    chip_tags_str = re.sub(r'[｜|]\s*[15]D[買賣]【[^】]*】(?:[·・][15]D[買賣]【[^】]*】)*', '', chip_raw) if chip_raw else ""
     rsi_tags_str = m_rsi.group(1).strip() if m_rsi else ""
     macd_tags_str = m_macd.group(1).strip() if m_macd else ""
     kd_tags_str = m_kd.group(1).strip() if m_kd else ""
@@ -1581,8 +1582,15 @@ deploy_mobile_job = _new_deploy_mobile_job()
 
 def _run_deploy_mobile():
     global deploy_mobile_job
+    base_path = os.environ.get("PATH", "")
+    extra_dirs = ["/opt/homebrew/bin", "/opt/homebrew/sbin", "/usr/local/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin"]
+    path_list = [p for p in base_path.split(os.pathsep) if p]
+    for d in extra_dirs:
+        if d not in path_list and os.path.exists(d):
+            path_list.insert(0, d)
     child_env = {
         **os.environ,
+        "PATH": os.pathsep.join(path_list),
         "PYTHONIOENCODING": "utf-8",
     }
     try:

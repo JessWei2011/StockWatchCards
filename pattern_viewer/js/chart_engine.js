@@ -25,6 +25,88 @@ window.ChartEngine = {
   },
 
   /**
+   * 計算以月為單位的 X 軸標籤與隔線索引
+   * @param {Array<string>} dates 
+   * @returns {{ monthIndices: Set<number>, labelsByIndex: Object }}
+   */
+  buildMonthAxisData(dates) {
+    if (!Array.isArray(dates) || !dates.length) {
+      return { monthIndices: new Set(), labelsByIndex: {}, labelsByDate: new Map() };
+    }
+
+    const n = dates.length;
+    let baseYear = null;
+    for (let i = n - 1; i >= 0; i--) {
+      const match = String(dates[i]).match(/(\d{4})/);
+      if (match) {
+        baseYear = parseInt(match[1], 10);
+        break;
+      }
+    }
+    if (!baseYear) baseYear = new Date().getFullYear();
+
+    const parsed = new Array(n);
+    let curYear = baseYear;
+    let nextMonth = null;
+
+    for (let i = n - 1; i >= 0; i--) {
+      const str = String(dates[i]).trim();
+      const ymd = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+      if (ymd) {
+        parsed[i] = { year: parseInt(ymd[1], 10), month: parseInt(ymd[2], 10), day: parseInt(ymd[3], 10) };
+      } else {
+        const md = str.match(/^(\d{1,2})[-/](\d{1,2})/);
+        if (md) {
+          const m = parseInt(md[1], 10);
+          const d = parseInt(md[2], 10);
+          if (nextMonth !== null && m > nextMonth) {
+            curYear--;
+          }
+          parsed[i] = { year: curYear, month: m, day: d };
+          nextMonth = m;
+        } else {
+          parsed[i] = { year: curYear, month: 1, day: 1 };
+        }
+      }
+    }
+
+    const monthIndices = new Set();
+    const labelsByIndex = {};
+    const labelsByDate = new Map();
+    let lastMonthKey = null;
+    let lastYear = null;
+
+    for (let i = 0; i < n; i++) {
+      const info = parsed[i];
+      const monthKey = `${info.year}-${String(info.month).padStart(2, '0')}`;
+      if (monthKey !== lastMonthKey) {
+        monthIndices.add(i);
+        let labelText;
+        if (lastYear === null || info.year !== lastYear || info.month === 1) {
+          labelText = `${info.year}/${String(info.month).padStart(2, '0')}`;
+        } else {
+          labelText = `${info.month}月`;
+        }
+        labelsByIndex[i] = labelText;
+        labelsByDate.set(dates[i], labelText);
+        lastMonthKey = monthKey;
+        lastYear = info.year;
+      }
+    }
+
+    // 若第 0 筆與第 1 個跨月點相隔 <= 5 個交易日，避免首筆標籤與次月標籤重疊
+    const sortedIndices = Array.from(monthIndices).sort((a, b) => a - b);
+    if (sortedIndices.length > 1 && sortedIndices[0] === 0 && sortedIndices[1] <= 5) {
+      const firstDate = dates[0];
+      monthIndices.delete(0);
+      delete labelsByIndex[0];
+      labelsByDate.delete(firstDate);
+    }
+
+    return { monthIndices, labelsByIndex, labelsByDate };
+  },
+
+  /**
    * Initialize or update the 5-pane chart
    * @param {string|HTMLElement} container 
    * @param {Object} stockData 
@@ -272,6 +354,40 @@ window.ChartEngine = {
     const legendTextColor = isLight ? '#1e293b' : '#cbd5e1';
     const zoomBorderColor = isLight ? '#cbd5e1' : '#222c3f';
 
+    const monthAxisInfo = this.buildMonthAxisData(dates);
+    const monthIndices = monthAxisInfo.monthIndices;
+    const labelsByIndex = monthAxisInfo.labelsByIndex;
+    const labelsByDate = monthAxisInfo.labelsByDate;
+
+    const monthSplitLine = {
+      show: true,
+      alignWithLabel: true,
+      interval: (index, value) => monthIndices.has(index) || labelsByDate.has(value),
+      lineStyle: {
+        color: isLight ? 'rgba(148, 163, 184, 0.45)' : 'rgba(148, 163, 184, 0.25)',
+        type: 'dashed',
+        width: 1
+      }
+    };
+
+    const monthAxisTick = {
+      show: true,
+      alignWithLabel: true,
+      interval: (index, value) => monthIndices.has(index) || labelsByDate.has(value),
+      length: 5,
+      lineStyle: { color: isLight ? '#64748b' : '#94a3b8', width: 1.5 }
+    };
+
+    const monthAxisLabel = {
+      show: true,
+      interval: (index, value) => monthIndices.has(index) || labelsByDate.has(value),
+      formatter: (value, index) => labelsByDate.get(value) || labelsByIndex[index] || '',
+      color: isLight ? '#334155' : '#cbd5e1',
+      fontSize: 11,
+      fontWeight: 'bold',
+      margin: 6
+    };
+
     const option = {
       backgroundColor: chartBg,
       animation: true,
@@ -344,11 +460,56 @@ window.ChartEngine = {
         { left: '6%', right: '4%', top: '82.0%', height: '8.5%' }  // bottom: 90.5% (底部 9.5% 留給日期時間軸與 dataZoom)
       ],
       xAxis: [
-        { type: 'category', data: dates, gridIndex: 0, axisLabel: { show: false }, axisLine: { lineStyle: { color: axisLineColor } } },
-        { type: 'category', data: dates, gridIndex: 1, axisLabel: { show: false }, axisLine: { lineStyle: { color: axisLineColor } } },
-        { type: 'category', data: dates, gridIndex: 2, axisLabel: { show: false }, axisLine: { lineStyle: { color: axisLineColor } } },
-        { type: 'category', data: dates, gridIndex: 3, axisLabel: { show: false }, axisLine: { lineStyle: { color: axisLineColor } } },
-        { type: 'category', data: dates, gridIndex: 4, axisLine: { lineStyle: { color: axisLineColor } } }
+        {
+          type: 'category',
+          data: dates,
+          gridIndex: 0,
+          boundaryGap: true,
+          axisLine: { lineStyle: { color: axisLineColor } },
+          axisTick: monthAxisTick,
+          axisLabel: monthAxisLabel,
+          splitLine: monthSplitLine
+        },
+        {
+          type: 'category',
+          data: dates,
+          gridIndex: 1,
+          boundaryGap: true,
+          axisLine: { lineStyle: { color: axisLineColor } },
+          axisTick: { show: false },
+          axisLabel: { show: false },
+          splitLine: monthSplitLine
+        },
+        {
+          type: 'category',
+          data: dates,
+          gridIndex: 2,
+          boundaryGap: true,
+          axisLine: { lineStyle: { color: axisLineColor } },
+          axisTick: { show: false },
+          axisLabel: { show: false },
+          splitLine: monthSplitLine
+        },
+        {
+          type: 'category',
+          data: dates,
+          gridIndex: 3,
+          boundaryGap: true,
+          axisLine: { lineStyle: { color: axisLineColor } },
+          axisTick: { show: false },
+          axisLabel: { show: false },
+          splitLine: monthSplitLine
+        },
+        {
+          type: 'category',
+          data: dates,
+          gridIndex: 4,
+          boundaryGap: true,
+          axisLine: { lineStyle: { color: axisLineColor } },
+          axisTick: monthAxisTick,
+          axisLabel: monthAxisLabel,
+          splitLine: monthSplitLine
+        }
       ],
       yAxis: [
         // Pane 0: K-line Price
@@ -858,7 +1019,52 @@ window.ChartEngine = {
     const grid = hasVolume
       ? [{ left: '6%', right: '4%', top: '11.0%', height: '19.8%' }, { left: '6%', right: '4%', top: '37.0%', height: '8.5%' }]
       : [{ left: '6%', right: '4%', top: '11.0%', height: '19.8%' }];
-    const xAxis = [{ type: 'category', data: dates, gridIndex: 0, boundaryGap: true, axisLabel: { show: false }, axisLine: { lineStyle: { color: axisLineColor } } }];
+    const monthAxisInfo = this.buildMonthAxisData(dates);
+    const monthIndices = monthAxisInfo.monthIndices;
+    const labelsByIndex = monthAxisInfo.labelsByIndex;
+    const labelsByDate = monthAxisInfo.labelsByDate;
+
+    const monthSplitLine = {
+      show: true,
+      alignWithLabel: true,
+      interval: (index, value) => monthIndices.has(index) || labelsByDate.has(value),
+      lineStyle: {
+        color: isLight ? 'rgba(148, 163, 184, 0.45)' : 'rgba(148, 163, 184, 0.25)',
+        type: 'dashed',
+        width: 1
+      }
+    };
+
+    const monthAxisTick = {
+      show: true,
+      alignWithLabel: true,
+      interval: (index, value) => monthIndices.has(index) || labelsByDate.has(value),
+      length: 5,
+      lineStyle: { color: isLight ? '#64748b' : '#94a3b8', width: 1.5 }
+    };
+
+    const monthAxisLabel = {
+      show: true,
+      interval: (index, value) => monthIndices.has(index) || labelsByDate.has(value),
+      formatter: (value, index) => labelsByDate.get(value) || labelsByIndex[index] || '',
+      color: isLight ? '#334155' : '#cbd5e1',
+      fontSize: 11,
+      fontWeight: 'bold',
+      margin: 6
+    };
+
+    const xAxis = [
+      {
+        type: 'category',
+        data: dates,
+        gridIndex: 0,
+        boundaryGap: true,
+        axisLine: { lineStyle: { color: axisLineColor } },
+        axisTick: monthAxisTick,
+        axisLabel: monthAxisLabel,
+        splitLine: monthSplitLine
+      }
+    ];
     const yAxis = [
       {
         scale: true,
@@ -883,7 +1089,16 @@ window.ChartEngine = {
       line('MA60', ma60, '#f472b6'), line('MA120', ma120, '#94a3b8')
     ];
     if (hasVolume) {
-      xAxis.push({ type: 'category', data: dates, gridIndex: 1, axisLabel: { color: legendTextColor, fontSize: 10 }, axisLine: { lineStyle: { color: axisLineColor } } });
+      xAxis.push({
+        type: 'category',
+        data: dates,
+        gridIndex: 1,
+        boundaryGap: true,
+        axisLine: { lineStyle: { color: axisLineColor } },
+        axisTick: monthAxisTick,
+        axisLabel: monthAxisLabel,
+        splitLine: monthSplitLine
+      });
       yAxis.push({ scale: true, gridIndex: 1, axisLabel: { show: false }, splitLine: { show: false } });
       series.push({
         name: volumeLabel, type: 'bar', xAxisIndex: 1, yAxisIndex: 1,
@@ -900,8 +1115,6 @@ window.ChartEngine = {
         }),
         barMaxWidth: 12
       }, line('MV5', vma5, '#facc15', 1, 1), line('MV20', vma20, '#38bdf8', 1, 1));
-    } else {
-      xAxis[0].axisLabel = { color: legendTextColor, fontSize: 10 };
     }
     const axisIndexes = hasVolume ? [0, 1] : [0];
     chartInstance.setOption({

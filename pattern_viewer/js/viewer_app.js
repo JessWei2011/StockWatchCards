@@ -766,6 +766,30 @@
         return `<span class="tag-pill ${tagClass}">${text}</span>`;
       };
 
+      // 智慧括號切割標籤，防止標籤內括號或逗號誤切
+      const splitPillTags = (str) => {
+        if (!str) return [];
+        const tags = [];
+        let cur = '';
+        let depth = 0;
+        for (const ch of str) {
+          if (ch === '(' || ch === '（' || ch === '【' || ch === '[') {
+            depth++;
+            cur += ch;
+          } else if (ch === ')' || ch === '）' || ch === '】' || ch === ']') {
+            if (depth > 0) depth--;
+            cur += ch;
+          } else if ((ch === '、' || ch === ',') && depth === 0) {
+            if (cur.trim()) tags.push(cur.trim());
+            cur = '';
+          } else {
+            cur += ch;
+          }
+        }
+        if (cur.trim()) tags.push(cur.trim());
+        return tags;
+      };
+
       // 渲染「📈 K線指標狀態」
       const statKlineTags = this.q('#statKlineTags') || document.getElementById('statKlineTags');
       if (statKlineTags) {
@@ -878,7 +902,8 @@
         }
 
         if (chipTagsStr) {
-          const parts = chipTagsStr.split(/[、,]/).map(s => s.trim()).filter(Boolean);
+          chipTagsStr = chipTagsStr.replace(/[｜|]\s*[15]D[買賣]【[^】]*】(?:[·・][15]D[買賣]【[^】]*】)*/g, '');
+          const parts = splitPillTags(chipTagsStr);
           statChipTags.innerHTML = parts.map(t => renderTagPill(t, 'chip')).join('');
         } else {
           statChipTags.innerHTML = `<span class="tag-pill tag-neutral">法人籌碼中性</span>`;
@@ -997,6 +1022,65 @@
           }
         }, { signal });
       }
+
+      // ── Y 軸垂直放大鏡 (Vertical Zoom: 1% ~ 4% 四格切換) ──
+      const zoomRail = this.root.querySelector('.chart-y-zoom-rail');
+      const zoomPlusBtn = this.root.querySelector('.chart-y-zoom-plus');
+      const zoomMinusBtn = this.root.querySelector('.chart-y-zoom-minus');
+      const zoomStepBtns = Array.from(this.root.querySelectorAll('.chart-y-zoom-step'));
+      const chartDom = this.q('#echart-main');
+      let currentStep = 1; // 預設 1% (1.0x 基準)
+
+      const applyStep = (stepNumber, notifyResize = true) => {
+        const step = Math.max(1, Math.min(4, Math.round(Number(stepNumber) || 1)));
+        currentStep = step;
+
+        zoomStepBtns.forEach(btn => {
+          const btnStep = Number(btn.dataset.step);
+          btn.classList.toggle('active', btnStep === currentStep);
+        });
+
+        if (zoomPlusBtn) zoomPlusBtn.disabled = currentStep >= 4;
+        if (zoomMinusBtn) zoomMinusBtn.disabled = currentStep <= 1;
+
+        if (chartDom) {
+          const baseHeight = 850;
+          // 1% -> 1.0x (850px), 2% -> 2.0x (1700px), 3% -> 3.0x (2550px), 4% -> 4.0x (3400px)
+          const targetHeight = Math.round(baseHeight * currentStep);
+          chartDom.style.height = `${targetHeight}px`;
+          chartDom.style.minHeight = `${targetHeight}px`;
+          chartDom.dataset.customZoomStep = String(currentStep);
+
+          if (notifyResize) {
+            this.resize();
+          }
+        }
+      };
+
+      if (zoomPlusBtn) {
+        zoomPlusBtn.addEventListener('click', () => {
+          if (currentStep < 4) {
+            applyStep(currentStep + 1, true);
+          }
+        }, { signal });
+      }
+
+      if (zoomMinusBtn) {
+        zoomMinusBtn.addEventListener('click', () => {
+          if (currentStep > 1) {
+            applyStep(currentStep - 1, true);
+          }
+        }, { signal });
+      }
+
+      zoomStepBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          applyStep(btn.dataset.step, true);
+        }, { signal });
+      });
+
+      // 初始化為 1% (預設)
+      applyStep(1, false);
     }
 
     updateDisposalBadge() {

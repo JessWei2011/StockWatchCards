@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI 股市型態視覺教學與 K線圖形介面</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="css/viewer.css?v=90">
+  <link rel="stylesheet" href="css/viewer.css?v=92">
   <script src="js/vendor/echarts.min.js"></script>
   <script>if(typeof echarts==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"><\/script>');}</script>
 </head>
@@ -138,7 +138,20 @@
           <h3 id="patternEmptyTitle">正在讀取報表資料…</h3>
           <p id="patternEmptyDetail">型態線圖只使用真實報表，不會產生模擬行情。</p>
         </div>
-        <div id="echart-main" hidden></div>
+        <div class="chart-interactive-stage">
+          <div id="echart-main" hidden></div>
+          <div class="chart-y-zoom-rail" title="Y軸垂直縮放 (1% ~ 4%)">
+            <button type="button" class="chart-y-zoom-btn chart-y-zoom-plus" title="放大一格 (+)">+</button>
+            <div class="chart-y-zoom-steps">
+              <button type="button" class="chart-y-zoom-step" data-step="1" title="1% (1.0x 預設基準)">1%</button>
+              <button type="button" class="chart-y-zoom-step" data-step="2" title="2% (2.0x 放大)">2%</button>
+              <button type="button" class="chart-y-zoom-step" data-step="3" title="3% (3.0x 放大)">3%</button>
+              <button type="button" class="chart-y-zoom-step" data-step="4" title="4% (4.0x 放大)">4%</button>
+            </div>
+            <button type="button" class="chart-y-zoom-btn chart-y-zoom-minus" title="縮小一格 (-)">−</button>
+            <span class="chart-y-zoom-title">ZOOM</span>
+          </div>
+        </div>
 
         <!-- 🏛️ 三大法人近15日逐日買賣超概數看板 (放置於 KD 指標下方) -->
         <div id="patternInstContainer" class="inst-mini-chart" style="display:none; margin-top:16px; margin-bottom:20px; padding:14px 16px; background:#141721; border:1px solid rgba(59,130,246,0.3); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
@@ -1141,8 +1154,8 @@
 
   <script src="js/parser.js?v=102"></script>
   <script src="js/pattern_engine.js?v=68"></script>
-  <script src="js/chart_engine.js?v=99"></script>
-  <script src="js/viewer_app.js?v=101"></script>
+  <script src="js/chart_engine.js?v=107"></script>
+  <script src="js/viewer_app.js?v=103"></script>
   <script>
     window.openKlineCheatSheetModal = function() {
       const modal = document.getElementById('klineCheatSheetModal');

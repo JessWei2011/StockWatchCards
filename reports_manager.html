@@ -776,6 +776,99 @@
     border: 1px solid #fef08a !important;
   }
 
+  /* ══════════════════════════════════════════════════════════════════════
+     ☀️ 法人與主力券商籌碼策略榜 & 長短線共振榜【白天模式高對比排版】
+     ══════════════════════════════════════════════════════════════════════ */
+  [data-theme="light"] #institutional-strategy-leaderboard b[style*="#fde68a"] {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .institutional-strategy-col {
+    background: #f8fafc !important;
+    border-width: 1.5px !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  }
+  [data-theme="light"] .institutional-strategy-col > div:first-child {
+    border-bottom: 1.5px solid #e2e8f0 !important;
+  }
+  [data-theme="light"] .institutional-strategy-col span[style*="#fbbf24"] {
+    color: #b45309 !important; /* 同步買超 深金 */
+  }
+  [data-theme="light"] .institutional-strategy-col span[style*="#c084fc"] {
+    color: #7e22ce !important; /* 投信買超 深紫 */
+  }
+  [data-theme="light"] .institutional-strategy-col span[style*="#34d399"] {
+    color: #047857 !important; /* 強力吸籌 深綠 */
+  }
+  [data-theme="light"] .institutional-strategy-col span[style*="#f87171"] {
+    color: #b91c1c !important; /* 倒貨警戒 深紅 */
+  }
+  [data-theme="light"] .institutional-strategy-item {
+    background: #ffffff !important;
+    border: 1px solid #f1f5f9 !important;
+  }
+  [data-theme="light"] .institutional-strategy-item:hover {
+    background: #f0f9ff !important;
+    border-color: #bae6fd !important;
+  }
+  [data-theme="light"] .institutional-strategy-item .overview-stock-name {
+    color: #0f172a !important;
+    font-weight: 850 !important;
+  }
+  [data-theme="light"] .institutional-strategy-item .stock-code {
+    color: #1d4ed8 !important;
+    font-weight: 850 !important;
+  }
+
+  /* 🚀 長短線共振榜白天模式 (精緻清爽天藍底 + 深黑/深藍高對比) */
+  [data-theme="light"] .resonance-overview-panel {
+    background: #f0f9ff !important;
+    border: 1.5px solid #7dd3fc !important;
+    box-shadow: 0 4px 14px rgba(14, 165, 233, 0.08) !important;
+  }
+  [data-theme="light"] .resonance-panel-title {
+    color: #0369a1 !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .resonance-panel-subtitle {
+    color: #475569 !important;
+    font-weight: 650 !important;
+  }
+  [data-theme="light"] .resonance-card-item {
+    background: #ffffff !important;
+    border: 1px solid #bae6fd !important;
+    box-shadow: 0 1px 3px rgba(14, 165, 233, 0.06) !important;
+  }
+  [data-theme="light"] .resonance-card-item:hover {
+    background: #e0f2fe !important;
+    border-color: #38bdf8 !important;
+  }
+  [data-theme="light"] .resonance-rank-num {
+    color: #0284c7 !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .resonance-tag-badge {
+    background: #e0f2fe !important;
+    color: #0369a1 !important;
+    border-color: #7dd3fc !important;
+    font-weight: 750 !important;
+  }
+  [data-theme="light"] .resonance-metric-val {
+    color: #0369a1 !important;
+    font-weight: 900 !important;
+  }
+  [data-theme="light"] .resonance-metric-sub {
+    color: #475569 !important;
+    font-weight: 700 !important;
+  }
+  [data-theme="light"] .resonance-score-badge {
+    background: #e0f2fe !important;
+    color: #0284c7 !important;
+    border-color: #38bdf8 !important;
+    font-weight: 900 !important;
+  }
+
   /* 4. 榜單切換工具列與按鈕 (Track Switching Toolbar & Buttons) */
   [data-theme="light"] .ranking-detail-toolbar {
     border-bottom: 1px solid #e2e8f0 !important;
@@ -3252,12 +3345,23 @@
     box-sizing: border-box !important;
     overflow: hidden !important;
   }
-  .pattern-viewer .chart-viewport:fullscreen #echart-main,
-  .pattern-viewer .chart-viewport:-webkit-full-screen #echart-main,
-  .pattern-viewer .chart-viewport.fullscreen #echart-main {
+  .pattern-viewer .chart-viewport:fullscreen .chart-interactive-stage,
+  .pattern-viewer .chart-viewport:-webkit-full-screen .chart-interactive-stage,
+  .pattern-viewer .chart-viewport.fullscreen .chart-interactive-stage {
     flex: 1 1 auto !important;
     height: calc(100% - 60px) !important;
     min-height: calc(100% - 60px) !important;
+    width: 100% !important;
+  }
+  .pattern-viewer .chart-viewport:fullscreen #echart-main,
+  .pattern-viewer .chart-viewport:-webkit-full-screen #echart-main,
+  .pattern-viewer .chart-viewport.fullscreen #echart-main,
+  .pattern-viewer .chart-viewport:fullscreen .chart-canvas,
+  .pattern-viewer .chart-viewport:-webkit-full-screen .chart-canvas,
+  .pattern-viewer .chart-viewport.fullscreen .chart-canvas {
+    flex: 1 1 auto !important;
+    height: 100% !important;
+    min-height: 100% !important;
     width: 100% !important;
   }
   .pattern-viewer .btn-fullscreen-toggle {
@@ -3401,7 +3505,7 @@
     to { opacity: 1; transform: translateY(0); }
   }
 </style>
-<link rel="stylesheet" href="pattern_viewer/css/viewer.css?v=90">
+<link rel="stylesheet" href="pattern_viewer/css/viewer.css?v=92">
 </head>
 <body>
   <header>
@@ -3508,7 +3612,20 @@
             <h3 id="reports-patternEmptyTitle" class="empty-title">正在讀取報表資料…</h3>
             <p id="reports-patternEmptyDetail" class="empty-detail">型態線圖只使用真實報表，不會產生模擬行情。</p>
           </div>
-          <div id="reports-echart-main" class="chart-canvas" hidden></div>
+          <div class="chart-interactive-stage">
+            <div id="reports-echart-main" class="chart-canvas" hidden></div>
+            <div class="chart-y-zoom-rail" title="Y軸垂直縮放 (1% ~ 4%)">
+              <button type="button" class="chart-y-zoom-btn chart-y-zoom-plus" title="放大一格 (+)">+</button>
+              <div class="chart-y-zoom-steps">
+                <button type="button" class="chart-y-zoom-step" data-step="1" title="1% (1.0x 預設基準)">1%</button>
+                <button type="button" class="chart-y-zoom-step" data-step="2" title="2% (2.0x 放大)">2%</button>
+                <button type="button" class="chart-y-zoom-step" data-step="3" title="3% (3.0x 放大)">3%</button>
+                <button type="button" class="chart-y-zoom-step" data-step="4" title="4% (4.0x 放大)">4%</button>
+              </div>
+              <button type="button" class="chart-y-zoom-btn chart-y-zoom-minus" title="縮小一格 (-)">−</button>
+              <span class="chart-y-zoom-title">ZOOM</span>
+            </div>
+          </div>
 
           <!-- 🏛️ 三大法人近15日逐日買賣超概數看板 (放置於 KD 指標下方) -->
           <div id="reports-patternInstContainer" class="inst-mini-chart" style="display:none; margin-top:16px; margin-bottom:20px; padding:14px 16px; background:#141721; border:1px solid rgba(59,130,246,0.3); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
@@ -3746,7 +3863,20 @@
             <h3 id="patternEmptyTitle">正在讀取報表資料…</h3>
             <p id="patternEmptyDetail">型態線圖只使用真實報表，不會產生模擬行情。</p>
           </div>
-          <div id="echart-main" hidden></div>
+          <div class="chart-interactive-stage">
+            <div id="echart-main" hidden></div>
+            <div class="chart-y-zoom-rail" title="Y軸垂直縮放 (1% ~ 4%)">
+              <button type="button" class="chart-y-zoom-btn chart-y-zoom-plus" title="放大一格 (+)">+</button>
+              <div class="chart-y-zoom-steps">
+                <button type="button" class="chart-y-zoom-step" data-step="1" title="1% (1.0x 預設基準)">1%</button>
+                <button type="button" class="chart-y-zoom-step" data-step="2" title="2% (2.0x 放大)">2%</button>
+                <button type="button" class="chart-y-zoom-step" data-step="3" title="3% (3.0x 放大)">3%</button>
+                <button type="button" class="chart-y-zoom-step" data-step="4" title="4% (4.0x 放大)">4%</button>
+              </div>
+              <button type="button" class="chart-y-zoom-btn chart-y-zoom-minus" title="縮小一格 (-)">−</button>
+              <span class="chart-y-zoom-title">ZOOM</span>
+            </div>
+          </div>
 
           <!-- 🏛️ 三大法人近15日逐日買賣超概數看板 (放置於 KD 指標下方) -->
           <div id="patternInstContainer" class="inst-mini-chart" style="display:none; margin-top:16px; margin-bottom:20px; padding:14px 16px; background:#141721; border:1px solid rgba(59,130,246,0.3); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
@@ -4850,8 +4980,8 @@
 <script>if(typeof echarts==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"><\/script>');}</script>
 <script src="pattern_viewer/js/parser.js?v=102"></script>
 <script src="pattern_viewer/js/pattern_engine.js?v=77"></script>
-<script src="pattern_viewer/js/chart_engine.js?v=99"></script>
-<script src="pattern_viewer/js/viewer_app.js?v=101"></script>
+<script src="pattern_viewer/js/chart_engine.js?v=107"></script>
+<script src="pattern_viewer/js/viewer_app.js?v=103"></script>
 <script src="render-shared.js?v=77"></script>
 <script>
   const DISPLAY_SCALE_KEY = 'stock-analysis-display-scale';
@@ -5296,22 +5426,48 @@
     let chipTags = [];
     let patternTags = [];
     
+    const splitPillTags = (str) => {
+      if (!str) return [];
+      const tags = [];
+      let cur = '';
+      let depth = 0;
+      for (const ch of str) {
+        if (ch === '(' || ch === '（' || ch === '【' || ch === '[') {
+          depth++;
+          cur += ch;
+        } else if (ch === ')' || ch === '）' || ch === '】' || ch === ']') {
+          if (depth > 0) depth--;
+          cur += ch;
+        } else if ((ch === '、' || ch === ',') && depth === 0) {
+          if (cur.trim()) tags.push(cur.trim());
+          cur = '';
+        } else {
+          cur += ch;
+        }
+      }
+      if (cur.trim()) tags.push(cur.trim());
+      return tags;
+    };
+
     const rsiM = mdText.match(/RSI\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
-    if (rsiM) rsiTags = rsiM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
+    if (rsiM) rsiTags = splitPillTags(rsiM[1].replace(/[*`]/g, ''));
     const volM = mdText.match(/VOL\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i) || mdText.match(/量能標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
-    if (volM) volTags = volM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
+    if (volM) volTags = splitPillTags(volM[1].replace(/[*`]/g, ''));
     const macdM = mdText.match(/MACD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
-    if (macdM) macdTags = macdM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
+    if (macdM) macdTags = splitPillTags(macdM[1].replace(/[*`]/g, ''));
     const kdM = mdText.match(/KD\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
-    if (kdM) kdTags = kdM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
+    if (kdM) kdTags = splitPillTags(kdM[1].replace(/[*`]/g, ''));
     const klineM = mdText.match(/K線\s*(?:指標)?標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/i);
-    if (klineM) techTags = klineM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
+    if (klineM) techTags = splitPillTags(klineM[1].replace(/[*`]/g, ''));
     const techM = mdText.match(/技術標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/);
-    if (techM && !techTags.length) techTags = techM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
+    if (techM && !techTags.length) techTags = splitPillTags(techM[1].replace(/[*`]/g, ''));
     const chipM = mdText.match(/籌碼標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/);
-    if (chipM) chipTags = chipM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
+    if (chipM) {
+      const cleanChip = chipM[1].replace(/[*`]/g, '').replace(/[｜|]\s*[15]D[買賣]【[^】]*】(?:[·・][15]D[買賣]【[^】]*】)*/g, '');
+      chipTags = splitPillTags(cleanChip);
+    }
     const patM = mdText.match(/型態標籤[】\]\s\*]*[：:]\s*([^\r\n]+)/);
-    if (patM) patternTags = patM[1].replace(/[*`]/g, '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
+    if (patM) patternTags = splitPillTags(patM[1].replace(/[*`]/g, ''));
 
     // 智能容錯：若歷史報告中尚未包含專屬 VOL / RSI / K線 標籤行，自動由卡片或報告內文即時推導
     if (!techTags.length && typeof klineStateTags === 'function' && card) {
@@ -6572,7 +6728,7 @@
 
     function renderInstitutionalStrategyLeaderboard(){
       if (!institutionalStrategyMarkdown) return '';
-      const boards = { sync: [], trust: [], broker_accum: [], broker_dump: [] };
+      const boards = { sync: [], trust: [], broker_accum: [], broker_dump: [], resonance: [] };
       let active = '';
       let asOf = '';
       institutionalStrategyMarkdown.split(/\r?\n/).forEach(raw => {
@@ -6583,13 +6739,63 @@
         else if (line.startsWith('##') && line.includes('投信買超')) active = 'trust';
         else if (line.startsWith('##') && line.includes('主力分點強力吸籌')) active = 'broker_accum';
         else if (line.startsWith('##') && line.includes('主力分點倒貨警戒')) active = 'broker_dump';
+        else if (line.startsWith('##') && (line.includes('長短線籌碼共振') || line.includes('籌碼共振'))) active = 'resonance';
         else if (active && line.startsWith('|') && line.endsWith('|')) {
           const cells = line.split('|').slice(1, -1).map(v => v.trim().replace(/`/g, ''));
-          if (cells.length === 7 && /^\d+$/.test(cells[0]) && /^\d{4}$/.test(cells[1])) boards[active].push(cells);
+          if (cells.length >= 7 && /^\d+$/.test(cells[0]) && /^\d{4}$/.test(cells[1])) boards[active].push(cells);
         }
       });
-      const column = (title, color, items, valueIndex, label) => `<div style="min-width:0; width:100%; box-sizing:border-box; background:rgba(0,0,0,.28); border:1px solid ${color}66; border-radius:10px; padding:10px 12px;"><div style="color:${color}; font-size:15px; font-weight:900; padding-bottom:7px; border-bottom:1.5px solid rgba(255,255,255,.12);">${title}</div><div style="display:flex; flex-direction:column; gap:4px; margin-top:7px;">${items.length ? items.map(cells => `<div class="institutional-strategy-item" data-stock-code="${escapeHtml(cells[1])}" style="display:flex; justify-content:space-between; align-items:center; padding:3px 7px; border-radius:6px; background:rgba(255,255,255,.035); font-size:15px; min-height:28px; cursor:pointer;"><span style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><b style="display:inline-block; width:20px; color:var(--text-dim);">${escapeHtml(cells[0])}</b><span class="stock-code ${getStockMarketClass(cells[1])}" style="font-family:monospace; font-weight:850;">${escapeHtml(cells[1])}</span>　<b>${escapeHtml(cells[2])}</b></span><b style="color:${color}; white-space:nowrap;">${label} ${escapeHtml(cells[valueIndex])}</b></div>`).join('') : '<div style="padding:10px; text-align:center; color:var(--text-dim);">當日無符合標的</div>'}</div></div>`;
-      return `<section id="institutional-strategy-leaderboard" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.12);"><div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:10px;"><b style="font-size:16px; color:#fde68a;">🏦 法人與主力券商籌碼策略榜</b><span style="font-size:12px; color:var(--text-dim);">資料日：${escapeHtml(asOf || '—')}｜單位：張 / 集中度%</span></div><div class="ranking-overview-row" style="margin-bottom:0;">${column('外資＋投信同步買超 ≥ 300張', '#fbbf24', boards.sync, 6, '合計')}${column('投信買超 TOP 10', '#c084fc', boards.trust, 4, '投信')}${column('🎯 主力分點強力吸籌 TOP 10', '#34d399', boards.broker_accum, 6, '集中度')}${column('🚨 主力分點倒貨警戒 TOP 10', '#f87171', boards.broker_dump, 6, '集中度')}</div></section>`;
+      const column = (title, color, items, valueIndex, label) => `
+        <div class="institutional-strategy-col" style="min-width:0; width:100%; box-sizing:border-box; background:rgba(0,0,0,0.4); border:2px solid ${color}66; border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px;">
+          <div style="text-align:center; border-bottom:1.5px solid rgba(255,255,255,0.12); padding-bottom:6px; min-height:26px; display:flex; align-items:center; justify-content:center;">
+            <span style="font-weight:900; font-size:15px; color:${color}; white-space:nowrap; letter-spacing:0.3px; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(title)}">${escapeHtml(title)}</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            ${items.length ? items.map(cells => {
+              const code = cells[1];
+              const rawName = cells[2] || '';
+              const isDayTrade = rawName.includes('⚡') || rawName.includes('隔日衝');
+              const cleanName = rawName.replace(/⚡\s*\(?隔日衝\)?/g, '').trim();
+              return `
+              <div class="institutional-strategy-item" data-stock-code="${escapeHtml(code)}" style="display:flex; align-items:center; justify-content:space-between; padding:3px 7px; border-radius:6px; background:rgba(255,255,255,0.035); font-size:15px; min-height:28px; box-sizing:border-box; cursor:pointer; transition:all .15s ease;">
+                <div style="display:flex; align-items:center; gap:5px; min-width:0; overflow:hidden;">
+                  <span style="font-weight:900; color:var(--text-dim); width:18px; font-size:14px; text-align:right; flex-shrink:0;">${escapeHtml(cells[0])}</span>
+                  <button type="button" class="ranking-star-btn overview-star-btn ${isStockStarred(code) ? 'active' : ''}" data-code="${escapeHtml(code)}" aria-label="${isStockStarred(code) ? '從重點清單移除' : '加入重點清單'}" aria-pressed="${isStockStarred(code)}" title="${isStockStarred(code) ? '已加入重點（點擊取消）' : '加入重點清單'}">★</button>
+                  <span class="stock-code ${getStockMarketClass(code)}" style="font-weight:850; font-family:monospace; font-size:15px; flex-shrink:0;" title="[${getStockMarketLabel(code)}] ${escapeHtml(code)}">${escapeHtml(code)}</span>
+                  <span class="overview-stock-name" style="font-weight:800; color:#ffffff; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(rawName)}">${escapeHtml(cleanName || rawName)}</span>
+                  ${isDayTrade ? `<span style="font-size:11px; padding:1px 3px; border-radius:3px; background:rgba(239,68,68,0.2); color:#fca5a5; font-weight:800; white-space:nowrap; flex-shrink:0;" title="主力隔日衝券商介入">隔日衝</span>` : ''}
+                </div>
+                <span class="overview-item-val" style="font-size:14.5px; font-weight:850; color:${color}; white-space:nowrap; flex-shrink:0; margin-left:6px;"><span style="font-size:12px; font-weight:600; color:var(--text-dim); margin-right:2px;">${label}</span>${escapeHtml(cells[valueIndex])}</span>
+              </div>
+            `;}).join('') : '<div style="color:var(--text-dim); font-size:15px; padding:10px; text-align:center;">當日無符合標的</div>'}
+          </div>
+        </div>`;
+
+      // 專屬長短線籌碼共振看板 (四欄並列架構，完全比照下方法人籌碼策略榜紅框架構)
+      let resonanceSection = '';
+      if (boards.resonance && boards.resonance.length) {
+        resonanceSection = `
+          <section id="resonance-strategy-leaderboard" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.12);">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:10px;">
+              <b style="font-size:16px; color:#38bdf8; display:flex; align-items:center; gap:6px;">
+                <span>🚀</span> 台股長短線籌碼共振 TOP 10（千張大戶逐週增持 ＋ 5D主力吸籌）
+              </b>
+              <span style="font-size:12px; color:var(--text-dim);">雙重濾網：長線存量鎖碼＋短線流量發動</span>
+            </div>
+            <div class="ranking-overview-row" style="margin-bottom:0;">
+              ${column('🚀 長短線共振 綜合評分 TOP 10', '#38bdf8', boards.resonance, 6, '評分')}
+              ${column('🔥 5D 主力集中度 TOP 10', '#34d399', boards.resonance.slice().sort((a,b) => parseFloat(b[5].replace('%','')) - parseFloat(a[5].replace('%',''))), 5, '集中度')}
+              ${column('💎 千張大戶本週增持 TOP 10', '#fbbf24', boards.resonance.slice().sort((a,b) => {
+                const getPt = str => { const m = str.match(/\+?([0-9.]+)pt/); return m ? parseFloat(m[1]) : 0; };
+                return getPt(b[4]) - getPt(a[4]);
+              }), 4, '大戶')}
+              ${column('🏷️ 產業族群標籤 TOP 10', '#818cf8', boards.resonance, 3, '族群')}
+            </div>
+          </section>
+        `;
+      }
+
+      return `${resonanceSection}<section id="institutional-strategy-leaderboard" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.12);"><div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:10px;"><b style="font-size:16px; color:#fde68a;">🏦 法人與主力券商籌碼策略榜</b><span style="font-size:12px; color:var(--text-dim);">資料日：${escapeHtml(asOf || '—')}｜單位：張 / 集中度%</span></div><div class="ranking-overview-row" style="margin-bottom:0;">${column('外資＋投信同步買超 ≥ 300張', '#fbbf24', boards.sync, 6, '合計')}${column('投信買超 TOP 10', '#c084fc', boards.trust, 4, '投信')}${column('🎯 主力分點強力吸籌 TOP 10', '#34d399', boards.broker_accum, 6, '集中度')}${column('🚨 主力分點倒貨警戒 TOP 10', '#f87171', boards.broker_dump, 6, '集中度')}</div></section>`;
     }
 
     let html = `
@@ -8149,7 +8355,8 @@
               deployMobileBtn.className = 'btn danger';
               deployMobileBtn.textContent = '❌ 發布失敗';
               if (statusEl) {
-                statusEl.innerHTML = '❌ 手機版發布失敗，請確認網路連線或憑證狀態。';
+                const lastErr = (status.lines && status.lines.length) ? status.lines.slice(-3).join(' | ') : '請確認網路連線或憑證狀態。';
+                statusEl.innerHTML = `❌ 手機版發布失敗：${escapeHtml(lastErr)}`;
               }
             }
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -18,6 +19,26 @@ DATA_DIR = PUBLIC_DIR / "data"
 def fail(message: str) -> int:
     print(f"[錯誤] {message}")
     return 1
+
+
+def _prepare_env() -> dict[str, str]:
+    env = os.environ.copy()
+    current_path = env.get("PATH", "")
+    extra_paths = [
+        "/opt/homebrew/bin",
+        "/opt/homebrew/sbin",
+        "/usr/local/bin",
+        "/usr/bin",
+        "/bin",
+        "/usr/sbin",
+        "/sbin",
+    ]
+    path_parts = [p for p in current_path.split(os.pathsep) if p]
+    for p in extra_paths:
+        if p not in path_parts and Path(p).exists():
+            path_parts.insert(0, p)
+    env["PATH"] = os.pathsep.join(path_parts)
+    return env
 
 
 def main() -> int:
@@ -42,15 +63,19 @@ def main() -> int:
 
     print(f"[OK] 索引確認：{expected_count} 檔個股。")
     print("[3/3] 正在部署至 Cloudflare Worker…")
-    wrangler = shutil.which("wrangler")
-    if wrangler:
+    deploy_env = _prepare_env()
+    wrangler_bin = MOBILE_DIR / "node_modules" / ".bin" / ("wrangler.cmd" if sys.platform == "win32" else "wrangler")
+    wrangler = shutil.which("wrangler", path=deploy_env.get("PATH"))
+    if wrangler_bin.exists():
+        command = [str(wrangler_bin), "deploy"]
+    elif wrangler:
         command = [wrangler, "deploy"]
     else:
-        npx = shutil.which("npx")
+        npx = shutil.which("npx", path=deploy_env.get("PATH"))
         if not npx:
             return fail("找不到 Node.js／npx。請安裝 Node.js 20 以上後重試。")
-        command = [npx, "wrangler", "deploy"]
-    result = subprocess.run(command, cwd=MOBILE_DIR)
+        command = [npx, "--yes", "wrangler", "deploy"]
+    result = subprocess.run(command, cwd=MOBILE_DIR, env=deploy_env)
     if result.returncode:
         return fail("Cloudflare 部署失敗，請檢查登入憑證與網路。")
 

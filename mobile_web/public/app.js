@@ -909,6 +909,82 @@
     return date.toLocaleString('zh-TW', { hour12: false });
   }
 
+  function buildMonthAxisData(dates) {
+    if (!Array.isArray(dates) || !dates.length) {
+      return { monthIndices: new Set(), labelsByIndex: {} };
+    }
+
+    const n = dates.length;
+    let baseYear = null;
+    for (let i = n - 1; i >= 0; i--) {
+      const match = String(dates[i]).match(/(\d{4})/);
+      if (match) {
+        baseYear = parseInt(match[1], 10);
+        break;
+      }
+    }
+    if (!baseYear) baseYear = new Date().getFullYear();
+
+    const parsed = new Array(n);
+    let curYear = baseYear;
+    let nextMonth = null;
+
+    for (let i = n - 1; i >= 0; i--) {
+      const str = String(dates[i]).trim();
+      const ymd = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+      if (ymd) {
+        parsed[i] = { year: parseInt(ymd[1], 10), month: parseInt(ymd[2], 10), day: parseInt(ymd[3], 10) };
+      } else {
+        const md = str.match(/^(\d{1,2})[-/](\d{1,2})/);
+        if (md) {
+          const m = parseInt(md[1], 10);
+          const d = parseInt(md[2], 10);
+          if (nextMonth !== null && m > nextMonth) {
+            curYear--;
+          }
+          parsed[i] = { year: curYear, month: m, day: d };
+          nextMonth = m;
+        } else {
+          parsed[i] = { year: curYear, month: 1, day: 1 };
+        }
+      }
+    }
+
+    const monthIndices = new Set();
+    const labelsByIndex = {};
+    const labelsByDate = new Map();
+    let lastMonthKey = null;
+    let lastYear = null;
+
+    for (let i = 0; i < n; i++) {
+      const info = parsed[i];
+      const monthKey = `${info.year}-${String(info.month).padStart(2, '0')}`;
+      if (monthKey !== lastMonthKey) {
+        monthIndices.add(i);
+        let labelText;
+        if (lastYear === null || info.year !== lastYear || info.month === 1) {
+          labelText = `${info.year}/${String(info.month).padStart(2, '0')}`;
+        } else {
+          labelText = `${info.month}月`;
+        }
+        labelsByIndex[i] = labelText;
+        labelsByDate.set(dates[i], labelText);
+        lastMonthKey = monthKey;
+        lastYear = info.year;
+      }
+    }
+
+    const sortedIndices = Array.from(monthIndices).sort((a, b) => a - b);
+    if (sortedIndices.length > 1 && sortedIndices[0] === 0 && sortedIndices[1] <= 5) {
+      const firstDate = dates[0];
+      monthIndices.delete(0);
+      delete labelsByIndex[0];
+      labelsByDate.delete(firstDate);
+    }
+
+    return { monthIndices, labelsByIndex, labelsByDate };
+  }
+
   function renderChart() {
     if (!window.echarts || !state.chartData) return;
     const dom = $('#stockChart');
@@ -918,6 +994,34 @@
     const dates = rows.map(r => r.date);
     const ohlc = rows.map(r => [r.open, r.close, r.low, r.high]);
     const volumes = rows.map((r, i) => [i, r.volume, r.close >= r.open ? 1 : -1]);
+
+    const monthAxisInfo = buildMonthAxisData(dates);
+    const monthIndices = monthAxisInfo.monthIndices;
+    const labelsByIndex = monthAxisInfo.labelsByIndex;
+    const labelsByDate = monthAxisInfo.labelsByDate;
+
+    const monthSplitLine = {
+      show: true,
+      alignWithLabel: true,
+      interval: (index, value) => monthIndices.has(index) || labelsByDate.has(value),
+      lineStyle: { color: 'rgba(148, 163, 184, 0.3)', type: 'dashed', width: 1 }
+    };
+    const monthAxisTick = {
+      show: true,
+      alignWithLabel: true,
+      interval: (index, value) => monthIndices.has(index) || labelsByDate.has(value),
+      length: 4,
+      lineStyle: { color: '#64748b', width: 1.5 }
+    };
+    const monthAxisLabel = {
+      show: true,
+      interval: (index, value) => monthIndices.has(index) || labelsByDate.has(value),
+      formatter: (value, index) => labelsByDate.get(value) || labelsByIndex[index] || '',
+      color: '#cbd5e1',
+      fontSize: 10,
+      fontWeight: 'bold',
+      margin: 4
+    };
 
     const option = {
       animation: false,
@@ -935,11 +1039,11 @@
         { left: 42, right: 12, top: '82%', height: '10%' }   // Pane 4: KD
       ],
       xAxis: [
-        { type: 'category', data: dates, gridIndex: 0, axisLine: { lineStyle: { color: '#334155' } }, axisLabel: { show: false } },
-        { type: 'category', data: dates, gridIndex: 1, axisLine: { lineStyle: { color: '#334155' } }, axisLabel: { show: false } },
-        { type: 'category', data: dates, gridIndex: 2, axisLine: { lineStyle: { color: '#334155' } }, axisLabel: { show: false } },
-        { type: 'category', data: dates, gridIndex: 3, axisLine: { lineStyle: { color: '#334155' } }, axisLabel: { show: false } },
-        { type: 'category', data: dates, gridIndex: 4, axisLine: { lineStyle: { color: '#334155' } }, axisLabel: { color: '#94a3b8', fontSize: 10 } }
+        { type: 'category', data: dates, gridIndex: 0, boundaryGap: true, axisLine: { lineStyle: { color: '#334155' } }, axisTick: monthAxisTick, axisLabel: monthAxisLabel, splitLine: monthSplitLine },
+        { type: 'category', data: dates, gridIndex: 1, boundaryGap: true, axisLine: { lineStyle: { color: '#334155' } }, axisTick: { show: false }, axisLabel: { show: false }, splitLine: monthSplitLine },
+        { type: 'category', data: dates, gridIndex: 2, boundaryGap: true, axisLine: { lineStyle: { color: '#334155' } }, axisTick: { show: false }, axisLabel: { show: false }, splitLine: monthSplitLine },
+        { type: 'category', data: dates, gridIndex: 3, boundaryGap: true, axisLine: { lineStyle: { color: '#334155' } }, axisTick: { show: false }, axisLabel: { show: false }, splitLine: monthSplitLine },
+        { type: 'category', data: dates, gridIndex: 4, boundaryGap: true, axisLine: { lineStyle: { color: '#334155' } }, axisTick: monthAxisTick, axisLabel: monthAxisLabel, splitLine: monthSplitLine }
       ],
       yAxis: [
         { scale: true, gridIndex: 0, splitLine: { lineStyle: { color: '#1e293b' } } },

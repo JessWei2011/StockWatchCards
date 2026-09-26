@@ -26,6 +26,21 @@ class TestInterfaceService(unittest.TestCase):
         self.assertFalse(res["ok"])
         self.assertIn("error", res)
 
+    def test_get_broker_chip_tag_no_broker_details(self):
+        import broker_chip_service
+        data = {
+            "concentration_1d": -26.5,
+            "concentration_5d": 17.1,
+            "matrix_status": "💎 波段吸籌·短線洗盤",
+            "top_buyers_5d": ["摩根士丹利+7,764", "高盛+6,131"],
+            "top_sellers": ["瑞銀-1,182", "摩根士丹利-1,141"],
+            "has_day_trader": False,
+        }
+        tag = broker_chip_service.get_broker_chip_tag(data)
+        self.assertEqual(tag, "💎 波段吸籌·短線洗盤 (5D +17.1% ｜ 1D -26.5%)")
+        self.assertNotIn("5D買", tag)
+        self.assertNotIn("1D賣", tag)
+
 
 if __name__ == "__main__":
     unittest.main()

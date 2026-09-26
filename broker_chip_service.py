@@ -395,35 +395,16 @@ def get_broker_chip_tag(broker_data: Optional[Dict[str, Any]]) -> Optional[str]:
 
     has_dt = broker_data.get("has_day_trader", False)
     dt_list = broker_data.get("day_traders", [])
-    dt_suffix = f" ⚡隔日衝({','.join(dt_list)})" if has_dt and dt_list else ""
+    dt_suffix = f" ⚡隔日衝({' / '.join(dt_list)})" if has_dt and dt_list else ""
 
     status = broker_data.get("matrix_status")
     if not status:
         st = determine_matrix_status(c1, c5, has_dt)
         status = st["status"]
 
-    top_b_1d = "、".join(broker_data.get("top_buyers", []))
-    top_b_5d = "、".join(broker_data.get("top_buyers_5d", []))
-    top_s_1d = "、".join(broker_data.get("top_sellers", []))
-    top_s_5d = "、".join(broker_data.get("top_sellers_5d", []))
-
-    # 詳細主力買賣分點
-    detail_parts = []
-    if top_b_5d and (c5 is not None and c5 >= 5.0):
-        detail_parts.append(f"5D買【{top_b_5d}】")
-    elif top_s_5d and (c5 is not None and c5 <= -5.0):
-        detail_parts.append(f"5D賣【{top_s_5d}】")
-
-    if top_b_1d and (c1 is not None and c1 >= 10.0):
-        detail_parts.append(f"1D買【{top_b_1d}】")
-    elif top_s_1d and (c1 is not None and c1 <= -10.0):
-        detail_parts.append(f"1D賣【{top_s_1d}】")
-
-    detail_str = f"｜{'·'.join(detail_parts)}" if detail_parts else ""
-
     if c5 is not None and c1 is not None:
-        return f"{status} (5D {c5:+.1f}% ｜ 1D {c1:+.1f}%{detail_str}){dt_suffix}"
+        return f"{status} (5D {c5:+.1f}% ｜ 1D {c1:+.1f}%){dt_suffix}"
     elif c5 is not None:
-        return f"{status} (5D {c5:+.1f}%{detail_str}){dt_suffix}"
+        return f"{status} (5D {c5:+.1f}%){dt_suffix}"
     else:
-        return f"{status} (1D {c1:+.1f}%{detail_str}){dt_suffix}"
+        return f"{status} (1D {c1:+.1f}%){dt_suffix}"
