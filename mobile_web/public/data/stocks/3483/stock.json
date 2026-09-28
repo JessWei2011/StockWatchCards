@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "stock": {
+    "code": "3483",
+    "name": "力致",
+    "group": "散熱",
+    "market": "TWO",
+    "date": "2026-09-24",
+    "isStarred": false
+  },
+  "latestAnalysis": {
+    "date": "2026-09-24",
+    "current": "77.50",
+    "decision": "觀望 / 逢低佈局",
+    "winRate": "56.8%",
+    "pattern": "多頭排列階梯推升 (Bullish Trend)",
+    "confidence": "完全確認",
+    "entry": "75.95",
+    "stop": "73.30",
+    "resist": "109.0",
+    "target": "134.96",
+    "bullish": [
+      "K線：📈 站穩5MA (強勢沿線推升)",
+      "RSI：RSI(14): 54.0 多空平衡",
+      "MACD：✨ MACD 零軸上金叉 (強勢攻擊)",
+      "KD：📈 KD 多方強勢推進",
+      "籌碼：🔥 真突破·強勢吸籌 (5D +12.2% ｜ 1D +11.1%)"
+    ],
+    "bearish": [
+      "成交量：📉 縮量沉澱整理",
+      "風控停損：73.30 元"
+    ],
+    "action": "交易方向：做多；建議評級：觀望 / 逢低佈局；策略：右側突破跟隨；目標價：134.96 元；停損：73.30 元。"
+  }
+}

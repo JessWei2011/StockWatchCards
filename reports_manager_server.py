@@ -50,6 +50,7 @@ REPORTS_STATE_FILE = ROOT_DIR / "reports_state.json"
 MACRO_DIR = ROOT_DIR / "指標數據"
 MACRO_DATA_FILE = MACRO_DIR / "macro_data.json"
 MACRO_STATUS_FILE = MACRO_DIR / "macro_update_status.json"
+MACRO_LIVE_FILE = MACRO_DIR / "macro_live.json"
 MACRO_UPDATE_SCRIPT = MACRO_DIR / "update_macro_data.py"
 PORT = 8935
 AUDIT_BLOCKS = ('monthly_revenue', 'earnings', 'catalyst', 'analyst_target', 'disposition')
@@ -488,6 +489,14 @@ def read_macro_update_status():
             "updatedFields": [],
             "failedFields": [],
         }
+
+
+def read_macro_live_data():
+    try:
+        payload = json.loads(MACRO_LIVE_FILE.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else {}
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {}
 
 
 def _new_macro_update_job():
@@ -1941,6 +1950,40 @@ def _fetch_twse_market_indexes():
     return result
 
 
+_TW_HOLIDAYS_CACHE = {"year": None, "holidays": {}, "timestamp": 0}
+_TW_HOLIDAYS_LOCK = threading.Lock()
+
+
+def get_tw_holidays():
+    """取得證交所公告之國定假日與休市日表。"""
+    now = time.time()
+    current_year = datetime.date.today().year
+    with _TW_HOLIDAYS_LOCK:
+        if _TW_HOLIDAYS_CACHE["year"] == current_year and now - _TW_HOLIDAYS_CACHE["timestamp"] < 86400:
+            return _TW_HOLIDAYS_CACHE["holidays"]
+    try:
+        r = requests.get(
+            "https://www.twse.com.tw/rwd/zh/holidaySchedule/holidaySchedule?response=json",
+            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+            timeout=5,
+        )
+        if r.status_code == 200:
+            data = r.json()
+            holidays = {}
+            for row in data.get("data", []):
+                if len(row) >= 2:
+                    holidays[str(row[0]).strip()] = str(row[1]).strip()
+            with _TW_HOLIDAYS_LOCK:
+                _TW_HOLIDAYS_CACHE["year"] = current_year
+                _TW_HOLIDAYS_CACHE["holidays"] = holidays
+                _TW_HOLIDAYS_CACHE["timestamp"] = now
+            return holidays
+    except Exception:
+        pass
+    with _TW_HOLIDAYS_LOCK:
+        return _TW_HOLIDAYS_CACHE["holidays"]
+
+
 def _fetch_yahoo_taiwan_futures():
     """讀取 Yahoo 的 WTX& 台指期近月；該頁面涵蓋日盤與夜盤報價。"""
     response = requests.get(
@@ -1955,12 +1998,19 @@ def _fetch_yahoo_taiwan_futures():
         matched = re.search(rf'"{field}":(?:\s*"([^"]+)"|([-0-9.]+))', page)
         return (matched.group(1) or matched.group(2)) if matched else None
 
-    market_time = _market_number(get_value("regularMarketTime"))
+    raw_time = get_value("regularMarketTime")
     updated_at = ""
-    if market_time:
-        updated_at = datetime.datetime.fromtimestamp(
-            market_time, tz=datetime.timezone(datetime.timedelta(hours=8))
-        ).strftime("%Y-%m-%d %H:%M:%S")
+    if raw_time:
+        try:
+            if "T" in str(raw_time):
+                dt = datetime.datetime.fromisoformat(str(raw_time).replace("Z", "+00:00"))
+                updated_at = dt.astimezone(datetime.timezone(datetime.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                updated_at = datetime.datetime.fromtimestamp(
+                    float(raw_time), tz=datetime.timezone(datetime.timedelta(hours=8))
+                ).strftime("%Y-%m-%d %H:%M:%S")
+        except Exception:
+            pass
     return _market_quote(
         "txf", "台指近全", get_value("regularMarketPrice"), get_value("previousClose"),
         "Yahoo 台指近月全盤", updated_at,
@@ -2058,9 +2108,37 @@ def fetch_market_pulse(force_refresh=False, markets=None):
         for fetch_key, key, label in (("dji", "dow", "道瓊指數"), ("ixic", "nasdaq", "納斯達克指數"), ("sox", "sox", "費城半導體指數")):
             quote_data = fetched.get(fetch_key)
             items.append(quote_data if not isinstance(quote_data, Exception) else failed_quote(key, label, "Yahoo Finance 延遲行情", quote_data))
+    today_taipei = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))
+    today_str = today_taipei.strftime("%Y-%m-%d")
+    holidays = get_tw_holidays()
+    is_tw_holiday = today_str in holidays
+    tw_holiday_name = holidays.get(today_str, "")
+
+    taipei_minutes = today_taipei.hour * 60 + today_taipei.minute
+    taipei_weekday = today_taipei.isoweekday()
+
+    if is_tw_holiday or taipei_weekday >= 6:
+        tw_active = False
+        txf_active = False
+    else:
+        tw_active = 540 <= taipei_minutes < 810
+        txf_active = (525 <= taipei_minutes < 825) or (taipei_minutes >= 900) or (taipei_weekday in (2, 3, 4, 5, 6) and taipei_minutes < 300)
+
+    now_ny = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-4)))
+    ny_weekday = now_ny.isoweekday()
+    ny_minutes = now_ny.hour * 60 + now_ny.minute
+    us_active = (1 <= ny_weekday <= 5) and (570 <= ny_minutes < 960)
+
     data = {
         "items": items,
-        "refreshedAt": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S"),
+        "refreshedAt": today_taipei.strftime("%Y-%m-%d %H:%M:%S"),
+        "schedule": {
+            "twActive": tw_active,
+            "txfActive": txf_active,
+            "usActive": us_active,
+            "isTwHoliday": is_tw_holiday,
+            "twHolidayName": tw_holiday_name,
+        },
     }
     with MARKET_PULSE_CACHE_LOCK:
         MARKET_PULSE_CACHE[cache_key] = {"timestamp": now, "data": data}
@@ -2360,14 +2438,23 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if parsed.path == "/api/macro/data":
             try:
-                self._json(200, {"ok": True, "entries": read_macro_data()})
+                self._json(200, {
+                    "ok": True,
+                    "entries": read_macro_data(),
+                    "live": read_macro_live_data(),
+                })
             except (OSError, ValueError, json.JSONDecodeError) as error:
                 self._json(500, {"ok": False, "error": f"總經資料讀取失敗: {error}"})
             return
         if parsed.path == "/api/macro/update-status":
             with MACRO_UPDATE_LOCK:
                 job = dict(MACRO_UPDATE_JOB)
-            self._json(200, {"ok": True, "status": read_macro_update_status(), "job": job})
+            self._json(200, {
+                "ok": True,
+                "status": read_macro_update_status(),
+                "job": job,
+                "live": read_macro_live_data(),
+            })
             return
         if parsed.path == "/api/institutional-breakdown":
             data, error = fetch_institutional_breakdown()

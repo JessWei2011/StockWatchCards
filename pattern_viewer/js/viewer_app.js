@@ -251,7 +251,7 @@
 
       this.populateStockSelect();
       const select = this.q('#stockSelect');
-      const initialCode = this.options.initialCode || (select && select.value);
+      const initialCode = this.options.initialCode || (select && select.value) || (this.reportsIndex[0] && this.reportsIndex[0].code) || (this.cards[0] && this.cards[0].code);
       if (initialCode) {
         await this.loadStock(initialCode);
       } else {

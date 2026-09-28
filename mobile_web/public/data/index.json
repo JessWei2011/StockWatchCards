@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "publishedAt": "2026-09-27T07:50:19+08:00",
+  "publishedAt": "2026-09-28T07:21:40+08:00",
   "defaultCode": "3324",
-  "count": 102,
+  "count": 103,
   "stocks": [
     {
       "code": "1303",
@@ -74,7 +74,7 @@
       "decision": "觀望 / 逢低佈局",
       "winRate": "75.5%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
-      "isStarred": true
+      "isStarred": false
     },
     {
       "code": "2308",
@@ -593,6 +593,18 @@
       "isStarred": false
     },
     {
+      "code": "3483",
+      "name": "力致",
+      "group": "散熱",
+      "market": "TWO",
+      "analysisDate": "2026-09-24",
+      "current": "77.50",
+      "decision": "觀望 / 逢低佈局",
+      "winRate": "56.8%",
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
+    },
+    {
       "code": "3491",
       "name": "昇達科",
       "group": "低軌衛星",
@@ -758,7 +770,7 @@
       "decision": "觀望 / 逢低佈局",
       "winRate": "75.5%",
       "pattern": "雙重底 W底形成突破 (Double Bottom)",
-      "isStarred": true
+      "isStarred": false
     },
     {
       "code": "5386",
@@ -1075,14 +1087,14 @@
     {
       "code": "6805",
       "name": "富世達",
-      "group": "軸承摺疊",
+      "group": "散熱",
       "market": "TW",
       "analysisDate": "2026-09-24",
       "current": "2530.00",
       "decision": "買入 (多頭順勢)",
       "winRate": "80.0%",
       "pattern": "雙重底 W底形成突破 (Double Bottom)",
-      "isStarred": false
+      "isStarred": true
     },
     {
       "code": "6831",

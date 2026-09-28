@@ -3210,6 +3210,14 @@
   .macro-delta.up{ color:#f87171; background:rgba(239,68,68,.16); }
   .macro-delta.down{ color:#4ade80; background:rgba(34,197,94,.16); }
   .macro-delta.flat{ color:#94a3b8; background:rgba(148,163,184,.13); }
+  .macro-auto-badge{
+    display:inline-flex; align-items:center; gap:5px; font-size:13.5px; font-weight:750;
+    color:#38bdf8; background:rgba(56,189,248,.12); border:1px solid rgba(56,189,248,.35);
+    border-radius:6px; padding:6px 12px; letter-spacing:.2px; white-space:nowrap;
+    transition:opacity .2s, color .2s, border-color .2s;
+  }
+  .macro-fresh.intraday{ color:#facc15; font-weight:750; }
+  .macro-fresh.closed{ color:#4ade80; font-weight:600; }
   .macro-blank{ color:#64748b; font-size:16px; font-style:italic; }
   .macro-edit-input{
     width:116px; padding:5px 7px; border:1px solid #22d3ee; border-radius:5px;
@@ -3572,26 +3580,6 @@
     <div class="main" style="padding:14px 18px; overflow-y:auto; overflow-x:hidden;">
       <!-- 📈 技術指標看盤終端（嵌入式） -->
       <div class="pattern-viewer pattern-viewer-embedded" id="reports-pattern-viewer" style="min-height:auto; background:transparent; width:100%; display:flex; flex-direction:column;">
-        <header class="navbar" style="border-radius:10px; margin-bottom:14px; padding:12px 18px;">
-          <div class="brand">
-            <div class="brand-icon">📈</div>
-            <div class="brand-text">
-              <h1>專業看盤・技術指標終端</h1>
-              <p>真實行情驅動：五層 K 線、均線（MA5/10/20/60/120）、布林通道、成交量、RSI、MACD、KD</p>
-            </div>
-          </div>
-          <div class="controls-bar" style="display:flex; align-items:center; gap:12px;">
-            <label for="reports-stockSelect" style="font-weight:700; color:#93c5fd;">🎯 選擇看盤個股：</label>
-            <div class="stock-search-wrap">
-              <input type="search" id="reports-stockSearchInput" class="stock-search-input" list="reports-stockSearchSuggestions" placeholder="輸入股號或股名" autocomplete="off" aria-label="輸入股號或股名">
-              <datalist id="reports-stockSearchSuggestions" class="stock-search-suggestions"></datalist>
-              <button type="button" id="reports-stockSearchBtn" class="stock-search-btn">前往</button>
-            </div>
-            <select id="reports-stockSelect" class="stock-selector"></select>
-            <button type="button" id="reports-patternStarBtn" class="pattern-star-btn" aria-label="加入重點清單" aria-pressed="false" title="加入重點清單" disabled>★</button>
-          </div>
-        </header>
-
         <main class="chart-viewport" style="border-radius:12px;">
           <div class="chart-header">
             <div class="chart-title-group">
@@ -3720,7 +3708,8 @@
           <div class="macro-panel-meta">
             <span id="macro-count">筆數：0</span>
             <button type="button" class="btn" id="macro-toggle-history-btn">📖 展開歷史數據</button>
-            <button type="button" class="btn" id="macro-update-btn" title="手動呼叫伺服器更新八項總經數據；開啟頁面時不會自動更新">🌐 總經數據更新</button>
+            <button type="button" class="btn" id="macro-update-btn" title="手動呼叫伺服器更新八項總經數據">🌐 總經數據更新</button>
+            <span id="macro-auto-badge" class="macro-auto-badge" title="分頁開啟時每 10 分鐘自動更新；切換至其他分頁時暫停">⏱️ 10分鐘自動更新 (10:00)</span>
           </div>
         </div>
         <div class="macro-dashboard" id="macro-dashboard">
@@ -4066,6 +4055,7 @@
           <strong>◈ 市場脈動</strong>
           <span class="market-pulse-lights" aria-label="行情 API 狀態">
             <span class="market-pulse-light" id="market-pulse-tw-light"><i class="market-pulse-light-dot"></i>台股</span>
+            <span class="market-pulse-light" id="market-pulse-txf-light"><i class="market-pulse-light-dot"></i>台指期</span>
             <span class="market-pulse-light" id="market-pulse-us-light"><i class="market-pulse-light-dot"></i>美股</span>
           </span>
           <span class="market-pulse-status" id="market-pulse-status">正在載入六項行情…</span>
@@ -5345,6 +5335,13 @@
     if (target === 'macro') {
       if (typeof loadMacroData === 'function') {
         loadMacroData();
+      }
+      if (typeof startMacroAutoUpdate === 'function') {
+        startMacroAutoUpdate();
+      }
+    } else {
+      if (typeof stopMacroAutoUpdate === 'function') {
+        stopMacroAutoUpdate();
       }
     }
     if (target === 'market-pulse') {
@@ -8856,11 +8853,62 @@
   const MACRO_TOP_FIELDS = MACRO_FIELDS.slice(0, 4);
   const MACRO_BOTTOM_FIELDS = MACRO_FIELDS.slice(4);
   let macroEntries = [];
+  let macroLiveData = null;
   let macroHistoryExpanded = false;
   let macroStatusTimer = null;
+  let macroAutoInterval = null;
+  let macroCountdownInterval = null;
+  let macroNextUpdateTs = 0;
+  let macroIsUpdating = false;
+  const MACRO_UPDATE_INTERVAL_MS = 10 * 60 * 1000;
+
+  function updateMacroAutoBadge(){
+    const badge = document.getElementById('macro-auto-badge');
+    if (!badge) return;
+    if (window.activeWorkspaceName !== 'macro') {
+      badge.textContent = '⏱️ 10分鐘更新：已暫停';
+      badge.style.opacity = '0.6';
+      return;
+    }
+    badge.style.opacity = '1';
+    if (macroIsUpdating) {
+      badge.textContent = '⏳ 自動更新中…';
+      return;
+    }
+    const remainingSec = Math.max(0, Math.round((macroNextUpdateTs - Date.now()) / 1000));
+    const m = Math.floor(remainingSec / 60);
+    const s = String(remainingSec % 60).padStart(2, '0');
+    badge.textContent = `⏱️ 10分自動更新 (${m}:${s})`;
+  }
+
+  function startMacroAutoUpdate(){
+    if (macroAutoInterval) return;
+    macroNextUpdateTs = Date.now() + MACRO_UPDATE_INTERVAL_MS;
+    updateMacroAutoBadge();
+    macroCountdownInterval = setInterval(updateMacroAutoBadge, 1000);
+    macroAutoInterval = setInterval(async () => {
+      if (window.activeWorkspaceName === 'macro' && !document.hidden && !macroIsUpdating) {
+        macroNextUpdateTs = Date.now() + MACRO_UPDATE_INTERVAL_MS;
+        await triggerMacroUpdate({ isAuto: true });
+      }
+    }, MACRO_UPDATE_INTERVAL_MS);
+  }
+
+  function stopMacroAutoUpdate(){
+    if (macroAutoInterval) {
+      clearInterval(macroAutoInterval);
+      macroAutoInterval = null;
+    }
+    if (macroCountdownInterval) {
+      clearInterval(macroCountdownInterval);
+      macroCountdownInterval = null;
+    }
+    updateMacroAutoBadge();
+  }
 
   function setMacroStatus(message, type=''){
     const el = document.getElementById('macro-status');
+    if (!el) return;
     el.className = `macro-status ${type}`.trim();
     el.textContent = message || '';
   }
@@ -8882,7 +8930,7 @@
   function macroDirection(value, previous){
     if (!Number.isFinite(value) || !Number.isFinite(previous)) return 'flat';
     const diff = value - previous;
-    return Math.abs(diff) < .001 ? 'flat' : (diff > 0 ? 'up' : 'down');
+    return Math.abs(diff) < .0001 ? 'flat' : (diff > 0 ? 'up' : 'down');
   }
 
   function macroDelta(value, previous){
@@ -8912,7 +8960,6 @@
       pad + index * (width-pad*2)/(points.length-1),
       pad + (height-pad*2) * (1-(value-min)/range)
     ]);
-    // 與最新數值採用相同基準：比較最新一期和前一期，而非整段走勢的首尾。
     const direction=macroDirection(points[points.length-1], points[points.length-2]);
     const isLight = document.documentElement.getAttribute('data-theme') === 'light';
     const color = isLight
@@ -8950,34 +8997,52 @@
     const latest=sorted[0] || {};
     const meta=latest._meta || {};
     MACRO_FIELDS.forEach(field => {
-      const values=asc.map(entry => Number(entry[field.key])).filter(Number.isFinite);
+      let values=asc.map(entry => Number(entry[field.key])).filter(Number.isFinite);
+      const liveInfo=macroLiveData?.fields?.[field.key];
+      if (liveInfo && !liveInfo.isClosed && Number.isFinite(Number(liveInfo.value))) {
+        values=[...values, Number(liveInfo.value)];
+      }
       const spark=document.getElementById(`macro-spark-${field.key}`);
       if (spark) spark.innerHTML=macroSparkSvg(values);
       const fresh=document.getElementById(`macro-fresh-${field.key}`);
       if (!fresh) return;
-      const asof=meta[field.key]?.asof;
+
+      if (liveInfo && !liveInfo.isClosed && liveInfo.value !== null) {
+        fresh.className = 'macro-fresh intraday';
+        fresh.textContent = '🟡 盤中波動';
+        fresh.title = `${field.label}：盤中即時波動（每10分鐘更新；收盤後正式記錄）`;
+        return;
+      }
+
+      const asof=liveInfo?.asof || meta[field.key]?.asof;
       if (!asof) {
+        fresh.className = 'macro-fresh';
         fresh.textContent='⚪ 無更新日期';
         fresh.title=`${field.label}：沒有自動更新紀錄`;
         return;
       }
       const isFresh=asof >= macroExpectedDate(field.key);
-      fresh.textContent=`${isFresh ? '🟢' : '⚪'} ${asof.slice(5).replace('-','/')}`;
-      fresh.title=`${field.label}：資料日期 ${asof}`;
+      fresh.className = 'macro-fresh closed';
+      fresh.textContent=`${isFresh ? '🟢' : '⚪'} ${asof.slice(5).replace('-','/')} 收盤`;
+      fresh.title=`${field.label}：資料日期 ${asof}（已收盤定案）`;
     });
   }
 
   function renderMacroTable(){
     const sorted=macroSortedDesc();
-    document.getElementById('macro-count').textContent=`筆數：${sorted.length}`;
+    document.getElementById('macro-count').textContent=`歷史筆數：${sorted.length}`;
     renderMacroHeaders(sorted);
+
     MACRO_FIELDS.forEach(field => {
       const latestCell=document.querySelector(`#macro-dashboard .macro-num[data-key="${field.key}"]`);
       const latestDate=document.getElementById(`macro-date-${field.key}`);
       const history=document.getElementById(`macro-history-${field.key}`);
       if (!latestCell || !latestDate || !history) return;
 
-      if (!sorted.length) {
+      const liveInfo=macroLiveData?.fields?.[field.key];
+      const hasLiveVal = liveInfo && liveInfo.value !== null && Number.isFinite(Number(liveInfo.value));
+
+      if (!sorted.length && !hasLiveVal) {
         latestCell.dataset.date='';
         latestCell.innerHTML='<span class="macro-blank">尚無資料</span>';
         latestDate.textContent='--';
@@ -8986,21 +9051,54 @@
         return;
       }
 
-      const latest=sorted[0];
-      latestCell.dataset.date=latest.date;
-      latestCell.innerHTML=macroCellHtml(sorted,0,field.key);
-      latestDate.textContent=latest.date;
-      history.hidden=!macroHistoryExpanded;
-      history.innerHTML=sorted.slice(1, 11).map((entry,index) => {
-        const dataIndex=index+1;
+      let displayValue = null;
+      let prevValue = null;
+      let displayDateText = '--';
+      let cellDateAttr = '';
+
+      if (hasLiveVal) {
+        displayValue = Number(liveInfo.value);
+        cellDateAttr = liveInfo.asof || '';
+        if (!liveInfo.isClosed) {
+          prevValue = macroEffectiveValue(sorted, 0, field.key);
+          displayDateText = `${liveInfo.asof ? liveInfo.asof.slice(5).replace('-','/') : ''} 盤中`;
+        } else {
+          if (sorted[0] && sorted[0].date === liveInfo.asof) {
+            prevValue = macroEffectiveValue(sorted, 1, field.key);
+          } else {
+            prevValue = macroEffectiveValue(sorted, 0, field.key);
+          }
+          displayDateText = liveInfo.asof || (sorted[0]?.date || '--');
+        }
+      } else if (sorted.length) {
+        displayValue = macroEffectiveValue(sorted, 0, field.key);
+        prevValue = macroEffectiveValue(sorted, 1, field.key);
+        displayDateText = sorted[0].date;
+        cellDateAttr = sorted[0].date;
+      }
+
+      latestCell.dataset.date = cellDateAttr;
+      if (displayValue !== null) {
+        const decimals = (field.key === 'us10y' || field.key === 'us30y') ? 3 : 2;
+        const valStr = displayValue.toFixed(decimals);
+        latestCell.innerHTML = `<span class="macro-value ${macroDirection(displayValue, prevValue)}">${valStr}</span>${macroDelta(displayValue, prevValue)}`;
+      } else {
+        latestCell.innerHTML = '<span class="macro-blank">-（留白）</span>';
+      }
+      latestDate.textContent = displayDateText;
+
+      history.hidden = !macroHistoryExpanded;
+      history.innerHTML = sorted.slice(0, 10).map((entry, index) => {
         return `<div class="macro-history-item">
           <span class="macro-history-date">${escapeHtml(entry.date)}</span>
-          <span class="macro-num macro-field-${field.key}" data-date="${escapeHtml(entry.date)}" data-key="${field.key}">${macroCellHtml(sorted,dataIndex,field.key)}</span>
+          <span class="macro-num macro-field-${field.key}" data-date="${escapeHtml(entry.date)}" data-key="${field.key}">${macroCellHtml(sorted, index, field.key)}</span>
         </div>`;
-      }).join('') || '<div class="macro-history-item"><span class="macro-blank">沒有更早的資料</span></div>';
+      }).join('') || '<div class="macro-history-item"><span class="macro-blank">沒有歷史資料</span></div>';
     });
 
-    document.querySelectorAll('#macro-dashboard .macro-num[data-date]').forEach(cell => cell.addEventListener('click', () => startMacroCellEdit(cell)));
+    document.querySelectorAll('#macro-dashboard .macro-history-list .macro-num[data-date]').forEach(cell => {
+      cell.addEventListener('click', () => startMacroCellEdit(cell));
+    });
   }
 
   async function loadMacroData({quiet=false}={}){
@@ -9009,11 +9107,13 @@
       const data=await response.json();
       if (!response.ok || !data.ok) throw new Error(data.error || `HTTP ${response.status}`);
       macroEntries=Array.isArray(data.entries) ? data.entries : [];
+      macroLiveData=data.live && typeof data.live === 'object' ? data.live : null;
       renderMacroTable();
-      if (!quiet) setMacroStatus('✅ 已載入本機 macro_data.json；需要新資料時請按上方「總經數據更新」。','success');
+      if (!quiet) setMacroStatus('✅ 已載入總經與波動率資料（含即時與收盤紀錄）。','success');
       return true;
     } catch (error) {
       macroEntries=[];
+      macroLiveData=null;
       renderMacroTable();
       setMacroStatus(`❌ 總經資料載入失敗：${error.message}`,'error');
       return false;
@@ -9106,8 +9206,10 @@ ${macroJsonText()}`;
       const data=await response.json();
       if (!response.ok || !data.ok) throw new Error(data.error || `HTTP ${response.status}`);
       const running=Boolean(data.job?.running);
-      button.disabled=running;
-      button.textContent=running ? '⏳ 總經數據更新中…' : '🌐 總經數據更新';
+      if (button) {
+        button.disabled=running;
+        button.textContent=running ? '⏳ 總經數據更新中…' : '🌐 總經數據更新';
+      }
       if (running) {
         setMacroStatus(data.status?.message || '⏳ 正在更新八項總經資料…');
         return true;
@@ -9115,34 +9217,74 @@ ${macroJsonText()}`;
       if (macroStatusTimer) {
         clearInterval(macroStatusTimer);
         macroStatusTimer=null;
+        macroIsUpdating=false;
         await loadMacroData({quiet:true});
         const state=data.status?.state;
         const type=state === 'success' ? 'success' : (state === 'partial' ? '' : 'error');
         setMacroStatus(data.status?.message || '總經更新程序已完成。',type);
+        updateMacroAutoBadge();
       }
       return false;
     } catch (error) {
-      button.disabled=false;
-      button.textContent='🌐 總經數據更新';
+      if (button) {
+        button.disabled=false;
+        button.textContent='🌐 總經數據更新';
+      }
+      macroIsUpdating=false;
       setMacroStatus(`❌ 無法取得總經更新狀態：${error.message}`,'error');
+      updateMacroAutoBadge();
       return false;
     }
   }
 
-  document.getElementById('macro-update-btn').addEventListener('click',async () => {
+  async function triggerMacroUpdate({ isAuto = false } = {}){
+    if (macroIsUpdating) return;
     const button=document.getElementById('macro-update-btn');
-    button.disabled=true;
-    button.textContent='⏳ 總經數據更新中…';
-    setMacroStatus('⏳ 正在啟動總經資料更新…');
-    const {ok,data}=await api('POST','/api/macro/update',{});
-    if (!ok) {
-      button.disabled=false;
-      button.textContent='🌐 總經數據更新';
-      setMacroStatus(`❌ ${data.error || '總經更新啟動失敗'}`,'error');
-      return;
+    macroIsUpdating=true;
+    if (button) {
+      button.disabled=true;
+      button.textContent='⏳ 總經數據更新中…';
     }
-    await pollMacroUpdateStatus();
-    if (!macroStatusTimer) macroStatusTimer=setInterval(pollMacroUpdateStatus,1500);
+    setMacroStatus(isAuto ? '⏳ [自動更新] 正在抓取八項總經即時與收盤數據…' : '⏳ 正在啟動總經資料更新…');
+    updateMacroAutoBadge();
+
+    try {
+      const {ok,data}=await api('POST','/api/macro/update',{});
+      if (!ok) {
+        if (button) {
+          button.disabled=false;
+          button.textContent='🌐 總經數據更新';
+        }
+        macroIsUpdating=false;
+        setMacroStatus(`❌ ${data.error || '總經更新啟動失敗'}`,'error');
+        updateMacroAutoBadge();
+        return;
+      }
+      await pollMacroUpdateStatus();
+      if (!macroStatusTimer) macroStatusTimer=setInterval(pollMacroUpdateStatus,1500);
+    } catch (err) {
+      if (button) {
+        button.disabled=false;
+        button.textContent='🌐 總經數據更新';
+      }
+      macroIsUpdating=false;
+      setMacroStatus(`❌ 總經更新錯誤：${err.message}`,'error');
+      updateMacroAutoBadge();
+    }
+  }
+
+  document.getElementById('macro-update-btn').addEventListener('click', () => {
+    macroNextUpdateTs = Date.now() + MACRO_UPDATE_INTERVAL_MS;
+    triggerMacroUpdate({ isAuto: false });
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && window.activeWorkspaceName === 'macro') {
+      if (Date.now() >= macroNextUpdateTs && !macroIsUpdating) {
+        macroNextUpdateTs = Date.now() + MACRO_UPDATE_INTERVAL_MS;
+        triggerMacroUpdate({ isAuto: true });
+      }
+    }
   });
 
   document.getElementById('macro-toggle-history-btn').addEventListener('click',event => {
@@ -9162,6 +9304,10 @@ ${macroJsonText()}`;
   });
   document.getElementById('macro-copy-json-btn').addEventListener('click',() => copyMacroText(macroJsonText(),'✅ 已複製完整 macro_data.json。'));
   document.getElementById('macro-copy-prompt-btn').addEventListener('click',() => copyMacroText(macroAnalysisPrompt(),'✅ 已複製網頁版總經分析 Prompt。'));
+
+  if (window.activeWorkspaceName === 'macro') {
+    startMacroAutoUpdate();
+  }
 
   // 管理頁關閉時通知主伺服器；重整會在 8 秒寬限期內重新註冊，不會誤關。
   const REPORTS_CLIENT_ID=sessionStorage.getItem('reports-manager-client-id') || (crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`);
@@ -9316,12 +9462,18 @@ ${macroJsonText()}`;
       const item = items.find(candidate => candidate.key === key);
       return item && !item.error && item.price !== null && item.price !== undefined;
     });
-    const twKeys = [schedule.twActive && 'taiex', schedule.twActive && 'otc', schedule.txfActive && 'txf'].filter(Boolean);
+    const twKeys = schedule.twActive ? ['taiex', 'otc'] : [];
+    const txfKeys = schedule.txfActive ? ['txf'] : [];
     const usKeys = schedule.usActive ? ['dow', 'nasdaq', 'sox'] : [];
+
     const twState = !twKeys.length ? 'stopped' : (loading ? 'loading' : (hasHealthyQuotes(twKeys) ? 'live' : 'stopped'));
+    const txfState = !txfKeys.length ? 'stopped' : (loading ? 'loading' : (hasHealthyQuotes(txfKeys) ? 'live' : 'stopped'));
     const usState = !usKeys.length ? 'stopped' : (loading ? 'loading' : (hasHealthyQuotes(usKeys) ? 'live' : 'stopped'));
-    setMarketPulseLight('market-pulse-tw-light', twState, twState === 'live' ? '台股行情 API 更新正常' : (twState === 'loading' ? '台股行情 API 更新中' : '台股休市或行情 API 未更新'));
-    setMarketPulseLight('market-pulse-us-light', usState, usState === 'live' ? '美股行情 API 更新正常' : (usState === 'loading' ? '美股行情 API 更新中' : '美股休市或行情 API 未更新'));
+
+    const holidaySuffix = schedule.isTwHoliday ? ` (${schedule.twHolidayName || '國定假日'})` : '';
+    setMarketPulseLight('market-pulse-tw-light', twState, twState === 'live' ? '台股現貨盤中即時更新' : (twState === 'loading' ? '台股現貨更新中' : `台股現貨休市${holidaySuffix}`));
+    setMarketPulseLight('market-pulse-txf-light', txfState, txfState === 'live' ? '台指期盤中即時更新' : (txfState === 'loading' ? '台指期更新中' : `台指期休市${holidaySuffix}`));
+    setMarketPulseLight('market-pulse-us-light', usState, usState === 'live' ? '美股盤中即時更新' : (usState === 'loading' ? '美股行情更新中' : '美股休市'));
   }
 
   function formatTrendNum(val){
@@ -9427,9 +9579,10 @@ ${macroJsonText()}`;
       const changeText = Number.isFinite(change)
         ? `${change > 0 ? '+' : ''}${formatMarketPulseNumber(change)} (${change > 0 ? '+' : ''}${Number(item.changePct || 0).toFixed(2)}%)`
         : (isClosed ? '休市中 · 暫停更新' : '暫無行情');
+      const timeStr = item.updatedAt ? ` · ${item.updatedAt.slice(5)}` : '';
       const sourceText = item.error
         ? `資料暫不可用：${item.source || ''}`
-        : `${item.source || ''}${item.delayed ? ' · 延遲' : ''}${isClosed ? ' · 休市' : ''}`;
+        : `${item.source || ''}${item.delayed ? ' · 延遲' : ''}${isClosed ? ' · 休市' : ''}${timeStr}`;
       const title = item.error ? escapeHtml(item.error) : escapeHtml(item.updatedAt || item.source || '');
       const trendHtml = buildMarketPulseTrend(item);
       const turnoverNum = Number(item.turnover);
@@ -9452,16 +9605,24 @@ ${macroJsonText()}`;
         </article>`;
     }).join('');
     if (statusEl) {
-      statusEl.textContent = schedule.labels.length
-        ? `自動更新中：${schedule.labels.join('、')}｜台股即時・美股延遲`
+      const activeLabels = [];
+      if (schedule.isTwHoliday) {
+        activeLabels.push(`台股/台指期休市 (${schedule.twHolidayName || '國定假日'})`);
+      } else {
+        if (schedule.twActive) activeLabels.push('台股盤中');
+        if (schedule.txfActive) activeLabels.push('台指期盤中');
+      }
+      if (schedule.usActive) activeLabels.push('美股盤中');
+      statusEl.textContent = activeLabels.length
+        ? `市場狀態：${activeLabels.join(' ｜ ')}｜台股即時・美股延遲`
         : '目前休市，已暫停所有行情請求';
     }
   }
 
   async function loadMarketPulse(forceRefresh = false){
     const statusEl = document.getElementById('market-pulse-status');
-    const schedule = getMarketPulseSchedule();
-    if (!forceRefresh) updateMarketPulseLights(schedule, [], true);
+    const localSchedule = getMarketPulseSchedule();
+    if (!forceRefresh) updateMarketPulseLights(localSchedule, [], true);
     try {
       const markets = ['tw', 'txf', 'us'];
       const params = new URLSearchParams({ markets: markets.join(',') });
@@ -9469,7 +9630,9 @@ ${macroJsonText()}`;
       const response = await fetch(`/api/market-pulse?${params}`);
       const payload = await response.json();
       if (!response.ok || !payload.ok || !payload.data) throw new Error(payload.error || '無法取得行情');
-      renderMarketPulse(payload.data, schedule);
+      const effectiveSchedule = Object.assign({}, localSchedule, payload.data.schedule || {});
+      renderMarketPulse(payload.data, effectiveSchedule);
+      updateMarketPulseLights(effectiveSchedule, payload.data.items || [], false);
     } catch (error) {
       if (statusEl) statusEl.textContent = `行情載入失敗：${error.message}`;
     }
