@@ -8960,7 +8960,15 @@
       pad + index * (width-pad*2)/(points.length-1),
       pad + (height-pad*2) * (1-(value-min)/range)
     ]);
-    const direction=macroDirection(points[points.length-1], points[points.length-2]);
+    const lastP = points[points.length-1];
+    let prevP = points[points.length-2];
+    for (let i = points.length - 2; i >= 0; i--) {
+      if (Math.abs(points[i] - lastP) >= 0.0001) {
+        prevP = points[i];
+        break;
+      }
+    }
+    const direction=macroDirection(lastP, prevP);
     const isLight = document.documentElement.getAttribute('data-theme') === 'light';
     const color = isLight
       ? (direction === 'flat' ? '#64748b' : (direction === 'up' ? '#dc2626' : '#16a34a'))
@@ -8997,10 +9005,35 @@
     const latest=sorted[0] || {};
     const meta=latest._meta || {};
     MACRO_FIELDS.forEach(field => {
-      let values=asc.map(entry => Number(entry[field.key])).filter(Number.isFinite);
+      let firstVal = null;
+      for (const entry of asc) {
+        const raw = entry?.[field.key];
+        if (raw !== null && raw !== undefined && raw !== '' && Number.isFinite(Number(raw))) {
+          firstVal = Number(raw);
+          break;
+        }
+      }
+
+      let values = [];
+      if (firstVal !== null) {
+        let currentVal = firstVal;
+        values = asc.map(entry => {
+          const raw = entry?.[field.key];
+          if (raw !== null && raw !== undefined && raw !== '' && Number.isFinite(Number(raw))) {
+            currentVal = Number(raw);
+          }
+          return currentVal;
+        });
+      }
+
       const liveInfo=macroLiveData?.fields?.[field.key];
       if (liveInfo && !liveInfo.isClosed && Number.isFinite(Number(liveInfo.value))) {
-        values=[...values, Number(liveInfo.value)];
+        const liveVal = Number(liveInfo.value);
+        if (asc.length && asc[asc.length - 1].date === liveInfo.asof) {
+          values[values.length - 1] = liveVal;
+        } else {
+          values.push(liveVal);
+        }
       }
       const spark=document.getElementById(`macro-spark-${field.key}`);
       if (spark) spark.innerHTML=macroSparkSvg(values);
@@ -9063,18 +9096,30 @@
           prevValue = macroEffectiveValue(sorted, 0, field.key);
           displayDateText = `${liveInfo.asof ? liveInfo.asof.slice(5).replace('-','/') : ''} 盤中`;
         } else {
-          if (sorted[0] && sorted[0].date === liveInfo.asof) {
-            prevValue = macroEffectiveValue(sorted, 1, field.key);
+          const asofIdx = sorted.findIndex(item => item.date === liveInfo.asof);
+          if (asofIdx >= 0) {
+            prevValue = macroEffectiveValue(sorted, asofIdx + 1, field.key);
           } else {
-            prevValue = macroEffectiveValue(sorted, 0, field.key);
+            prevValue = macroEffectiveValue(sorted, 1, field.key);
           }
           displayDateText = liveInfo.asof || (sorted[0]?.date || '--');
         }
       } else if (sorted.length) {
-        displayValue = macroEffectiveValue(sorted, 0, field.key);
-        prevValue = macroEffectiveValue(sorted, 1, field.key);
-        displayDateText = sorted[0].date;
-        cellDateAttr = sorted[0].date;
+        const firstValidIdx = sorted.findIndex(item => {
+          const r = item?.[field.key];
+          return r !== null && r !== undefined && r !== '' && Number.isFinite(Number(r));
+        });
+        if (firstValidIdx >= 0) {
+          displayValue = Number(sorted[firstValidIdx][field.key]);
+          prevValue = macroEffectiveValue(sorted, firstValidIdx + 1, field.key);
+          displayDateText = sorted[firstValidIdx].date;
+          cellDateAttr = sorted[firstValidIdx].date;
+        } else {
+          displayValue = null;
+          prevValue = null;
+          displayDateText = sorted[0].date;
+          cellDateAttr = sorted[0].date;
+        }
       }
 
       latestCell.dataset.date = cellDateAttr;
