@@ -25,6 +25,85 @@ window.ChartEngine = {
   },
 
   /**
+   * 依據欲呈現之真實 K 棒數量與未來留白緩衝槽位，計算錨定於最新 K 棒的 dataZoom 範圍
+   * 放大時最新 K 棒漸進置中至約 68%（選項 A，右側留約 32% 視野空間）；縮小時慢慢往右回復至 100%
+   */
+  _calcZoomFromVisibleBars(visibleBars, realTotal, bufferDays = 35) {
+    const totalSlots = realTotal + bufferDays;
+    const lastRealIndex = realTotal - 1;
+    const minBars = 10;
+    const maxBars = realTotal;
+    const zoomProgress = Math.max(0, Math.min(1, (maxBars - visibleBars) / Math.max(1, maxBars - minBars)));
+    // 當縮到最小 (看全部) 時：1.0 (最右邊界)
+    // 當放大到最大時：0.68 (約 68% 中偏右位置，右側留 32% 空白，符合選項 A)
+    const targetRatio = 1.0 - zoomProgress * 0.32;
+    const totalVisibleSlots = visibleBars / targetRatio;
+    const rightBufferSlots = Math.round(totalVisibleSlots * (1 - targetRatio));
+    const endIndex = Math.min(totalSlots - 1, lastRealIndex + rightBufferSlots);
+    const startIndex = Math.max(0, Math.round(endIndex - totalVisibleSlots));
+    const start = Math.max(0, (startIndex / (totalSlots - 1)) * 100);
+    const end = Math.min(100, (endIndex / (totalSlots - 1)) * 100);
+    return { start, end, startIndex, endIndex };
+  },
+
+  /**
+   * 綁定以最新 K 柱為錨點的滾輪縮放邏輯，維持滑鼠按住拖曳平移歷史數據的能力
+   */
+  _attachCustomWheelZoom(dom, state) {
+    if (!dom || !state || state.wheelZoomHandler) return;
+
+    const handleWheel = (e) => {
+      if (!state.chartInstance || state.chartInstance.isDisposed()) return;
+
+      // 攔截滾輪事件，阻止頁面上下滾動，並阻止 ECharts 預設以滑鼠游標為焦點的縮放
+      e.preventDefault();
+      e.stopPropagation();
+
+      const realTotal = state.realTotal || 100;
+      const bufferDays = state.bufferDays || 35;
+      const totalSlots = realTotal + bufferDays;
+
+      let currentBars = state.currentVisibleBars || 20;
+      const opt = state.chartInstance.getOption();
+      const dz = opt && opt.dataZoom && opt.dataZoom[0];
+      if (dz && dz.start != null && dz.end != null) {
+        const spanSlots = ((dz.end - dz.start) / 100) * (totalSlots - 1);
+        if (spanSlots > 0) {
+          currentBars = Math.max(10, Math.min(realTotal, spanSlots * 0.75));
+        }
+      }
+
+      // 阻尼計算：平滑支援滑鼠滾輪與觸控板手勢
+      let delta = e.deltaY;
+      if (e.deltaMode === 1) delta *= 40;
+      else if (e.deltaMode === 2) delta *= 800;
+      const zoomStep = Math.min(0.25, Math.max(0.04, Math.abs(delta) / 400));
+      const zoomFactor = delta < 0 ? (1 - zoomStep) : (1 + zoomStep * 1.15);
+
+      let nextBars = currentBars * zoomFactor;
+      nextBars = Math.max(10, Math.min(realTotal, nextBars));
+      state.currentVisibleBars = nextBars;
+
+      const res = this._calcZoomFromVisibleBars(nextBars, realTotal, bufferDays);
+      state.chartInstance.dispatchAction({
+        type: 'dataZoom',
+        start: res.start,
+        end: res.end
+      });
+    };
+
+    dom.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+    state.wheelZoomHandler = handleWheel;
+
+    const originalCleanup = state.zoomCleanup;
+    state.zoomCleanup = () => {
+      if (typeof originalCleanup === 'function') originalCleanup();
+      dom.removeEventListener('wheel', handleWheel, { capture: true });
+      state.wheelZoomHandler = null;
+    };
+  },
+
+  /**
    * 計算以月為單位的 X 軸標籤與隔線索引
    * @param {Array<string>} dates 
    * @returns {{ monthIndices: Set<number>, labelsByIndex: Object }}
@@ -200,8 +279,11 @@ window.ChartEngine = {
     // Only reset the zoom when the stock actually changes — re-renders for the same stock (toggling
     // BOLL/MA, etc.) keep whatever zoom range the user has manually set.
     const DEFAULT_ZOOM_DAYS = 20;
-    const total = stockData.dates.length;
-    const stockKey = `${stockData.title}|${total}`;
+    const BUFFER_DAYS = 35;
+    const realTotal = stockData.dates.length;
+    const expandedDates = stockData.dates.concat(new Array(BUFFER_DAYS).fill(''));
+    const total = expandedDates.length;
+    const stockKey = `${stockData.title}|${realTotal}`;
     const isSameStock = state.lastStockKey === stockKey;
     const showShortMa = displayToggles.showMa !== false;
     const showBoll = displayToggles.showBoll !== false;
@@ -218,11 +300,14 @@ window.ChartEngine = {
       }
     }
     if (zoomStart == null) {
-      zoomEnd = 100;
-      zoomStart = total > DEFAULT_ZOOM_DAYS
-        ? Math.max(0, Math.round(((total - DEFAULT_ZOOM_DAYS) / total) * 100))
-        : 0;
+      const initBars = Math.min(DEFAULT_ZOOM_DAYS, realTotal);
+      const zoomRes = this._calcZoomFromVisibleBars(initBars, realTotal, BUFFER_DAYS);
+      zoomStart = zoomRes.start;
+      zoomEnd = zoomRes.end;
+      state.currentVisibleBars = initBars;
     }
+    state.realTotal = realTotal;
+    state.bufferDays = BUFFER_DAYS;
     state.lastStockKey = stockKey;
     state.lastStockData = stockData;
     state.lastOverlayData = overlayData;
@@ -462,7 +547,7 @@ window.ChartEngine = {
       xAxis: [
         {
           type: 'category',
-          data: dates,
+          data: expandedDates,
           gridIndex: 0,
           boundaryGap: true,
           axisLine: { lineStyle: { color: axisLineColor } },
@@ -472,7 +557,7 @@ window.ChartEngine = {
         },
         {
           type: 'category',
-          data: dates,
+          data: expandedDates,
           gridIndex: 1,
           boundaryGap: true,
           axisLine: { lineStyle: { color: axisLineColor } },
@@ -482,7 +567,7 @@ window.ChartEngine = {
         },
         {
           type: 'category',
-          data: dates,
+          data: expandedDates,
           gridIndex: 2,
           boundaryGap: true,
           axisLine: { lineStyle: { color: axisLineColor } },
@@ -492,7 +577,7 @@ window.ChartEngine = {
         },
         {
           type: 'category',
-          data: dates,
+          data: expandedDates,
           gridIndex: 3,
           boundaryGap: true,
           axisLine: { lineStyle: { color: axisLineColor } },
@@ -502,7 +587,7 @@ window.ChartEngine = {
         },
         {
           type: 'category',
-          data: dates,
+          data: expandedDates,
           gridIndex: 4,
           boundaryGap: true,
           axisLine: { lineStyle: { color: axisLineColor } },
@@ -524,8 +609,26 @@ window.ChartEngine = {
         { min: 0, max: 100, gridIndex: 4, splitLine: { lineStyle: { color: splitLineColor } } }
       ],
       dataZoom: [
-        { type: 'inside', xAxisIndex: [0, 1, 2, 3, 4], start: zoomStart, end: zoomEnd },
-        { type: 'slider', xAxisIndex: [0, 1, 2, 3, 4], bottom: '0.8%', height: 16, borderColor: zoomBorderColor, fillerColor: 'rgba(59, 130, 246, 0.2)', start: zoomStart, end: zoomEnd }
+        {
+          type: 'inside',
+          xAxisIndex: [0, 1, 2, 3, 4],
+          zoomOnMouseWheel: false,
+          moveOnMouseMove: true,
+          moveOnMouseWheel: false,
+          start: zoomStart,
+          end: zoomEnd
+        },
+        {
+          type: 'slider',
+          xAxisIndex: [0, 1, 2, 3, 4],
+          bottom: '0.8%',
+          height: 16,
+          borderColor: zoomBorderColor,
+          fillerColor: 'rgba(59, 130, 246, 0.2)',
+          zoomOnMouseWheel: false,
+          start: zoomStart,
+          end: zoomEnd
+        }
       ],
       series: [
         // 0. K-line Candlestick (Grid 0)
@@ -977,6 +1080,8 @@ window.ChartEngine = {
     };
     dom.addEventListener('mouseleave', state.mouseLeaveHandler);
 
+    this._attachCustomWheelZoom(dom, state);
+
     // 多階段延遲觸發 resize，保證容器切換完成後能正確取得寬高並繪製
     requestAnimationFrame(() => this.resize(dom));
     setTimeout(() => this.resize(dom), 60);
@@ -994,9 +1099,21 @@ window.ChartEngine = {
     const splitLineColor = isLight ? '#e2e8f0' : '#151b28';
     const legendTextColor = isLight ? '#1e293b' : '#cbd5e1';
     const zoomBorderColor = isLight ? '#cbd5e1' : '#222c3f';
-    const total = dates.length;
-    const start = config.isSameStock ? config.zoomStart : (total > 80 ? Math.round(((total - 80) / total) * 100) : 0);
-    const end = config.isSameStock ? config.zoomEnd : 100;
+    const BUFFER_DAYS = 35;
+    const realTotal = dates.length;
+    const expandedDates = dates.concat(new Array(BUFFER_DAYS).fill(''));
+    const total = expandedDates.length;
+    let start = config.isSameStock ? config.zoomStart : null;
+    let end = config.isSameStock ? config.zoomEnd : null;
+    if (start == null || end == null) {
+      const initBars = Math.min(80, realTotal);
+      const zoomRes = this._calcZoomFromVisibleBars(initBars, realTotal, BUFFER_DAYS);
+      start = zoomRes.start;
+      end = zoomRes.end;
+      state.currentVisibleBars = initBars;
+    }
+    state.realTotal = realTotal;
+    state.bufferDays = BUFFER_DAYS;
     const maSelected = config.showShortMa !== false;
     const legendData = ['K線', 'MA5', 'MA10', 'MA20', 'MA60', 'MA120'];
     if (hasVolume) legendData.push(volumeLabel, 'MV5', 'MV20');
@@ -1056,7 +1173,7 @@ window.ChartEngine = {
     const xAxis = [
       {
         type: 'category',
-        data: dates,
+        data: expandedDates,
         gridIndex: 0,
         boundaryGap: true,
         axisLine: { lineStyle: { color: axisLineColor } },
@@ -1091,7 +1208,7 @@ window.ChartEngine = {
     if (hasVolume) {
       xAxis.push({
         type: 'category',
-        data: dates,
+        data: expandedDates,
         gridIndex: 1,
         boundaryGap: true,
         axisLine: { lineStyle: { color: axisLineColor } },
@@ -1129,8 +1246,26 @@ window.ChartEngine = {
       legend: { data: legendData, top: 5, textStyle: { color: legendTextColor, fontSize: 11 }, selected },
       grid, xAxis, yAxis,
       dataZoom: [
-        { type: 'inside', xAxisIndex: axisIndexes, start, end },
-        { type: 'slider', xAxisIndex: axisIndexes, bottom: '1%', height: 16, borderColor: zoomBorderColor, fillerColor: 'rgba(59,130,246,.2)', start, end }
+        {
+          type: 'inside',
+          xAxisIndex: axisIndexes,
+          zoomOnMouseWheel: false,
+          moveOnMouseMove: true,
+          moveOnMouseWheel: false,
+          start,
+          end
+        },
+        {
+          type: 'slider',
+          xAxisIndex: axisIndexes,
+          bottom: '1%',
+          height: 16,
+          borderColor: zoomBorderColor,
+          fillerColor: 'rgba(59,130,246,.2)',
+          zoomOnMouseWheel: false,
+          start,
+          end
+        }
       ],
       series
     }, true);
@@ -1232,6 +1367,8 @@ window.ChartEngine = {
       }
     };
     dom.addEventListener('mouseleave', state.mouseLeaveHandler);
+
+    this._attachCustomWheelZoom(dom, state);
 
     requestAnimationFrame(() => this.resize(dom));
     setTimeout(() => this.resize(dom), 80);
