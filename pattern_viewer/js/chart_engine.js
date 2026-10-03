@@ -104,6 +104,90 @@ window.ChartEngine = {
   },
 
   /**
+   * 支援滑鼠左鍵按住垂直拖曳滾動頁面/容器（滑鼠往上拖 ➔ 頁面往下滾動看下方資訊；滑鼠往下拖 ➔ 頁面往上回捲）
+   */
+  _attachDragScroll(dom) {
+    if (!dom || dom._dragScrollAttached) return;
+    dom._dragScrollAttached = true;
+
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let lastY = 0;
+    let isVerticalDrag = false;
+    let scrollTarget = null;
+
+    const findScrollableParent = (node) => {
+      let curr = node ? node.parentElement : null;
+      while (curr && curr !== document.body && curr !== document.documentElement) {
+        const style = window.getComputedStyle(curr);
+        const overflowY = style.overflowY;
+        if ((overflowY === 'auto' || overflowY === 'scroll') && curr.scrollHeight > curr.clientHeight) {
+          return curr;
+        }
+        curr = curr.parentElement;
+      }
+      const docEl = document.scrollingElement || document.documentElement;
+      if (docEl && docEl.scrollHeight > docEl.clientHeight) {
+        return docEl;
+      }
+      return window;
+    };
+
+    const performScroll = (target, deltaY) => {
+      if (!target) return;
+      if (target === window) {
+        window.scrollBy({ top: -deltaY, behavior: 'auto' });
+      } else if (typeof target.scrollTop === 'number') {
+        target.scrollTop -= deltaY;
+      } else if (typeof target.scrollBy === 'function') {
+        target.scrollBy({ top: -deltaY, behavior: 'auto' });
+      }
+    };
+
+    const onMouseDown = (e) => {
+      // 僅響應滑鼠左鍵
+      if (e.button !== 0) return;
+      isDragging = true;
+      isVerticalDrag = false;
+      startX = e.clientX;
+      startY = e.clientY;
+      lastY = e.clientY;
+      scrollTarget = findScrollableParent(dom);
+    };
+
+    const onMouseMove = (e) => {
+      if (!isDragging) return;
+      const deltaY = e.clientY - lastY;
+      const totalDx = Math.abs(e.clientX - startX);
+      const totalDy = Math.abs(e.clientY - startY);
+
+      if (!isVerticalDrag) {
+        // 垂直移動超過 4px 且垂直位移大於水平位移的 50%，判定為垂直拖曳滾動
+        if (totalDy >= 4 && totalDy > totalDx * 0.5) {
+          isVerticalDrag = true;
+        }
+      }
+
+      if (isVerticalDrag && deltaY !== 0) {
+        if (e.cancelable) e.preventDefault();
+        performScroll(scrollTarget, deltaY);
+        lastY = e.clientY;
+      }
+    };
+
+    const onMouseUp = () => {
+      isDragging = false;
+      isVerticalDrag = false;
+      scrollTarget = null;
+    };
+
+    dom.addEventListener('mousedown', onMouseDown, { passive: true });
+    window.addEventListener('mousemove', onMouseMove, { passive: false });
+    window.addEventListener('mouseup', onMouseUp, { passive: true });
+  },
+
+  /**
    * 計算以月為單位的 X 軸標籤與隔線索引
    * @param {Array<string>} dates 
    * @returns {{ monthIndices: Set<number>, labelsByIndex: Object }}
@@ -1139,6 +1223,7 @@ window.ChartEngine = {
     dom.addEventListener('mouseleave', state.mouseLeaveHandler);
 
     this._attachCustomWheelZoom(dom, state);
+    this._attachDragScroll(dom);
 
     // 多階段延遲觸發 resize，保證容器切換完成後能正確取得寬高並繪製
     requestAnimationFrame(() => this.resize(dom));
@@ -1428,6 +1513,7 @@ window.ChartEngine = {
     dom.addEventListener('mouseleave', state.mouseLeaveHandler);
 
     this._attachCustomWheelZoom(dom, state);
+    this._attachDragScroll(dom);
 
     requestAnimationFrame(() => this.resize(dom));
     setTimeout(() => this.resize(dom), 80);
