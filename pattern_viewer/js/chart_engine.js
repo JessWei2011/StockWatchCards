@@ -186,6 +186,58 @@ window.ChartEngine = {
   },
 
   /**
+   * 計算圖表各 Pane 的垂直座標與高度，讓 ZOOM 僅縮放最上方的 K 線主圖，其餘副指標維持固定高度
+   */
+  _getChartLayout(dom, isMarket = false, hasVolume = true) {
+    const step = Math.max(1, Math.min(4, Math.round(Number(dom && dom.dataset && dom.dataset.customZoomStep) || 1)));
+    const baseKlineHeight = 170;
+    const klineHeight = baseKlineHeight * step;
+
+    const klineHudTop = 72;
+    const klineTop = 94;
+
+    const volHudTop = klineTop + klineHeight + 36;
+    const volTop = volHudTop + 17;
+    const volHeight = 72;
+
+    const rsiHudTop = volTop + volHeight + 38;
+    const rsiTop = rsiHudTop + 17;
+    const rsiHeight = 72;
+
+    const macdHudTop = rsiTop + rsiHeight + 38;
+    const macdTop = macdHudTop + 17;
+    const macdHeight = 72;
+
+    const kdHudTop = macdTop + macdHeight + 38;
+    const kdTop = kdHudTop + 17;
+    const kdHeight = 72;
+
+    const totalHeight = isMarket
+      ? (hasVolume ? (volTop + volHeight + 80) : (klineTop + klineHeight + 80))
+      : (kdTop + kdHeight + 80);
+
+    return {
+      step,
+      klineHeight,
+      klineHudTop,
+      klineTop,
+      volHudTop,
+      volTop,
+      volHeight,
+      rsiHudTop,
+      rsiTop,
+      rsiHeight,
+      macdHudTop,
+      macdTop,
+      macdHeight,
+      kdHudTop,
+      kdTop,
+      kdHeight,
+      totalHeight
+    };
+  },
+
+  /**
    * Initialize or update the 5-pane chart
    * @param {string|HTMLElement} container 
    * @param {Object} stockData 
@@ -221,13 +273,19 @@ window.ChartEngine = {
 
     const parentW = dom.parentElement ? dom.parentElement.clientWidth : 0;
     const domWidth = dom.clientWidth || dom.offsetWidth || parentW || 900;
-    const domHeight = Math.max(dom.clientHeight || dom.offsetHeight || 0, 850);
+    const isMarket = stockData && stockData.reportType === 'market';
+    const hasVolume = isMarket ? (stockData.hasVolume === true) : true;
+    const layout = this._getChartLayout(dom, isMarket, hasVolume);
+    const domHeight = layout.totalHeight;
+    dom.style.height = `${domHeight}px`;
+    dom.style.minHeight = `${domHeight}px`;
 
     console.log('[ChartEngine Debug] 🚀 ChartEngine.render() 開始執行', {
       stock: stockData.title,
       datesCount: stockData.dates ? stockData.dates.length : 0,
       domWidth,
       domHeight,
+      zoomStep: layout.step,
       rawClientWidth: dom.clientWidth,
       rawClientHeight: dom.clientHeight,
       parentWidth: parentW
@@ -533,16 +591,16 @@ window.ChartEngine = {
         })()
       },
       grid: [
-        // ⬜ 白色框：K線主圖（依指示加大 3 倍 pitch：top: 8.5% HUD -> 11.0% Grid）
-        { left: '6%', right: '4%', top: '11.0%', height: '19.8%' }, // bottom: 30.8% (留白 4.2% 至 VOL)
-        // 🟨 黃色框：成交量 VOL（top: 35.0% HUD -> 37.0% Grid，僅 2.0% 間距，文字緊貼圖表頂部）
-        { left: '6%', right: '4%', top: '37.0%', height: '8.5%' }, // bottom: 45.5% (留白 4.5% 至 RSI)
-        // 🟧 橘色框：RSI 指標（top: 50.0% HUD -> 52.0% Grid，僅 2.0% 間距，文字緊貼圖表頂部）
-        { left: '6%', right: '4%', top: '52.0%', height: '8.5%' }, // bottom: 60.5% (留白 4.5% 至 MACD)
-        // 🟧 橘色框：MACD 指標（top: 65.0% HUD -> 67.0% Grid，僅 2.0% 間距，徹底消除原 4.png 標示的黃色留白框）
-        { left: '6%', right: '4%', top: '67.0%', height: '8.5%' }, // bottom: 75.5% (留白 4.5% 至 KD)
-        // 🟩 綠色框：KD 指標（top: 80.0% HUD -> 82.0% Grid，僅 2.0% 間距，徹底消除原 4.png 標示的黃色留白框）
-        { left: '6%', right: '4%', top: '82.0%', height: '8.5%' }  // bottom: 90.5% (底部 9.5% 留給日期時間軸與 dataZoom)
+        // ⬜ 白色框：K線主圖（根據 Zoom Step 垂直縮放高度，1x: 170px, 2x: 340px, 3x: 510px, 4x: 680px）
+        { left: '6%', right: '4%', top: layout.klineTop, height: layout.klineHeight },
+        // 🟨 黃色框：成交量 VOL（高度固定 72px，位置隨上方 K 線高度動態位移）
+        { left: '6%', right: '4%', top: layout.volTop, height: layout.volHeight },
+        // 🟧 橘色框：RSI 指標（高度固定 72px）
+        { left: '6%', right: '4%', top: layout.rsiTop, height: layout.rsiHeight },
+        // 🟧 橘色框：MACD 指標（高度固定 72px）
+        { left: '6%', right: '4%', top: layout.macdTop, height: layout.macdHeight },
+        // 🟩 綠色框：KD 指標（高度固定 72px）
+        { left: '6%', right: '4%', top: layout.kdTop, height: layout.kdHeight }
       ],
       xAxis: [
         {
@@ -621,7 +679,7 @@ window.ChartEngine = {
         {
           type: 'slider',
           xAxisIndex: [0, 1, 2, 3, 4],
-          bottom: '0.8%',
+          bottom: 8,
           height: 16,
           borderColor: zoomBorderColor,
           fillerColor: 'rgba(59, 130, 246, 0.2)',
@@ -973,15 +1031,15 @@ window.ChartEngine = {
       }
 
       // 保持最新座標位置與日夜主題模式
-      if (!overlay.dataset.renderedVersion || overlay.dataset.renderedVersion !== 'v87' || overlay.dataset.themeMode !== (isLight ? 'light' : 'dark')) {
-        overlay.dataset.renderedVersion = 'v87';
+      if (!overlay.dataset.renderedVersion || overlay.dataset.renderedVersion !== 'v88-' + layout.step || overlay.dataset.themeMode !== (isLight ? 'light' : 'dark')) {
+        overlay.dataset.renderedVersion = 'v88-' + layout.step;
         overlay.dataset.themeMode = isLight ? 'light' : 'dark';
         overlay.innerHTML = `
-          <div id="ichud-pane-0" style="position:absolute; left:6.2%; top:8.5%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
-          <div id="ichud-pane-1" style="position:absolute; left:6.2%; top:35.0%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
-          <div id="ichud-pane-2" style="position:absolute; left:6.2%; top:50.0%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
-          <div id="ichud-pane-3" style="position:absolute; left:6.2%; top:65.0%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
-          <div id="ichud-pane-4" style="position:absolute; left:6.2%; top:80.0%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
+          <div id="ichud-pane-0" style="position:absolute; left:6.2%; top:${layout.klineHudTop}px; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
+          <div id="ichud-pane-1" style="position:absolute; left:6.2%; top:${layout.volHudTop}px; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
+          <div id="ichud-pane-2" style="position:absolute; left:6.2%; top:${layout.rsiHudTop}px; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
+          <div id="ichud-pane-3" style="position:absolute; left:6.2%; top:${layout.macdHudTop}px; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
+          <div id="ichud-pane-4" style="position:absolute; left:6.2%; top:${layout.kdHudTop}px; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
         `;
       }
 
@@ -1127,6 +1185,7 @@ window.ChartEngine = {
       selected.MA20 = maSelected;
     }
 
+    const layout = this._getChartLayout(dom, true, hasVolume);
     const line = (name, data, color, xAxisIndex = 0, yAxisIndex = 0) => ({
       name, type: 'line', xAxisIndex, yAxisIndex, data, showSymbol: false,
       smooth: false, connectNulls: false, lineStyle: { width: 1.4, color }, emphasis: { focus: 'series' }
@@ -1134,8 +1193,8 @@ window.ChartEngine = {
     // 市場指數主圖與個股 K 線窗格使用相同高度，避免因市場版省略 RSI／MACD／KD
     // 而把每根 K 棒垂直拉長；其餘空間保留為乾淨的報表留白。
     const grid = hasVolume
-      ? [{ left: '6%', right: '4%', top: '11.0%', height: '19.8%' }, { left: '6%', right: '4%', top: '37.0%', height: '8.5%' }]
-      : [{ left: '6%', right: '4%', top: '11.0%', height: '19.8%' }];
+      ? [{ left: '6%', right: '4%', top: layout.klineTop, height: layout.klineHeight }, { left: '6%', right: '4%', top: layout.volTop, height: layout.volHeight }]
+      : [{ left: '6%', right: '4%', top: layout.klineTop, height: layout.klineHeight }];
     const monthAxisInfo = this.buildMonthAxisData(dates);
     const monthIndices = monthAxisInfo.monthIndices;
     const labelsByIndex = monthAxisInfo.labelsByIndex;
@@ -1258,7 +1317,7 @@ window.ChartEngine = {
         {
           type: 'slider',
           xAxisIndex: axisIndexes,
-          bottom: '1%',
+          bottom: 8,
           height: 16,
           borderColor: zoomBorderColor,
           fillerColor: 'rgba(59,130,246,.2)',
@@ -1299,12 +1358,12 @@ window.ChartEngine = {
         chartDom.appendChild(overlay);
       }
 
-      if (!overlay.dataset.renderedVersion || overlay.dataset.renderedVersion !== 'market-v1' || overlay.dataset.themeMode !== (isLight ? 'light' : 'dark')) {
-        overlay.dataset.renderedVersion = 'market-v1';
+      if (!overlay.dataset.renderedVersion || overlay.dataset.renderedVersion !== 'market-v2-' + layout.step || overlay.dataset.themeMode !== (isLight ? 'light' : 'dark')) {
+        overlay.dataset.renderedVersion = 'market-v2-' + layout.step;
         overlay.dataset.themeMode = isLight ? 'light' : 'dark';
         overlay.innerHTML = `
-          <div id="ichud-pane-0" style="position:absolute; left:6.2%; top:8.5%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
-          ${hasVolume ? `<div id="ichud-pane-1" style="position:absolute; left:6.2%; top:35.0%; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>` : ''}
+          <div id="ichud-pane-0" style="position:absolute; left:6.2%; top:${layout.klineHudTop}px; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>
+          ${hasVolume ? `<div id="ichud-pane-1" style="position:absolute; left:6.2%; top:${layout.volHudTop}px; font-size:12px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:${hudDefaultColor}; white-space:nowrap; text-shadow:${hudShadow}; line-height:1.2;"></div>` : ''}
         `;
       }
 

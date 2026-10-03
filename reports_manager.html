@@ -287,11 +287,10 @@
      ☀️ 總經分析頁面【方案 A：Apple Stocks / Google Finance 純白極簡高對比風】
      涵蓋：三大法人買賣金額看板、注意與處置股票即時預警中心、8項總經與波動率卡片、歷史明細、Git備份卡
      ══════════════════════════════════════════════════════════════════════ */
-  [data-theme="light"] #macro-workspace,
   [data-theme="light"] #market-pulse-workspace {
     background: #ffffff !important;
   }
-  [data-theme="light"] #macro-workspace .macro-panel {
+  [data-theme="light"] #market-pulse-workspace .macro-panel {
     color: #0f172a !important;
   }
 
@@ -1560,7 +1559,7 @@
   [data-theme="light"] #reports-workspace,
   [data-theme="light"] #ranking-workspace,
   [data-theme="light"] #analysis-workspace,
-  [data-theme="light"] #macro-workspace,
+  [data-theme="light"] #market-pulse-workspace,
   [data-theme="light"] #pattern-workspace {
     background: #ffffff !important;
   }
@@ -2703,15 +2702,16 @@
   .app-tab:hover{ color:var(--text); background:var(--hover); }
   .app-tab.active{ color:#08101c; background:var(--accent); border-color:var(--accent); }
   .workspace{ flex:1; min-height:0; }
-  #reports-workspace[hidden], #pattern-workspace[hidden], #ranking-workspace[hidden], #analysis-workspace[hidden], #macro-workspace[hidden], #market-pulse-workspace[hidden]{ display:none !important; }
+  #reports-workspace[hidden], #pattern-workspace[hidden], #ranking-workspace[hidden], #analysis-workspace[hidden], #market-pulse-workspace[hidden]{ display:none !important; }
   #reports-workspace{ display:flex; flex-direction:column; }
   #market-pulse-workspace{
-    overflow-y:auto; overflow-x:hidden; padding:24px 32px; display:flex; flex-direction:column; gap:18px; min-width:0; background:#0b0d13;
-    zoom: 1.5;
+    overflow-y:auto; overflow-x:hidden; padding:20px 28px; display:flex; flex-direction:column; gap:18px; min-width:0; background:#0b0d13;
   }
-  #market-pulse-workspace .market-pulse-strip{ border-radius:12px; border:1px solid var(--border); max-width:1400px; width:100%; margin:0 auto; box-sizing:border-box; }
-  #macro-workspace{ overflow-y:auto; overflow-x:hidden; padding:20px 28px; display:flex; flex-direction:column; gap:18px; min-width:0; background:#0b0d13; zoom:.8; }
-  #macro-workspace .market-inst-card, #macro-workspace .disposal-warning-card, #macro-workspace .macro-panel{ max-width:1800px; width:100%; margin:0 auto; }
+  #market-pulse-workspace .market-pulse-strip,
+  #market-pulse-workspace .market-inst-card,
+  #market-pulse-workspace .disposal-warning-card,
+  #market-pulse-workspace .macro-panel{ max-width:1800px; width:100%; margin:0 auto; box-sizing:border-box; }
+  #market-pulse-workspace .market-pulse-strip{ border-radius:12px; border:1px solid var(--border); }
   #pattern-workspace{ overflow:auto; background:#0f1117; }
   #pattern-workspace .pattern-viewer{ min-height:100%; }
   #organizer-panel{ display:none !important; }
@@ -3550,7 +3550,6 @@
     <button type="button" class="app-tab" data-workspace="pattern">📈 專業看盤</button>
     <button type="button" class="app-tab" data-workspace="ranking">🏆 排行榜</button>
     <button type="button" class="app-tab" data-workspace="analysis">📑 分析報告</button>
-    <button type="button" class="app-tab" data-workspace="macro">🌐 總經分析</button>
     <button type="button" class="app-tab" data-workspace="market-pulse">◈ 市場脈動</button>
   </nav>
   <section class="workspace" id="reports-workspace">
@@ -3658,87 +3657,6 @@
       </section>
     </div>
   </div>
-  </section>
-
-  <section class="workspace" id="macro-workspace" hidden>
-    <!-- 📊 台股大盤三大法人買賣金額明細看板 -->
-    <div class="market-inst-card" id="market-inst-card">
-      <div class="market-inst-header">
-        <div class="market-inst-title">
-          <span class="icon">📊</span>
-          <span class="title-text">台股大盤三大法人買賣金額明細 <span style="font-size:13px; font-weight:normal; opacity:.75;">(不含自營避險)</span></span>
-          <span class="market-inst-date-badge" id="market-inst-date-badge"><span class="market-inst-dot active"></span>載入中...</span>
-        </div>
-        <div class="market-inst-actions">
-          <span class="market-inst-status" id="market-inst-status"></span>
-          <button type="button" class="btn market-refresh-btn" id="market-inst-refresh-btn" title="向證交所重新整理大盤法人最新數據">🔄 即時重整</button>
-        </div>
-      </div>
-      <div class="market-inst-body" id="market-inst-body">
-        <div class="market-inst-loading">⏳ 正在連線台灣證券交易所取得大盤三大法人數據...</div>
-      </div>
-    </div>
-
-    <!-- 🚨 處置與注意股票即時預警看板 -->
-    <div class="disposal-warning-card collapsed" id="disposal-warning-card">
-      <div class="disposal-warning-header">
-        <div class="disposal-warning-title">
-          <span class="icon">🚨</span>
-          <span class="title-text">處置與注意股票預警中心</span>
-          <span class="disposal-warning-badge normal" id="disposal-warning-badge">連線證交所/櫃買中...</span>
-        </div>
-        <div class="disposal-warning-actions">
-          <span class="disposal-warning-status" id="disposal-warning-status"></span>
-          <button type="button" class="btn" id="disposal-toggle-btn">📖 展開預警看板</button>
-          <button type="button" class="btn disposal-refresh-btn" id="disposal-refresh-btn" title="向證交所與櫃買中心重新整理最新處置與注意公告">🔄 即時重整</button>
-        </div>
-      </div>
-      <div class="disposal-warning-body" id="disposal-warning-body" hidden>
-        <div class="disposal-warning-loading">⏳ 正在連線台灣證券交易所與櫃買中心取得處置及注意股票資料...</div>
-      </div>
-    </div>
-
-    <section class="macro-panel" id="macro-panel" aria-label="總經數據中心">
-      <div class="macro-table-card">
-        <div class="macro-table-toolbar">
-          <div>
-            <div class="macro-panel-title">🌐 總經與波動率數據</div>
-            <div class="macro-status" id="macro-status">載入既有資料中…</div>
-          </div>
-          <div class="macro-panel-meta">
-            <span id="macro-count">筆數：0</span>
-            <button type="button" class="btn" id="macro-toggle-history-btn">📖 展開歷史數據</button>
-            <button type="button" class="btn" id="macro-update-btn" title="手動呼叫伺服器更新八項總經數據">🌐 總經數據更新</button>
-            <span id="macro-auto-badge" class="macro-auto-badge" title="分頁開啟時每 10 分鐘自動更新；切換至其他分頁時暫停">⏱️ 10分鐘自動更新 (10:00)</span>
-          </div>
-        </div>
-        <div class="macro-dashboard" id="macro-dashboard">
-          <article class="macro-indicator-card macro-field-vixtwn" data-macro-key="vixtwn"><div class="macro-card-heading"><div><span class="macro-th-label">VIXTWN（台）</span><span class="macro-fresh" id="macro-fresh-vixtwn"></span></div></div><span class="macro-spark" id="macro-spark-vixtwn"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-vixtwn">--</span><span class="macro-num" data-key="vixtwn"></span></div><div class="macro-history-list" id="macro-history-vixtwn" hidden></div></article>
-          <article class="macro-indicator-card macro-field-vix" data-macro-key="vix"><div class="macro-card-heading"><div><span class="macro-th-label">VIX（美）</span><span class="macro-fresh" id="macro-fresh-vix"></span></div></div><span class="macro-spark" id="macro-spark-vix"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-vix">--</span><span class="macro-num" data-key="vix"></span></div><div class="macro-history-list" id="macro-history-vix" hidden></div></article>
-          <article class="macro-indicator-card macro-field-gold" data-macro-key="gold"><div class="macro-card-heading"><div><span class="macro-th-label">現貨黃金 XAU/USD</span><span class="macro-fresh" id="macro-fresh-gold"></span></div></div><span class="macro-spark" id="macro-spark-gold"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-gold">--</span><span class="macro-num" data-key="gold"></span></div><div class="macro-history-list" id="macro-history-gold" hidden></div></article>
-          <article class="macro-indicator-card macro-field-dxy" data-macro-key="dxy"><div class="macro-card-heading"><div><span class="macro-th-label">美元指數 DXY</span><span class="macro-fresh" id="macro-fresh-dxy"></span></div></div><span class="macro-spark" id="macro-spark-dxy"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-dxy">--</span><span class="macro-num" data-key="dxy"></span></div><div class="macro-history-list" id="macro-history-dxy" hidden></div></article>
-          <article class="macro-indicator-card macro-field-oil" data-macro-key="oil"><div class="macro-card-heading"><div><span class="macro-th-label">布蘭特原油 ($)</span><span class="macro-fresh" id="macro-fresh-oil"></span></div></div><span class="macro-spark" id="macro-spark-oil"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-oil">--</span><span class="macro-num" data-key="oil"></span></div><div class="macro-history-list" id="macro-history-oil" hidden></div></article>
-          <article class="macro-indicator-card macro-field-us10y" data-macro-key="us10y"><div class="macro-card-heading"><div><span class="macro-th-label">10年美債 (%)</span><span class="macro-fresh" id="macro-fresh-us10y"></span></div></div><span class="macro-spark" id="macro-spark-us10y"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-us10y">--</span><span class="macro-num" data-key="us10y"></span></div><div class="macro-history-list" id="macro-history-us10y" hidden></div></article>
-          <article class="macro-indicator-card macro-field-us30y" data-macro-key="us30y"><div class="macro-card-heading"><div><span class="macro-th-label">30年美債 (%)</span><span class="macro-fresh" id="macro-fresh-us30y"></span></div></div><span class="macro-spark" id="macro-spark-us30y"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-us30y">--</span><span class="macro-num" data-key="us30y"></span></div><div class="macro-history-list" id="macro-history-us30y" hidden></div></article>
-          <article class="macro-indicator-card macro-field-spread" data-macro-key="spread"><div class="macro-card-heading"><div><span class="macro-th-label">利差 Spread (%)</span><span class="macro-fresh" id="macro-fresh-spread"></span></div></div><span class="macro-spark" id="macro-spark-spread"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-spread">--</span><span class="macro-num" data-key="spread"></span></div><div class="macro-history-list" id="macro-history-spread" hidden></div></article>
-        </div>
-      </div>
-
-      <div class="macro-backup-card">
-        <div class="macro-backup-header">
-          <div>
-            <div class="macro-backup-title">📁 Git 同步檔（macro_data.json）</div>
-            <div class="macro-backup-note">✅ 更新與表格修改只寫入本機 macro_data.json；Git pull / push 維持手動執行</div>
-          </div>
-          <div class="macro-backup-actions">
-            <button type="button" class="btn" id="macro-download-btn">💾 手動下載 macro_data.json</button>
-            <button type="button" class="btn" id="macro-copy-json-btn">📋 複製 JSON</button>
-            <button type="button" class="btn" id="macro-copy-prompt-btn">📝 網頁版分析 Prompt</button>
-          </div>
-        </div>
-        <div class="macro-status" id="macro-copy-status"></div>
-      </div>
-    </section>
   </section>
 
   <section class="workspace" id="pattern-workspace" hidden>
@@ -4067,6 +3985,85 @@
         <div class="market-pulse-placeholder"></div><div class="market-pulse-placeholder"></div><div class="market-pulse-placeholder"></div>
       </div>
     </section>
+
+    <!-- 📊 台股大盤三大法人買賣金額明細看板 -->
+    <div class="market-inst-card" id="market-inst-card">
+      <div class="market-inst-header">
+        <div class="market-inst-title">
+          <span class="icon">📊</span>
+          <span class="title-text">台股大盤三大法人買賣金額明細 <span style="font-size:13px; font-weight:normal; opacity:.75;">(不含自營避險)</span></span>
+          <span class="market-inst-date-badge" id="market-inst-date-badge"><span class="market-inst-dot active"></span>載入中...</span>
+        </div>
+        <div class="market-inst-actions">
+          <span class="market-inst-status" id="market-inst-status"></span>
+          <button type="button" class="btn market-refresh-btn" id="market-inst-refresh-btn" title="向證交所重新整理大盤法人最新數據">🔄 即時重整</button>
+        </div>
+      </div>
+      <div class="market-inst-body" id="market-inst-body">
+        <div class="market-inst-loading">⏳ 正在連線台灣證券交易所取得大盤三大法人數據...</div>
+      </div>
+    </div>
+
+    <section class="macro-panel" id="macro-panel" aria-label="總經數據中心">
+      <div class="macro-table-card">
+        <div class="macro-table-toolbar">
+          <div>
+            <div class="macro-panel-title">🌐 總經與波動率數據</div>
+            <div class="macro-status" id="macro-status">載入既有資料中…</div>
+          </div>
+          <div class="macro-panel-meta">
+            <span id="macro-count">筆數：0</span>
+            <button type="button" class="btn" id="macro-toggle-history-btn">📖 展開歷史數據</button>
+            <button type="button" class="btn" id="macro-update-btn" title="手動呼叫伺服器更新八項總經數據">🌐 總經數據更新</button>
+            <span id="macro-auto-badge" class="macro-auto-badge" title="分頁開啟時每 10 分鐘自動更新；切換至其他分頁時暫停">⏱️ 10分鐘自動更新 (10:00)</span>
+          </div>
+        </div>
+        <div class="macro-dashboard" id="macro-dashboard">
+          <article class="macro-indicator-card macro-field-vixtwn" data-macro-key="vixtwn"><div class="macro-card-heading"><div><span class="macro-th-label">VIXTWN（台）</span><span class="macro-fresh" id="macro-fresh-vixtwn"></span></div></div><span class="macro-spark" id="macro-spark-vixtwn"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-vixtwn">--</span><span class="macro-num" data-key="vixtwn"></span></div><div class="macro-history-list" id="macro-history-vixtwn" hidden></div></article>
+          <article class="macro-indicator-card macro-field-vix" data-macro-key="vix"><div class="macro-card-heading"><div><span class="macro-th-label">VIX（美）</span><span class="macro-fresh" id="macro-fresh-vix"></span></div></div><span class="macro-spark" id="macro-spark-vix"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-vix">--</span><span class="macro-num" data-key="vix"></span></div><div class="macro-history-list" id="macro-history-vix" hidden></div></article>
+          <article class="macro-indicator-card macro-field-gold" data-macro-key="gold"><div class="macro-card-heading"><div><span class="macro-th-label">現貨黃金 XAU/USD</span><span class="macro-fresh" id="macro-fresh-gold"></span></div></div><span class="macro-spark" id="macro-spark-gold"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-gold">--</span><span class="macro-num" data-key="gold"></span></div><div class="macro-history-list" id="macro-history-gold" hidden></div></article>
+          <article class="macro-indicator-card macro-field-dxy" data-macro-key="dxy"><div class="macro-card-heading"><div><span class="macro-th-label">美元指數 DXY</span><span class="macro-fresh" id="macro-fresh-dxy"></span></div></div><span class="macro-spark" id="macro-spark-dxy"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-dxy">--</span><span class="macro-num" data-key="dxy"></span></div><div class="macro-history-list" id="macro-history-dxy" hidden></div></article>
+          <article class="macro-indicator-card macro-field-oil" data-macro-key="oil"><div class="macro-card-heading"><div><span class="macro-th-label">布蘭特原油 ($)</span><span class="macro-fresh" id="macro-fresh-oil"></span></div></div><span class="macro-spark" id="macro-spark-oil"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-oil">--</span><span class="macro-num" data-key="oil"></span></div><div class="macro-history-list" id="macro-history-oil" hidden></div></article>
+          <article class="macro-indicator-card macro-field-us10y" data-macro-key="us10y"><div class="macro-card-heading"><div><span class="macro-th-label">10年美債 (%)</span><span class="macro-fresh" id="macro-fresh-us10y"></span></div></div><span class="macro-spark" id="macro-spark-us10y"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-us10y">--</span><span class="macro-num" data-key="us10y"></span></div><div class="macro-history-list" id="macro-history-us10y" hidden></div></article>
+          <article class="macro-indicator-card macro-field-us30y" data-macro-key="us30y"><div class="macro-card-heading"><div><span class="macro-th-label">30年美債 (%)</span><span class="macro-fresh" id="macro-fresh-us30y"></span></div></div><span class="macro-spark" id="macro-spark-us30y"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-us30y">--</span><span class="macro-num" data-key="us30y"></span></div><div class="macro-history-list" id="macro-history-us30y" hidden></div></article>
+          <article class="macro-indicator-card macro-field-spread" data-macro-key="spread"><div class="macro-card-heading"><div><span class="macro-th-label">利差 Spread (%)</span><span class="macro-fresh" id="macro-fresh-spread"></span></div></div><span class="macro-spark" id="macro-spark-spread"></span><div class="macro-card-latest"><span class="macro-latest-date" id="macro-date-spread">--</span><span class="macro-num" data-key="spread"></span></div><div class="macro-history-list" id="macro-history-spread" hidden></div></article>
+        </div>
+      </div>
+
+      <div class="macro-backup-card">
+        <div class="macro-backup-header">
+          <div>
+            <div class="macro-backup-title">📁 Git 同步檔（macro_data.json）</div>
+            <div class="macro-backup-note">✅ 更新與表格修改只寫入本機 macro_data.json；Git pull / push 維持手動執行</div>
+          </div>
+          <div class="macro-backup-actions">
+            <button type="button" class="btn" id="macro-download-btn">💾 手動下載 macro_data.json</button>
+            <button type="button" class="btn" id="macro-copy-json-btn">📋 複製 JSON</button>
+            <button type="button" class="btn" id="macro-copy-prompt-btn">📝 網頁版分析 Prompt</button>
+          </div>
+        </div>
+        <div class="macro-status" id="macro-copy-status"></div>
+      </div>
+    </section>
+
+    <!-- 🚨 處置與注意股票即時預警看板 -->
+    <div class="disposal-warning-card collapsed" id="disposal-warning-card">
+      <div class="disposal-warning-header">
+        <div class="disposal-warning-title">
+          <span class="icon">🚨</span>
+          <span class="title-text">處置與注意股票預警中心</span>
+          <span class="disposal-warning-badge normal" id="disposal-warning-badge">連線證交所/櫃買中...</span>
+        </div>
+        <div class="disposal-warning-actions">
+          <span class="disposal-warning-status" id="disposal-warning-status"></span>
+          <button type="button" class="btn" id="disposal-toggle-btn">📖 展開預警看板</button>
+          <button type="button" class="btn disposal-refresh-btn" id="disposal-refresh-btn" title="向證交所與櫃買中心重新整理最新處置與注意公告">🔄 即時重整</button>
+        </div>
+      </div>
+      <div class="disposal-warning-body" id="disposal-warning-body" hidden>
+        <div class="disposal-warning-loading">⏳ 正在連線台灣證券交易所與櫃買中心取得處置及注意股票資料...</div>
+      </div>
+    </div>
   </section>
 
   <div class="modal-overlay hidden" id="delete-modal">
@@ -4970,8 +4967,8 @@
 <script>if(typeof echarts==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"><\/script>');}</script>
 <script src="pattern_viewer/js/parser.js?v=102"></script>
 <script src="pattern_viewer/js/pattern_engine.js?v=77"></script>
-<script src="pattern_viewer/js/chart_engine.js?v=108"></script>
-<script src="pattern_viewer/js/viewer_app.js?v=103"></script>
+<script src="pattern_viewer/js/chart_engine.js?v=109"></script>
+<script src="pattern_viewer/js/viewer_app.js?v=104"></script>
 <script src="render-shared.js?v=77"></script>
 <script>
   const DISPLAY_SCALE_KEY = 'stock-analysis-display-scale';
@@ -5257,7 +5254,8 @@
   }
 
   async function activateWorkspace(name, { pushHistory = true } = {}){
-    const target = ['pattern', 'ranking', 'analysis', 'macro', 'market-pulse'].includes(name) ? name : 'reports';
+    let target = name === 'macro' ? 'market-pulse' : name;
+    target = ['pattern', 'ranking', 'analysis', 'market-pulse'].includes(target) ? target : 'reports';
     window.activeWorkspaceName = target;
     document.querySelectorAll('.app-tab').forEach(button => {
       const active = button.dataset.workspace === target;
@@ -5268,8 +5266,6 @@
     document.getElementById('pattern-workspace').hidden = target !== 'pattern';
     document.getElementById('ranking-workspace').hidden = target !== 'ranking';
     document.getElementById('analysis-workspace').hidden = target !== 'analysis';
-    const macroWs = document.getElementById('macro-workspace');
-    if (macroWs) macroWs.hidden = target !== 'macro';
     const marketPulseWs = document.getElementById('market-pulse-workspace');
     if (marketPulseWs) marketPulseWs.hidden = target !== 'market-pulse';
     document.getElementById('breadcrumb').style.visibility = target === 'reports' ? '' : 'hidden';
@@ -5332,21 +5328,22 @@
         await loadMarkdownReport(selectedStockCode);
       }
     }
-    if (target === 'macro') {
+    if (target === 'market-pulse') {
+      if (typeof loadMarketPulse === 'function') {
+        loadMarketPulse();
+      }
       if (typeof loadMacroData === 'function') {
         loadMacroData();
       }
       if (typeof startMacroAutoUpdate === 'function') {
         startMacroAutoUpdate();
       }
+      if (typeof loadMarketInstBreakdown === 'function') {
+        loadMarketInstBreakdown();
+      }
     } else {
       if (typeof stopMacroAutoUpdate === 'function') {
         stopMacroAutoUpdate();
-      }
-    }
-    if (target === 'market-pulse') {
-      if (typeof loadMarketPulse === 'function') {
-        loadMarketPulse();
       }
     }
   }
@@ -5917,8 +5914,8 @@
       // 同時取得 Evolution, Gemini, ChatGPT, 法人籌碼策略 與 主力券商分點集中度 資料
       const [resE, resG, resC, institutionalRes, brokerChipsRes] = await Promise.all([
         fetch('/api/winrate-ranking-report?source=evolution', {cache:'no-store'}).then(r => r.json()).catch(() => null),
-        fetch('/api/winrate-ranking-report?source=gemini').then(r => r.json()).catch(() => null),
-        fetch('/api/winrate-ranking-report?source=chatgpt').then(r => r.json()).catch(() => null),
+        fetch('/api/winrate-ranking-report?source=gemini', {cache:'no-store'}).then(r => r.json()).catch(() => null),
+        fetch('/api/winrate-ranking-report?source=chatgpt', {cache:'no-store'}).then(r => r.json()).catch(() => null),
         fetch('/api/institutional-chip-strategy', {cache:'no-store'}).then(r => r.json()).catch(() => null),
         fetch('/api/broker-chips', {cache:'no-store'}).then(r => r.json()).catch(() => null)
       ]);
@@ -6932,7 +6929,8 @@
     const hash = window.location.hash.replace(/^#/, '').trim();
     if (!hash) return { workspace: 'reports', code: null };
     const [workspacePart, queryPart] = hash.split('?');
-    const workspace = ['pattern', 'ranking', 'analysis', 'reports', 'macro', 'market-pulse'].includes(workspacePart) ? workspacePart : 'reports';
+    let workspace = ['pattern', 'ranking', 'analysis', 'reports', 'macro', 'market-pulse'].includes(workspacePart) ? workspacePart : 'reports';
+    if (workspace === 'macro') workspace = 'market-pulse';
     let code = null;
     if (queryPart) {
       const params = new URLSearchParams(queryPart);
@@ -6942,9 +6940,9 @@
   }
 
   function getRouteHash(workspace, code){
-    const ws = ['pattern', 'ranking', 'analysis', 'macro', 'market-pulse'].includes(workspace) ? workspace : 'reports';
+    let ws = ['pattern', 'ranking', 'analysis', 'market-pulse'].includes(workspace) ? workspace : 'reports';
+    if (workspace === 'macro') ws = 'market-pulse';
     if (ws === 'reports') return '#reports';
-    if (ws === 'macro') return '#macro';
     if (ws === 'market-pulse') return '#market-pulse';
     if (ws === 'ranking') return '#ranking';
     if (code) return `#${ws}?code=${encodeURIComponent(code)}`;
@@ -6955,7 +6953,8 @@
 
   function syncBrowserHistory(workspace, code, { replace = false } = {}){
     if (isApplyingRouteFromPopState) return;
-    const targetWs = ['pattern', 'ranking', 'analysis', 'macro', 'market-pulse'].includes(workspace) ? workspace : 'reports';
+    let targetWs = ['pattern', 'ranking', 'analysis', 'market-pulse'].includes(workspace) ? workspace : 'reports';
+    if (workspace === 'macro') targetWs = 'market-pulse';
     const targetCode = code ? String(code).trim() : null;
     const targetHash = getRouteHash(targetWs, targetCode);
     const stateObj = { workspace: targetWs, code: targetCode };
@@ -7044,10 +7043,7 @@
   } else if (initialRoute.workspace === 'analysis' && initialRoute.code) {
     switchToStockAnalysis(initialRoute.code, { pushHistory: false });
     syncBrowserHistory('analysis', initialRoute.code, { replace: true });
-  } else if (initialRoute.workspace === 'macro') {
-    activateWorkspace('macro', { pushHistory: false });
-    syncBrowserHistory('macro', null, { replace: true });
-  } else if (initialRoute.workspace === 'market-pulse') {
+  } else if (initialRoute.workspace === 'market-pulse' || initialRoute.workspace === 'macro') {
     activateWorkspace('market-pulse', { pushHistory: false });
     syncBrowserHistory('market-pulse', null, { replace: true });
   } else if (initialRoute.workspace !== 'reports') {
@@ -8865,7 +8861,7 @@
   function updateMacroAutoBadge(){
     const badge = document.getElementById('macro-auto-badge');
     if (!badge) return;
-    if (window.activeWorkspaceName !== 'macro') {
+    if (window.activeWorkspaceName !== 'market-pulse') {
       badge.textContent = '⏱️ 10分鐘更新：已暫停';
       badge.style.opacity = '0.6';
       return;
@@ -8887,7 +8883,7 @@
     updateMacroAutoBadge();
     macroCountdownInterval = setInterval(updateMacroAutoBadge, 1000);
     macroAutoInterval = setInterval(async () => {
-      if (window.activeWorkspaceName === 'macro' && !document.hidden && !macroIsUpdating) {
+      if (window.activeWorkspaceName === 'market-pulse' && !document.hidden && !macroIsUpdating) {
         macroNextUpdateTs = Date.now() + MACRO_UPDATE_INTERVAL_MS;
         await triggerMacroUpdate({ isAuto: true });
       }
@@ -9324,7 +9320,7 @@ ${macroJsonText()}`;
   });
 
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && window.activeWorkspaceName === 'macro') {
+    if (!document.hidden && window.activeWorkspaceName === 'market-pulse') {
       if (Date.now() >= macroNextUpdateTs && !macroIsUpdating) {
         macroNextUpdateTs = Date.now() + MACRO_UPDATE_INTERVAL_MS;
         triggerMacroUpdate({ isAuto: true });
@@ -9350,7 +9346,7 @@ ${macroJsonText()}`;
   document.getElementById('macro-copy-json-btn').addEventListener('click',() => copyMacroText(macroJsonText(),'✅ 已複製完整 macro_data.json。'));
   document.getElementById('macro-copy-prompt-btn').addEventListener('click',() => copyMacroText(macroAnalysisPrompt(),'✅ 已複製網頁版總經分析 Prompt。'));
 
-  if (window.activeWorkspaceName === 'macro') {
+  if (window.activeWorkspaceName === 'market-pulse') {
     startMacroAutoUpdate();
   }
 

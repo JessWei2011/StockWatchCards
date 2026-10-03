@@ -1044,15 +1044,18 @@
         if (zoomMinusBtn) zoomMinusBtn.disabled = currentStep <= 1;
 
         if (chartDom) {
-          const baseHeight = 850;
-          // 1% -> 1.0x (850px), 2% -> 2.0x (1700px), 3% -> 3.0x (2550px), 4% -> 4.0x (3400px)
-          const targetHeight = Math.round(baseHeight * currentStep);
+          chartDom.dataset.customZoomStep = String(currentStep);
+          const isMarket = this.currentStockData && this.currentStockData.reportType === 'market';
+          const hasVolume = this.currentStockData ? (this.currentStockData.hasVolume === true) : true;
+          const layout = (window.ChartEngine && typeof window.ChartEngine._getChartLayout === 'function')
+            ? window.ChartEngine._getChartLayout(chartDom, isMarket, hasVolume)
+            : { totalHeight: 850 + (currentStep - 1) * 170 };
+          const targetHeight = layout.totalHeight;
           chartDom.style.height = `${targetHeight}px`;
           chartDom.style.minHeight = `${targetHeight}px`;
-          chartDom.dataset.customZoomStep = String(currentStep);
 
           if (notifyResize) {
-            this.resize();
+            this.updateUI();
           }
         }
       };

@@ -16,18 +16,19 @@ from urllib.request import Request, urlopen
 ROOT_DIR = Path(__file__).resolve().parent
 OUTPUT_FILE = ROOT_DIR / "institutional_chip_strategy_ranking.md"
 TWSE_URL = "https://www.twse.com.tw/rwd/zh/fund/T86"
-TPEX_URL = "https://www.tpex.org.tw/web/stock/3insti/daily_trade/3itrade_hedge_result.php"
+TPEX_OPENAPI_URL = "https://www.tpex.org.tw/openapi/v1/tpex_3insti_daily_trading"
 CODE_RE = re.compile(r"^\d{4}$")
 USER_AGENT = "StockCenter Institutional Chip Ranking/1.0"
 
 
-def fetch_json(url: str, params: dict[str, str]) -> dict:
+def fetch_json(url: str, params: dict[str, str] | None = None) -> dict | list:
+    full_url = f"{url}?{urlencode(params)}" if params else url
     request = Request(
-        f"{url}?{urlencode(params)}",
+        full_url,
         headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
     )
-    context = ssl.create_default_context()
-    with urlopen(request, timeout=20, context=context) as response:
+    context = ssl._create_unverified_context()
+    with urlopen(request, timeout=15, context=context) as response:
         return json.loads(response.read().decode("utf-8-sig"))
 
 
@@ -64,51 +65,86 @@ def parse_twse(rows: list[list[object]]) -> dict[str, dict]:
     return result
 
 
-def parse_tpex(payload: dict) -> dict[str, dict]:
-    tables = payload.get("tables") or []
-    rows = tables[0].get("data", []) if tables else []
+def parse_tpex_openapi(rows: list[dict]) -> tuple[date | None, dict[str, dict]]:
     result = {}
+    target_dt = None
     for row in rows:
-        if len(row) < 24:
-            continue
-        code = str(row[0]).strip()
+        code = str(row.get("SecuritiesCompanyCode", "")).strip()
         if not CODE_RE.fullmatch(code):
             continue
+        if target_dt is None and "Date" in row:
+            raw_d = str(row["Date"]).strip()
+            if len(raw_d) >= 6:
+                y = int(raw_d[:-4]) + 1911
+                m = int(raw_d[-4:-2])
+                d = int(raw_d[-2:])
+                target_dt = date(y, m, d)
+
+        foreign = as_lots(
+            row.get("ForeignInvestorsInclude MainlandAreaInvestors-Difference") or
+            row.get("ForeignInvestorsIncludeMainlandAreaInvestors-Difference") or
+            row.get("Foreign Investors include Mainland Area Investors (Foreign Dealers excluded)-Difference")
+        )
+        trust = as_lots(row.get("SecuritiesInvestmentTrustCompanies-Difference"))
+        dealer = as_lots(row.get("Dealers-Difference"))
+        total = as_lots(row.get("TotalDifference"))
         result[code] = {
             "code": code,
-            "name": str(row[1]).strip(),
+            "name": str(row.get("CompanyName", "")).strip(),
             "market": "TPEx",
-            "foreign": as_lots(row[10]),
-            "trust": as_lots(row[13]),
-            "dealer": as_lots(row[22]),
-            "total": as_lots(row[23]),
+            "foreign": foreign,
+            "trust": trust,
+            "dealer": dealer,
+            "total": total,
         }
-    return result
+    return target_dt, result
 
 
 def fetch_latest_market_data(today: date | None = None) -> tuple[date, list[dict]]:
-    """從最近十個日曆日中找出上市、上櫃皆已有法人資料的交易日。"""
+    """優先透過 TPEx OpenAPI 取得最新上櫃法人資料，並同步取得 TWSE 上市法人資料。"""
     today = today or date.today()
     failures = []
+
+    # 1. 先抓 TPEx OpenAPI (最新交易日)
+    tpex_date = None
+    tpex_records = {}
+    try:
+        tpex_data = fetch_json(TPEX_OPENAPI_URL)
+        if isinstance(tpex_data, list):
+            tpex_date, tpex_records = parse_tpex_openapi(tpex_data)
+    except Exception as error:
+        failures.append(f"TPEx OpenAPI 失敗 ({error})")
+
+    if tpex_date and tpex_records:
+        try:
+            twse = fetch_json(TWSE_URL, {
+                "response": "json", "date": tpex_date.strftime("%Y%m%d"), "selectType": "ALLBUT0999",
+            })
+            twse_rows = twse.get("data") or []
+            if twse.get("stat") == "OK" and twse_rows:
+                records = [*parse_twse(twse_rows).values(), *tpex_records.values()]
+                if records:
+                    return tpex_date, records
+        except Exception as error:
+            failures.append(f"TWSE {tpex_date} 失敗 ({error})")
+
+    # 2. 若 OpenAPI 未能成功，後備依序向 TWSE 查詢最近交易日
     for offset in range(10):
         target = today - timedelta(days=offset)
         try:
             twse = fetch_json(TWSE_URL, {
                 "response": "json", "date": target.strftime("%Y%m%d"), "selectType": "ALLBUT0999",
             })
-            tpex = fetch_json(TPEX_URL, {
-                "l": "zh-tw", "o": "json", "se": "AL", "t": "D", "d": roc_date(target),
-            })
             twse_rows = twse.get("data") or []
-            tpex_rows = (tpex.get("tables") or [{}])[0].get("data") or []
-            if twse.get("stat") != "OK" or not twse_rows or not tpex_rows:
+            if twse.get("stat") != "OK" or not twse_rows:
                 failures.append(target.isoformat())
                 continue
-            records = [*parse_twse(twse_rows).values(), *parse_tpex(tpex).values()]
+            records = [*parse_twse(twse_rows).values(), *tpex_records.values()]
             if records:
                 return target, records
         except Exception as error:
             failures.append(f"{target.isoformat()} ({error})")
+
     raise RuntimeError("近十日無法取得完整 TWSE T86 與 TPEx 三大法人資料：" + "；".join(failures))
 
 

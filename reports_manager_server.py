@@ -2266,13 +2266,22 @@ def fetch_disposal_and_notice_data(force_refresh=False):
 
     # 2. 上櫃處置 (TPEx)
     try:
-        r = requests.get("https://www.tpex.org.tw/www/zh-tw/bulletin/disposal/disp?response=json", headers=headers, timeout=5)
+        r = requests.get("https://www.tpex.org.tw/openapi/v1/tpex_disposal_information", headers=headers, timeout=8, verify=False)
         if r.status_code == 200:
             d = r.json()
-            if "tables" in d and d["tables"]:
-                for row in d["tables"][0].get("data", []):
-                    if len(row) < 6:
+            rows = d if isinstance(d, list) else (d.get("tables", [{}])[0].get("data", []) if isinstance(d, dict) else [])
+            for row in rows:
+                if isinstance(row, dict):
+                    pub_date = _parse_roc_date_str(str(row.get("Date", "")))
+                    code = str(row.get("SecuritiesCompanyCode", "")).strip()
+                    name = str(row.get("CompanyName", "")).strip()
+                    if not code or not _is_common_stock(code, name):
                         continue
+                    period_raw = str(row.get("DispositionPeriod", "")).strip()
+                    reasons = str(row.get("DispositionReasons", "")).strip()
+                    measures = str(row.get("DisposalCondition", "")).strip()
+                    count = "1"
+                elif isinstance(row, list) and len(row) >= 6:
                     pub_date = _parse_roc_date_str(row[1])
                     code_m = re.search(r"\b\d{4,6}\b", str(row[2]))
                     code = code_m.group(0) if code_m else str(row[2]).strip()
@@ -2282,50 +2291,53 @@ def fetch_disposal_and_notice_data(force_refresh=False):
                         continue
                     count = str(row[4])
                     period_raw = str(row[5]).strip()
-                    p_parts = re.split(r"[～~\-至]", period_raw)
-                    start_d = _parse_roc_date_str(p_parts[0]) if len(p_parts) > 0 else ""
-                    end_d = _parse_roc_date_str(p_parts[1]) if len(p_parts) > 1 else ""
                     reasons = str(row[6]).strip() if len(row) > 6 else ""
                     measures = str(row[7]).strip() if len(row) > 7 else ""
+                else:
+                    continue
 
-                    if start_d and start_d > today_str:
-                        status = "upcoming"
-                        status_label = "🚨 明日處置"
-                    elif start_d and end_d and start_d <= today_str <= end_d:
-                        status = "active"
-                        status_label = "🔒 處置中"
-                    else:
-                        status = "ended"
-                        status_label = "✅ 處置結束"
+                p_parts = re.split(r"[～~\-至]", period_raw)
+                start_d = _parse_roc_date_str(p_parts[0]) if len(p_parts) > 0 else ""
+                end_d = _parse_roc_date_str(p_parts[1]) if len(p_parts) > 1 else ""
 
-                    item = {
-                        "market": "TPEx",
-                        "code": code,
-                        "name": name,
-                        "pub_date": pub_date,
-                        "start_date": start_d,
-                        "end_date": end_d,
-                        "period_raw": period_raw,
-                        "status": status,
-                        "status_label": status_label,
-                        "measures": measures,
-                        "reasons": reasons,
-                        "count": count
-                    }
-                    disposals.append(item)
-                    stock_map[code] = {
-                        "type": "disposal",
-                        "code": code,
-                        "name": name,
-                        "status": status,
-                        "status_label": status_label,
-                        "start_date": start_d,
-                        "end_date": end_d,
-                        "period_raw": period_raw,
-                        "measures": measures,
-                        "reasons": reasons,
-                        "market": "TPEx"
-                    }
+                if start_d and start_d > today_str:
+                    status = "upcoming"
+                    status_label = "🚨 明日處置"
+                elif start_d and end_d and start_d <= today_str <= end_d:
+                    status = "active"
+                    status_label = "🔒 處置中"
+                else:
+                    status = "ended"
+                    status_label = "✅ 處置結束"
+
+                item = {
+                    "market": "TPEx",
+                    "code": code,
+                    "name": name,
+                    "pub_date": pub_date,
+                    "start_date": start_d,
+                    "end_date": end_d,
+                    "period_raw": period_raw,
+                    "status": status,
+                    "status_label": status_label,
+                    "measures": measures,
+                    "reasons": reasons,
+                    "count": count
+                }
+                disposals.append(item)
+                stock_map[code] = {
+                    "type": "disposal",
+                    "code": code,
+                    "name": name,
+                    "status": status,
+                    "status_label": status_label,
+                    "start_date": start_d,
+                    "end_date": end_d,
+                    "period_raw": period_raw,
+                    "measures": measures,
+                    "reasons": reasons,
+                    "market": "TPEx"
+                }
     except Exception as e:
         print(f"[Warn] Fetch TPEx Punish Error: {e}", file=sys.stderr)
 

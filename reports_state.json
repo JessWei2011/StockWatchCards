@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-27T17:07:06.727201Z",
+  "updatedAt": "2026-10-02T16:31:52.912710Z",
   "stocks": {
     "1303": {
       "name": "南亞",
@@ -538,9 +538,9 @@
     },
     "6831": {
       "name": "邁科",
-      "folder": "散熱",
-      "updatedAt": "2026-09-21T11:44:29.596222Z",
-      "deletedAt": null
+      "folder": "",
+      "updatedAt": "2026-09-30T16:26:44.000234Z",
+      "deletedAt": "2026-09-30T16:26:44.000234Z"
     },
     "7769": {
       "name": "鴻勁",
@@ -660,6 +660,18 @@
       "name": "力致",
       "folder": "散熱",
       "updatedAt": "2026-09-27T17:06:20.935243Z",
+      "deletedAt": null
+    },
+    "2353": {
+      "name": "宏碁",
+      "folder": "工業電腦",
+      "updatedAt": "2026-10-02T01:43:25.931382Z",
+      "deletedAt": null
+    },
+    "6442": {
+      "name": "光聖",
+      "folder": "CPO",
+      "updatedAt": "2026-10-02T16:31:52.912710Z",
       "deletedAt": null
     }
   }

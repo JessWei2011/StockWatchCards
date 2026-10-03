@@ -272,8 +272,12 @@ def save_cache(sid, cache):
     except Exception:
         pass
 
-def _latest_expected_friday():
-    d = datetime.today()
+def _latest_expected_friday(now=None):
+    dt = now or datetime.now()
+    d = dt.date()
+    # 每週五約 19:30 集保公布當週資料，19:30 前以更前一週週五為基準
+    if d.weekday() == 4 and (dt.hour < 19 or (dt.hour == 19 and dt.minute < 30)):
+        d -= timedelta(days=1)
     while d.weekday() != 4:
         d -= timedelta(days=1)
     return d.strftime("%Y%m%d")
@@ -303,7 +307,11 @@ def _fetch_holders_market_locked():
             pass
 
     try:
-        r = _session.get("https://opendata.tdcc.com.tw/getOD.ashx?id=1-5", headers=HEADERS, timeout=30)
+        tdcc_hdrs = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://www.tdcc.com.tw/",
+        }
+        r = _session.get("https://opendata.tdcc.com.tw/getOD.ashx?id=1-5", headers=tdcc_hdrs, timeout=30)
         if r.status_code == 200 and r.text.strip():
             os.makedirs(CACHE_DIR, exist_ok=True)
             with open(HOLDERS_MARKET_CACHE, "w", encoding="utf-8") as f:
@@ -535,25 +543,127 @@ def _fetch_otc_company_names_locked():
     每日收盤行情端點，裡面本來就含全市場代號+中文名稱，穩定得多。
     """
     global _otc_company_names_cache
-    if _otc_company_names_cache is not None:
+    if _otc_company_names_cache:
         return _otc_company_names_cache
     names = {}
-    try:
-        otc_hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        r = _session.get(
-            "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes",
-            headers=otc_hdrs, timeout=15, verify=False
-        )
-        if r.status_code == 200:
-            for row in r.json():
-                code = row.get("SecuritiesCompanyCode")
-                cname = row.get("CompanyName")
-                if code and cname:
-                    names[code] = cname
-    except Exception:
-        pass
-    _otc_company_names_cache = names
+    otc_hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    for endpoint in (
+        "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes",
+        "https://www.tpex.org.tw/openapi/v1/tpex_3insti_daily_trading",
+        "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_margin_balance",
+    ):
+        try:
+            r = _session.get(endpoint, headers=otc_hdrs, timeout=12, verify=False)
+            if r.status_code == 200:
+                for row in r.json():
+                    code = str(row.get("SecuritiesCompanyCode") or "").strip()
+                    cname = str(row.get("CompanyName") or "").strip()
+                    if code and cname:
+                        names[code] = cname
+            if names:
+                break
+        except Exception:
+            pass
+    if names:
+        _otc_company_names_cache = names
     return names
+
+_otc_3insti_cache = None
+_otc_3insti_lock = threading.Lock()
+
+def fetch_otc_3insti_market():
+    """抓上櫃 (TPEx) 全市場三大法人 OpenAPI 資料（每日收盤後更新）"""
+    global _otc_3insti_cache
+    with _otc_3insti_lock:
+        if _otc_3insti_cache is not None:
+            return _otc_3insti_cache
+        data_by_stock = {}
+        data_date_str = ""
+        try:
+            otc_hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            r = _session.get(
+                "https://www.tpex.org.tw/openapi/v1/tpex_3insti_daily_trading",
+                headers=otc_hdrs, timeout=12, verify=False
+            )
+            if r.status_code == 200:
+                for row in r.json():
+                    code = str(row.get("SecuritiesCompanyCode", "")).strip()
+                    if not code:
+                        continue
+                    if not data_date_str and "Date" in row:
+                        raw_d = str(row["Date"]).strip()
+                        if len(raw_d) >= 6:
+                            y = int(raw_d[:-4]) + 1911
+                            m = int(raw_d[-4:-2])
+                            d = int(raw_d[-2:])
+                            data_date_str = f"{y:04d}-{m:02d}-{d:02d}"
+                    f_diff = (
+                        row.get("ForeignInvestorsInclude MainlandAreaInvestors-Difference") or
+                        row.get("ForeignInvestorsIncludeMainlandAreaInvestors-Difference") or
+                        row.get("Foreign Investors include Mainland Area Investors (Foreign Dealers excluded)-Difference")
+                    )
+                    f_net = to_lot(f_diff)
+                    tr_net = to_lot(row.get("SecuritiesInvestmentTrustCompanies-Difference"))
+                    dl_net = to_lot(row.get("Dealers-Difference"))
+                    sm_net = to_lot(row.get("TotalDifference"))
+                    data_by_stock[code] = {
+                        "dt": data_date_str,
+                        "f": f_net,
+                        "tr": tr_net,
+                        "dl": dl_net,
+                        "sm": sm_net,
+                    }
+        except Exception:
+            pass
+        _otc_3insti_cache = (data_date_str, data_by_stock)
+        return _otc_3insti_cache
+
+_otc_margin_cache = None
+_otc_margin_lock = threading.Lock()
+
+def fetch_otc_margin_market():
+    """抓上櫃 (TPEx) 全市場融資融券 OpenAPI 資料（每日收盤後更新）"""
+    global _otc_margin_cache
+    with _otc_margin_lock:
+        if _otc_margin_cache is not None:
+            return _otc_margin_cache
+        data_by_stock = {}
+        data_date_str = ""
+        try:
+            otc_hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            r = _session.get(
+                "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_margin_balance",
+                headers=otc_hdrs, timeout=12, verify=False
+            )
+            if r.status_code == 200:
+                for row in r.json():
+                    code = str(row.get("SecuritiesCompanyCode", "")).strip()
+                    if not code:
+                        continue
+                    if not data_date_str and "Date" in row:
+                        raw_d = str(row["Date"]).strip()
+                        if len(raw_d) >= 6:
+                            y = int(raw_d[:-4]) + 1911
+                            m = int(raw_d[-4:-2])
+                            d = int(raw_d[-2:])
+                            data_date_str = f"{y:04d}-{m:02d}-{d:02d}"
+                    mb = parse_int(row.get("MarginPurchaseBalance"))
+                    prev_mb = parse_int(row.get("MarginPurchaseBalancePreviousDay"))
+                    md = mb - prev_mb
+                    sb = parse_int(row.get("ShortSaleBalance"))
+                    prev_sb = parse_int(row.get("ShortSaleBalancePreviousDay"))
+                    sd = sb - prev_sb
+                    data_by_stock[code] = {
+                        "dt": data_date_str,
+                        "mb": mb,
+                        "md": md,
+                        "sb": sb,
+                        "sd": sd,
+                    }
+        except Exception:
+            pass
+        _otc_margin_cache = (data_date_str, data_by_stock)
+        return _otc_margin_cache
 
 def resolve_by_name(query):
     """用中文股票名稱查詢代號（TWSE codeQuery 同時涵蓋上市與上櫃）"""
@@ -644,6 +754,16 @@ def extract_disposition_period(text):
                 return d1, d2
             except:
                 pass
+
+    m3 = re.search(r'(\d{7})\s*[~\-]\s*(\d{7})', s)
+    if m3:
+        p1, p2 = m3.group(1), m3.group(2)
+        try:
+            d1 = datetime(int(p1[:3]) + 1911, int(p1[3:5]), int(p1[5:]))
+            d2 = datetime(int(p2[:3]) + 1911, int(p2[3:5]), int(p2[5:]))
+            return d1, d2
+        except:
+            pass
 
     return None, None
 
@@ -943,8 +1063,7 @@ def fetch_disposition_info(sid, is_otc=False):
 
     else:
         candidates = [
-            ("https://www.tpex.org.tw/openapi/v1/tpex_mainboard_disposal_securities_information", None, True),
-            ("https://www.tpex.org.tw/web/bulletin/disposal_information/disposal_information_result.php", {"l": "zh-tw", "o": "json", "stkno": sid}, False),
+            ("https://www.tpex.org.tw/openapi/v1/tpex_disposal_information", None, True),
         ]
 
         otc_hdrs = {
@@ -988,7 +1107,7 @@ def fetch_disposition_info(sid, is_otc=False):
                             ks = str(k)
                             if ("證券代號" in ks) or ("SecuritiesCompanyCode" in ks) or ("股票代號" in ks):
                                 code = str(row[k]).strip()
-                            if ("處置起訖時間" in ks) or ("處置起迄時間" in ks) or ("處置期間" in ks):
+                            if ("處置起訖時間" in ks) or ("處置起迄時間" in ks) or ("處置期間" in ks) or ("DispositionPeriod" in ks):
                                 period_text = str(row[k]).strip()
                     elif isinstance(row, list):
                         if len(row) >= 4:
@@ -1050,6 +1169,14 @@ def fetch_inst(sid, dates, is_otc=False, cache=None):
     cache = {} if cache is None else cache
     otc_hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
+    if is_otc:
+        # 上櫃使用官方 OpenAPI 取得最新交易日三大法人
+        data_date_str, otc_insti_map = fetch_otc_3insti_market()
+        if data_date_str and sid in otc_insti_map:
+            rec = dict(otc_insti_map[sid])
+            rec["dt"] = data_date_str
+            cache[data_date_str] = rec
+
     for d in dates:
         dt_key = fmt_date(d)
         reused_market_response = False
@@ -1078,26 +1205,11 @@ def fetch_inst(sid, dates, is_otc=False, cache=None):
                 cache[dt_key] = rec
                 break
         else:
-            url = "https://www.tpex.org.tw/web/stock/3insti/daily_trade/3itrade_hedge_result.php"
-            params = {"l": "zh-tw", "o": "json", "se": "AL", "t": "D", "d": to_roc_date(d)}
-            data = market_json_get(url, params, headers=otc_hdrs, timeout=10, verify=False) or {}
-
-            data_list = data.get("tables", [])
-            if not data_list:
-                continue
-            rows_data = data_list[0].get("data", [])
-
-            for row in rows_data:
-                if row[0].strip() != sid:
-                    continue
-                rec = {"dt": dt_key, "f": to_lot(row[10]), "tr": to_lot(row[13]), "dl": to_lot(row[22]), "sm": to_lot(row[23])}
-                rows.append(rec)
-                cache[dt_key] = rec
-                break
+            # 上櫃無歷史批量端點，直接使用快取與最新日 OpenAPI，不逐日無效等待
+            break
 
         if len(rows) >= DAYS_LOOKBACK:
             break
-        # 上市與上櫃端點都回傳整個市場；批次內只抓一次並共用。
 
     return rows[:DAYS_LOOKBACK]
 
@@ -1106,6 +1218,14 @@ def fetch_margin(sid, dates, is_otc=False, cache=None):
     rows = []
     cache = {} if cache is None else cache
     otc_hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+
+    if is_otc:
+        # 上櫃使用官方 OpenAPI 取得最新交易日融資融券
+        data_date_str, otc_margin_map = fetch_otc_margin_market()
+        if data_date_str and sid in otc_margin_map:
+            rec = dict(otc_margin_map[sid])
+            rec["dt"] = data_date_str
+            cache[data_date_str] = rec
 
     for d in dates:
         dt_key = fmt_date(d)
@@ -1142,27 +1262,11 @@ def fetch_margin(sid, dates, is_otc=False, cache=None):
                 cache[dt_key] = rec
 
         else:
-            url = "https://www.tpex.org.tw/web/stock/margin_trading/margin_balance/margin_bal_result.php"
-            params = {"l": "zh-tw", "o": "json", "d": to_roc_date(d)}
-            data = market_json_get(url, params, headers=otc_hdrs, timeout=10, verify=False) or {}
-
-            data_list = data.get("tables", [])
-            if not data_list:
-                continue
-            rows_data = data_list[0].get("data", [])
-
-            for row in rows_data:
-                if len(row) >= 15 and str(row[0]).strip() == sid:
-                    mb_prev, mb_today = parse_int(row[2]) // 1000, parse_int(row[6]) // 1000
-                    sb_prev, sb_today = parse_int(row[10]) // 1000, parse_int(row[14]) // 1000
-                    rec = {"dt": dt_key, "mb": mb_today, "md": mb_today - mb_prev, "sb": sb_today, "sd": sb_today - sb_prev}
-                    rows.append(rec)
-                    cache[dt_key] = rec
-                    break
+            # 上櫃無歷史批量端點，直接使用快取與最新日 OpenAPI，不逐日無效等待
+            break
 
         if len(rows) >= DAYS_LOOKBACK:
             break
-        # 全市場回應由同批次共用，避免同日期被每檔股票重抓與等待。
 
     return rows[:DAYS_LOOKBACK]
 
@@ -1277,23 +1381,22 @@ def run(ticker_input):
     else:
         name = fetch_otc_company_names().get(sid)
 
-    if not name and is_otc:
+    # 若尚未取得中文名稱，嘗試從既有狀態檔或報表清單取得
+    if not name or any(c.isascii() and c.isalpha() for c in name.replace('-KY', '').replace(' ', '')):
         try:
-            otc_hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-            res = _session.get(
-                "https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_no1430/stk_wn1430_result.php",
-                params={"l": "zh-tw", "o": "json", "se": "EW", "s": "0,asc", "d": to_roc_date(dates[0])},
-                headers=otc_hdrs, timeout=8, verify=False
-            )
-            if res.status_code == 200:
-                data_list = res.json().get("tables", [])
-                if data_list:
-                    for row in data_list[0].get("data", []):
-                        if len(row) >= 2 and str(row[0]).strip() == sid:
-                            name = str(row[1]).strip()
-                            break
+            if os.path.exists(STATE_FILE):
+                with open(STATE_FILE, "r", encoding="utf-8") as sf:
+                    st_name = json.load(sf).get("stocks", {}).get(sid, {}).get("name")
+                    if st_name:
+                        name = st_name
         except Exception:
             pass
+
+    if not name:
+        for t_sid, t_name, _path, _cat in scan_tracked_stocks():
+            if t_sid == sid and t_name:
+                name = t_name
+                break
 
     if not name:
         name = info.get("longName") or info.get("shortName") or sid
@@ -1301,7 +1404,7 @@ def run(ticker_input):
     STOCK_NAME_MAP = {
         '2301': '光寶科', '2308': '台達電', '2368': '金像電', '2408': '南亞科', '2467': '志聖',
         '3037': '欣興', '3189': '景碩', '4958': '臻鼎-KY', '6213': '聯茂', '6214': '精誠',
-        '6531': '愛普', '8021': '尖點', '8039': '台虹', '8046': '南電',
+        '6510': '精測', '6531': '愛普', '8021': '尖點', '8039': '台虹', '8046': '南電',
     }
     dict_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stock_name_dict.json")
     if os.path.exists(dict_file):
@@ -1537,7 +1640,15 @@ def scan_tracked_stocks():
                 if not m:
                     continue
                 sid, name = m.group(1), m.group(2)
-                found[sid] = (name, os.path.join(dirpath, fn), category)
+                full_p = os.path.join(dirpath, fn)
+                if sid not in found:
+                    found[sid] = (name, full_p, category)
+                else:
+                    try:
+                        if os.path.getmtime(full_p) > os.path.getmtime(found[sid][1]):
+                            found[sid] = (name, full_p, category)
+                    except OSError:
+                        pass
     except Exception:
         pass
 
@@ -1609,12 +1720,31 @@ def is_report_up_to_date(path, now=None):
             return False, cutoff_date_str
         latest_kline = kline_dates[-1]
 
-        # 2. 檢查三大法人表格第一筆（最新）日期 (<td>YYYY-MM-DD</td>)
-        m_inst = re.search(r"<h2>三大法人.*?</h2>\s*<table>\s*<tr>.*?</tr>\s*<tr><td>(\d{4}-\d{2}-\d{2})</td>", text, re.S)
-        latest_inst = m_inst.group(1) if m_inst else None
+        # 2. 檢查三大法人表格第一筆（最新）日期
+        latest_inst = None
+        has_inst_table = False
+        m_inst_card = re.search(r'<div class="card">\s*<h2>三大法人.*?</h2>(.*?)</div>', text, re.S)
+        if m_inst_card:
+            card_content = m_inst_card.group(1)
+            if "<table>" in card_content:
+                has_inst_table = True
+                inst_dates = re.findall(r"<td>(\d{4}-\d{2}-\d{2})</td>", card_content)
+                if inst_dates:
+                    latest_inst = inst_dates[0]
+
+        # 3. 檢查大戶持股比例（集保週報）是否包含最新預期週五
+        expected_friday = _latest_expected_friday(now)
+        expected_friday_iso = f"{expected_friday[:4]}-{expected_friday[4:6]}-{expected_friday[6:]}"
+        m_holders_card = re.search(r'<div class="card">\s*<h2>大戶持股比例.*?</h2>(.*?)</div>', text, re.S)
+        if m_holders_card:
+            card_content = m_holders_card.group(1)
+            if "<table>" in card_content:
+                holder_dates = re.findall(r"<td>(\d{4}-\d{2}-\d{2})</td>", card_content)
+                if holder_dates and holder_dates[-1] < expected_friday_iso:
+                    return False, cutoff_date_str
 
         # 若報表含有三大法人表格，則需驗證三大法人最新日期
-        if "三大法人" in text and latest_inst:
+        if has_inst_table and latest_inst:
             if latest_kline == target_mmdd and latest_inst == cutoff_date_str:
                 return True, cutoff_date_str
             # 若任一項未達今日目標日期，判定為尚未完整
