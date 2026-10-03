@@ -549,6 +549,7 @@ def _fetch_otc_company_names_locked():
     otc_hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     for endpoint in (
         "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes",
+        "https://www.tpex.org.tw/openapi/v1/tpex_esb_latest_statistics",
         "https://www.tpex.org.tw/openapi/v1/tpex_3insti_daily_trading",
         "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_margin_balance",
     ):
@@ -560,8 +561,6 @@ def _fetch_otc_company_names_locked():
                     cname = str(row.get("CompanyName") or "").strip()
                     if code and cname:
                         names[code] = cname
-            if names:
-                break
         except Exception:
             pass
     if names:
