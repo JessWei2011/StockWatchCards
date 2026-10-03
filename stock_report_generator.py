@@ -1220,7 +1220,7 @@ def fetch_margin(sid, dates, is_otc=False, cache=None):
     otc_hdrs = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
     if is_otc:
-        # 上櫃使用官方 OpenAPI 取得最新交易日融資融券
+        # 上櫃使用官方 OpenAPI 取得最新交易日融資融券補入快取
         data_date_str, otc_margin_map = fetch_otc_margin_market()
         if data_date_str and sid in otc_margin_map:
             rec = dict(otc_margin_map[sid])
@@ -1229,7 +1229,6 @@ def fetch_margin(sid, dates, is_otc=False, cache=None):
 
     for d in dates:
         dt_key = fmt_date(d)
-        reused_market_response = False
         if dt_key in cache:
             rows.append(cache[dt_key])
             if len(rows) >= DAYS_LOOKBACK:
@@ -1239,7 +1238,6 @@ def fetch_margin(sid, dates, is_otc=False, cache=None):
         if not is_otc:
             url = "https://www.twse.com.tw/rwd/zh/marginTrading/MI_MARGN"
             params = {"response": "json", "date": d, "selectType": "ALL"}
-            reused_market_response = twse_response_cached(url, params)
             data = twse_get(url, params)
             if not data or data.get("stat") != "OK":
                 continue
@@ -1260,10 +1258,35 @@ def fetch_margin(sid, dates, is_otc=False, cache=None):
                 rec = {"dt": dt_key, "mb": mb_today, "md": mb_today - mb_prev, "sb": sb_today, "sd": sb_today - sb_prev}
                 rows.append(rec)
                 cache[dt_key] = rec
-
         else:
-            # 上櫃無歷史批量端點，直接使用快取與最新日 OpenAPI，不逐日無效等待
-            break
+            try:
+                y = int(d[:4]) - 1911
+                m = int(d[4:6])
+                day = int(d[6:8])
+                d_roc = f"{y}/{m:02d}/{day:02d}"
+            except Exception:
+                continue
+
+            url = "https://www.tpex.org.tw/web/stock/margin_trading/margin_balance/margin_bal_result.php"
+            params = {"l": "zh-tw", "o": "json", "d": d_roc, "s": "0,asc"}
+            data = market_json_get(url, params, headers=otc_hdrs, timeout=8, verify=False)
+            if not data or data.get("stat") != "ok":
+                continue
+
+            target_row = None
+            tables = data.get("tables", [])
+            tbl_rows = tables[0].get("data", []) if tables else []
+            for row in tbl_rows:
+                if len(row) >= 15 and str(row[0]).strip() == sid:
+                    target_row = row
+                    break
+
+            if target_row:
+                mb_prev, mb_today = parse_int(target_row[2]), parse_int(target_row[6])
+                sb_prev, sb_today = parse_int(target_row[10]), parse_int(target_row[14])
+                rec = {"dt": dt_key, "mb": mb_today, "md": mb_today - mb_prev, "sb": sb_today, "sd": sb_today - sb_prev}
+                rows.append(rec)
+                cache[dt_key] = rec
 
         if len(rows) >= DAYS_LOOKBACK:
             break
