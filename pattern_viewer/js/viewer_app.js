@@ -1029,10 +1029,10 @@
       const zoomMinusBtn = this.root.querySelector('.chart-y-zoom-minus');
       const zoomStepBtns = Array.from(this.root.querySelectorAll('.chart-y-zoom-step'));
       const chartDom = this.q('#echart-main');
-      let currentStep = 1; // 預設 1% (1.0x 基準)
+      let currentStep = 2; // 預設 2% (2.0x 基準)
 
       const applyStep = (stepNumber, notifyResize = true) => {
-        const step = Math.max(1, Math.min(4, Math.round(Number(stepNumber) || 1)));
+        const step = Math.max(1, Math.min(4, Math.round(Number(stepNumber) || 2)));
         currentStep = step;
 
         zoomStepBtns.forEach(btn => {
@@ -1082,8 +1082,8 @@
         }, { signal });
       });
 
-      // 初始化為 1% (預設)
-      applyStep(1, false);
+      // 初始化為 2% (預設)
+      applyStep(2, false);
     }
 
     updateDisposalBadge() {

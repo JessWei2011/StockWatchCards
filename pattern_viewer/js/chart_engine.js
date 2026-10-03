@@ -273,7 +273,7 @@ window.ChartEngine = {
    * 計算圖表各 Pane 的垂直座標與高度，讓 ZOOM 僅縮放最上方的 K 線主圖，其餘副指標維持固定高度
    */
   _getChartLayout(dom, isMarket = false, hasVolume = true) {
-    const step = Math.max(1, Math.min(4, Math.round(Number(dom && dom.dataset && dom.dataset.customZoomStep) || 1)));
+    const step = Math.max(1, Math.min(4, Math.round(Number(dom && dom.dataset && dom.dataset.customZoomStep) || 2)));
     const baseKlineHeight = 170;
     const klineHeight = baseKlineHeight * step;
 
