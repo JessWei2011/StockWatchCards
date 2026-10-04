@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "publishedAt": "2026-10-03T14:23:00+08:00",
+  "publishedAt": "2026-10-04T22:13:37+08:00",
   "defaultCode": "3324",
   "count": 104,
   "stocks": [
@@ -36,9 +36,9 @@
       "analysisDate": "2026-10-02",
       "current": "121.00",
       "decision": "買入 (多頭順勢)",
-      "winRate": "50.2%",
+      "winRate": "53.0%",
       "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
-      "isStarred": false
+      "isStarred": true
     },
     {
       "code": "2059",
@@ -110,7 +110,7 @@
       "decision": "觀望 / 逢低佈局",
       "winRate": "78.5%",
       "pattern": "高檔 VCP 窄幅窒息量整理 (VCP Squeeze)",
-      "isStarred": true
+      "isStarred": false
     },
     {
       "code": "2344",
@@ -139,7 +139,7 @@
     {
       "code": "2353",
       "name": "宏碁",
-      "group": "工業電腦",
+      "group": "品牌電腦與板卡",
       "market": "TW",
       "analysisDate": "2026-10-02",
       "current": "31.40",
@@ -151,7 +151,7 @@
     {
       "code": "2357",
       "name": "華碩",
-      "group": "工業電腦",
+      "group": "品牌電腦與板卡",
       "market": "TW",
       "analysisDate": "2026-10-02",
       "current": "962.00",
@@ -187,7 +187,7 @@
     {
       "code": "2377",
       "name": "微星",
-      "group": "工業電腦",
+      "group": "品牌電腦與板卡",
       "market": "TW",
       "analysisDate": "2026-10-02",
       "current": "155.00",
@@ -285,10 +285,10 @@
       "name": "全新",
       "group": "CPO",
       "market": "TW",
-      "analysisDate": "2026-10-02",
-      "current": "580.00",
-      "decision": "強烈買入 (動能爆發)",
-      "winRate": "74.8%",
+      "analysisDate": "2026-09-22",
+      "current": "547.00",
+      "decision": "觀望 / 逢低佈局",
+      "winRate": "73.2%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": true
     },
@@ -417,10 +417,10 @@
       "name": "蔚華科",
       "group": "設備",
       "market": "TW",
-      "analysisDate": "2026-10-02",
-      "current": "216.00",
-      "decision": "強烈買入 (動能爆發)",
-      "winRate": "72.5%",
+      "analysisDate": "2026-09-30",
+      "current": "209.50",
+      "decision": "買入 (多頭順勢)",
+      "winRate": "76.2%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": false
     },
@@ -573,11 +573,11 @@
       "name": "創意",
       "group": "IC設計",
       "market": "TW",
-      "analysisDate": "2026-10-02",
-      "current": "7900.00",
-      "decision": "買入 (多頭順勢)",
-      "winRate": "75.5%",
-      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "analysisDate": "2026-09-24",
+      "current": "8525.00",
+      "decision": "強烈買入 (動能爆發)",
+      "winRate": "72.5%",
+      "pattern": "創歷史/波段新高 (High Breakout)",
       "isStarred": false
     },
     {
@@ -744,7 +744,19 @@
       "analysisDate": "2026-10-02",
       "current": "585.00",
       "decision": "買入 (多頭順勢)",
-      "winRate": "58.6%",
+      "winRate": "60.5%",
+      "pattern": "多頭排列階梯推升 (Bullish Trend)",
+      "isStarred": false
+    },
+    {
+      "code": "4991",
+      "name": "環宇-KY",
+      "group": "CPO",
+      "market": "TWO",
+      "analysisDate": "2026-10-02",
+      "current": "534.00",
+      "decision": "強烈買入 (動能爆發)",
+      "winRate": "77.0%",
       "pattern": "多頭排列階梯推升 (Bullish Trend)",
       "isStarred": false
     },
@@ -875,7 +887,7 @@
       "market": "TWO",
       "analysisDate": "2026-10-02",
       "current": "148.00",
-      "decision": "強烈買入 (動能爆發)",
+      "decision": "買入 (多頭順勢)",
       "winRate": "76.4%",
       "pattern": "雙重底 W底形成突破 (Double Bottom)",
       "isStarred": false
@@ -1118,18 +1130,6 @@
       "decision": "觀望 / 逢低佈局",
       "winRate": "71.0%",
       "pattern": "雙重底 W底形成突破 (Double Bottom)",
-      "isStarred": true
-    },
-    {
-      "code": "7710",
-      "name": "ASRock Industrial Computer Corporation",
-      "group": "工業電腦",
-      "market": "TWO",
-      "analysisDate": "2026-10-02",
-      "current": "206.00",
-      "decision": "觀望 / 逢低佈局",
-      "winRate": "45.5%",
-      "pattern": "高檔盤整/區間震盪",
       "isStarred": false
     },
     {

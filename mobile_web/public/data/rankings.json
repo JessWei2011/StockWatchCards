@@ -439,39 +439,39 @@
         },
         {
           "rank": "5",
-          "code": "3374",
-          "name": "精材",
-          "price": "467.50"
-        },
-        {
-          "rank": "6",
           "code": "5425",
           "name": "台半",
           "price": "102.00"
         },
         {
+          "rank": "6",
+          "code": "3374",
+          "name": "精材",
+          "price": "467.50"
+        },
+        {
           "rank": "7",
+          "code": "4991",
+          "name": "環宇-KY",
+          "price": "534.00"
+        },
+        {
+          "rank": "8",
           "code": "5386",
           "name": "青雲",
           "price": "292.50"
         },
         {
-          "rank": "8",
+          "rank": "9",
           "code": "4958",
           "name": "臻鼎-KY",
           "price": "561.00"
         },
         {
-          "rank": "9",
+          "rank": "10",
           "code": "2308",
           "name": "台達電",
           "price": "1885.00"
-        },
-        {
-          "rank": "10",
-          "code": "2303",
-          "name": "聯電",
-          "price": "161.50"
         }
       ]
     },
@@ -524,21 +524,21 @@
         },
         {
           "rank": "8",
+          "code": "3443",
+          "name": "創意",
+          "price": "8525.00"
+        },
+        {
+          "rank": "9",
           "code": "3441",
           "name": "聯一光",
           "price": "211.00"
         },
         {
-          "rank": "9",
+          "rank": "10",
           "code": "8227",
           "name": "巨有科技",
           "price": "370.00"
-        },
-        {
-          "rank": "10",
-          "code": "8046",
-          "name": "南電",
-          "price": "1460.00"
         }
       ]
     },
@@ -591,21 +591,21 @@
         },
         {
           "rank": "8",
+          "code": "4991",
+          "name": "環宇-KY",
+          "price": "534.00"
+        },
+        {
+          "rank": "9",
           "code": "3037",
           "name": "欣興",
           "price": "1305.00"
         },
         {
-          "rank": "9",
+          "rank": "10",
           "code": "3189",
           "name": "景碩",
           "price": "1050.00"
-        },
-        {
-          "rank": "10",
-          "code": "3481",
-          "name": "群創",
-          "price": "52.80"
         }
       ]
     },
@@ -1151,9 +1151,9 @@
         },
         {
           "rank": 10,
-          "code": "7710",
-          "name": "東擎科技",
-          "displayValue": "-1.47pp"
+          "code": "2449",
+          "name": "京元電子",
+          "displayValue": "-1.42pp"
         }
       ]
     },
@@ -1255,39 +1255,39 @@
         },
         {
           "rank": 5,
+          "code": "4991",
+          "name": "環宇-KY",
+          "displayValue": "-1.91pp"
+        },
+        {
+          "rank": 6,
           "code": "2449",
           "name": "京元電子",
           "displayValue": "-1.82pp"
         },
         {
-          "rank": 6,
+          "rank": 7,
           "code": "6173",
           "name": "信昌電",
           "displayValue": "-1.74pp"
         },
         {
-          "rank": 7,
+          "rank": 8,
           "code": "6223",
           "name": "旺矽",
           "displayValue": "-1.45pp"
         },
         {
-          "rank": 8,
+          "rank": 9,
           "code": "3374",
           "name": "精材",
           "displayValue": "-1.30pp"
         },
         {
-          "rank": 9,
+          "rank": 10,
           "code": "6187",
           "name": "萬潤",
           "displayValue": "-1.29pp"
-        },
-        {
-          "rank": 10,
-          "code": "6531",
-          "name": "愛普",
-          "displayValue": "-1.26pp"
         }
       ]
     }

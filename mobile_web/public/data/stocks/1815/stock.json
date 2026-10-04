@@ -6,13 +6,13 @@
     "group": "PCB",
     "market": "TWO",
     "date": "2026-10-02",
-    "isStarred": false
+    "isStarred": true
   },
   "latestAnalysis": {
     "date": "2026-10-02",
     "current": "121.00",
     "decision": "買入 (多頭順勢)",
-    "winRate": "50.2%",
+    "winRate": "53.0%",
     "pattern": "雙底打底成型蓄勢中 (Double Bottom Base)",
     "confidence": "完全確認",
     "entry": "118.58",

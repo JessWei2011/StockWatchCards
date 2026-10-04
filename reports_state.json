@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-02T16:31:52.912710Z",
+  "updatedAt": "2026-10-04T14:08:30.119262Z",
   "stocks": {
     "1303": {
       "name": "南亞",
@@ -639,10 +639,10 @@
       "deletedAt": null
     },
     "7710": {
-      "name": "7710",
-      "folder": "工業電腦",
-      "updatedAt": "2026-09-24T09:43:52.570920Z",
-      "deletedAt": null
+      "name": "東擎科技",
+      "folder": "",
+      "updatedAt": "2026-10-03T16:27:32.430619Z",
+      "deletedAt": "2026-10-03T16:27:32.430619Z"
     },
     "6770": {
       "name": "力積電",
@@ -672,6 +672,12 @@
       "name": "光聖",
       "folder": "CPO",
       "updatedAt": "2026-10-02T16:31:52.912710Z",
+      "deletedAt": null
+    },
+    "4991": {
+      "name": "環宇-KY",
+      "folder": "CPO",
+      "updatedAt": "2026-10-04T14:08:30.119262Z",
       "deletedAt": null
     }
   }

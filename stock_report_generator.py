@@ -93,7 +93,7 @@ REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports"
 STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports_state.json")
 TODAY_NEW_STOCKS_FILE = os.path.join(CACHE_DIR, "today_new_stocks.json")
 HOLDERS_WEEKS = 8  # 大戶持股比例趨勢顯示週數
-HOLDERS_BACKFILL_WEEKS = 3  # 快取不足時，額外回補的過去週數(一次性，補齊後不再重複查詢)
+HOLDERS_BACKFILL_WEEKS = 8  # 快取不足時，額外回補的過去週數(一次性，補齊後不再重複查詢)
 DEFAULT_BATCH_WORKERS = max(4, min(12, (os.cpu_count() or 4)))
 MAX_BATCH_WORKERS = max(8, min(16, (os.cpu_count() or 4) * 2))
 _chart_render_lock = threading.Lock()
@@ -1204,8 +1204,25 @@ def fetch_inst(sid, dates, is_otc=False, cache=None):
                 cache[dt_key] = rec
                 break
         else:
-            # 上櫃無歷史批量端點，直接使用快取與最新日 OpenAPI，不逐日無效等待
-            break
+            # 上櫃歷史端點：TPEx dailyTrade 查詢該日全市場三大法人
+            d_formatted = f"{d[:4]}/{d[4:6]}/{d[6:8]}"
+            url = "https://www.tpex.org.tw/www/zh-tw/insti/dailyTrade"
+            params = {"type": "Daily", "response": "json", "date": d_formatted}
+            data = market_json_get(url, params, headers=otc_hdrs, timeout=8, verify=False)
+            if not data or data.get("stat") != "ok":
+                continue
+            tables = data.get("tables", [])
+            tbl_rows = tables[0].get("data", []) if tables else []
+            for row in tbl_rows:
+                if len(row) >= 24 and str(row[0]).strip() == sid:
+                    f_net = to_lot(row[10])
+                    tr_net = to_lot(row[13])
+                    dl_net = to_lot(row[22])
+                    sm_net = to_lot(row[23])
+                    rec = {"dt": dt_key, "f": f_net, "tr": tr_net, "dl": dl_net, "sm": sm_net}
+                    rows.append(rec)
+                    cache[dt_key] = rec
+                    break
 
         if len(rows) >= DAYS_LOOKBACK:
             break
