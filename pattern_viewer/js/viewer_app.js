@@ -226,6 +226,7 @@
         '#stockSearchBtn': '#stockSearchBtn, .stock-search-btn',
         '#toggleMa': '#toggleMa, .toggle-ma',
         '#toggleBoll': '#toggleBoll, .toggle-boll',
+        '#toggleLevels': '#toggleLevels, .toggle-levels',
         '#toggleFullscreenChart': '#toggleFullscreenChart, .btn-fullscreen-toggle',
         '#chartTitle': '#chartTitle, .chart-title',
         '#chartDisposalBadge': '#chartDisposalBadge, .chart-disposal-badge',
@@ -574,7 +575,12 @@
     }
 
     getActiveOverlay() {
-      // 依使用者指示全面移除型態比對與教學折線，回歸純粹、標準、乾淨的看盤終端。
+      if (!this.currentStockData) return null;
+      const code = String(this.currentCode || '').split('.')[0].trim();
+      const card = this.cardByCode && this.cardByCode[code];
+      if (window.PatternEngine && typeof window.PatternEngine.buildKeyLevelsOverlay === 'function') {
+        return window.PatternEngine.buildKeyLevelsOverlay(this.currentStockData, card);
+      }
       return null;
     }
 
@@ -641,9 +647,11 @@
       if (chart) {
         const toggleBoll = this.q('#toggleBoll');
         const toggleMa = this.q('#toggleMa');
+        const toggleLevels = this.q('#toggleLevels');
         ChartEngine.render(chart, this.currentStockData, overlay, {
           showBoll: toggleBoll ? toggleBoll.checked : true,
-          showMa: toggleMa ? toggleMa.checked : true
+          showMa: toggleMa ? toggleMa.checked : true,
+          showLevels: toggleLevels ? toggleLevels.checked : true
         });
       }
 
@@ -1013,6 +1021,9 @@
 
       const toggleMa = this.q('#toggleMa');
       if (toggleMa) toggleMa.addEventListener('change', () => this.updateUI(), { signal });
+
+      const toggleLevels = this.q('#toggleLevels');
+      if (toggleLevels) toggleLevels.addEventListener('change', () => this.updateUI(), { signal });
 
       const fullscreenBtn = this.q('#toggleFullscreenChart');
       if (fullscreenBtn) {

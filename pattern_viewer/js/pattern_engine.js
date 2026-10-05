@@ -638,5 +638,182 @@ window.PatternEngine = {
         { seriesName: 'K值', type: 'markArea', yAxisStart: 80, yAxisEnd: 100, label: 'KD 高檔區', color: 'rgba(244, 63, 94, 0.15)' }
       ]
     };
+  },
+
+  /**
+   * 建立關鍵支撐與壓力線的 Overlay 物件。
+   * 優先採用個別個股報告 card 中精算之支撐位 (Fibonacci / 防守點) 與阻力位 (波段前高 / 目標價)；
+   * 若無報告卡片，則由近 60 日 K 線之轉折高低點與波段前高/前低自動備援推算。
+   */
+  buildKeyLevelsOverlay(stockData, card = null) {
+    if (!stockData || !stockData.candles || stockData.candles.length === 0) return null;
+    const { candles, dates } = stockData;
+    const n = candles.length;
+    const lastClose = candles[n - 1][1];
+
+    // 1. 識別近 45 根 K 棒之局部波段轉折高低點 (Fractal Peaks & Valleys)
+    const fractalPeaks = [];
+    const fractalValleys = [];
+    const w = 2; // 左右各 2 根 K 棒確認轉折
+    for (let i = Math.max(0, n - 45); i < n - 1; i++) {
+      const hi = candles[i][3];
+      const lo = candles[i][2];
+      const rw = Math.min(w, (n - 1) - i);
+
+      let leftOk = true;
+      for (let j = Math.max(0, i - w); j < i; j++) {
+        if (candles[j][3] > hi) { leftOk = false; break; }
+      }
+      let rightOk = true;
+      for (let j = i + 1; j <= i + rw; j++) {
+        if (candles[j][3] > hi) { rightOk = false; break; }
+      }
+
+      if (leftOk && rightOk) {
+        if (rw === 1) {
+          // 若只有 1 根右側確認（昨日高點），要求拉回幅度 >= 2.5% 且昨日高點高於今日
+          if ((hi - lastClose) / hi >= 0.025 && candles[n - 1][3] < hi) {
+            fractalPeaks.push({ date: dates[i], price: hi, idx: i });
+          }
+        } else {
+          fractalPeaks.push({ date: dates[i], price: hi, idx: i });
+        }
+      }
+
+      let leftVOk = true;
+      for (let j = Math.max(0, i - w); j < i; j++) {
+        if (candles[j][2] < lo) { leftVOk = false; break; }
+      }
+      let rightVOk = true;
+      for (let j = i + 1; j <= i + rw; j++) {
+        if (candles[j][2] < lo) { rightVOk = false; break; }
+      }
+
+      if (leftVOk && rightVOk) {
+        if (rw === 1) {
+          if ((lastClose - lo) / lo >= 0.025 && candles[n - 1][2] > lo) {
+            fractalValleys.push({ date: dates[i], price: lo, idx: i });
+          }
+        } else {
+          fractalValleys.push({ date: dates[i], price: lo, idx: i });
+        }
+      }
+    }
+
+    const resistanceCandidates = [];
+    const supportCandidates = [];
+
+    // 2. 局部波段前高（高於現價 1%）
+    const validPeaks = fractalPeaks.filter(p => p.price >= lastClose * 1.01);
+    if (validPeaks.length > 0) {
+      const recentPeak = validPeaks.slice().sort((a, b) => b.idx - a.idx)[0];
+      resistanceCandidates.push({
+        price: recentPeak.price,
+        typeLabel: '壓力',
+        tag: `前高(${recentPeak.date})`,
+        color: '#f43f5e'
+      });
+    }
+
+    // 3. 局部波段波谷（低於現價 1%）
+    const validValleys = fractalValleys.filter(v => v.price <= lastClose * 0.99);
+    if (validValleys.length > 0) {
+      const recentValley = validValleys.slice().sort((a, b) => b.idx - a.idx)[0];
+      supportCandidates.push({
+        price: recentValley.price,
+        typeLabel: '支撐',
+        tag: `波谷(${recentValley.date})`,
+        color: '#10b981'
+      });
+    }
+
+    const simplifyDesc = (desc) => {
+      if (!desc) return '';
+      return desc.replace(/近期波段\/歷史高點/, '波段大頂')
+                 .replace(/第一階段波段測量目標價/, '目標價')
+                 .replace(/關鍵支撐\s*\/\s*防禦平台/, '防禦平台')
+                 .replace(/短線強弱線/, '強弱線')
+                 .replace(/Fib\s*23\.6%/, 'Fib 23.6%')
+                 .replace(/Fib\s*38\.2%/, 'Fib 38.2%');
+    };
+
+    // 4. 分析卡片數值 (Card)
+    if (card) {
+      if (Array.isArray(card.resistances)) {
+        card.resistances.forEach(r => {
+          if (r && r.price != null && !isNaN(r.price)) {
+            const p = Number(r.price);
+            if (p >= lastClose * 1.01 && p <= lastClose * 1.45) {
+              const tag = simplifyDesc(r.desc) || (r.level ? `R${r.level}` : '壓力');
+              resistanceCandidates.push({
+                price: p,
+                typeLabel: '壓力',
+                tag: tag,
+                color: '#f43f5e'
+              });
+            }
+          }
+        });
+      }
+      if (Array.isArray(card.supports)) {
+        card.supports.forEach(s => {
+          if (s && s.price != null && !isNaN(s.price)) {
+            const p = Number(s.price);
+            if (p <= lastClose * 0.99 && p >= lastClose * 0.70) {
+              const tag = simplifyDesc(s.desc) || (s.level ? `S${s.level}` : '支撐');
+              supportCandidates.push({
+                price: p,
+                typeLabel: '支撐',
+                tag: tag,
+                color: '#10b981'
+              });
+            } else if (p > lastClose * 1.01 && p <= lastClose * 1.35) {
+              resistanceCandidates.push({
+                price: p,
+                typeLabel: '壓力',
+                tag: '反壓/強弱線',
+                color: '#f43f5e'
+              });
+            }
+          }
+        });
+      }
+    }
+
+    // 5. 月線 MA20 動態支撐
+    if (stockData.ma20 && stockData.ma20.length > 0) {
+      const ma20Val = stockData.ma20[stockData.ma20.length - 1];
+      if (Number.isFinite(ma20Val) && ma20Val <= lastClose * 0.99 && ma20Val >= lastClose * 0.75) {
+        supportCandidates.push({
+          price: Number(ma20Val.toFixed(1)),
+          typeLabel: '支撐',
+          tag: '月線(MA20)',
+          color: '#10b981'
+        });
+      }
+    }
+
+    // 6. 挑選最多 2 條，並過濾過於接近的線條（維持至少 1.5% 距離避免重疊）
+    const pickLevels = (candidates, isResistance) => {
+      candidates.sort((a, b) => isResistance ? (a.price - b.price) : (b.price - a.price));
+      const result = [];
+      for (const c of candidates) {
+        const tooClose = result.some(item => Math.abs(item.price - c.price) / c.price < 0.015);
+        if (!tooClose) {
+          result.push(c);
+          if (result.length >= 2) break;
+        }
+      }
+      return result;
+    };
+
+    const resistanceLines = pickLevels(resistanceCandidates, true);
+    const supportLines = pickLevels(supportCandidates, false);
+
+    return {
+      name: '關鍵支撐與壓力線',
+      resistanceLines,
+      supportLines
+    };
   }
 };

@@ -130,6 +130,7 @@
           <div class="chart-toggles">
             <label class="toggle-label"><input type="checkbox" id="toggleMa" checked> 均線（MA5 / 10 / 20 / 60 / 120）</label>
             <label class="toggle-label"><input type="checkbox" id="toggleBoll" checked> 布林通道（BOLL 上/下軌）</label>
+            <label class="toggle-label"><input type="checkbox" id="toggleLevels" checked> 支撐／壓力線</label>
             <button type="button" class="btn-fullscreen-toggle" id="toggleFullscreenChart" onclick="if(window.toggleChartFullscreen) window.toggleChartFullscreen();" title="全螢幕放大看盤">⛶ 全螢幕看盤</button>
           </div>
         </div>
@@ -1153,9 +1154,9 @@
   </div>
 
   <script src="js/parser.js?v=102"></script>
-  <script src="js/pattern_engine.js?v=68"></script>
-  <script src="js/chart_engine.js?v=111"></script>
-  <script src="js/viewer_app.js?v=105"></script>
+  <script src="js/pattern_engine.js?v=83"></script>
+  <script src="js/chart_engine.js?v=115"></script>
+  <script src="js/viewer_app.js?v=107"></script>
   <script>
     window.openKlineCheatSheetModal = function() {
       const modal = document.getElementById('klineCheatSheetModal');

@@ -703,6 +703,30 @@ def parse_md_report_card(md_path):
     macd_tags_str = m_macd.group(1).strip() if m_macd else ""
     kd_tags_str = m_kd.group(1).strip() if m_kd else ""
 
+    # 解析關鍵支撐位與阻力位 (供看盤圖表標示使用)
+    supp_matches = re.findall(r'-\s*\*\*支撐位\s*(\d+)\*\*[：:]\s*([0-9.]+)\s*元(?:\s*\((.*?)\))?', text)
+    res_matches = re.findall(r'-\s*\*\*阻力位\s*(\d+)\*\*[：:]\s*([0-9.]+)\s*元(?:\s*\((.*?)\))?', text)
+    support_levels = []
+    for m in supp_matches:
+        try:
+            support_levels.append({
+                "level": int(m[0]),
+                "price": float(m[1]),
+                "desc": m[2].strip() if m[2] else f"支撐位 {m[0]}"
+            })
+        except (ValueError, IndexError):
+            pass
+    resistance_levels = []
+    for m in res_matches:
+        try:
+            resistance_levels.append({
+                "level": int(m[0]),
+                "price": float(m[1]),
+                "desc": m[2].strip() if m[2] else f"壓力位 {m[0]}"
+            })
+        except (ValueError, IndexError):
+            pass
+
     m_mkt = re.search(r'\(([0-9A-Za-z]+)\.(TW|TWO)\)', text)
     market = m_mkt.group(2) if m_mkt else ("TWO" if "(TWO)" in md_path.name else "TW")
 
@@ -725,6 +749,8 @@ def parse_md_report_card(md_path):
         "kdTags": kd_tags_str,
         "technicalTags": tech_tags_str,
         "chipTags": chip_tags_str,
+        "supports": support_levels,
+        "resistances": resistance_levels,
         "raw": text,
         "reportPath": md_path.relative_to(REPORTS_DIR).as_posix()
     }

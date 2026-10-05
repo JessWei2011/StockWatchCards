@@ -553,22 +553,77 @@ window.ChartEngine = {
         });
       }
 
-      // 3. Resistance / Key Level Horizontal Line
-      if (overlayData.resistanceLine) {
-        markLines.push({
-          name: overlayData.resistanceLine.label,
-          yAxis: overlayData.resistanceLine.price,
-          lineStyle: {
-            color: overlayData.color || '#f59e0b',
-            type: 'dashed',
-            width: 2
-          },
-          label: {
-            formatter: `${overlayData.resistanceLine.label}: $${overlayData.resistanceLine.price}`,
-            position: 'end',
-            fontSize: 11,
-            color: overlayData.color || '#f59e0b'
-          }
+      // 3. Resistance & Support Key Level Horizontal Lines
+      const showLevels = displayToggles && displayToggles.showLevels !== false;
+      if (showLevels) {
+        // 3.1 壓力線 (Resistance Lines) - 橘紅/紅色虛線
+        const resLines = (overlayData.resistanceLines || (overlayData.resistanceLine ? [overlayData.resistanceLine] : []))
+          .filter(item => item && item.price != null && !isNaN(item.price))
+          .sort((a, b) => Number(b.price) - Number(a.price));
+
+        resLines.forEach((item, idx) => {
+          const lineColor = item.color || '#f43f5e';
+          const tagText = item.tag ? ` (${item.tag})` : '';
+          const fullLabel = `壓力${tagText} $${Number(item.price).toFixed(1)}`;
+          // 若有多條壓力線，第一條置頂 (insideEndTop)，第二條置底 (insideEndBottom) 徹底避免文字重疊
+          const pos = (idx % 2 === 0) ? 'insideEndTop' : 'insideEndBottom';
+          markLines.push({
+            name: fullLabel,
+            yAxis: Number(item.price),
+            lineStyle: {
+              color: lineColor,
+              type: 'dashed',
+              width: 1.8
+            },
+            label: {
+              formatter: fullLabel,
+              position: pos,
+              distance: 5,
+              fontSize: 11,
+              fontWeight: 'bold',
+              color: lineColor,
+              backgroundColor: isLight ? 'rgba(255,255,255,0.92)' : 'rgba(15,23,42,0.92)',
+              borderColor: lineColor,
+              borderWidth: 1,
+              padding: [2, 6],
+              borderRadius: 4
+            }
+          });
+        });
+
+        // 3.2 支撐線 (Support Lines) - 翠綠/青色虛線
+        const suppLines = (overlayData.supportLines || (overlayData.supportLine ? [overlayData.supportLine] : []))
+          .filter(item => item && item.price != null && !isNaN(item.price))
+          .sort((a, b) => Number(b.price) - Number(a.price));
+
+        suppLines.forEach((item, idx) => {
+          const lineColor = item.color || '#10b981';
+          const tagText = item.tag ? ` (${item.tag})` : '';
+          const fullLabel = `支撐${tagText} $${Number(item.price).toFixed(1)}`;
+          // 若有多條支撐線，第一條置頂 (insideEndTop)，第二條置底 (insideEndBottom) 徹底避免文字重疊
+          const pos = (idx % 2 === 0) ? 'insideEndTop' : 'insideEndBottom';
+          markLines.push({
+            name: fullLabel,
+            yAxis: Number(item.price),
+            lineStyle: {
+              color: lineColor,
+              type: 'dashed',
+              width: 1.8
+            },
+            label: {
+              formatter: fullLabel,
+              position: pos,
+              distance: 5,
+              fontSize: 11,
+              fontWeight: 'bold',
+              color: lineColor,
+              backgroundColor: isLight ? 'rgba(255,255,255,0.92)' : 'rgba(15,23,42,0.92)',
+              borderColor: lineColor,
+              borderWidth: 1,
+              padding: [2, 6],
+              borderRadius: 4
+            }
+          });
         });
       }
     }
