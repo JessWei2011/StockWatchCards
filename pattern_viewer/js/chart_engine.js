@@ -738,16 +738,17 @@ window.ChartEngine = {
       },
       grid: [
         // ⬜ 白色框：K線主圖（根據 Zoom Step 垂直縮放高度，1x: 170px, 2x: 340px, 3x: 510px, 4x: 680px）
-        { left: '4%', right: '70px', top: layout.klineTop, height: layout.klineHeight },
+        { left: '4%', right: '78px', top: layout.klineTop, height: layout.klineHeight },
         // 🟨 黃色框：成交量 VOL（高度固定 72px，位置隨上方 K 線高度動態位移）
-        { left: '4%', right: '70px', top: layout.volTop, height: layout.volHeight },
+        { left: '4%', right: '78px', top: layout.volTop, height: layout.volHeight },
         // 🟧 橘色框：RSI 指標（高度固定 72px）
-        { left: '4%', right: '70px', top: layout.rsiTop, height: layout.rsiHeight },
+        { left: '4%', right: '78px', top: layout.rsiTop, height: layout.rsiHeight },
         // 🟧 橘色框：MACD 指標（高度固定 72px）
-        { left: '4%', right: '70px', top: layout.macdTop, height: layout.macdHeight },
+        { left: '4%', right: '78px', top: layout.macdTop, height: layout.macdHeight },
         // 🟩 綠色框：KD 指標（高度固定 72px）
-        { left: '4%', right: '70px', top: layout.kdTop, height: layout.kdHeight }
+        { left: '4%', right: '78px', top: layout.kdTop, height: layout.kdHeight }
       ],
+
       xAxis: [
         {
           type: 'category',
@@ -1368,12 +1369,17 @@ window.ChartEngine = {
     const isUp = closePrice >= prevClose;
     const priceColor = isUp ? '#ef4444' : '#10b981';
 
+    const formatPriceText = (v) => {
+      if (v >= 1000) return v.toFixed(1);
+      return v.toFixed(2);
+    };
+
     items.push({
       key: 'close',
       tag: '現',
       val: closePrice,
       color: priceColor,
-      text: closePrice.toFixed(2),
+      text: formatPriceText(closePrice),
       isBold: true
     });
 
@@ -1395,7 +1401,7 @@ window.ChartEngine = {
             tag: cfg.tag,
             val,
             color: cfg.color,
-            text: val.toFixed(2)
+            text: formatPriceText(val)
           });
         }
       }
@@ -1412,7 +1418,7 @@ window.ChartEngine = {
             tag: 'UB',
             val,
             color: '#a855f7',
-            text: val.toFixed(2)
+            text: formatPriceText(val)
           });
         }
       }
@@ -1424,11 +1430,12 @@ window.ChartEngine = {
             tag: 'LB',
             val,
             color: '#a855f7',
-            text: val.toFixed(2)
+            text: formatPriceText(val)
           });
         }
       }
     }
+
 
     // 計算每個項目在主圖 Y 軸上的真實像素位置
     const validItems = [];
@@ -1560,8 +1567,9 @@ window.ChartEngine = {
     // 市場指數主圖與個股 K 線窗格使用相同高度，避免因市場版省略 RSI／MACD／KD
     // 而把每根 K 棒垂直拉長；其餘空間保留為乾淨的報表留白。
     const grid = hasVolume
-      ? [{ left: '4%', right: '70px', top: layout.klineTop, height: layout.klineHeight }, { left: '4%', right: '70px', top: layout.volTop, height: layout.volHeight }]
-      : [{ left: '4%', right: '70px', top: layout.klineTop, height: layout.klineHeight }];
+      ? [{ left: '4%', right: '78px', top: layout.klineTop, height: layout.klineHeight }, { left: '4%', right: '78px', top: layout.volTop, height: layout.volHeight }]
+      : [{ left: '4%', right: '78px', top: layout.klineTop, height: layout.klineHeight }];
+
     const monthAxisInfo = this.buildMonthAxisData(dates);
     const monthIndices = monthAxisInfo.monthIndices;
     const labelsByIndex = monthAxisInfo.labelsByIndex;
