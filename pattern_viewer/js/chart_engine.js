@@ -632,9 +632,16 @@ window.ChartEngine = {
     // 0: K-line (38%), 1: VOL (10%), 2: RSI (10%), 3: MACD (10%), 4: KD (10%)
     const chartBg = isLight ? '#ffffff' : '#0b0f19';
     const axisLineColor = isLight ? '#94a3b8' : '#222c3f';
-    const splitLineColor = isLight ? '#f1f5f9' : '#151b28';
+    // 增強 Y 軸水平輔助參考線對比度與虛線清晰度，避免過暗看不見
+    const splitLineStyle = {
+      color: isLight ? 'rgba(148, 163, 184, 0.55)' : 'rgba(148, 163, 184, 0.28)',
+      type: 'dashed',
+      dashOffset: 2,
+      width: 1
+    };
     const legendTextColor = isLight ? '#1e293b' : '#cbd5e1';
     const zoomBorderColor = isLight ? '#cbd5e1' : '#222c3f';
+
 
     const monthAxisInfo = this.buildMonthAxisData(dates);
     const monthIndices = monthAxisInfo.monthIndices;
@@ -731,15 +738,15 @@ window.ChartEngine = {
       },
       grid: [
         // ⬜ 白色框：K線主圖（根據 Zoom Step 垂直縮放高度，1x: 170px, 2x: 340px, 3x: 510px, 4x: 680px）
-        { left: '6%', right: '4%', top: layout.klineTop, height: layout.klineHeight },
+        { left: '4%', right: '70px', top: layout.klineTop, height: layout.klineHeight },
         // 🟨 黃色框：成交量 VOL（高度固定 72px，位置隨上方 K 線高度動態位移）
-        { left: '6%', right: '4%', top: layout.volTop, height: layout.volHeight },
+        { left: '4%', right: '70px', top: layout.volTop, height: layout.volHeight },
         // 🟧 橘色框：RSI 指標（高度固定 72px）
-        { left: '6%', right: '4%', top: layout.rsiTop, height: layout.rsiHeight },
+        { left: '4%', right: '70px', top: layout.rsiTop, height: layout.rsiHeight },
         // 🟧 橘色框：MACD 指標（高度固定 72px）
-        { left: '6%', right: '4%', top: layout.macdTop, height: layout.macdHeight },
+        { left: '4%', right: '70px', top: layout.macdTop, height: layout.macdHeight },
         // 🟩 綠色框：KD 指標（高度固定 72px）
-        { left: '6%', right: '4%', top: layout.kdTop, height: layout.kdHeight }
+        { left: '4%', right: '70px', top: layout.kdTop, height: layout.kdHeight }
       ],
       xAxis: [
         {
@@ -794,16 +801,16 @@ window.ChartEngine = {
         }
       ],
       yAxis: [
-        // Pane 0: K-line Price
-        { scale: true, gridIndex: 0, axisLine: { lineStyle: { color: axisLineColor } }, splitLine: { lineStyle: { color: splitLineColor } } },
+        // Pane 0: K-line Price (全部靠右側)
+        { position: 'right', scale: true, gridIndex: 0, axisLine: { lineStyle: { color: axisLineColor } }, splitLine: { lineStyle: splitLineStyle } },
         // Pane 1: Volume
-        { scale: true, gridIndex: 1, axisLabel: { show: false }, splitLine: { show: false } },
+        { position: 'right', scale: true, gridIndex: 1, axisLabel: { show: false }, splitLine: { show: false } },
         // Pane 2: RSI (0-100)
-        { min: 0, max: 100, gridIndex: 2, splitLine: { lineStyle: { color: splitLineColor } } },
+        { position: 'right', min: 0, max: 100, gridIndex: 2, splitLine: { lineStyle: splitLineStyle } },
         // Pane 3: MACD
-        { scale: true, gridIndex: 3, splitLine: { lineStyle: { color: splitLineColor } } },
+        { position: 'right', scale: true, gridIndex: 3, splitLine: { lineStyle: splitLineStyle } },
         // Pane 4: KD (0-100)
-        { min: 0, max: 100, gridIndex: 4, splitLine: { lineStyle: { color: splitLineColor } } }
+        { position: 'right', min: 0, max: 100, gridIndex: 4, splitLine: { lineStyle: splitLineStyle } }
       ],
       dataZoom: [
         {
@@ -1280,10 +1287,224 @@ window.ChartEngine = {
     this._attachCustomWheelZoom(dom, state);
     this._attachDragScroll(dom);
 
-    // 多階段延遲觸發 resize，保證容器切換完成後能正確取得寬高並繪製
-    requestAnimationFrame(() => this.resize(dom));
-    setTimeout(() => this.resize(dom), 60);
-    setTimeout(() => this.resize(dom), 200);
+    // 綁定 TradingView 風格右側防重疊彩色數值標籤 (收盤價、MA、BOLL)
+    this._updateRightPriceBadges(dom, state);
+    if (!state.dataZoomBadgesBound) {
+      state.dataZoomBadgesBound = true;
+      state.chartInstance.on('dataZoom', () => {
+        this._updateRightPriceBadges(dom, state);
+      });
+      state.chartInstance.on('legendselectchanged', (params) => {
+        if (state.lastDisplayToggles) {
+          // 同步選取狀態
+        }
+        this._updateRightPriceBadges(dom, state);
+      });
+    }
+
+    // 多階段延遲觸發 resize 與標籤重算，保證容器切換完成後能正確取得寬高並繪製
+    requestAnimationFrame(() => {
+      this.resize(dom);
+      this._updateRightPriceBadges(dom, state);
+    });
+    setTimeout(() => {
+      this.resize(dom);
+      this._updateRightPriceBadges(dom, state);
+    }, 60);
+    setTimeout(() => {
+      this.resize(dom);
+      this._updateRightPriceBadges(dom, state);
+    }, 200);
+  },
+
+  /**
+   * TradingView 風格右側 Y 軸防重疊彩色數值膠囊標籤 (Price Scale Badges)
+   * 標示最新收盤價 (紅漲/綠跌)、MA (5/10/20/60/120) 及 BOLL (上/下軌)，上下排列且防數值重疊
+   */
+  _updateRightPriceBadges(dom, state) {
+    if (!dom || !state || !state.chartInstance || state.chartInstance.isDisposed()) return;
+    const stockData = state.lastStockData;
+    if (!stockData || !stockData.dates || !stockData.dates.length) return;
+
+    let container = dom.querySelector('.echart-right-price-badges');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'echart-right-price-badges';
+      dom.appendChild(container);
+    }
+
+    const n = stockData.dates.length;
+    const lastIdx = n - 1;
+    const candles = stockData.candles;
+    if (!candles || !candles[lastIdx]) {
+      container.innerHTML = '';
+      return;
+    }
+
+    // 判斷當前指標顯示狀態 (由 legend 及 displayToggles 決定)
+    let legendSelected = null;
+    try {
+      const opt = state.chartInstance.getOption();
+      if (opt && opt.legend && opt.legend[0] && opt.legend[0].selected) {
+        legendSelected = opt.legend[0].selected;
+      }
+    } catch (_) {}
+
+    const isVisible = (name, fallback = true) => {
+      if (legendSelected && legendSelected[name] !== undefined) {
+        return !!legendSelected[name];
+      }
+      return fallback;
+    };
+
+    const isMarket = stockData.reportType === 'market';
+    const items = [];
+
+    // 1. 收盤價（現價）
+    const lastCandle = candles[lastIdx];
+    const prevCandle = lastIdx > 0 ? candles[lastIdx - 1] : lastCandle;
+    const closePrice = Number(lastCandle[1]);
+    const prevClose = Number(prevCandle ? prevCandle[1] : lastCandle[0]);
+    const isUp = closePrice >= prevClose;
+    const priceColor = isUp ? '#ef4444' : '#10b981';
+
+    items.push({
+      key: 'close',
+      tag: '現',
+      val: closePrice,
+      color: priceColor,
+      text: closePrice.toFixed(2),
+      isBold: true
+    });
+
+    // 2. 均線系列
+    const maConfigs = [
+      { key: 'MA5', name: 'MA5', tag: '5', data: stockData.ma5, color: '#f59e0b', defaultShow: true },
+      { key: 'MA10', name: 'MA10', tag: '10', data: stockData.ma10, color: '#3b82f6', defaultShow: true },
+      { key: 'MA20', name: 'MA20', tag: '20', data: stockData.ma20, color: '#ec4899', defaultShow: true },
+      { key: 'MA60', name: 'MA60', tag: '60', data: stockData.ma60, color: '#10b981', defaultShow: false },
+      { key: 'MA120', name: 'MA120', tag: '120', data: stockData.ma120, color: '#8b5cf6', defaultShow: false }
+    ];
+
+    maConfigs.forEach(cfg => {
+      if (isVisible(cfg.name, cfg.defaultShow) && cfg.data && cfg.data[lastIdx] != null) {
+        const val = Number(cfg.data[lastIdx]);
+        if (!isNaN(val)) {
+          items.push({
+            key: cfg.key,
+            tag: cfg.tag,
+            val,
+            color: cfg.color,
+            text: val.toFixed(2)
+          });
+        }
+      }
+    });
+
+    // 3. 布林通道 (BOLL 上軌 / 下軌) - 個股主圖專屬
+    if (!isMarket) {
+      const showBoll = state.lastDisplayToggles ? (state.lastDisplayToggles.showBoll !== false) : true;
+      if (isVisible('BOLL上軌', showBoll) && stockData.bollUpper && stockData.bollUpper[lastIdx] != null) {
+        const val = Number(stockData.bollUpper[lastIdx]);
+        if (!isNaN(val)) {
+          items.push({
+            key: 'bollUpper',
+            tag: 'UB',
+            val,
+            color: '#a855f7',
+            text: val.toFixed(2)
+          });
+        }
+      }
+      if (isVisible('BOLL下軌', showBoll) && stockData.bollLower && stockData.bollLower[lastIdx] != null) {
+        const val = Number(stockData.bollLower[lastIdx]);
+        if (!isNaN(val)) {
+          items.push({
+            key: 'bollLower',
+            tag: 'LB',
+            val,
+            color: '#a855f7',
+            text: val.toFixed(2)
+          });
+        }
+      }
+    }
+
+    // 計算每個項目在主圖 Y 軸上的真實像素位置
+    const validItems = [];
+    items.forEach(it => {
+      try {
+        const pixel = state.chartInstance.convertToPixel({ yAxisIndex: 0 }, it.val);
+        if (pixel != null && !isNaN(pixel)) {
+          it.rawY = pixel;
+          validItems.push(it);
+        }
+      } catch (_) {}
+    });
+
+    if (!validItems.length) {
+      container.innerHTML = '';
+      return;
+    }
+
+    // 主圖 Y 軸顯示邊界範圍
+    const layout = this._getChartLayout(dom, isMarket, isMarket ? (stockData.hasVolume === true) : true);
+    const minY = layout.klineTop + 6;
+    const maxY = layout.klineTop + layout.klineHeight - 6;
+
+    // 依 Y 座標從小到大排列 (即價格由高到低)
+    validItems.sort((a, b) => a.rawY - b.rawY);
+
+    // 防重疊演算法 (Two-pass Relaxation with boundary clamping)
+    // 標籤高度約 17px，安全間距 minGap = 19px
+    const minGap = 19;
+    const count = validItems.length;
+    const adjustedY = validItems.map(it => it.rawY);
+
+    // 第一階段：由上至下依序推開
+    for (let i = 1; i < count; i++) {
+      if (adjustedY[i] < adjustedY[i - 1] + minGap) {
+        adjustedY[i] = adjustedY[i - 1] + minGap;
+      }
+    }
+
+    // 第二階段：若底部超出 maxY，由下至上回推
+    if (adjustedY[count - 1] > maxY) {
+      adjustedY[count - 1] = maxY;
+      for (let i = count - 2; i >= 0; i--) {
+        if (adjustedY[i] > adjustedY[i + 1] - minGap) {
+          adjustedY[i] = adjustedY[i + 1] - minGap;
+        }
+      }
+    }
+
+    // 第三階段：若頂部被推擠出 minY，再次由上至下修正
+    if (adjustedY[0] < minY) {
+      adjustedY[0] = minY;
+      for (let i = 1; i < count; i++) {
+        if (adjustedY[i] < adjustedY[i - 1] + minGap) {
+          adjustedY[i] = adjustedY[i - 1] + minGap;
+        }
+      }
+    }
+
+    // 渲染或更新標籤 DOM
+    let html = '';
+    for (let i = 0; i < count; i++) {
+      const it = validItems[i];
+      const y = adjustedY[i];
+      // 標籤置中對齊 y
+      const topPx = Math.round(y - 9);
+      const tagHtml = it.tag ? `<span class="badge-tag">${it.tag}</span>` : '';
+      const fontWeight = it.isBold ? '800' : '700';
+
+      html += `<div class="echart-price-badge-item" style="top:${topPx}px; background-color:${it.color}; font-weight:${fontWeight};">` +
+              tagHtml +
+              `<span class="badge-text">${it.text}</span>` +
+              `</div>`;
+    }
+
+    container.innerHTML = html;
   },
 
   _renderMarketChart(dom, state, stockData, config) {
@@ -1294,9 +1515,15 @@ window.ChartEngine = {
     const isLight = config.isLight;
     const chartBg = isLight ? '#ffffff' : '#0b0f19';
     const axisLineColor = isLight ? '#94a3b8' : '#222c3f';
-    const splitLineColor = isLight ? '#e2e8f0' : '#151b28';
+    const splitLineStyle = {
+      color: isLight ? 'rgba(148, 163, 184, 0.55)' : 'rgba(148, 163, 184, 0.28)',
+      type: 'dashed',
+      dashOffset: 2,
+      width: 1
+    };
     const legendTextColor = isLight ? '#1e293b' : '#cbd5e1';
     const zoomBorderColor = isLight ? '#cbd5e1' : '#222c3f';
+
     const BUFFER_DAYS = 35;
     const realTotal = dates.length;
     const expandedDates = dates.concat(new Array(BUFFER_DAYS).fill(''));
@@ -1333,8 +1560,8 @@ window.ChartEngine = {
     // 市場指數主圖與個股 K 線窗格使用相同高度，避免因市場版省略 RSI／MACD／KD
     // 而把每根 K 棒垂直拉長；其餘空間保留為乾淨的報表留白。
     const grid = hasVolume
-      ? [{ left: '6%', right: '4%', top: layout.klineTop, height: layout.klineHeight }, { left: '6%', right: '4%', top: layout.volTop, height: layout.volHeight }]
-      : [{ left: '6%', right: '4%', top: layout.klineTop, height: layout.klineHeight }];
+      ? [{ left: '4%', right: '70px', top: layout.klineTop, height: layout.klineHeight }, { left: '4%', right: '70px', top: layout.volTop, height: layout.volHeight }]
+      : [{ left: '4%', right: '70px', top: layout.klineTop, height: layout.klineHeight }];
     const monthAxisInfo = this.buildMonthAxisData(dates);
     const monthIndices = monthAxisInfo.monthIndices;
     const labelsByIndex = monthAxisInfo.labelsByIndex;
@@ -1383,13 +1610,15 @@ window.ChartEngine = {
     ];
     const yAxis = [
       {
+        position: 'right',
         scale: true,
         boundaryGap: ['5%', '8%'],
         gridIndex: 0,
         axisLine: { lineStyle: { color: axisLineColor } },
-        splitLine: { lineStyle: { color: splitLineColor } }
+        splitLine: { lineStyle: splitLineStyle }
       }
     ];
+
     const series = [
       {
         name: 'K線', type: 'candlestick', xAxisIndex: 0, yAxisIndex: 0, data: candles,
@@ -1415,7 +1644,7 @@ window.ChartEngine = {
         axisLabel: monthAxisLabel,
         splitLine: monthSplitLine
       });
-      yAxis.push({ scale: true, gridIndex: 1, axisLabel: { show: false }, splitLine: { show: false } });
+      yAxis.push({ position: 'right', scale: true, gridIndex: 1, axisLabel: { show: false }, splitLine: { show: false } });
       series.push({
         name: volumeLabel, type: 'bar', xAxisIndex: 1, yAxisIndex: 1,
         data: volumes.map((value, index) => {
@@ -1570,8 +1799,26 @@ window.ChartEngine = {
     this._attachCustomWheelZoom(dom, state);
     this._attachDragScroll(dom);
 
-    requestAnimationFrame(() => this.resize(dom));
-    setTimeout(() => this.resize(dom), 80);
+    // 綁定 TradingView 風格右側防重疊彩色數值標籤 (市場大盤 / 櫃買指數)
+    this._updateRightPriceBadges(dom, state);
+    if (!state.marketDataZoomBadgesBound) {
+      state.marketDataZoomBadgesBound = true;
+      chartInstance.on('dataZoom', () => {
+        this._updateRightPriceBadges(dom, state);
+      });
+      chartInstance.on('legendselectchanged', () => {
+        this._updateRightPriceBadges(dom, state);
+      });
+    }
+
+    requestAnimationFrame(() => {
+      this.resize(dom);
+      this._updateRightPriceBadges(dom, state);
+    });
+    setTimeout(() => {
+      this.resize(dom);
+      this._updateRightPriceBadges(dom, state);
+    }, 80);
   },
 
   _attachZoomFix(dom) {
@@ -1643,6 +1890,7 @@ window.ChartEngine = {
         } else {
           state.chartInstance.resize();
         }
+        this._updateRightPriceBadges(dom, state);
       }
       return;
     }
@@ -1656,6 +1904,7 @@ window.ChartEngine = {
           } else {
             state.chartInstance.resize();
           }
+          this._updateRightPriceBadges(dom, state);
         }
       }
     });
