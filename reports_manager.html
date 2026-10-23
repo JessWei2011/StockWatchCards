@@ -433,14 +433,17 @@
   }
   [data-theme="light"] .macro-table-toolbar {
     border-bottom: 1.5px solid #e2e8f0 !important;
+    padding: 10px 16px !important;
   }
   [data-theme="light"] .macro-panel-title {
     color: #0f172a !important;
-    font-weight: 900 !important;
+    font-weight: 850 !important;
+    font-size: 16px !important;
   }
   [data-theme="light"] .macro-panel-meta {
     color: #475569 !important;
     font-weight: 600 !important;
+    font-size: 13px !important;
   }
   [data-theme="light"] .macro-panel-meta #macro-count {
     color: #0f172a !important;
@@ -449,6 +452,7 @@
   [data-theme="light"] .macro-status {
     color: #0284c7 !important;
     font-weight: 750 !important;
+    font-size: 13px !important;
   }
   [data-theme="light"] .macro-status.success {
     color: #15803d !important;
@@ -482,6 +486,7 @@
     border: 1.5px solid #e2e8f0 !important;
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
     border-radius: 10px !important;
+    padding: 10px 14px !important;
   }
   [data-theme="light"] .macro-indicator-card:hover {
     background: #f0f9ff !important;
@@ -489,13 +494,13 @@
   }
   [data-theme="light"] .macro-th-label {
     color: #0f172a !important;
-    font-weight: 850 !important;
-    font-size: 17px !important;
+    font-weight: 800 !important;
+    font-size: 13px !important;
   }
   [data-theme="light"] .macro-fresh {
     color: #0369a1 !important;
     font-weight: 700 !important;
-    font-size: 13.5px !important;
+    font-size: 11px !important;
   }
   [data-theme="light"] .macro-spark {
     background: #f8fafc !important;
@@ -505,11 +510,12 @@
   [data-theme="light"] .macro-latest-date {
     color: #64748b !important;
     font-weight: 750 !important;
-    font-size: 13px !important;
+    font-size: 11px !important;
   }
   [data-theme="light"] .macro-card-latest .macro-num {
     color: #0f172a !important;
     font-weight: 900 !important;
+    font-size: 20px !important;
   }
   [data-theme="light"] .macro-value {
     color: #0f172a !important;
@@ -1603,6 +1609,33 @@
   [data-theme="light"] .market-pulse-turnover { color:#d97706; }
   [data-theme="light"] .market-pulse-meta,
   [data-theme="light"] .market-pulse-status { color:#64748b; }
+  [data-theme="light"] .market-pulse-trend {
+    background:rgba(241, 245, 249, 0.85);
+    border-color:rgba(203, 213, 225, 0.9);
+  }
+  [data-theme="light"] .market-pulse-trend:hover {
+    background:#ffffff;
+    border-color:#94a3b8;
+  }
+  [data-theme="light"] .trend-lbl.high .lbl-val,
+  [data-theme="light"] .trend-lbl.low .lbl-val {
+    color:#1e293b;
+  }
+  [data-theme="light"] .market-pulse-pill-badge.typhoon{
+    background:#ffe4e6; color:#e11d48; border-color:#fda4af;
+  }
+  [data-theme="light"] .market-pulse-pill-badge.holiday{
+    background:#fee2e2; color:#b91c1c; border-color:#fca5a5;
+  }
+  [data-theme="light"] .market-pulse-pill-badge.weekend{
+    background:#fef3c7; color:#b45309; border-color:#fcd34d;
+  }
+  [data-theme="light"] .market-pulse-pill-badge.closed{
+    background:#f1f5f9; color:#475569; border-color:#cbd5e1;
+  }
+  [data-theme="light"] .market-pulse-pill-badge.open{
+    background:#dcfce7; color:#15803d; border-color:#86efac;
+  }
   [data-theme="light"] .resizer {
     background: #f1f5f9 !important;
     border-left: 1px solid #e2e8f0 !important;
@@ -2620,7 +2653,36 @@
     display:flex; align-items:stretch; justify-content:space-between; gap:10px;
   }
   .market-pulse-main{ min-width:0; flex:1 1 auto; display:flex; flex-direction:column; justify-content:space-between; }
-  .market-pulse-title{ color:#67e8f9; font-size:13px; font-weight:800; letter-spacing:.035em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .market-pulse-title-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:2px; }
+  .market-pulse-title{ color:#67e8f9; font-size:13px; font-weight:800; letter-spacing:.035em; white-space:nowrap; }
+  .market-pulse-pill-badge{
+    display:inline-flex; align-items:center; gap:3.5px;
+    font-size:9.5px; font-weight:750; line-height:1;
+    padding:2px 7px; border-radius:999px;
+    white-space:nowrap; user-select:none;
+    letter-spacing:.02em;
+  }
+  .market-pulse-pill-badge .badge-dot{
+    width:5px; height:5px; border-radius:50%; background:currentColor; flex-shrink:0;
+  }
+  .market-pulse-pill-badge.typhoon{
+    background:rgba(239,68,68,0.22); color:#fda4af; border:1px solid rgba(244,63,94,0.6);
+  }
+  .market-pulse-pill-badge.holiday{
+    background:rgba(239,68,68,0.16); color:#fca5a5; border:1px solid rgba(239,68,68,0.45);
+  }
+  .market-pulse-pill-badge.weekend{
+    background:rgba(245,158,11,0.16); color:#fcd34d; border:1px solid rgba(245,158,11,0.45);
+  }
+  .market-pulse-pill-badge.closed{
+    background:rgba(148,163,184,0.14); color:#cbd5e1; border:1px solid rgba(148,163,184,0.32);
+  }
+  .market-pulse-pill-badge.open{
+    background:rgba(34,197,94,0.16); color:#86efac; border:1px solid rgba(34,197,94,0.45);
+  }
+  .market-pulse-pill-badge.open .badge-dot{
+    animation:market-pulse-breathe 1.2s ease-in-out infinite alternate;
+  }
   .market-pulse-price{ margin-top:2px; color:#e5edf8; font-size:20px; line-height:1.15; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.025em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .market-pulse-change{ margin-top:2px; color:#94a3b8; font-size:12px; font-weight:750; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .market-pulse-card.up .market-pulse-price, .market-pulse-card.up .market-pulse-change{ color:#ff5964; }
@@ -2629,9 +2691,13 @@
   .market-pulse-turnover{ margin-top:2px; color:#fbbf24; font-size:12px; font-weight:750; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .market-pulse-meta{ margin-top:4px; color:#7890ab; font-size:10px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .market-pulse-trend{
-    flex:0 0 148px; display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+    flex:0 0 160px; display:flex; flex-direction:column; align-items:center; justify-content:space-between;
     padding:3px 6px; border-radius:6px; background:rgba(15,23,42,.65);
     border:1px solid rgba(56,189,248,.18); box-sizing:border-box; user-select:none;
+    cursor:pointer; transition:border-color .15s ease, background-color .15s ease;
+  }
+  .market-pulse-trend:hover{
+    background:rgba(15,23,42,.85); border-color:rgba(56,189,248,.45);
   }
   .market-pulse-trend-badge{
     font-size:9.5px; font-weight:800; padding:1px 5px; border-radius:3px; line-height:1.2;
@@ -2641,12 +2707,13 @@
   .market-pulse-trend-badge.green-k{ background:rgba(34,197,94,.18); color:#4ade80; border:1px solid rgba(34,197,94,.5); }
   .market-pulse-trend-badge.flat{ background:rgba(148,163,184,.15); color:#94a3b8; border:1px solid rgba(148,163,184,.3); }
   .market-pulse-trend-body{
-    display:flex; align-items:center; justify-content:space-between; gap:6px; width:100%;
+    display:flex; align-items:center; justify-content:space-between; gap:4px; width:100%;
   }
-  .market-pulse-spark{ width:46px; height:48px; flex-shrink:0; display:block; overflow:visible; }
+  .market-pulse-spark{ width:96px; height:36px; flex-shrink:0; display:block; overflow:visible; }
   .market-pulse-trend-labels{
-    display:flex; flex-direction:column; justify-content:space-around; height:48px;
+    display:flex; flex-direction:column; justify-content:space-around; height:36px;
     font-size:10px; line-height:1.2; font-variant-numeric:tabular-nums; flex:1; min-width:0;
+    margin-left:2px;
   }
   .trend-lbl{
     display:flex; align-items:center; justify-content:space-between; gap:2px;
@@ -3178,42 +3245,43 @@
   }
   .macro-table-toolbar{
     display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
-    padding:15px 18px; border-bottom:1px solid rgba(71,85,105,.45);
+    padding:10px 16px; border-bottom:1px solid rgba(71,85,105,.45);
   }
-  .macro-panel-title{ font-size:21px; font-weight:850; color:#67e8f9; }
-  .macro-panel-meta{ display:flex; align-items:center; gap:12px; color:var(--text-dim); font-size:17px; }
-  .macro-status{ min-height:27px; color:#67e8f9; font-size:17px; font-weight:700; }
+  .macro-panel-title{ font-size:16px; font-weight:850; color:#67e8f9; }
+  .macro-panel-meta{ display:flex; align-items:center; gap:10px; color:var(--text-dim); font-size:13px; }
+  .macro-status{ min-height:20px; color:#67e8f9; font-size:13px; font-weight:700; }
   .macro-status.success{ color:#4ade80; }
   .macro-status.error{ color:#fca5a5; }
   .macro-dashboard{
-    display:grid; grid-template-columns:repeat(4,minmax(210px,1fr)); gap:14px; padding:18px;
+    display:grid; grid-template-columns:repeat(4,minmax(210px,1fr)); gap:10px; padding:12px 16px;
   }
   .macro-indicator-card{
-    min-width:0; background:linear-gradient(145deg,#111c2a,#0c1420); border:1px solid rgba(56,189,248,.26); border-radius:10px;
-    padding:15px; box-shadow:inset 0 1px rgba(255,255,255,.025), 0 8px 20px rgba(2,12,27,.2); transition:border-color .15s, background .15s;
+    min-width:0; min-height:94px; background:linear-gradient(145deg,#111c2a,#0c1420); border:1px solid rgba(56,189,248,.26); border-radius:10px;
+    padding:10px 14px; box-shadow:inset 0 1px rgba(255,255,255,.025), 0 8px 20px rgba(2,12,27,.2); transition:border-color .15s, background .15s;
+    box-sizing:border-box;
   }
   .macro-indicator-card:hover{ background:linear-gradient(145deg,#142236,#0e1928); border-color:rgba(103,232,249,.58); }
-  .macro-card-heading{ display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
-  .macro-th-label{ display:block; white-space:nowrap; color:#dbeafe; font-size:17px; font-weight:850; letter-spacing:.2px; }
-  .macro-fresh{ display:block; min-height:20px; margin-top:3px; color:#7dd3fc; font-size:13.5px; font-weight:500; white-space:nowrap; }
-  .macro-spark{ display:block; height:54px; margin-top:11px; border-radius:5px; background:rgba(56,189,248,.05); overflow:hidden; }
-  .macro-card-latest{ display:flex; justify-content:space-between; align-items:flex-end; gap:8px; margin-top:13px; }
-  .macro-latest-date{ color:#7dd3fc; font-size:13px; font-weight:800; white-space:nowrap; }
+  .macro-card-heading{ display:flex; justify-content:space-between; gap:6px; align-items:center; }
+  .macro-th-label{ display:block; white-space:nowrap; color:#dbeafe; font-size:13px; font-weight:800; letter-spacing:.02em; }
+  .macro-fresh{ display:block; min-height:16px; margin-top:0; color:#7dd3fc; font-size:11px; font-weight:600; white-space:nowrap; }
+  .macro-spark{ display:block; height:32px; margin-top:4px; border-radius:4px; background:rgba(56,189,248,.05); overflow:hidden; }
+  .macro-card-latest{ display:flex; justify-content:space-between; align-items:baseline; gap:6px; margin-top:4px; }
+  .macro-latest-date{ color:#7dd3fc; font-size:11px; font-weight:700; white-space:nowrap; }
   .macro-num{ cursor:pointer; transition:background .12s; }
   .macro-num:hover{ background:#252a38; outline:1px dashed #22d3ee; outline-offset:2px; border-radius:4px; }
-  .macro-card-latest .macro-num{ padding:3px 5px; margin:-3px -5px; font-family:"Courier New",Courier,monospace; font-size:25px; font-weight:850; }
+  .macro-card-latest .macro-num{ padding:2px 4px; margin:-2px -4px; font-family:"Courier New",Courier,monospace; font-size:20px; font-weight:850; line-height:1.15; }
   .macro-value{ font-weight:850; color:#cbd5e1; }
   .macro-value.up{ color:#fb7185; }
   .macro-value.down{ color:#4ade80; }
   .macro-value.flat{ color:#cbd5e1; }
-  .macro-delta{ display:inline-block; margin-left:4px; padding:2px 5px; border-radius:5px; font-size:14px; }
+  .macro-delta{ display:inline-block; margin-left:4px; padding:1px 4px; border-radius:4px; font-size:12px; }
   .macro-delta.up{ color:#f87171; background:rgba(239,68,68,.16); }
   .macro-delta.down{ color:#4ade80; background:rgba(34,197,94,.16); }
   .macro-delta.flat{ color:#94a3b8; background:rgba(148,163,184,.13); }
   .macro-auto-badge{
-    display:inline-flex; align-items:center; gap:5px; font-size:13.5px; font-weight:750;
+    display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:750;
     color:#38bdf8; background:rgba(56,189,248,.12); border:1px solid rgba(56,189,248,.35);
-    border-radius:6px; padding:6px 12px; letter-spacing:.2px; white-space:nowrap;
+    border-radius:6px; padding:4px 10px; letter-spacing:.2px; white-space:nowrap;
     transition:opacity .2s, color .2s, border-color .2s;
   }
   .macro-fresh.intraday{ color:#facc15; font-weight:750; }
@@ -3988,24 +4056,6 @@
       </div>
     </section>
 
-    <!-- 📊 台股大盤三大法人買賣金額明細看板 -->
-    <div class="market-inst-card" id="market-inst-card">
-      <div class="market-inst-header">
-        <div class="market-inst-title">
-          <span class="icon">📊</span>
-          <span class="title-text">台股大盤三大法人買賣金額明細 <span style="font-size:13px; font-weight:normal; opacity:.75;">(不含自營避險)</span></span>
-          <span class="market-inst-date-badge" id="market-inst-date-badge"><span class="market-inst-dot active"></span>載入中...</span>
-        </div>
-        <div class="market-inst-actions">
-          <span class="market-inst-status" id="market-inst-status"></span>
-          <button type="button" class="btn market-refresh-btn" id="market-inst-refresh-btn" title="向證交所重新整理大盤法人最新數據">🔄 即時重整</button>
-        </div>
-      </div>
-      <div class="market-inst-body" id="market-inst-body">
-        <div class="market-inst-loading">⏳ 正在連線台灣證券交易所取得大盤三大法人數據...</div>
-      </div>
-    </div>
-
     <section class="macro-panel" id="macro-panel" aria-label="總經數據中心">
       <div class="macro-table-card">
         <div class="macro-table-toolbar">
@@ -4047,6 +4097,24 @@
         <div class="macro-status" id="macro-copy-status"></div>
       </div>
     </section>
+
+    <!-- 📊 台股大盤三大法人買賣金額明細看板 -->
+    <div class="market-inst-card" id="market-inst-card">
+      <div class="market-inst-header">
+        <div class="market-inst-title">
+          <span class="icon">📊</span>
+          <span class="title-text">台股大盤三大法人買賣金額明細 <span style="font-size:13px; font-weight:normal; opacity:.75;">(不含自營避險)</span></span>
+          <span class="market-inst-date-badge" id="market-inst-date-badge"><span class="market-inst-dot active"></span>載入中...</span>
+        </div>
+        <div class="market-inst-actions">
+          <span class="market-inst-status" id="market-inst-status"></span>
+          <button type="button" class="btn market-refresh-btn" id="market-inst-refresh-btn" title="向證交所重新整理大盤法人最新數據">🔄 即時重整</button>
+        </div>
+      </div>
+      <div class="market-inst-body" id="market-inst-body">
+        <div class="market-inst-loading">⏳ 正在連線台灣證券交易所取得大盤三大法人數據...</div>
+      </div>
+    </div>
 
     <!-- 🚨 處置與注意股票即時預警看板 -->
     <div class="disposal-warning-card collapsed" id="disposal-warning-card">
@@ -9479,6 +9547,9 @@ ${macroJsonText()}`;
   }
 
   function getMarketPulseSchedule(){
+    if (window.__lastMarketPulseSchedule) {
+      return window.__lastMarketPulseSchedule;
+    }
     const taipei = marketPulseClock('Asia/Taipei');
     const newYork = marketPulseClock('America/New_York');
     const taipeiTradingDay = taipei.weekday >= 1 && taipei.weekday <= 5;
@@ -9513,10 +9584,11 @@ ${macroJsonText()}`;
     const txfState = !txfKeys.length ? 'stopped' : (loading ? 'loading' : (hasHealthyQuotes(txfKeys) ? 'live' : 'stopped'));
     const usState = !usKeys.length ? 'stopped' : (loading ? 'loading' : (hasHealthyQuotes(usKeys) ? 'live' : 'stopped'));
 
-    const holidaySuffix = schedule.isTwHoliday ? ` (${schedule.twHolidayName || '國定假日'})` : '';
-    setMarketPulseLight('market-pulse-tw-light', twState, twState === 'live' ? '台股現貨盤中即時更新' : (twState === 'loading' ? '台股現貨更新中' : `台股現貨休市${holidaySuffix}`));
-    setMarketPulseLight('market-pulse-txf-light', txfState, txfState === 'live' ? '台指期盤中即時更新' : (txfState === 'loading' ? '台指期更新中' : `台指期休市${holidaySuffix}`));
-    setMarketPulseLight('market-pulse-us-light', usState, usState === 'live' ? '美股盤中即時更新' : (usState === 'loading' ? '美股行情更新中' : '美股休市'));
+    const twReasonSuffix = schedule.twClosedReason ? ` (${schedule.twClosedReason})` : (schedule.isTwHoliday ? ` (${schedule.twHolidayName || '國定假日'})` : '');
+    const txfReasonSuffix = schedule.txfClosedReason ? ` (${schedule.txfClosedReason})` : twReasonSuffix;
+    setMarketPulseLight('market-pulse-tw-light', twState, twState === 'live' ? '台股現貨盤中即時更新' : (twState === 'loading' ? '台股現貨更新中' : `台股現貨休市${twReasonSuffix}`));
+    setMarketPulseLight('market-pulse-txf-light', txfState, txfState === 'live' ? '台指期盤中即時更新' : (txfState === 'loading' ? '台指期更新中' : `台指期休市${txfReasonSuffix}`));
+    setMarketPulseLight('market-pulse-us-light', usState, usState === 'live' ? '美股盤中即時更新' : (usState === 'loading' ? '美股行情更新中' : (schedule.usClosedReason ? `美股休市 (${schedule.usClosedReason})` : '美股休市')));
   }
 
   function formatTrendNum(val){
@@ -9529,12 +9601,15 @@ ${macroJsonText()}`;
 
   function buildMarketPulseTrend(item){
     const y = Number(item.previousClose);
-    const o = Number(item.open);
     const z = Number(item.price);
-    const h = Number(item.high ?? Math.max(y, o, z));
-    const l = Number(item.low ?? Math.min(y, o, z));
+    const rawO = (item.open !== null && item.open !== undefined && item.open !== '') ? Number(item.open) : null;
+    const o = (rawO !== null && Number.isFinite(rawO) && rawO > 0) ? rawO : y;
+    const rawH = (item.high !== null && item.high !== undefined && item.high !== '') ? Number(item.high) : null;
+    const rawL = (item.low !== null && item.low !== undefined && item.low !== '') ? Number(item.low) : null;
+    const h = (rawH !== null && Number.isFinite(rawH) && rawH > 0) ? rawH : Math.max(y, o, z);
+    const l = (rawL !== null && Number.isFinite(rawL) && rawL > 0) ? rawL : Math.min(y, o, z);
 
-    if (!Number.isFinite(y) || !Number.isFinite(o) || !Number.isFinite(z)) {
+    if (!Number.isFinite(y) || y <= 0 || !Number.isFinite(z) || z <= 0) {
       return '';
     }
 
@@ -9545,52 +9620,169 @@ ${macroJsonText()}`;
     } else {
       badgeText = z >= o ? '開低走高' : '開低走低';
     }
+    const isYang = z >= o;
+    const badgeClass = isYang ? 'red-k' : 'green-k';
 
-    // 2. 漲跌顏色：比對目標一律為「昨日收盤價 (y)」
-    //    現價 >= 昨收：漲（紅色）
-    //    現價 <  昨收：跌（綠色）
+    // 2. 整理走勢點位陣列 (完全比照 StockBrowser Yahoo 雙色分時折線圖)
+    const rawPoints = [];
+    if (Array.isArray(item.points) && item.points.length > 0) {
+      for (const p of item.points) {
+        if (typeof p === 'number' && Number.isFinite(p) && p > 0) {
+          rawPoints.push(p);
+        }
+      }
+    }
+
+    // 若無歷史點位，以開高低現合成自然擬真的分時走勢 (避免生硬直線)
+    if (rawPoints.length === 0) {
+      if (o !== null && z !== null) {
+        const keyNodes = [o, h !== null ? h : Math.max(o, z), l !== null ? l : Math.min(o, z), z];
+        for (let i = 0; i < keyNodes.length - 1; i++) {
+          const startVal = keyNodes[i];
+          const endVal = keyNodes[i + 1];
+          const steps = 6;
+          for (let s = 0; s < steps; s++) {
+            const progress = s / steps;
+            const wave = Math.sin(progress * Math.PI) * (h - l) * 0.08;
+            const ease = (1 - Math.cos(progress * Math.PI)) / 2;
+            rawPoints.push(startVal + (endVal - startVal) * ease + wave);
+          }
+        }
+        rawPoints.push(z);
+      }
+    } else if (z !== null) {
+      // 確保最後一個點位精準貼齊即時現價
+      rawPoints[rawPoints.length - 1] = z;
+    }
+
+    if (rawPoints.length < 2) {
+      return '';
+    }
+
+    const W = 96;
+    const H = 36;
+    const padTop = 3;
+    const padBottom = 3;
+    const usableH = H - padTop - padBottom;
+
+    // 計算座標極值 (將昨收 y 納入範圍，確保基準線永遠在視圖內)
+    let minVal = y;
+    let maxVal = y;
+    for (const pt of rawPoints) {
+      if (pt < minVal) minVal = pt;
+      if (pt > maxVal) maxVal = pt;
+    }
+
+    const span = maxVal - minVal;
+    // 上下預留 8% 邊距，避免貼頂/貼底
+    const margin = Math.max(span * 0.08, 0.5);
+    const scaleMin = minVal - margin;
+    const scaleMax = maxVal + margin;
+    const scaleRange = scaleMax - scaleMin || 1;
+
+    const getY = (val) => {
+      const ratio = (val - scaleMin) / scaleRange;
+      return padTop + (1 - ratio) * usableH;
+    };
+
+    const baseY = Math.max(padTop, Math.min(H - padBottom, getY(y)));
+    const totalPts = rawPoints.length;
+
+    // 產生 SVG 折線點座標
+    const coords = rawPoints.map((pt, i) => {
+      const x = (i / (totalPts - 1)) * (W - 4) + 2;
+      const cy = getY(pt);
+      return [Math.round(x * 10) / 10, Math.round(cy * 10) / 10];
+    });
+
+    // 採用 Catmull-Rom / Bézier 平滑貝茲曲線，確保線條自然圓潤且不失真
+    function buildSmoothPath(pts) {
+      if (pts.length < 2) return '';
+      if (pts.length === 2) {
+        return `M ${pts[0][0]} ${pts[0][1]} L ${pts[1][0]} ${pts[1][1]}`;
+      }
+      let d = `M ${pts[0][0]} ${pts[0][1]}`;
+      const tension = 0.65;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = i > 0 ? pts[i - 1] : pts[i];
+        const p1 = pts[i];
+        const p2 = pts[i + 1];
+        const p3 = i < pts.length - 2 ? pts[i + 2] : p2;
+
+        const cp1x = Math.round((p1[0] + ((p2[0] - p0[0]) / 6) * tension) * 10) / 10;
+        const cp1y = Math.round((p1[1] + ((p2[1] - p0[1]) / 6) * tension) * 10) / 10;
+        const cp2x = Math.round((p2[0] - ((p3[0] - p1[0]) / 6) * tension) * 10) / 10;
+        const cp2y = Math.round((p2[1] - ((p3[1] - p1[1]) / 6) * tension) * 10) / 10;
+
+        d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2[0]} ${p2[1]}`;
+      }
+      return d;
+    }
+
+    const lineD = buildSmoothPath(coords);
+
+    // 封閉面積路徑 (由平滑曲線路徑 + 封閉回基準線 baseY)
+    const firstX = coords[0][0];
+    const lastX = coords[coords.length - 1][0];
+    const lastY = coords[coords.length - 1][1];
+    const areaD = `${lineD} L ${lastX} ${baseY} L ${firstX} ${baseY} Z`;
+
     const isUp = z >= y;
-    const badgeClass = isUp ? 'red-k' : 'green-k';
-    const candleColor = isUp ? '#ff5964' : '#4ade80';
+    const pointColor = isUp ? '#ff5964' : '#22c55e';
 
-    const minVal = Math.min(l, y, o, z);
-    const maxVal = Math.max(h, y, o, z);
-    const span = (maxVal - minVal) || 1;
-    const pad = span * 0.12;
-    const chartMin = minVal - pad;
-    const chartMax = maxVal + pad;
-    const chartRange = chartMax - chartMin;
+    const fmt = (num) => formatMarketPulseNumber(num);
+    const chg = Number.isFinite(item.change) ? Number(item.change) : z - y;
+    const pct = Number.isFinite(item.changePct) ? Number(item.changePct) : (chg / y) * 100;
+    const tooltip = `${item.label || item.key} 當日分時走勢\n現價: ${fmt(z)} (${chg >= 0 ? '+' : ''}${fmt(chg)}, ${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)\n昨收基準: ${fmt(y)}\n開盤: ${o !== null ? fmt(o) : '-'}\n最高: ${h !== null ? fmt(h) : '-'}\n最低: ${l !== null ? fmt(l) : '-'}\n累積分時: ${totalPts} 點`;
 
-    const W = 44;
-    const H = 46;
-    const scaleY = (val) => Math.round((H - 4) - ((val - chartMin) / chartRange) * (H - 8));
-
-    const yY = scaleY(y);
-    const yO = scaleY(o);
-    const yZ = scaleY(z);
-    const yH = scaleY(h);
-    const yL = scaleY(l);
-
-    const bodyTop = Math.min(yO, yZ);
-    const bodyHeight = Math.max(Math.abs(yZ - yO), 3);
-    const tooltip = `昨收: ${formatMarketPulseNumber(y)} | 開盤: ${formatMarketPulseNumber(o)} | 現價: ${formatMarketPulseNumber(z)} | 最高: ${formatMarketPulseNumber(h)} | 最低: ${formatMarketPulseNumber(l)}`;
+    const uid = 'spark-' + (item.key || 'item') + '-' + Math.floor(Math.random() * 100000);
 
     return `
       <div class="market-pulse-trend" title="${escapeHtml(tooltip)}">
         <span class="market-pulse-trend-badge ${badgeClass}">${badgeText}</span>
         <div class="market-pulse-trend-body">
-          <svg class="market-pulse-spark" viewBox="0 0 ${W} ${H}">
-            <!-- 昨收基準水平線 -->
-            <line x1="2" y1="${yY}" x2="${W - 2}" y2="${yY}" stroke="#eab308" stroke-dasharray="3,2" stroke-width="1" opacity="0.9" />
+          <svg class="market-pulse-spark" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">
+            <defs>
+              <!-- 上半部：高於昨收的紅色漸層 -->
+              <linearGradient id="grad-up-${uid}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ff5964" stop-opacity="0.45" />
+                <stop offset="90%" stop-color="#ff5964" stop-opacity="0.05" />
+              </linearGradient>
 
-            <!-- 最高最低影線 -->
-            <line x1="22" y1="${yH}" x2="22" y2="${yL}" stroke="${candleColor}" stroke-width="1.8" stroke-linecap="round" />
+              <!-- 下半部：低於昨收的綠色漸層 -->
+              <linearGradient id="grad-down-${uid}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="10%" stop-color="#22c55e" stop-opacity="0.05" />
+                <stop offset="100%" stop-color="#22c55e" stop-opacity="0.45" />
+              </linearGradient>
 
-            <!-- K 棒實體 (開盤 ~ 現價) -->
-            <rect x="13" y="${bodyTop}" width="18" height="${bodyHeight}" rx="2" fill="${candleColor}" stroke="${candleColor}" stroke-width="0.5" />
+              <!-- 基準線上方裁切區 (紅) -->
+              <clipPath id="clip-above-${uid}">
+                <rect x="0" y="0" width="${W}" height="${baseY}" />
+              </clipPath>
 
-            <!-- 現價指示圓點 -->
-            <circle cx="22" cy="${yZ}" r="3" fill="#ffffff" stroke="${candleColor}" stroke-width="2" />
+              <!-- 基準線下方裁切區 (綠) -->
+              <clipPath id="clip-below-${uid}">
+                <rect x="0" y="${baseY}" width="${W}" height="${H - baseY}" />
+              </clipPath>
+            </defs>
+
+            <!-- 昨收基準水平線 (灰色虛線) -->
+            <line x1="1" y1="${baseY}" x2="${W - 1}" y2="${baseY}" stroke="#94a3b8" stroke-dasharray="2.5,2" stroke-width="1" opacity="0.8" />
+
+            <!-- 基準線上方部分：紅線 + 紅漸層填色 -->
+            <g clip-path="url(#clip-above-${uid})">
+              <path d="${areaD}" fill="url(#grad-up-${uid})" />
+              <path d="${lineD}" fill="none" stroke="#ff5964" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </g>
+
+            <!-- 基準線下方部分：綠線 + 綠漸層填色 -->
+            <g clip-path="url(#clip-below-${uid})">
+              <path d="${areaD}" fill="url(#grad-down-${uid})" />
+              <path d="${lineD}" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </g>
+
+            <!-- 最新價格點位小圓點 -->
+            <circle cx="${lastX}" cy="${lastY}" r="2.5" fill="${pointColor}" stroke="#ffffff" stroke-width="1" />
           </svg>
           <div class="market-pulse-trend-labels">
             <div class="trend-lbl high"><span class="lbl-tag">高</span><span class="lbl-val">${formatTrendNum(h)}</span></div>
@@ -9606,9 +9798,13 @@ ${macroJsonText()}`;
     if (!gridEl) return;
     const incomingItems = Array.isArray(data?.items) ? data.items : [];
     updateMarketPulseLights(schedule, incomingItems);
-    incomingItems.forEach(item => marketPulseItems.set(item.key, { ...marketPulseItems.get(item.key), ...item, marketClosed:false }));
+    incomingItems.forEach(item => marketPulseItems.set(item.key, { ...marketPulseItems.get(item.key), ...item }));
     const activeByMarket = { tw:schedule.twActive, txf:schedule.txfActive, us:schedule.usActive };
-    const items = marketPulseDefinitions.map(definition => ({ ...definition, ...marketPulseItems.get(definition.key), marketClosed: !activeByMarket[definition.market] }));
+    const items = marketPulseDefinitions.map(definition => {
+      const liveItem = marketPulseItems.get(definition.key) || {};
+      const isMarketClosed = liveItem.marketClosed !== undefined ? Boolean(liveItem.marketClosed) : !activeByMarket[definition.market];
+      return { ...definition, ...liveItem, marketClosed: isMarketClosed };
+    });
     gridEl.innerHTML = items.map(item => {
       const change = Number(item.change);
       const isClosed = Boolean(item.marketClosed);
@@ -9635,10 +9831,56 @@ ${macroJsonText()}`;
         const formattedYi = turnoverYi.toLocaleString('zh-TW', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
         turnoverHtml = `<div class="market-pulse-turnover" title="成交交易量：${formattedYi} 億元">成交交易量：${formattedYi} 億</div>`;
       }
+
+      let closedBadgeHtml = '';
+      if (isClosed) {
+        let badgeLabel = item.closedReason || '';
+        let badgeType = item.closedType || '';
+        let badgeTitle = badgeLabel;
+
+        if (!badgeLabel) {
+          if (item.market === 'tw' || item.market === 'txf') {
+            if (schedule.isSpecialClosed) {
+              badgeLabel = schedule.twClosedReason || '颱風假休市';
+              badgeType = schedule.twClosedType || 'typhoon';
+              badgeTitle = badgeLabel;
+            } else if (schedule.isTwHoliday) {
+              badgeLabel = schedule.twHolidayName ? `${schedule.twHolidayName}休市` : '國定假日休市';
+              badgeType = 'holiday';
+              badgeTitle = `${schedule.twHolidayName || '國定假日'}休市`;
+            } else if (schedule.isWeekend) {
+              badgeLabel = '週末休市';
+              badgeType = 'weekend';
+              badgeTitle = '週末休市';
+            } else {
+              badgeLabel = schedule.twClosedReason || '休市中';
+              badgeType = 'closed';
+              badgeTitle = '非開盤時段';
+            }
+          } else if (item.market === 'us') {
+            if (schedule.usIsWeekend) {
+              badgeLabel = '週末休市';
+              badgeType = 'weekend';
+              badgeTitle = '美股週末休市';
+            } else {
+              badgeLabel = schedule.usClosedReason || '休市中';
+              badgeType = 'closed';
+              badgeTitle = '美股非開盤時段';
+            }
+          }
+        }
+        closedBadgeHtml = `<span class="market-pulse-pill-badge ${badgeType || 'closed'}" title="${escapeHtml(badgeTitle || badgeLabel)}"><span class="badge-dot"></span>${escapeHtml(badgeLabel || '休市中')}</span>`;
+      } else {
+        closedBadgeHtml = `<span class="market-pulse-pill-badge open" title="市場開盤交易中"><span class="badge-dot"></span>開盤中</span>`;
+      }
+
       return `
         <article class="market-pulse-card ${changeClass}" title="${title}">
           <div class="market-pulse-main">
-            <div class="market-pulse-title">${escapeHtml(item.label || '市場指數')}</div>
+            <div class="market-pulse-title-row">
+              <span class="market-pulse-title">${escapeHtml(item.label || '市場指數')}</span>
+              ${closedBadgeHtml}
+            </div>
             <div class="market-pulse-price">${formatMarketPulseNumber(item.price)}</div>
             <div class="market-pulse-change">${changeText}</div>
             ${turnoverHtml}
@@ -9649,7 +9891,9 @@ ${macroJsonText()}`;
     }).join('');
     if (statusEl) {
       const activeLabels = [];
-      if (schedule.isTwHoliday) {
+      if (schedule.twClosedReason) {
+        activeLabels.push(`台股/台指期休市 (${schedule.twClosedReason})`);
+      } else if (schedule.isTwHoliday) {
         activeLabels.push(`台股/台指期休市 (${schedule.twHolidayName || '國定假日'})`);
       } else {
         if (schedule.twActive) activeLabels.push('台股盤中');
@@ -9665,7 +9909,8 @@ ${macroJsonText()}`;
   async function loadMarketPulse(forceRefresh = false){
     const statusEl = document.getElementById('market-pulse-status');
     const localSchedule = getMarketPulseSchedule();
-    if (!forceRefresh) updateMarketPulseLights(localSchedule, [], true);
+    const baseSchedule = window.__lastMarketPulseSchedule || localSchedule;
+    if (!forceRefresh) updateMarketPulseLights(baseSchedule, [], true);
     try {
       const markets = ['tw', 'txf', 'us'];
       const params = new URLSearchParams({ markets: markets.join(',') });
@@ -9673,7 +9918,12 @@ ${macroJsonText()}`;
       const response = await fetch(`/api/market-pulse?${params}`);
       const payload = await response.json();
       if (!response.ok || !payload.ok || !payload.data) throw new Error(payload.error || '無法取得行情');
-      const effectiveSchedule = Object.assign({}, localSchedule, payload.data.schedule || {});
+      const serverSchedule = payload.data.schedule || {};
+      const effectiveSchedule = Object.assign({}, localSchedule, serverSchedule);
+      if (serverSchedule.twActive !== undefined) effectiveSchedule.twActive = serverSchedule.twActive;
+      if (serverSchedule.txfActive !== undefined) effectiveSchedule.txfActive = serverSchedule.txfActive;
+      if (serverSchedule.usActive !== undefined) effectiveSchedule.usActive = serverSchedule.usActive;
+      window.__lastMarketPulseSchedule = effectiveSchedule;
       renderMarketPulse(payload.data, effectiveSchedule);
       updateMarketPulseLights(effectiveSchedule, payload.data.items || [], false);
     } catch (error) {
